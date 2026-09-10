@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 0 auto; padding: 10px 0 40px 0;">
+
+    <!-- Top Navigation Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+            <a href="/transactions" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                <span>←</span> Torna ai Movimenti & Conti
+            </a>
+            <h1 style="font-size: 1.8rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 10px;">
+                <span>🧭 Configura Nuovo Conto o Carta</span>
+            </h1>
+        </div>
+        <a href="/transactions" class="btn-secondary" style="padding: 8px 16px; font-size: 0.85rem; border-radius: 8px; text-decoration: none;">
+            Annulla
+        </a>
+    </div>
+
+    <!-- Main Wizard Grid -->
+    <div style="display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start;">
+        
+        <!-- Left: Guided Wizard Form -->
+        <div class="card" style="margin-bottom: 0;">
+            <form method="POST" action="/accounts/wizard/save" id="accountWizardForm">
+                
+                <!-- Step 1: Account Type Selection -->
+                <div style="margin-bottom: 24px;">
+                    <label style="font-size: 0.82rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 0.05em; display: block; margin-bottom: 10px;">
+                        1. Seleziona la Tipologia di Strumento
+                    </label>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        
+                        <!-- Option 1: Conto Corrente -->
+                        <div class="type-card active" onclick="selectType('CHECKING', this)" style="cursor: pointer; border: 2px solid #0ea5e9; background: rgba(14, 165, 233, 0.1); border-radius: 12px; padding: 16px; transition: all 0.2s;">
+                            <div style="font-size: 2rem; margin-bottom: 8px;">🏛️</div>
+                            <strong style="color: #fff; font-size: 1rem; display: block; margin-bottom: 4px;">Conto Corrente</strong>
+                            <span style="font-size: 0.78rem; color: #94a3b8; line-height: 1.35; display: block;">
+                                Per stipendio, bonifici, bollette e domiciliazioni (con IBAN).
+                            </span>
+                        </div>
+
+                        <!-- Option 2: Carta Prepagata -->
+                        <div class="type-card" onclick="selectType('CARD', this)" style="cursor: pointer; border: 1px solid #334155; background: rgba(15, 23, 42, 0.6); border-radius: 12px; padding: 16px; transition: all 0.2s;">
+                            <div style="font-size: 2rem; margin-bottom: 8px;">💳</div>
+                            <strong style="color: #fff; font-size: 1rem; display: block; margin-bottom: 4px;">Carta Prepagata</strong>
+                            <span style="font-size: 0.78rem; color: #94a3b8; line-height: 1.35; display: block;">
+                                Ricaricabile per spese online, shopping e viaggi (es. Postepay, BPER Card, Revolut).
+                            </span>
+                        </div>
+
+                        <!-- Option 3: Conto Deposito / Investimenti -->
+                        <div class="type-card" onclick="selectType('SAVINGS', this)" style="cursor: pointer; border: 1px solid #334155; background: rgba(15, 23, 42, 0.6); border-radius: 12px; padding: 16px; transition: all 0.2s;">
+                            <div style="font-size: 2rem; margin-bottom: 8px;">📈</div>
+                            <strong style="color: #fff; font-size: 1rem; display: block; margin-bottom: 4px;">Conto Deposito</strong>
+                            <span style="font-size: 0.78rem; color: #94a3b8; line-height: 1.35; display: block;">
+                                Per risparmi vincolati, fondo di emergenza o investimenti.
+                            </span>
+                        </div>
+
+                        <!-- Option 4: Contanti -->
+                        <div class="type-card" onclick="selectType('CASH', this)" style="cursor: pointer; border: 1px solid #334155; background: rgba(15, 23, 42, 0.6); border-radius: 12px; padding: 16px; transition: all 0.2s;">
+                            <div style="font-size: 2rem; margin-bottom: 8px;">💵</div>
+                            <strong style="color: #fff; font-size: 1rem; display: block; margin-bottom: 4px;">Portafoglio Contanti</strong>
+                            <span style="font-size: 0.78rem; color: #94a3b8; line-height: 1.35; display: block;">
+                                Per tenere traccia dei prelievi e dei pagamenti in contanti a mano.
+                            </span>
+                        </div>
+
+                    </div>
+                    <input type="hidden" name="type" id="in_type" value="{{ prefill_type or 'CHECKING' }}">
+                </div>
+
+                <!-- Step 2: Bank Preset & Profile Owner -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px;">
+                    <div>
+                        <label style="font-size: 0.8rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 6px;">
+                            Banca / Istituto Emittente
+                        </label>
+                        <select name="bank_name" id="in_bank" class="form-control" onchange="updateBankBranding()" style="width: 100%; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px;">
+                            <option value="BPER Banca">🏛️ BPER Banca</option>
+                            <option value="Poste Italiane (BancoPosta)">📮 Poste Italiane (BancoPosta)</option>
+                            <option value="Poste Italiane (Postepay)">💳 Poste Italiane (Postepay)</option>
+                            <option value="Intesa Sanpaolo">🏛️ Intesa Sanpaolo</option>
+                            <option value="UniCredit">🔴 UniCredit</option>
+                            <option value="Fineco Bank">📊 Fineco Bank</option>
+                            <option value="Revolut">🚀 Revolut</option>
+                            <option value="BBVA">🌐 BBVA</option>
+                            <option value="BCC - Credito Cooperativo">🏦 BCC - Credito Cooperativo</option>
+                            <option value="Altro">Altra Banca / Istituto</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style="font-size: 0.8rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 6px;">
+                            👤 Intestatario / Profilo
+                        </label>
+                        <select name="profile_id" id="in_profile" class="form-control" onchange="updateCardPreview()" style="width: 100%; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px;">
+                            {% for p in profiles %}
+                            <option value="{{ p.id }}" data-name="{{ p.name }}" {% if p.is_primary %}selected{% endif %}>
+                                {{ p.name }} ({{ p.role_title }})
+                            </option>
+                            {% endfor %}
+                            <option value="" data-name="Conto Cointestato">👥 Conto Cointestato / Familiare</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Step 3: Account Name & Identification -->
+                <div style="margin-bottom: 18px;">
+                    <label style="font-size: 0.8rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 6px;">
+                        Nome Personalizzato del Conto / Carta
+                    </label>
+                    <input type="text" name="name" id="in_name" placeholder="es. BPER - Conto Corrente Principale" class="form-control" oninput="updateCardPreview()" style="width: 100%; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px;">
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">
+                        💡 Se lo lasci vuoto, verrà generato automaticamente combinando Banca e Tipologia.
+                    </small>
+                </div>
+
+                <!-- Step 4: Coordinates (IBAN or Card PAN) -->
+                <div id="section_iban" style="margin-bottom: 18px;">
+                    <label style="font-size: 0.8rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 6px;">
+                        IBAN (Opzionale, per riconciliazione automatica)
+                    </label>
+                    <input type="text" name="iban" id="in_iban" placeholder="es. IT60X0538712900000000123456" class="form-control" maxlength="27" oninput="updateCardPreview()" style="width: 100%; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; font-family: monospace; text-transform: uppercase;">
+                </div>
+
+                <div id="section_card" style="display: none; margin-bottom: 18px;">
+                    <label style="font-size: 0.8rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 6px;">
+                        Ultime 4 Cifre Carta (PAN Mascherato)
+                    </label>
+                    <input type="text" name="card_pan" id="in_pan" placeholder="es. 4081" maxlength="4" class="form-control" oninput="updateCardPreview()" style="width: 100%; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; font-family: monospace;">
+                </div>
+
+                <!-- Step 5: Initial Balance -->
+                <div style="margin-bottom: 24px;">
+                    <label style="font-size: 0.8rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 6px;">
+                        Saldo Iniziale / Attuale (€)
+                    </label>
+                    <input type="number" step="0.01" name="balance" id="in_balance" value="0.00" class="form-control" oninput="updateCardPreview()" style="width: 100%; background: #0f172a; color: #10b981; font-weight: 800; font-size: 1.1rem; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px;">
+                </div>
+
+                <!-- Submit Button -->
+                <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #334155; padding-top: 16px;">
+                    <a href="/transactions" class="btn-secondary" style="padding: 10px 20px; font-size: 0.9rem; border-radius: 8px; text-decoration: none;">
+                        Annulla
+                    </a>
+                    <button type="submit" class="btn-primary" style="padding: 10px 24px; font-size: 0.95rem; font-weight: 800; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                        <span>✓</span>
+                        <span>Salva e Aggiungi Conto</span>
+                    </button>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- Right: Live Interactive Card Mockup -->
+        <div style="position: sticky; top: 20px;">
+            <div style="margin-bottom: 10px; font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted); font-weight: 800; letter-spacing: 0.05em;">
+                Anteprima Carta / Conto
+            </div>
+
+            <!-- Virtual Bank Card -->
+            <div id="liveCard" style="background: linear-gradient(135deg, #0ea5e9, #0369a1); border-radius: 16px; padding: 20px; color: #fff; box-shadow: 0 15px 30px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); display: flex; flex-direction: column; justify-content: space-between; height: 210px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+                
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div id="cardBankName" style="font-size: 0.95rem; font-weight: 800; letter-spacing: 0.02em;">BPER Banca</div>
+                        <div id="cardTypeBadge" style="font-size: 0.7rem; background: rgba(255,255,255,0.25); padding: 2px 8px; border-radius: 4px; display: inline-block; margin-top: 4px; font-weight: 700;">CONTO CORRENTE</div>
+                    </div>
+                    <div id="cardBankIcon" style="font-size: 1.8rem;">🏛️</div>
+                </div>
+
+                <!-- Chip & IBAN/PAN -->
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <div style="width: 32px; height: 24px; background: linear-gradient(135deg, #fbbf24, #d97706); border-radius: 4px; border: 1px solid rgba(0,0,0,0.2);"></div>
+                        <span style="font-size: 1rem; opacity: 0.7;">📶</span>
+                    </div>
+                    <div id="cardIdentifier" style="font-family: monospace; font-size: 0.88rem; letter-spacing: 0.1em; opacity: 0.9;">
+                        IT•• •••• •••• •••• •••• •••• •••
+                    </div>
+                </div>
+
+                <!-- Holder & Balance -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div>
+                        <div style="font-size: 0.65rem; text-transform: uppercase; opacity: 0.75; font-weight: 600;">Intestatario</div>
+                        <div id="cardHolder" style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">LEOPOLDO DI PAOLO</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 0.65rem; text-transform: uppercase; opacity: 0.75; font-weight: 600;">Saldo</div>
+                        <div id="cardBalance" style="font-size: 1.05rem; font-weight: 900;">0,00 €</div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Hint Box -->
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; border-radius: 12px; padding: 14px; margin-top: 16px; font-size: 0.8rem; color: #94a3b8; line-height: 1.45;">
+                🛡️ <strong>Riconciliazione Fiscale:</strong><br>
+                Associare correttamente il conto al profilo titolare garantisce che cedolini e spese deducibili vengano attribuiti al 100% alla persona giusta nel Modello 730.
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+const BANK_PRESETS = {
+    "BPER Banca": { icon: "🏛️", color: "linear-gradient(135deg, #0ea5e9, #0369a1)" },
+    "Poste Italiane (BancoPosta)": { icon: "📮", color: "linear-gradient(135deg, #eab308, #ca8a04)" },
+    "Poste Italiane (Postepay)": { icon: "💳", color: "linear-gradient(135deg, #f59e0b, #d97706)" },
+    "Intesa Sanpaolo": { icon: "🏛️", color: "linear-gradient(135deg, #10b981, #047857)" },
+    "UniCredit": { icon: "🔴", color: "linear-gradient(135deg, #ef4444, #b91c1c)" },
+    "Fineco Bank": { icon: "📊", color: "linear-gradient(135deg, #3b82f6, #1d4ed8)" },
+    "Revolut": { icon: "🚀", color: "linear-gradient(135deg, #6366f1, #4338ca)" },
+    "BBVA": { icon: "🌐", color: "linear-gradient(135deg, #0284c7, #0369a1)" },
+    "BCC - Credito Cooperativo": { icon: "🏦", color: "linear-gradient(135deg, #14b8a6, #0f766e)" },
+    "Altro": { icon: "💳", color: "linear-gradient(135deg, #475569, #1e293b)" }
+};
+
+function selectType(type, el) {
+    document.querySelectorAll('.type-card').forEach(c => {
+        c.style.border = "1px solid #334155";
+        c.style.background = "rgba(15, 23, 42, 0.6)";
+    });
+    el.style.border = "2px solid #0ea5e9";
+    el.style.background = "rgba(14, 165, 233, 0.1)";
+    document.getElementById('in_type').value = type;
+
+    // Toggle coordinates
+    if (type === 'CARD') {
+        document.getElementById('section_iban').style.display = 'none';
+        document.getElementById('section_card').style.display = 'block';
+    } else if (type === 'CASH') {
+        document.getElementById('section_iban').style.display = 'none';
+        document.getElementById('section_card').style.display = 'none';
+    } else {
+        document.getElementById('section_iban').style.display = 'block';
+        document.getElementById('section_card').style.display = 'none';
+    }
+
+    updateCardPreview();
+}
+
+function updateBankBranding() {
+    const bank = document.getElementById('in_bank').value;
+    const preset = BANK_PRESETS[bank] || BANK_PRESETS["Altro"];
+    const card = document.getElementById('liveCard');
+    card.style.background = preset.color;
+    document.getElementById('cardBankName').innerText = bank;
+    document.getElementById('cardBankIcon').innerText = preset.icon;
+    updateCardPreview();
+}
+
+function updateCardPreview() {
+    const bank = document.getElementById('in_bank').value;
+    const type = document.getElementById('in_type').value;
+    const profileSelect = document.getElementById('in_profile');
+    const selectedOption = profileSelect.options[profileSelect.selectedIndex];
+    const holderName = selectedOption ? selectedOption.getAttribute('data-name') : 'LEOPOLDO DI PAOLO';
+    
+    const iban = document.getElementById('in_iban').value.trim();
+    const pan = document.getElementById('in_pan').value.trim();
+    const balVal = parseFloat(document.getElementById('in_balance').value || 0);
+
+    const typeLabels = {
+        'CHECKING': 'CONTO CORRENTE',
+        'CARD': 'CARTA PREPAGATA',
+        'SAVINGS': 'CONTO DEPOSITO',
+        'CASH': 'PORTAFOGLIO CONTANTI'
+    };
+
+    document.getElementById('cardTypeBadge').innerText = typeLabels[type] || 'CONTO';
+    document.getElementById('cardHolder').innerText = holderName.toUpperCase();
+    document.getElementById('cardBalance').innerText = balVal.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
+
+    if (type === 'CARD' && pan) {
+        document.getElementById('cardIdentifier').innerText = `•••• •••• •••• ${pan}`;
+    } else if (iban) {
+        document.getElementById('cardIdentifier').innerText = iban.length > 10 ? `${iban.substring(0, 4)} •••• •••• ${iban.substring(iban.length - 4)}` : iban;
+    } else {
+        document.getElementById('cardIdentifier').innerText = type === 'CARD' ? '•••• •••• •••• ••••' : 'IT•• •••• •••• •••• ••••';
+    }
+}
+
+// Initial setup
+document.addEventListener('DOMContentLoaded', () => {
+    updateBankBranding();
+    updateCardPreview();
+});
+</script>
+{% endblock %}

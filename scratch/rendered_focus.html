@@ -1,0 +1,2742 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Focus Categorie & Mutuo - FiscMoney</title>
+    <link rel="icon" type="image/png" href="/static/images/favicon.png">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#0b0f19">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    
+
+    
+    <!-- App Header -->
+    <header class="app-header">
+        <a href="/dashboard" class="brand-logo">
+            <img src="/static/images/logo.png" alt="FiscMoney Logo" style="width: 28px; height: 28px; border-radius: 50%; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); object-fit: cover;">
+            <span>Fisc<span style="color: var(--accent-primary);">Money</span></span>
+            
+        </a>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            
+
+            <!-- User Profile Avatar Pill & Dropdown -->
+            <div class="header-profile-container" style="position: relative;">
+                <button id="headerProfileTrigger" onclick="toggleHeaderProfileDropdown(event)" class="header-profile-btn" aria-expanded="false" aria-label="Menu Profilo" title="Gestione Account & Assistente">
+                    <div class="header-avatar-circle" style="overflow: hidden; padding: 0;">
+                        
+                            <img src="/static/images/logo.png" alt="User" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: #0f172a;">
+                        
+                    </div>
+                    <span class="header-username-text">Account</span>
+                    <span class="header-chevron" id="headerChevron">▾</span>
+                </button>
+
+                <!-- Glassmorphic Dropdown Menu -->
+                <div id="headerProfileDropdown" class="header-profile-dropdown" style="display: none;">
+                    <div class="profile-dropdown-header">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="profile-dropdown-avatar" style="overflow: hidden; padding: 0;">
+                                
+                                    <img src="/static/images/logo.png" alt="User" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: #0f172a;">
+                                
+                            </div>
+                            <div style="overflow: hidden; flex: 1;">
+                                <div style="font-weight: 700; color: #fff; font-size: 0.9rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                                    Utente FiscMoney
+                                </div>
+                                <div style="font-size: 0.72rem; color: var(--text-muted); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                                    None
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 8px; display: flex; align-items: center; justify-content: space-between;">
+                            <span class="plan-badge plan-badge-free">
+                                ✨ Piano FREE
+                            </span>
+                            <span style="font-size: 0.7rem; color: #10b981; display: flex; align-items: center; gap: 4px; font-weight: 600;">
+                                <span style="width: 6px; height: 6px; background: #10b981; border-radius: 50%; box-shadow: 0 0 6px #10b981;"></span> Online
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="profile-dropdown-divider"></div>
+
+                    <div class="profile-dropdown-menu">
+                        
+
+                        
+                        <a href="javascript:void(0)" class="profile-dropdown-item" onclick="openAssistantModal()">
+                            
+                            <img src="/static/images/avatars/demetrio.jpg" alt="Demetrio" style="width: 26px; height: 26px; border-radius: 50%; object-fit: cover; border: 1.5px solid #38bdf8; flex-shrink: 0;">
+                            
+                            <div class="dropdown-item-text">
+                                <strong>Assistente: Demetrio</strong>
+                                <small>Il Consulente Smart &amp; Diretto &bull; <span style="color: var(--accent-primary); font-weight: 700;">Cambia</span></small>
+                            </div>
+                        </a>
+                        
+
+                        <a href="/settings/rules" class="profile-dropdown-item">
+                            <span class="dropdown-item-icon">⚙️</span>
+                            <div class="dropdown-item-text">
+                                <strong>Regole & Categorie IA</strong>
+                                <small>Auto-categorizzazione spese</small>
+                            </div>
+                        </a>
+
+                        <a href="/cashflow" class="profile-dropdown-item ">
+                            <span class="dropdown-item-icon">📊</span>
+                            <div class="dropdown-item-text">
+                                <strong>Analisi Cash Flow & Budget</strong>
+                                <small>Entrate vs Spese mensili</small>
+                            </div>
+                        </a>
+
+                        <a href="/focus" class="profile-dropdown-item active">
+                            <span class="dropdown-item-icon">🎯</span>
+                            <div class="dropdown-item-text">
+                                <strong>Focus Categorie & Mutuo</strong>
+                                <small>Analisi verticale & ammortamento</small>
+                            </div>
+                        </a>
+
+                        <div class="profile-dropdown-divider"></div>
+
+                        <a href="/logout" class="profile-dropdown-item dropdown-logout-btn">
+                            <span class="dropdown-item-icon">🚪</span>
+                            <div class="dropdown-item-text">
+                                <strong style="color: #ef4444;">Esci dall'Account</strong>
+                                <small>Termina sessione in sicurezza</small>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+
+    
+    <!-- Global System Broadcast Announcement Banner with Auto-Dismiss Timer -->
+    <div id="system-announcement-banner" class="container" style="margin-top: 14px; margin-bottom: 0; display: none;">
+        <div class="alert alert-warning" style="margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; border-radius: 12px; font-size: 0.88rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative; overflow: hidden; padding: 12px 16px;">
+            <div style="display: flex; align-items: center; gap: 10px; z-index: 2;">
+                <span style="font-size: 1.3rem;">
+                    ⚠️
+                </span>
+                <div>
+                    <strong style="color: #fff;">Manutenzione Piattaforma FiscMoney</strong>: <span>Rilascio nuove funzionalita fiscali 2026</span>
+                </div>
+            </div>
+            <button type="button" onclick="closeAnnouncementBanner('11')" style="background: transparent; border: none; color: inherit; font-size: 1.3rem; cursor: pointer; padding: 0 6px; line-height: 1; z-index: 2;" title="Chiudi avviso">&times;</button>
+            
+            <!-- Progress Bar shrinking over 6.5s -->
+            <div id="announcement-progress-bar" style="position: absolute; bottom: 0; left: 0; height: 3px; background: rgba(255,255,255,0.45); width: 100%; border-radius: 0 0 12px 12px; z-index: 1;"></div>
+        </div>
+    </div>
+    
+
+    <!-- Floating Auto-Toast Notifications Container -->
+    <div id="toast-container" style="position: fixed; top: 75px; right: 20px; z-index: 999999; display: flex; flex-direction: column; gap: 10px; max-width: 400px; width: calc(100% - 40px); pointer-events: none;">
+        
+            
+        
+    </div>
+
+    <!-- Main Content -->
+    <main class="container">
+        
+<div class="container-fluid" style="padding: 0 12px 40px 12px; max-width: 1400px; margin: 0 auto;">
+
+    <!-- TOP HEADER & DUAL TAB SWITCHER (CASHFLOW vs FOCUS) -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 14px;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.8rem;">🎯</span>
+                <div>
+                    <h2 style="font-size: 1.4rem; font-weight: 800; color: #fff; margin: 0;">
+                        Focus Tematico & Special Hub Mutuo
+                    </h2>
+                    <p style="color: var(--text-muted); font-size: 0.82rem; margin: 2px 0 0 0;">
+                        Analisi verticale modulare per centro di costo, consumi completi per tag e simulatore ammortamento mutuo
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <!-- Top Dual Switcher -->
+            <div style="display: inline-flex; background: rgba(15, 23, 42, 0.8); border: 1px solid var(--border-color); border-radius: 12px; padding: 4px; gap: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                <a href="/cashflow" class="btn btn-sm" style="background: transparent; color: var(--text-muted); font-weight: 600; border: none; padding: 6px 14px; border-radius: 8px;">
+                    📊 Cash Flow Mensile
+                </a>
+                <a href="/focus" class="btn btn-sm" style="background: linear-gradient(135deg, var(--accent-primary), #2563eb); color: #fff; font-weight: 700; border: none; padding: 6px 14px; border-radius: 8px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);">
+                    🎯 Focus & Mutuo
+                </a>
+            </div>
+
+            <!-- Add Category to Focus Modal Button -->
+            <button type="button" onclick="openAddCategoryModal()" class="btn btn-sm" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; padding: 6px 14px;">
+                <span>➕</span> Aggiungi Categoria
+            </button>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- 1. SPECIAL HUB MUTUO & CREDITO IMMOBILIARE               -->
+    <!-- ======================================================== -->
+    <div class="card" style="background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.12), rgba(15, 23, 42, 0.85)); border: 1.5px solid rgba(59, 130, 246, 0.35); box-shadow: 0 10px 30px rgba(0,0,0,0.4); margin-bottom: 24px; position: relative; overflow: hidden;">
+        
+        <!-- Glow highlight -->
+        <div style="position: absolute; top: -60px; right: -60px; width: 160px; height: 160px; background: rgba(59, 130, 246, 0.2); filter: blur(50px); pointer-events: none;"></div>
+
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                    🏠
+                </div>
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">
+                            Mutuo Prima Casa (BCC)
+                        </h3>
+                        <span class="badge-tag" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); font-size: 0.7rem; font-weight: 700;">
+                            BCC Credito Cooperativo
+                        </span>
+                        
+                        <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.7rem; font-weight: 700;">
+                            ✨ Prima Casa (730 Detraibile)
+                        </span>
+                        
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 0.78rem; margin: 3px 0 0 0;">
+                        Piano di ammortamento alla francese, stato di rimborso debito e consulenza fiscale/finanziaria attiva
+                    </p>
+                </div>
+            </div>
+
+            <!-- Settings Button -->
+            <button type="button" onclick="openMortgageModal()" class="btn btn-secondary btn-sm" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px;">
+                <span>⚙️</span> Configura Parametri Mutuo
+            </button>
+        </div>
+
+        <!-- BIG PROGRESS BAR: DEBITO RIMBORSATO vs RESIDUO -->
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 16px; margin-bottom: 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Capitale Restituito ad Oggi</span>
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #34d399; margin-top: 2px;">
+                        € 21.405,35
+                        <span style="font-size: 0.85rem; font-weight: 700; color: #94a3b8;">(10.2%)</span>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Debito Residuo Stimato</span>
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #f87171; margin-top: 2px;">
+                        € 188.086,86
+                        <span style="font-size: 0.75rem; font-weight: 600; color: #94a3b8;">su € 210.000</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Bar -->
+            <div style="background: rgba(239, 68, 68, 0.25); border-radius: 10px; height: 14px; width: 100%; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); position: relative;">
+                <div style="background: linear-gradient(90deg, #10b981, #059669); height: 100%; width: 10.2%; border-radius: 10px; transition: width 0.6s ease;"></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.72rem; color: #94a3b8;">
+                <span>📅 Inizio: <strong>2023-01-01</strong></span>
+                <span>⏳ Rate: <strong>45 pagate</strong> / 240 totali (195 rimanenti)</span>
+                <span>🏁 Scadenza Prevista: <strong>01/01/2043</strong></span>
+            </div>
+        </div>
+
+        <!-- KPI SUMMARY GRID (4 CARDS) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 18px;">
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 12px 14px;">
+                <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Rata Mensile Attuale</span>
+                <div style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;">
+                    € 1.050,00
+                </div>
+                <small style="color: #94a3b8; font-size: 0.7rem;">Quota costante addebito</small>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 12px 14px;">
+                <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Tasso & Tipologia</span>
+                <div style="font-size: 1.25rem; font-weight: 800; color: #60a5fa; margin-top: 2px;">
+                    3.45% <span style="font-size: 0.8rem; font-weight: 600; color: #cbd5e1;">(FIXED)</span>
+                </div>
+                <small style="color: #94a3b8; font-size: 0.7rem;">TAN contrattuale attivo</small>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 12px 14px;">
+                <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Interessi Anno in Corso</span>
+                <div style="font-size: 1.25rem; font-weight: 800; color: #f59e0b; margin-top: 2px;">
+                    € 4.944,90
+                </div>
+                <small style="color: #94a3b8; font-size: 0.7rem;">Quota interessi maturata</small>
+            </div>
+
+            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: var(--radius-md); padding: 12px 14px;">
+                <span style="font-size: 0.72rem; color: #34d399; font-weight: 700; text-transform: uppercase;">Detrazione 730 Stimata</span>
+                <div style="font-size: 1.25rem; font-weight: 800; color: #34d399; margin-top: 2px;">
+                    +€ 760,00
+                </div>
+                <small style="color: #a7f3d0; font-size: 0.7rem;">19% IRPEF (Rigo E7 Modello 730)</small>
+            </div>
+        </div>
+
+        <!-- JULY ADVISOR HEADER & STRATEGIC INSIGHTS -->
+        <div style="display: flex; align-items: center; gap: 14px; background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-md); padding: 12px 16px; margin-top: 14px; margin-bottom: 12px;">
+            <div style="position: relative; width: 48px; height: 48px; border-radius: 50%; padding: 2px; background: linear-gradient(135deg, #06b6d4, #8b5cf6); box-shadow: 0 0 14px rgba(6, 182, 212, 0.45); flex-shrink: 0;">
+                <img src="/static/images/avatars/july.jpg" alt="July" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.05rem; font-weight: 800; color: #fff;">July</span>
+                    <span style="font-size: 0.7rem; font-weight: 700; background: rgba(6, 182, 212, 0.15); color: #38bdf8; border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 6px; padding: 2px 8px;">
+                        Stratega Mutui & Credito
+                    </span>
+                </div>
+                <span style="font-size: 0.75rem; color: #94a3b8;">
+                    Consulenza Finanziaria per Ottimizzazione Debito, Estinzione Straordinaria & Surroga
+                </span>
+            </div>
+        </div>
+
+        <!-- AI ADVISOR INSIGHTS FOR MORTGAGE -->
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+            
+            <div class="advisor-insight-item advisor-success" style="margin: 0;">
+                <div class="advisor-icon">🏛️</div>
+                <div class="advisor-content">
+                    <div class="advisor-title">Detrazione Fiscale 730 (Rigo E7)</div>
+                    <div class="advisor-text">Per l'anno fiscale in corso hai maturato una quota interessi stimata di <strong>€ 4,944.90</strong>. Grazie alla detrazione IRPEF del 19% sulla Prima Casa (tetto max € 4.000/anno), riceverai un <strong>rimborso fiscale stimato di € 760.00</strong> nel tuo 730.</div>
+                </div>
+            </div>
+            
+            <div class="advisor-insight-item advisor-purple" style="margin: 0;">
+                <div class="advisor-icon">⚡</div>
+                <div class="advisor-content">
+                    <div class="advisor-title">Opportunità Surroga a Costo Zero (Legge Bersani n. 40/2007)</div>
+                    <div class="advisor-text">Il tuo tasso contrattuale è del <strong>3.45%</strong>. Con la <em>Portabilità del Mutuo (Surroga Bersani)</em> puoi trasferire il finanziamento verso un altro istituto a <strong>zero spese notarili, zero penali e zero commissioni bancarie</strong>. Ottenere un tasso di mercato al ~2.80% ti farebbe risparmiare circa <strong>€ 102/mese</strong> (oltre <strong>€ 19,867</strong> complessivi fino a scadenza!).</div>
+                </div>
+            </div>
+            
+            <div class="advisor-insight-item advisor-amber" style="margin: 0;">
+                <div class="advisor-icon">💡</div>
+                <div class="advisor-content">
+                    <div class="advisor-title">Estinzione Anticipata vs Investimento</div>
+                    <div class="advisor-text">Rimborsare una quota straordinaria di <strong>€ 5.000</strong> oggi ridurrebbe il debito residuo a <strong>€ 183,087</strong>, facendoti risparmiare circa <strong>€ 2,803</strong> di interessi futuri. Valuta se la resa netta dei tuoi investimenti liquidi supera il 3.45% annuo prima di estinguere anticipatamente.</div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- AMORTIZATION CHART (ESTINZIONE NEL TEMPO & DEBITO)       -->
+        <!-- ======================================================== -->
+        <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 16px; margin-top: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    <div style="font-size: 0.88rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+                        <span>📈</span> Piano di Estinzione nel Tempo & Debito Residuo
+                    </div>
+                    <div style="font-size: 0.72rem; color: #94a3b8;">
+                        Evoluzione del capitale residuo anno per anno e ripartizione tra Quota Capitale e Quota Interessi
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; font-size: 0.72rem; flex-wrap: wrap;">
+                    <span style="display: flex; align-items: center; gap: 4px; color: #60a5fa;"><span style="display: inline-block; width: 10px; height: 10px; background: #3b82f6; border-radius: 2px;"></span> Quota Capitale</span>
+                    <span style="display: flex; align-items: center; gap: 4px; color: #f87171;"><span style="display: inline-block; width: 10px; height: 10px; background: #ef4444; border-radius: 2px;"></span> Quota Interessi</span>
+                    <span style="display: flex; align-items: center; gap: 4px; color: #fbbf24;"><span style="display: inline-block; width: 12px; height: 3px; background: #fbbf24;"></span> Debito Residuo</span>
+                    <span id="legendSimLine" style="display: none; align-items: center; gap: 4px; color: #10b981; font-weight: 700;"><span style="display: inline-block; width: 12px; height: 3px; background: #10b981;"></span> Con Bonifico Extra</span>
+                </div>
+            </div>
+            <div style="height: 250px; width: 100%; position: relative;">
+                <canvas id="mortgageAmortizationChart"></canvas>
+            </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- SIMULATORE BONIFICO STRAORDINARIO (ESTINZIONE PARZIALE) -->
+        <!-- ======================================================== -->
+        <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(6, 182, 212, 0.05)); border: 1.5px solid rgba(16, 185, 129, 0.28); border-radius: var(--radius-md); padding: 18px; margin-top: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.3rem;">⚡</span>
+                    <div>
+                        <h4 style="color: #34d399; font-size: 0.95rem; font-weight: 800; margin: 0;">
+                            Simulatore Bonifico Straordinario Una Tantum (Estinzione Parziale)
+                        </h4>
+                        <p style="color: #94a3b8; font-size: 0.73rem; margin: 2px 0 0 0;">
+                            Scopri quanto guadagni e come abbatti gli interessi versando una somma straordinaria alla banca.
+                        </p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 0.75rem; color: #cbd5e1; font-weight: 700;">Importo Bonifico:</span>
+                    <div style="position: relative; width: 140px;">
+                        <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.8rem; font-weight: 700;">€</span>
+                        <input type="number" id="extraPayInput" value="10000" step="500" min="0" max="188086.86" style="width: 100%; padding: 4px 8px 4px 22px; font-size: 0.85rem; font-weight: 800; background: #0f172a; color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 6px;" oninput="runPrepaymentSimulation()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick pills -->
+            <div style="display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; align-items: center;">
+                <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 600;">Scelta rapida:</span>
+                <button type="button" onclick="setExtraPay(2500)" class="btn btn-sm btn-extra-pill" data-amt="2500" style="background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 0.7rem; padding: 2px 8px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">+ € 2.500</button>
+                <button type="button" onclick="setExtraPay(5000)" class="btn btn-sm btn-extra-pill" data-amt="5000" style="background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 0.7rem; padding: 2px 8px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">+ € 5.000</button>
+                <button type="button" onclick="setExtraPay(10000)" class="btn btn-sm btn-extra-pill active-pill" data-amt="10000" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 6px;">+ € 10.000</button>
+                <button type="button" onclick="setExtraPay(20000)" class="btn btn-sm btn-extra-pill" data-amt="20000" style="background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 0.7rem; padding: 2px 8px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">+ € 20.000</button>
+                <button type="button" onclick="setExtraPay(30000)" class="btn btn-sm btn-extra-pill" data-amt="30000" style="background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 0.7rem; padding: 2px 8px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">+ € 30.000</button>
+            </div>
+
+            <!-- Comparative Strategy Results Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 14px;">
+                
+                <!-- Strategy A: Riduzione Durata (Max Risparmio Interessi) -->
+                <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: var(--radius-md); padding: 14px; position: relative;">
+                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.4);">
+                        CONSIGLIATO (MAX RISPARMIO)
+                    </div>
+                    <div style="font-size: 0.82rem; font-weight: 800; color: #fff; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                        <span>🚀</span> Strategia A: Riduci la Durata (Stessa Rata)
+                    </div>
+                    <p style="font-size: 0.72rem; color: #94a3b8; margin: 0 0 10px 0;">
+                        Mantieni la rata mensile invariata a <strong>€ 1.050,00</strong> ed estingui il mutuo prima del previsto.
+                    </p>
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+                            <span style="color: #cbd5e1;">Anticipo Estinzione:</span>
+                            <strong id="simStratA_earlyTime" style="color: #38bdf8; font-size: 0.9rem;">-</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+                            <span style="color: #cbd5e1;">Nuova Data Fine Mutuo:</span>
+                            <strong id="simStratA_newEndDate" style="color: #fff;">-</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px; margin-top: 2px;">
+                            <span style="color: #34d399; font-weight: 700;">Totale Interessi Risparmiati:</span>
+                            <strong id="simStratA_interestSaved" style="color: #34d399; font-size: 1.05rem; font-weight: 800;">+ € 0,00</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strategy B: Riduzione Rata Mensile (Migliora Cash Flow Immediato) -->
+                <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: var(--radius-md); padding: 14px;">
+                    <div style="font-size: 0.82rem; font-weight: 800; color: #fff; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                        <span>💰</span> Strategia B: Riduci la Rata (Stessa Durata)
+                    </div>
+                    <p style="font-size: 0.72rem; color: #94a3b8; margin: 0 0 10px 0;">
+                        Mantieni la data di fine mutuo a <strong>01/01/2043</strong> ma riduci immediatamente la spesa mensile.
+                    </p>
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+                            <span style="color: #cbd5e1;">Nuova Rata Mensile:</span>
+                            <strong id="simStratB_newInstallment" style="color: #60a5fa; font-size: 0.9rem;">-</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+                            <span style="color: #cbd5e1;">Liquidità Liberata al Mese:</span>
+                            <strong id="simStratB_monthlySavings" style="color: #38bdf8;">-</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px; margin-top: 2px;">
+                            <span style="color: #60a5fa; font-weight: 700;">Totale Interessi Risparmiati:</span>
+                            <strong id="simStratB_interestSaved" style="color: #60a5fa; font-size: 1.05rem; font-weight: 800;">+ € 0,00</strong>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- RECONCILED BANK PAYMENTS ACCORDION -->
+        
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- 2. MODULAR VERTICAL CATEGORY CARDS (WITH INDEPENDENT TIMEFRAME) -->
+    <!-- ======================================================== -->
+    
+        
+        
+        <div class="card focus-category-card" id="cardContainer_1" data-cat-name="Casa &amp; Immobili" data-card-idx="1" style="background: rgba(15, 23, 42, 0.7); border: 1.5px solid var(--border-color); border-left: 5px solid #3b82f6; margin-bottom: 24px; padding: 18px; transition: all 0.3s ease;">
+            
+            <!-- Category Header & Independent Timeframe Toolbar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 1.7rem;">🏠</span>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <h3 style="font-size: 1.22rem; font-weight: 800; color: #fff; margin: 0;">
+                                Focus: Casa &amp; Immobili
+                            </h3>
+                            <span id="presetBadge_1" class="badge-tag" style="background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 0.72rem; font-weight: 700;">
+                                Ultimi 6 Mesi
+                            </span>
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 0.78rem; margin: 2px 0 0 0;">
+                            Analisi granulare dei tag, trend temporale e spesa media
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Independent Timeframe Toolbar for THIS specific card -->
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    
+                    <!-- Preset pills for this card -->
+                    <div style="display: inline-flex; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 2px;">
+                        <button type="button" onclick="updateCardTimeframe('1', 'Casa &amp; Immobili', '2M')" class="btn btn-sm btn-preset-pill btn-preset-1 " data-preset="2M" style="font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border: none; border-radius: 6px;">
+                            2M
+                        </button>
+                        <button type="button" onclick="updateCardTimeframe('1', 'Casa &amp; Immobili', '6M')" class="btn btn-sm btn-preset-pill btn-preset-1 active-pill" data-preset="6M" style="font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border: none; border-radius: 6px;">
+                            6M
+                        </button>
+                        <button type="button" onclick="updateCardTimeframe('1', 'Casa &amp; Immobili', '12M')" class="btn btn-sm btn-preset-pill btn-preset-1 " data-preset="12M" style="font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border: none; border-radius: 6px;">
+                            1 Anno
+                        </button>
+                        <button type="button" onclick="updateCardTimeframe('1', 'Casa &amp; Immobili', 'ALL')" class="btn btn-sm btn-preset-pill btn-preset-1 " data-preset="ALL" style="font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border: none; border-radius: 6px;">
+                            Tutto
+                        </button>
+                    </div>
+
+                    <!-- Custom Range Dropdowns for this card -->
+                    <div style="display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 2px 6px;">
+                        <span style="font-size: 0.68rem; color: #94a3b8;">Da:</span>
+                        <select id="fromYm_1" style="padding: 2px 4px; font-size: 0.72rem; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px;">
+                            
+                            <option value="2026-09" >2026-09</option>
+                            
+                        </select>
+                        <span style="font-size: 0.68rem; color: #94a3b8;">A:</span>
+                        <select id="toYm_1" style="padding: 2px 4px; font-size: 0.72rem; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px;">
+                            
+                            <option value="2026-09" selected>2026-09</option>
+                            
+                        </select>
+                        <button type="button" onclick="applyCustomCardRange('1', 'Casa &amp; Immobili')" style="background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(59, 130, 246, 0.5); color: #60a5fa; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; cursor: pointer;">
+                            🔍
+                        </button>
+                    </div>
+
+                    <!-- Remove Card Button -->
+                    <form method="POST" action="/focus/categories/toggle" style="margin: 0;">
+                        <input type="hidden" name="category_name" value="Casa &amp; Immobili">
+                        <input type="hidden" name="action" value="remove">
+                        <button type="submit" class="btn btn-secondary btn-sm" title="Rimuovi card dal focus" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 4px 8px; border-radius: 6px; cursor: pointer;">
+                            ✕
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- CARD METRICS SUMMARY & DIRECT Q&A BOXES -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                
+                <!-- Main Spend Pill -->
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 12px 14px;">
+                    <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">
+                        Spesa Totale nel Periodo
+                    </div>
+                    <div id="totSpent_1" style="font-size: 1.4rem; font-weight: 800; color: #fff; margin-top: 2px;">
+                        € 0,00
+                    </div>
+                    <small id="avgSpent_1" style="color: #94a3b8; font-size: 0.72rem; display: block; margin-top: 2px;">
+                        Media: € 0,00/mese (0 movimenti)
+                    </small>
+                </div>
+
+                <!-- Direct Answers -->
+                
+            </div>
+
+            <!-- ======================================================== -->
+            <!-- ALL TAGS COMPLETE ANALYSIS MATRIX                        -->
+            <!-- ======================================================== -->
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                    <div style="font-size: 0.78rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                        <span>🏷️</span> Analisi Completa di Tutti i Tag & Sotto-Voci:
+                    </div>
+                    <span style="font-size: 0.7rem; color: #94a3b8;">
+                        Clicca su un tag per filtrare i movimenti sottostanti
+                    </span>
+                </div>
+
+                <!-- Tag Cards Grid -->
+                <div id="tagsGrid_1" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px;">
+                    
+                    <div onclick="filterDrawerByTag('drawer_1', '#mutuo', this)" 
+                         class="tag-focus-pill"
+                         style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-left: 3px solid #475569; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: all 0.2s ease;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                                <span>🏠</span> Mutuo
+                            </span>
+                            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600;">
+                                0 mov.
+                            </span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.95rem; font-weight: 800; color: #475569;">
+                                € 0,00
+                            </span>
+                            <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">
+                                0.0%
+                            </span>
+                        </div>
+
+                        <!-- Mini progress bar -->
+                        <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                            <div style="background: #3b82f6; height: 100%; width: 0.0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div onclick="filterDrawerByTag('drawer_1', '#affitto', this)" 
+                         class="tag-focus-pill"
+                         style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-left: 3px solid #475569; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: all 0.2s ease;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                                <span>🏢</span> Affitto
+                            </span>
+                            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600;">
+                                0 mov.
+                            </span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.95rem; font-weight: 800; color: #475569;">
+                                € 0,00
+                            </span>
+                            <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">
+                                0.0%
+                            </span>
+                        </div>
+
+                        <!-- Mini progress bar -->
+                        <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                            <div style="background: #3b82f6; height: 100%; width: 0.0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div onclick="filterDrawerByTag('drawer_1', '#condominio', this)" 
+                         class="tag-focus-pill"
+                         style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-left: 3px solid #475569; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: all 0.2s ease;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                                <span>🏘️</span> Condominio
+                            </span>
+                            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600;">
+                                0 mov.
+                            </span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.95rem; font-weight: 800; color: #475569;">
+                                € 0,00
+                            </span>
+                            <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">
+                                0.0%
+                            </span>
+                        </div>
+
+                        <!-- Mini progress bar -->
+                        <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                            <div style="background: #3b82f6; height: 100%; width: 0.0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div onclick="filterDrawerByTag('drawer_1', '#manutenzione_casa', this)" 
+                         class="tag-focus-pill"
+                         style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-left: 3px solid #475569; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: all 0.2s ease;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                                <span>🔧</span> Manutenzione Casa
+                            </span>
+                            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600;">
+                                0 mov.
+                            </span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.95rem; font-weight: 800; color: #475569;">
+                                € 0,00
+                            </span>
+                            <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">
+                                0.0%
+                            </span>
+                        </div>
+
+                        <!-- Mini progress bar -->
+                        <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                            <div style="background: #3b82f6; height: 100%; width: 0.0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div onclick="filterDrawerByTag('drawer_1', '#brico_arredo', this)" 
+                         class="tag-focus-pill"
+                         style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-left: 3px solid #475569; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: all 0.2s ease;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                                <span>🛠️</span> Brico &amp; Arredo
+                            </span>
+                            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600;">
+                                0 mov.
+                            </span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.95rem; font-weight: 800; color: #475569;">
+                                € 0,00
+                            </span>
+                            <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">
+                                0.0%
+                            </span>
+                        </div>
+
+                        <!-- Mini progress bar -->
+                        <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                            <div style="background: #3b82f6; height: 100%; width: 0.0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div onclick="filterDrawerByTag('drawer_1', '#ristrutturazione', this)" 
+                         class="tag-focus-pill"
+                         style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-left: 3px solid #475569; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: all 0.2s ease;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                                <span>🏗️</span> Ristrutturazione
+                            </span>
+                            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600;">
+                                0 mov.
+                            </span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.95rem; font-weight: 800; color: #475569;">
+                                € 0,00
+                            </span>
+                            <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">
+                                0.0%
+                            </span>
+                        </div>
+
+                        <!-- Mini progress bar -->
+                        <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                            <div style="background: #3b82f6; height: 100%; width: 0.0%;"></div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+
+            <!-- CHARTS 2-COLUMN LAYOUT (Stacked Bar on Left + Donut on Right) -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                
+                <!-- Left: Stacked Bar Monthly Trend -->
+                <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px;">
+                    <div style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>📈 Trend Mensile Sotto-Voci</span>
+                        <span style="font-size: 0.7rem; color: #94a3b8;">(Importi in €)</span>
+                    </div>
+                    <div style="height: 200px; width: 100%; position: relative;">
+                        <canvas id="barChart_1"></canvas>
+                    </div>
+                </div>
+
+                <!-- Right: Subcategory Breakdown Donut & List -->
+                <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin-bottom: 10px;">
+                        <span>🍩 Ripartizione % nel Periodo</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                        <div style="width: 130px; height: 130px; position: relative; flex-shrink: 0;">
+                            <canvas id="donutChart_1"></canvas>
+                        </div>
+                        <div id="subcatList_1" style="flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 6px; max-height: 140px; overflow-y: auto;">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FILTERED TRANSACTIONS DRILLDOWN ACCORDION -->
+            
+
+        </div>
+        
+        
+        <div class="card focus-category-card" id="cardContainer_2" data-cat-name="Auto &amp; Mobilità" data-card-idx="2" style="background: rgba(15, 23, 42, 0.7); border: 1.5px solid var(--border-color); border-left: 5px solid #f59e0b; margin-bottom: 24px; padding: 18px; transition: all 0.3s ease;">
+            
+            <!-- Category Header & Independent Timeframe Toolbar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 1.7rem;">🚗</span>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <h3 style="font-size: 1.22rem; font-weight: 800; color: #fff; margin: 0;">
+                                Focus: Auto &amp; Mobilità
+                            </h3>
+                            <span id="presetBadge_2" class="badge-tag" style="background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 0.72rem; font-weight: 700;">
+                                Ultimi 6 Mesi
+                            </span>
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 0.78rem; margin: 2px 0 0 0;">
+                            Analisi granulare dei tag, trend temporale e spesa media
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Independent Timeframe Toolbar for THIS specific card -->
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    
+                    <!-- Preset pills for this card -->
+                    <div style="display: inline-flex; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 2px;">
+                        <button type="button" onclick="updateCardTimeframe('2', 'Auto &amp; Mobilità', '2M')" class="btn btn-sm btn-preset-pill btn-preset-2 " data-preset="2M" style="font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border: none; border-radius: 6px;">
+                            2M
+                        </button>
+                        <button type="button" onclick="updateCardTimeframe('2', 'Auto &amp; Mobilità', '6M')" class="btn btn-sm btn-preset-pill btn-preset-2 active-pill" data-preset="6M" style="font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border: none; border-radius: 6px;">
+                            6M
+                        </button>
+                        <button type="button" onclick="updateCardTimeframe('2', 'Auto &amp; Mobilità', '12M')" class="btn btn-sm btn-preset-pill btn-preset-2 " data-preset="12M" style="font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border: none; border-radius: 6px;">
+                            1 Anno
+                        </button>
+                        <button type="button" onclick="updateCardTimeframe('2', 'Auto &amp; Mobilità', 'ALL')" class="btn btn-sm btn-preset-pill btn-preset-2 " data-preset="ALL" style="font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border: none; border-radius: 6px;">
+                            Tutto
+                        </button>
+                    </div>
+
+                    <!-- Custom Range Dropdowns for this card -->
+                    <div style="display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 2px 6px;">
+                        <span style="font-size: 0.68rem; color: #94a3b8;">Da:</span>
+                        <select id="fromYm_2" style="padding: 2px 4px; font-size: 0.72rem; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px;">
+                            
+                            <option value="2026-09" >2026-09</option>
+                            
+                        </select>
+                        <span style="font-size: 0.68rem; color: #94a3b8;">A:</span>
+                        <select id="toYm_2" style="padding: 2px 4px; font-size: 0.72rem; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px;">
+                            
+                            <option value="2026-09" selected>2026-09</option>
+                            
+                        </select>
+                        <button type="button" onclick="applyCustomCardRange('2', 'Auto &amp; Mobilità')" style="background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(59, 130, 246, 0.5); color: #60a5fa; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; cursor: pointer;">
+                            🔍
+                        </button>
+                    </div>
+
+                    <!-- Remove Card Button -->
+                    <form method="POST" action="/focus/categories/toggle" style="margin: 0;">
+                        <input type="hidden" name="category_name" value="Auto &amp; Mobilità">
+                        <input type="hidden" name="action" value="remove">
+                        <button type="submit" class="btn btn-secondary btn-sm" title="Rimuovi card dal focus" style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 4px 8px; border-radius: 6px; cursor: pointer;">
+                            ✕
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- CARD METRICS SUMMARY & DIRECT Q&A BOXES -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                
+                <!-- Main Spend Pill -->
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 12px 14px;">
+                    <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">
+                        Spesa Totale nel Periodo
+                    </div>
+                    <div id="totSpent_2" style="font-size: 1.4rem; font-weight: 800; color: #fff; margin-top: 2px;">
+                        € 0,00
+                    </div>
+                    <small id="avgSpent_2" style="color: #94a3b8; font-size: 0.72rem; display: block; margin-top: 2px;">
+                        Media: € 0,00/mese (0 movimenti)
+                    </small>
+                </div>
+
+                <!-- Direct Answers -->
+                
+                <div class="qna-box-2" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 12px 14px;">
+                    <div style="font-size: 0.74rem; color: #cbd5e1; font-weight: 700;">
+                        ⛽ Quanta spesa per carburante/ricarica nel periodo (Ultimi 6 Mesi)?
+                    </div>
+                    <div style="font-size: 1.3rem; font-weight: 800; color: #f59e0b; margin: 3px 0 1px 0;">
+                        € 0,00
+                    </div>
+                    <small style="color: #94a3b8; font-size: 0.7rem; display: block;">
+                        Circa € 0.00/mese (0.0% del totale mobilità).
+                    </small>
+                </div>
+                
+            </div>
+
+            <!-- ======================================================== -->
+            <!-- ALL TAGS COMPLETE ANALYSIS MATRIX                        -->
+            <!-- ======================================================== -->
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                    <div style="font-size: 0.78rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                        <span>🏷️</span> Analisi Completa di Tutti i Tag & Sotto-Voci:
+                    </div>
+                    <span style="font-size: 0.7rem; color: #94a3b8;">
+                        Clicca su un tag per filtrare i movimenti sottostanti
+                    </span>
+                </div>
+
+                <!-- Tag Cards Grid -->
+                <div id="tagsGrid_2" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px;">
+                    
+                    <div onclick="filterDrawerByTag('drawer_2', '#carburante', this)" 
+                         class="tag-focus-pill"
+                         style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-left: 3px solid #475569; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: all 0.2s ease;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                                <span>⛽</span> Carburante
+                            </span>
+                            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600;">
+                                0 mov.
+                            </span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.95rem; font-weight: 800; color: #475569;">
+                                € 0,00
+                            </span>
+                            <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">
+                                0.0%
+                            </span>
+                        </div>
+
+                        <!-- Mini progress bar -->
+                        <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                            <div style="background: #f59e0b; height: 100%; width: 0.0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div onclick="filterDrawerByTag('drawer_2', '#telepass', this)" 
+                         class="tag-focus-pill"
+                         style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-left: 3px solid #475569; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: all 0.2s ease;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                                <span>🛣️</span> Telepass &amp; Pedaggi
+                            </span>
+                            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600;">
+                                0 mov.
+                            </span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.95rem; font-weight: 800; color: #475569;">
+                                € 0,00
+                            </span>
+                            <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">
+                                0.0%
+                            </span>
+                        </div>
+
+                        <!-- Mini progress bar -->
+                        <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                            <div style="background: #f59e0b; height: 100%; width: 0.0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div onclick="filterDrawerByTag('drawer_2', '#assicurazione', this)" 
+                         class="tag-focus-pill"
+                         style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-left: 3px solid #475569; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: all 0.2s ease;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                                <span>🛡️</span> Assicurazione
+                            </span>
+                            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600;">
+                                0 mov.
+                            </span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.95rem; font-weight: 800; color: #475569;">
+                                € 0,00
+                            </span>
+                            <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">
+                                0.0%
+                            </span>
+                        </div>
+
+                        <!-- Mini progress bar -->
+                        <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                            <div style="background: #f59e0b; height: 100%; width: 0.0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div onclick="filterDrawerByTag('drawer_2', '#bollo', this)" 
+                         class="tag-focus-pill"
+                         style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-left: 3px solid #475569; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: all 0.2s ease;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                                <span>📋</span> Bollo Auto
+                            </span>
+                            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600;">
+                                0 mov.
+                            </span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.95rem; font-weight: 800; color: #475569;">
+                                € 0,00
+                            </span>
+                            <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">
+                                0.0%
+                            </span>
+                        </div>
+
+                        <!-- Mini progress bar -->
+                        <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                            <div style="background: #f59e0b; height: 100%; width: 0.0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div onclick="filterDrawerByTag('drawer_2', '#tagliando_meccanico', this)" 
+                         class="tag-focus-pill"
+                         style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-left: 3px solid #475569; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: all 0.2s ease;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                                <span>🔧</span> Tagliando &amp; Meccanico
+                            </span>
+                            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600;">
+                                0 mov.
+                            </span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.95rem; font-weight: 800; color: #475569;">
+                                € 0,00
+                            </span>
+                            <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">
+                                0.0%
+                            </span>
+                        </div>
+
+                        <!-- Mini progress bar -->
+                        <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                            <div style="background: #f59e0b; height: 100%; width: 0.0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div onclick="filterDrawerByTag('drawer_2', '#mezzi_taxi', this)" 
+                         class="tag-focus-pill"
+                         style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-left: 3px solid #475569; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: all 0.2s ease;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                                <span>🚆</span> Mezzi &amp; Taxi
+                            </span>
+                            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600;">
+                                0 mov.
+                            </span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.95rem; font-weight: 800; color: #475569;">
+                                € 0,00
+                            </span>
+                            <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">
+                                0.0%
+                            </span>
+                        </div>
+
+                        <!-- Mini progress bar -->
+                        <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                            <div style="background: #f59e0b; height: 100%; width: 0.0%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div onclick="filterDrawerByTag('drawer_2', '#cambio_gomme', this)" 
+                         class="tag-focus-pill"
+                         style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.03); border-left: 3px solid #475569; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: all 0.2s ease;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 0.78rem; font-weight: 700; color: #64748b; display: flex; align-items: center; gap: 4px;">
+                                <span>⚙️</span> Cambio Gomme
+                            </span>
+                            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600;">
+                                0 mov.
+                            </span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.95rem; font-weight: 800; color: #475569;">
+                                € 0,00
+                            </span>
+                            <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">
+                                0.0%
+                            </span>
+                        </div>
+
+                        <!-- Mini progress bar -->
+                        <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                            <div style="background: #f59e0b; height: 100%; width: 0.0%;"></div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+
+            <!-- CHARTS 2-COLUMN LAYOUT (Stacked Bar on Left + Donut on Right) -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                
+                <!-- Left: Stacked Bar Monthly Trend -->
+                <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px;">
+                    <div style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+                        <span>📈 Trend Mensile Sotto-Voci</span>
+                        <span style="font-size: 0.7rem; color: #94a3b8;">(Importi in €)</span>
+                    </div>
+                    <div style="height: 200px; width: 100%; position: relative;">
+                        <canvas id="barChart_2"></canvas>
+                    </div>
+                </div>
+
+                <!-- Right: Subcategory Breakdown Donut & List -->
+                <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin-bottom: 10px;">
+                        <span>🍩 Ripartizione % nel Periodo</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                        <div style="width: 130px; height: 130px; position: relative; flex-shrink: 0;">
+                            <canvas id="donutChart_2"></canvas>
+                        </div>
+                        <div id="subcatList_2" style="flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 6px; max-height: 140px; overflow-y: auto;">
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FILTERED TRANSACTIONS DRILLDOWN ACCORDION -->
+            
+
+        </div>
+        
+    
+
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: CONFIGURA PARAMETRI MUTUO                         -->
+<!-- ======================================================== -->
+<div id="mortgageConfigModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 520px;">
+        <div class="modal-header">
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+                <span>⚙️</span> Parametri Contrattuali Mutuo
+            </h3>
+            <button class="modal-close" onclick="closeMortgageModal()">&times;</button>
+        </div>
+        
+        <form action="/focus/mortgage/save" method="POST">
+            <div class="form-group">
+                <label for="mName">Nome Mutuo / Descrizione *</label>
+                <input type="text" id="mName" name="name" class="form-control" value="Mutuo Prima Casa (BCC)" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label for="mBank">Istituto Bancario / Erogante</label>
+                    <input type="text" id="mBank" name="bank_name" class="form-control" value="BCC Credito Cooperativo" required>
+                </div>
+                <div class="form-group">
+                    <label for="mOrigAmt">Importo Originale Finanziato (€) *</label>
+                    <input type="number" step="0.01" id="mOrigAmt" name="original_amount" class="form-control" value="210000.0" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label for="mStartDate">Data Inizio Mutuo *</label>
+                    <input type="date" id="mStartDate" name="start_date" class="form-control" value="2023-01-01" required>
+                    <small style="color: #94a3b8; font-size: 0.68rem;">Anche antecedente agli estratti conto importati.</small>
+                </div>
+                <div class="form-group">
+                    <label for="mDuration">Durata Totale (Anni) *</label>
+                    <input type="number" step="1" id="mDuration" name="duration_years" class="form-control" value="20" required>
+                    <small style="color: #94a3b8; font-size: 0.68rem;">es. 20, 25 o 30 anni.</small>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label for="mRate">Tasso Attuale (TAN in %) *</label>
+                    <input type="number" step="0.01" id="mRate" name="annual_interest_rate" class="form-control" value="3.45" required>
+                </div>
+                <div class="form-group">
+                    <label for="mType">Tipologia Tasso</label>
+                    <select id="mType" name="interest_type" class="form-control" style="background: #1e293b; color: #fff;">
+                        <option value="FIXED" selected>🔒 Tasso Fisso</option>
+                        <option value="VARIABLE" >⚡ Tasso Variabile</option>
+                        <option value="CAP" >🛡️ Variabile con CAP</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="mInst">Importo Rata Mensile Corrente (€) *</label>
+                <input type="number" step="0.01" id="mInst" name="monthly_installment" class="form-control" value="1050.0" required>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.85rem;">
+                    <input type="checkbox" name="is_primary_residence" value="1" checked>
+                    <span>🏠 Si tratta di mutuo per acquisto Prima Casa (abilita detrazione 19% 730)</span>
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" onclick="closeMortgageModal()" style="width: 40%;">Annulla</button>
+                <button type="submit" class="btn btn-primary" style="width: 60%;">Salva Parametri Mutuo</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: AGGIUNGI CATEGORIA AL FOCUS                       -->
+<!-- ======================================================== -->
+<div id="addCategoryModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 460px;">
+        <div class="modal-header">
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+                <span>➕</span> Aggiungi Categoria al Focus
+            </h3>
+            <button class="modal-close" onclick="closeAddCategoryModal()">&times;</button>
+        </div>
+        
+        <p style="color: #94a3b8; font-size: 0.8rem; margin: 0 0 14px 0;">
+            Seleziona una delle macro-categorie per aggiungere la card interattiva con grafici e drill-down al tuo cruscotto:
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            
+            <form method="POST" action="/focus/categories/toggle" style="margin: 0;">
+                <input type="hidden" name="category_name" value="Spesa &amp; Alimentari">
+                <input type="hidden" name="action" value="add">
+                <button type="submit" class="btn btn-secondary" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid #10b981; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">🛒</span>
+                        <strong style="color: #fff; font-size: 0.88rem;">Spesa &amp; Alimentari</strong>
+                    </div>
+                    <span style="color: #34d399; font-size: 0.75rem; font-weight: 700;">
+                        + Aggiungi
+                    </span>
+                </button>
+            </form>
+            
+            <form method="POST" action="/focus/categories/toggle" style="margin: 0;">
+                <input type="hidden" name="category_name" value="Casa &amp; Immobili">
+                <input type="hidden" name="action" value="add">
+                <button type="submit" class="btn btn-secondary" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid #3b82f6; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">🏠</span>
+                        <strong style="color: #fff; font-size: 0.88rem;">Casa &amp; Immobili</strong>
+                    </div>
+                    <span style="color: #34d399; font-size: 0.75rem; font-weight: 700;">
+                        ✓ Già Presente
+                    </span>
+                </button>
+            </form>
+            
+            <form method="POST" action="/focus/categories/toggle" style="margin: 0;">
+                <input type="hidden" name="category_name" value="Bollette &amp; Utenze">
+                <input type="hidden" name="action" value="add">
+                <button type="submit" class="btn btn-secondary" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid #06b6d4; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">💡</span>
+                        <strong style="color: #fff; font-size: 0.88rem;">Bollette &amp; Utenze</strong>
+                    </div>
+                    <span style="color: #34d399; font-size: 0.75rem; font-weight: 700;">
+                        + Aggiungi
+                    </span>
+                </button>
+            </form>
+            
+            <form method="POST" action="/focus/categories/toggle" style="margin: 0;">
+                <input type="hidden" name="category_name" value="Auto &amp; Mobilità">
+                <input type="hidden" name="action" value="add">
+                <button type="submit" class="btn btn-secondary" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid #f59e0b; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">🚗</span>
+                        <strong style="color: #fff; font-size: 0.88rem;">Auto &amp; Mobilità</strong>
+                    </div>
+                    <span style="color: #34d399; font-size: 0.75rem; font-weight: 700;">
+                        ✓ Già Presente
+                    </span>
+                </button>
+            </form>
+            
+            <form method="POST" action="/focus/categories/toggle" style="margin: 0;">
+                <input type="hidden" name="category_name" value="Ristoranti &amp; Bar">
+                <input type="hidden" name="action" value="add">
+                <button type="submit" class="btn btn-secondary" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid #f97316; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">🍽️</span>
+                        <strong style="color: #fff; font-size: 0.88rem;">Ristoranti &amp; Bar</strong>
+                    </div>
+                    <span style="color: #34d399; font-size: 0.75rem; font-weight: 700;">
+                        + Aggiungi
+                    </span>
+                </button>
+            </form>
+            
+            <form method="POST" action="/focus/categories/toggle" style="margin: 0;">
+                <input type="hidden" name="category_name" value="Shopping &amp; Abbigliamento">
+                <input type="hidden" name="action" value="add">
+                <button type="submit" class="btn btn-secondary" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid #ec4899; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">🛍️</span>
+                        <strong style="color: #fff; font-size: 0.88rem;">Shopping &amp; Abbigliamento</strong>
+                    </div>
+                    <span style="color: #34d399; font-size: 0.75rem; font-weight: 700;">
+                        + Aggiungi
+                    </span>
+                </button>
+            </form>
+            
+            <form method="POST" action="/focus/categories/toggle" style="margin: 0;">
+                <input type="hidden" name="category_name" value="Digitale, Tech &amp; Tel">
+                <input type="hidden" name="action" value="add">
+                <button type="submit" class="btn btn-secondary" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid #8b5cf6; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">🌐</span>
+                        <strong style="color: #fff; font-size: 0.88rem;">Digitale, Tech &amp; Tel</strong>
+                    </div>
+                    <span style="color: #34d399; font-size: 0.75rem; font-weight: 700;">
+                        + Aggiungi
+                    </span>
+                </button>
+            </form>
+            
+            <form method="POST" action="/focus/categories/toggle" style="margin: 0;">
+                <input type="hidden" name="category_name" value="Viaggi &amp; Tempo Libero">
+                <input type="hidden" name="action" value="add">
+                <button type="submit" class="btn btn-secondary" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid #14b8a6; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">✈️</span>
+                        <strong style="color: #fff; font-size: 0.88rem;">Viaggi &amp; Tempo Libero</strong>
+                    </div>
+                    <span style="color: #34d399; font-size: 0.75rem; font-weight: 700;">
+                        + Aggiungi
+                    </span>
+                </button>
+            </form>
+            
+            <form method="POST" action="/focus/categories/toggle" style="margin: 0;">
+                <input type="hidden" name="category_name" value="Salute &amp; Benessere">
+                <input type="hidden" name="action" value="add">
+                <button type="submit" class="btn btn-secondary" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid #ef4444; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">🩺</span>
+                        <strong style="color: #fff; font-size: 0.88rem;">Salute &amp; Benessere</strong>
+                    </div>
+                    <span style="color: #34d399; font-size: 0.75rem; font-weight: 700;">
+                        + Aggiungi
+                    </span>
+                </button>
+            </form>
+            
+            <form method="POST" action="/focus/categories/toggle" style="margin: 0;">
+                <input type="hidden" name="category_name" value="Lavoro &amp; Entrate">
+                <input type="hidden" name="action" value="add">
+                <button type="submit" class="btn btn-secondary" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid #a855f7; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">💼</span>
+                        <strong style="color: #fff; font-size: 0.88rem;">Lavoro &amp; Entrate</strong>
+                    </div>
+                    <span style="color: #34d399; font-size: 0.75rem; font-weight: 700;">
+                        + Aggiungi
+                    </span>
+                </button>
+            </form>
+            
+            <form method="POST" action="/focus/categories/toggle" style="margin: 0;">
+                <input type="hidden" name="category_name" value="Risparmio &amp; Investimenti">
+                <input type="hidden" name="action" value="add">
+                <button type="submit" class="btn btn-secondary" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid #059669; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">📈</span>
+                        <strong style="color: #fff; font-size: 0.88rem;">Risparmio &amp; Investimenti</strong>
+                    </div>
+                    <span style="color: #34d399; font-size: 0.75rem; font-weight: 700;">
+                        + Aggiungi
+                    </span>
+                </button>
+            </form>
+            
+            <form method="POST" action="/focus/categories/toggle" style="margin: 0;">
+                <input type="hidden" name="category_name" value="Tasse, Fisco &amp; Banche">
+                <input type="hidden" name="action" value="add">
+                <button type="submit" class="btn btn-secondary" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid #6366f1; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">🏛️</span>
+                        <strong style="color: #fff; font-size: 0.88rem;">Tasse, Fisco &amp; Banche</strong>
+                    </div>
+                    <span style="color: #34d399; font-size: 0.75rem; font-weight: 700;">
+                        + Aggiungi
+                    </span>
+                </button>
+            </form>
+            
+        </div>
+    </div>
+</div>
+
+<style>
+.active-pill {
+    background: var(--accent-primary) !important;
+    color: #fff !important;
+}
+.btn-preset-pill {
+    background: transparent;
+    color: #94a3b8;
+}
+.tag-focus-pill:hover {
+    background: rgba(255,255,255,0.08) !important;
+    transform: translateY(-1px);
+}
+</style>
+
+<!-- JAVASCRIPT: ASYNC PER-CARD TIMEFRAME UPDATES & CHARTS -->
+<script>
+const chartInstances = {};
+
+function toggleDrawer(drawerId, arrowId) {
+    const d = document.getElementById(drawerId);
+    const a = document.getElementById(arrowId);
+    if (!d) return;
+    if (d.style.display === 'none' || d.style.display === '') {
+        d.style.display = 'block';
+        if (a) a.style.transform = 'rotate(90deg)';
+    } else {
+        d.style.display = 'none';
+        if (a) a.style.transform = 'rotate(0deg)';
+    }
+}
+
+function filterDrawerByTag(drawerId, tagCode, pillElem) {
+    const drawer = document.getElementById(drawerId);
+    if (drawer) {
+        drawer.style.display = 'block';
+        const rows = drawer.querySelectorAll('.tx-row-item');
+        rows.forEach(r => {
+            const rawTags = r.getAttribute('data-tags') || '';
+            if (rawTags.includes(tagCode)) {
+                r.style.display = 'flex';
+                r.style.background = 'rgba(59, 130, 246, 0.15)';
+            } else {
+                r.style.display = 'none';
+                r.style.background = 'transparent';
+            }
+        });
+    }
+}
+
+function formatEurJs(val) {
+    return (val || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ASYNC PER-CARD TIMEFRAME UPDATE
+async function updateCardTimeframe(cardIdx, categoryName, preset, fromYm = '', toYm = '') {
+    // Update active pill styling
+    const pills = document.querySelectorAll(`.btn-preset-${cardIdx}`);
+    pills.forEach(p => {
+        if (p.getAttribute('data-preset') === preset) {
+            p.classList.add('active-pill');
+        } else {
+            p.classList.remove('active-pill');
+        }
+    });
+
+    const cardElem = document.getElementById(`cardContainer_${cardIdx}`);
+    if (cardElem) cardElem.style.opacity = '0.6';
+
+    try {
+        let url = `/api/focus/category-data?category_name=${encodeURIComponent(categoryName)}&preset=${preset}`;
+        if (fromYm && toYm) {
+            url += `&from_ym=${fromYm}&to_ym=${toYm}`;
+        }
+        const res = await fetch(url);
+        const json = await res.json();
+        
+        if (json.success && json.data) {
+            const d = json.data;
+            
+            // 1. Update Badge & Spend
+            const pBadge = document.getElementById(`presetBadge_${cardIdx}`);
+            if (pBadge) pBadge.innerText = d.preset_label;
+
+            const totElem = document.getElementById(`totSpent_${cardIdx}`);
+            if (totElem) totElem.innerText = `€ ${formatEurJs(d.total_spent)}`;
+
+            const avgElem = document.getElementById(`avgSpent_${cardIdx}`);
+            if (avgElem) avgElem.innerText = `Media: € ${formatEurJs(d.monthly_avg)}/mese (${d.tx_count} movimenti)`;
+
+            // 2. Re-render All Tags Grid
+            const tagsGrid = document.getElementById(`tagsGrid_${cardIdx}`);
+            if (tagsGrid && d.all_tags_analysis) {
+                tagsGrid.innerHTML = d.all_tags_analysis.map(tg => `
+                    <div onclick="filterDrawerByTag('drawer_${cardIdx}', '${tg.code}', this)" 
+                         class="tag-focus-pill"
+                         style="background: ${tg.has_activity ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.2)'}; border: 1px solid ${tg.has_activity ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)'}; border-left: 3px solid ${tg.has_activity ? d.color : '#475569'}; border-radius: 8px; padding: 8px 10px; cursor: pointer; transition: all 0.2s ease;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <span style="font-size: 0.78rem; font-weight: 700; color: ${tg.has_activity ? '#fff' : '#64748b'}; display: flex; align-items: center; gap: 4px;">
+                                <span>${tg.icon}</span> ${tg.label}
+                            </span>
+                            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600;">
+                                ${tg.tx_count} mov.
+                            </span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.95rem; font-weight: 800; color: ${tg.has_activity ? '#38bdf8' : '#475569'};">
+                                € ${formatEurJs(tg.total_amount)}
+                            </span>
+                            <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 600;">
+                                ${tg.percent}%
+                            </span>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                            <div style="background: ${d.color}; height: 100%; width: ${tg.percent}%;"></div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // 3. Re-render Subcategory List
+            const subList = document.getElementById(`subcatList_${cardIdx}`);
+            if (subList && d.subcat_breakdown) {
+                subList.innerHTML = d.subcat_breakdown.map(s => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem;">
+                        <span style="color: #cbd5e1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;" title="${s.name}">
+                            ${s.name}
+                        </span>
+                        <span style="color: #fff; font-weight: 700;">
+                            € ${formatEurJs(s.amount)} (${s.percent}%)
+                        </span>
+                    </div>
+                `).join('');
+            }
+
+            // 4. Update Bar & Donut Charts
+            if (chartInstances[`bar_${cardIdx}`]) {
+                chartInstances[`bar_${cardIdx}`].data.labels = d.chart_months_labels;
+                chartInstances[`bar_${cardIdx}`].data.datasets = d.chart_datasets;
+                chartInstances[`bar_${cardIdx}`].update();
+            }
+
+            if (chartInstances[`donut_${cardIdx}`]) {
+                chartInstances[`donut_${cardIdx}`].data.labels = d.donut_labels;
+                chartInstances[`donut_${cardIdx}`].data.datasets[0].data = d.donut_values;
+                chartInstances[`donut_${cardIdx}`].data.datasets[0].backgroundColor = d.donut_colors;
+                chartInstances[`donut_${cardIdx}`].update();
+            }
+        }
+    } catch (e) {
+        console.error("Error updating card timeframe:", e);
+    } finally {
+        if (cardElem) cardElem.style.opacity = '1';
+    }
+}
+
+function applyCustomCardRange(cardIdx, categoryName) {
+    const fromVal = document.getElementById(`fromYm_${cardIdx}`).value;
+    const toVal = document.getElementById(`toYm_${cardIdx}`).value;
+    updateCardTimeframe(cardIdx, categoryName, 'CUSTOM', fromVal, toVal);
+}
+
+function openMortgageModal() {
+    document.getElementById('mortgageConfigModal').classList.add('open');
+}
+
+function closeMortgageModal() {
+    document.getElementById('mortgageConfigModal').classList.remove('open');
+}
+
+function openAddCategoryModal() {
+    document.getElementById('addCategoryModal').classList.add('open');
+}
+
+function closeAddCategoryModal() {
+    document.getElementById('addCategoryModal').classList.remove('open');
+}
+
+window.addEventListener('click', function(e) {
+    const mModal = document.getElementById('mortgageConfigModal');
+    const cModal = document.getElementById('addCategoryModal');
+    if (e.target === mModal) closeMortgageModal();
+    if (e.target === cModal) closeAddCategoryModal();
+});
+
+// ========================================================
+// MORTGAGE AMORTIZATION & PREPAYMENT SIMULATOR ENGINE
+// ========================================================
+const MORTGAGE_CONSTS = {
+    originalAmount: 210000.0,
+    residualDebt: 188086.86,
+    installment: 1050.0,
+    annualRate: 3.45,
+    remainingMonths: 195,
+    paidMonths: 45,
+    totalMonths: 240,
+    chartYears: ["2023", "2024", "2025", "2026", "2027", "2028", "2029", "2030", "2031", "2032", "2033", "2034", "2035", "2036", "2037", "2038", "2039", "2040", "2041", "2042"],
+    chartResidual: [204559.51, 198928.32, 193099.76, 187066.9, 180822.58, 174359.4, 167669.67, 160745.47, 153578.57, 146160.46, 138482.34, 130535.09, 122309.29, 113795.17, 104982.62, 95861.19, 86420.04, 76647.97, 66533.38, 56064.27],
+    chartCapital: [5440.49, 5631.19, 5828.57, 6032.85, 6244.32, 6463.2, 6689.72, 6924.2, 7166.91, 7418.1, 7678.11, 7947.26, 8225.8, 8514.13, 8812.55, 9121.44, 9441.15, 9772.07, 10114.57, 10469.12],
+    chartInterest: [7159.51, 6968.81, 6771.43, 6567.15, 6355.68, 6136.8, 5910.28, 5675.8, 5433.09, 5181.9, 4921.89, 4652.74, 4374.2, 4085.87, 3787.45, 3478.56, 3158.85, 2827.93, 2485.43, 2130.88],
+    endDateStr: "01/01/2043"
+};
+
+let mortgageChartInstance = null;
+
+function setExtraPay(amt) {
+    const input = document.getElementById('extraPayInput');
+    if (input) {
+        input.value = amt;
+        document.querySelectorAll('.btn-extra-pill').forEach(btn => {
+            if (parseInt(btn.getAttribute('data-amt')) === amt) {
+                btn.classList.add('active-pill');
+                btn.style.background = 'rgba(16, 185, 129, 0.2)';
+                btn.style.color = '#34d399';
+                btn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+            } else {
+                btn.classList.remove('active-pill');
+                btn.style.background = 'rgba(255,255,255,0.06)';
+                btn.style.color = '#cbd5e1';
+                btn.style.borderColor = 'rgba(255,255,255,0.1)';
+            }
+        });
+        runPrepaymentSimulation();
+    }
+}
+
+function runPrepaymentSimulation() {
+    const input = document.getElementById('extraPayInput');
+    if (!input) return;
+    let extraAmt = parseFloat(input.value) || 0;
+    const curDebt = MORTGAGE_CONSTS.residualDebt;
+    if (extraAmt > curDebt) {
+        extraAmt = curDebt;
+        input.value = extraAmt;
+    }
+
+    const r = (MORTGAGE_CONSTS.annualRate / 100.0) / 12.0;
+    const R_old = MORTGAGE_CONSTS.installment;
+    const M_old = MORTGAGE_CONSTS.remainingMonths;
+    const P_new = Math.max(0, curDebt - extraAmt);
+
+    // ----------------------------------------------------
+    // STRATEGY A: REDUCE DURATION (SAME INSTALLMENT)
+    // ----------------------------------------------------
+    let savedMonths = 0;
+    let newMonths = 0;
+    let interestSaved_A = 0;
+    let newEndDateStr = MORTGAGE_CONSTS.endDateStr;
+
+    if (P_new <= 0) {
+        savedMonths = M_old;
+        newMonths = 0;
+        const totalOldInterest = (R_old * M_old) - curDebt;
+        interestSaved_A = Math.max(0, totalOldInterest);
+        newEndDateStr = "Estinto Immediatamente!";
+    } else if (r > 0) {
+        // N = - ln(1 - (r * P_new) / R_old) / ln(1 + r)
+        const numerator = 1 - (r * P_new / R_old);
+        if (numerator > 0) {
+            const nTheoretical = - Math.log(numerator) / Math.log(1 + r);
+            newMonths = Math.ceil(nTheoretical);
+            savedMonths = Math.max(0, M_old - newMonths);
+
+            const oldTotalFuturePayment = R_old * M_old;
+            const newTotalFuturePayment = R_old * newMonths;
+            const oldInterest = oldTotalFuturePayment - curDebt;
+            const newInterest = newTotalFuturePayment - P_new;
+            interestSaved_A = Math.max(0, oldInterest - newInterest);
+
+            // Compute new end date
+            const today = new Date();
+            const targetDate = new Date(today.getFullYear(), today.getMonth() + newMonths, 1);
+            const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+            const yyyy = targetDate.getFullYear();
+            newEndDateStr = `${mm}/${yyyy}`;
+        }
+    }
+
+    const yearsSaved = Math.floor(savedMonths / 12);
+    const monthsRemainder = savedMonths % 12;
+    let timeSavedStr = "";
+    if (yearsSaved > 0 && monthsRemainder > 0) {
+        timeSavedStr = `${yearsSaved} Anni e ${monthsRemainder} Mesi`;
+    } else if (yearsSaved > 0) {
+        timeSavedStr = `${yearsSaved} Anni`;
+    } else {
+        timeSavedStr = `${monthsRemainder} Mesi`;
+    }
+
+    const earlyElem = document.getElementById('simStratA_earlyTime');
+    if (earlyElem) earlyElem.innerText = extraAmt > 0 ? `⏱️ Anticipo di ${timeSavedStr}` : '-';
+
+    const endElem = document.getElementById('simStratA_newEndDate');
+    if (endElem) endElem.innerText = extraAmt > 0 ? `📅 ${newEndDateStr}` : MORTGAGE_CONSTS.endDateStr;
+
+    const intAElem = document.getElementById('simStratA_interestSaved');
+    if (intAElem) intAElem.innerText = `+ € ${formatEurJs(interestSaved_A)}`;
+
+    // ----------------------------------------------------
+    // STRATEGY B: REDUCE INSTALLMENT (SAME DURATION)
+    // ----------------------------------------------------
+    let newInstallment = R_old;
+    let monthlySavings = 0;
+    let interestSaved_B = 0;
+
+    if (P_new <= 0) {
+        newInstallment = 0;
+        monthlySavings = R_old;
+        const totalOldInterest = (R_old * M_old) - curDebt;
+        interestSaved_B = Math.max(0, totalOldInterest);
+    } else if (r > 0 && M_old > 0) {
+        newInstallment = P_new * (r * Math.pow(1 + r, M_old)) / (Math.pow(1 + r, M_old) - 1);
+        monthlySavings = Math.max(0, R_old - newInstallment);
+
+        const oldInterest = (R_old * M_old) - curDebt;
+        const newInterest = (newInstallment * M_old) - P_new;
+        interestSaved_B = Math.max(0, oldInterest - newInterest);
+    }
+
+    const instElem = document.getElementById('simStratB_newInstallment');
+    if (instElem) instElem.innerText = extraAmt > 0 ? `€ ${formatEurJs(newInstallment)} /mese` : `€ ${formatEurJs(R_old)} /mese`;
+
+    const savElem = document.getElementById('simStratB_monthlySavings');
+    if (savElem) savElem.innerText = extraAmt > 0 ? `+ € ${formatEurJs(monthlySavings)} /mese` : '-';
+
+    const intBElem = document.getElementById('simStratB_interestSaved');
+    if (intBElem) intBElem.innerText = `+ € ${formatEurJs(interestSaved_B)}`;
+
+    // ----------------------------------------------------
+    // UPDATE CHART SIMULATION CURVE
+    // ----------------------------------------------------
+    if (mortgageChartInstance) {
+        const legendSim = document.getElementById('legendSimLine');
+        if (extraAmt > 0) {
+            if (legendSim) legendSim.style.display = 'inline-flex';
+
+            const currentYear = new Date().getFullYear();
+            const simCurve = [];
+            let simP = curDebt - extraAmt;
+            
+            for (let i = 0; i < MORTGAGE_CONSTS.chartYears.length; i++) {
+                const yr = parseInt(MORTGAGE_CONSTS.chartYears[i]);
+                if (yr < currentYear) {
+                    simCurve.push(MORTGAGE_CONSTS.chartResidual[i]);
+                } else if (yr === currentYear) {
+                    simCurve.push(Math.round(simP));
+                } else {
+                    for (let m = 0; m < 12; m++) {
+                        if (simP <= 0) { simP = 0; break; }
+                        const intQ = simP * r;
+                        const capQ = R_old - intQ;
+                        simP = Math.max(0, simP - capQ);
+                    }
+                    simCurve.push(Math.round(simP));
+                }
+            }
+
+            mortgageChartInstance.data.datasets[3].data = simCurve;
+            mortgageChartInstance.data.datasets[3].hidden = false;
+        } else {
+            if (legendSim) legendSim.style.display = 'none';
+            mortgageChartInstance.data.datasets[3].data = [];
+            mortgageChartInstance.data.datasets[3].hidden = true;
+        }
+        mortgageChartInstance.update();
+    }
+}
+
+// INITIALIZE DYNAMIC CHARTS FOR CATEGORIES & MORTGAGE
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof Chart === 'undefined') return;
+
+    // 0. MORTGAGE AMORTIZATION CHART
+    const mChartCtx = document.getElementById('mortgageAmortizationChart');
+    if (mChartCtx) {
+        mortgageChartInstance = new Chart(mChartCtx, {
+            type: 'bar',
+            data: {
+                labels: MORTGAGE_CONSTS.chartYears,
+                datasets: [
+                    {
+                        type: 'bar',
+                        label: 'Quota Capitale',
+                        data: MORTGAGE_CONSTS.chartCapital,
+                        backgroundColor: '#3b82f6',
+                        stack: 'yearly',
+                        yAxisID: 'yBar',
+                        order: 2
+                    },
+                    {
+                        type: 'bar',
+                        label: 'Quota Interessi',
+                        data: MORTGAGE_CONSTS.chartInterest,
+                        backgroundColor: '#ef4444',
+                        stack: 'yearly',
+                        yAxisID: 'yBar',
+                        order: 2
+                    },
+                    {
+                        type: 'line',
+                        label: 'Debito Residuo Standard',
+                        data: MORTGAGE_CONSTS.chartResidual,
+                        borderColor: '#fbbf24',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2.5,
+                        pointRadius: 2,
+                        pointHoverRadius: 5,
+                        tension: 0.15,
+                        yAxisID: 'yDebt',
+                        order: 1
+                    },
+                    {
+                        type: 'line',
+                        label: 'Debito con Bonifico Extra',
+                        data: [],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                        borderWidth: 3,
+                        borderDash: [5, 4],
+                        pointRadius: 3,
+                        pointHoverRadius: 6,
+                        tension: 0.15,
+                        yAxisID: 'yDebt',
+                        hidden: true,
+                        order: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.03)' },
+                        ticks: { color: '#94a3b8', font: { size: 10, weight: '600' } }
+                    },
+                    yBar: {
+                        type: 'linear',
+                        position: 'left',
+                        stacked: true,
+                        grid: { color: 'rgba(255,255,255,0.04)' },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: { size: 10 },
+                            callback: function(v) { return '€ ' + (v / 1000).toFixed(0) + 'k'; }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Rata Annuale (€)',
+                            color: '#64748b',
+                            font: { size: 10 }
+                        }
+                    },
+                    yDebt: {
+                        type: 'linear',
+                        position: 'right',
+                        grid: { display: false },
+                        ticks: {
+                            color: '#fbbf24',
+                            font: { size: 10, weight: '600' },
+                            callback: function(v) { return '€ ' + (v / 1000).toFixed(0) + 'k'; }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Debito Residuo (€)',
+                            color: '#fbbf24',
+                            font: { size: 10 }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleColor: '#fff',
+                        bodyColor: '#cbd5e1',
+                        borderColor: 'rgba(255,255,255,0.12)',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(c) {
+                                return c.dataset.label + ': € ' + c.parsed.y.toLocaleString('it-IT', {minimumFractionDigits: 2});
+                            }
+                        }
+                    }
+                }
+            });
+
+        // Run default simulation (€10,000)
+        runPrepaymentSimulation();
+    }
+
+    
+    // 1. Stacked Bar Chart for Casa &amp; Immobili
+    const barCtx_1 = document.getElementById('barChart_1');
+    if (barCtx_1) {
+        chartInstances[`bar_1`] = new Chart(barCtx_1, {
+            type: 'bar',
+            data: {
+                labels: ["Apr \u002726", "Mag \u002726", "Giu \u002726", "Lug \u002726", "Ago \u002726", "Set \u002726"],
+                datasets: []
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8', font: { size: 10, weight: '600' } }
+                    },
+                    y: {
+                        stacked: true,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { 
+                            color: '#94a3b8', 
+                            font: { size: 10 },
+                            callback: function(v) { return '€ ' + v; }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: { color: '#cbd5e1', font: { size: 10 }, boxWidth: 10 }
+                    },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleColor: '#fff',
+                        bodyColor: '#cbd5e1',
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(c) {
+                                return c.dataset.label + ': € ' + c.parsed.y.toLocaleString('it-IT', {minimumFractionDigits: 2});
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Donut Chart for Casa &amp; Immobili
+    const donutCtx_1 = document.getElementById('donutChart_1');
+    if (donutCtx_1) {
+        chartInstances[`donut_1`] = new Chart(donutCtx_1, {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [],
+                    borderWidth: 2,
+                    borderColor: '#0f172a'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleColor: '#fff',
+                        bodyColor: '#cbd5e1',
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(c) {
+                                const val = c.parsed || 0;
+                                const tot = c.dataset.data.reduce((a, b) => a + b, 0);
+                                const pct = tot > 0 ? ((val / tot) * 100).toFixed(1) : 0;
+                                return ' € ' + val.toLocaleString('it-IT', {minimumFractionDigits: 2}) + ' (' + pct + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // 1. Stacked Bar Chart for Auto &amp; Mobilità
+    const barCtx_2 = document.getElementById('barChart_2');
+    if (barCtx_2) {
+        chartInstances[`bar_2`] = new Chart(barCtx_2, {
+            type: 'bar',
+            data: {
+                labels: ["Apr \u002726", "Mag \u002726", "Giu \u002726", "Lug \u002726", "Ago \u002726", "Set \u002726"],
+                datasets: []
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true,
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8', font: { size: 10, weight: '600' } }
+                    },
+                    y: {
+                        stacked: true,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { 
+                            color: '#94a3b8', 
+                            font: { size: 10 },
+                            callback: function(v) { return '€ ' + v; }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: { color: '#cbd5e1', font: { size: 10 }, boxWidth: 10 }
+                    },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleColor: '#fff',
+                        bodyColor: '#cbd5e1',
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(c) {
+                                return c.dataset.label + ': € ' + c.parsed.y.toLocaleString('it-IT', {minimumFractionDigits: 2});
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Donut Chart for Auto &amp; Mobilità
+    const donutCtx_2 = document.getElementById('donutChart_2');
+    if (donutCtx_2) {
+        chartInstances[`donut_2`] = new Chart(donutCtx_2, {
+            type: 'doughnut',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [],
+                    borderWidth: 2,
+                    borderColor: '#0f172a'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleColor: '#fff',
+                        bodyColor: '#cbd5e1',
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(c) {
+                                const val = c.parsed || 0;
+                                const tot = c.dataset.data.reduce((a, b) => a + b, 0);
+                                const pct = tot > 0 ? ((val / tot) * 100).toFixed(1) : 0;
+                                return ' € ' + val.toLocaleString('it-IT', {minimumFractionDigits: 2}) + ' (' + pct + '%)';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+});
+</script>
+
+
+    </main>
+
+    
+    <!-- Bottom Mobile Navigation (Solo per Finanze Personali) -->
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="nav-item ">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Home</span>
+        </a>
+        <a href="/cashflow" class="nav-item ">
+            <span class="nav-icon">🎯</span>
+            <span class="nav-label">Cash Flow</span>
+        </a>
+        <a href="/transactions" class="nav-item ">
+            <span class="nav-icon">💳</span>
+            <span class="nav-label">Conti</span>
+        </a>
+        <a href="/paystubs" class="nav-item ">
+            <span class="nav-icon">📄</span>
+            <span class="nav-label">Cedolini</span>
+        </a>
+        <a href="/tax730" class="nav-item ">
+            <span class="nav-icon">🏛️</span>
+            <span class="nav-label">730</span>
+        </a>
+    </nav>
+    
+
+    
+    <!-- ======================================================== -->
+    <!-- GLOBAL AI ASSISTANT SELECTOR MODAL                       -->
+    <!-- ======================================================== -->
+    <div id="assistantSelectorModal" class="assistant-modal-backdrop" style="display: none;" onclick="handleAssistantModalBackdropClick(event)">
+        <div class="assistant-modal-container" onclick="event.stopPropagation()">
+            <!-- Modal Header -->
+            <div class="assistant-modal-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.5rem;">🤖</span>
+                    <div>
+                        <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">Scegli il tuo Assistente Virtuale</h2>
+                        <p style="font-size: 0.76rem; color: var(--text-muted); margin: 2px 0 0 0;">Seleziona il co-pilota AI ideale per guidare le tue decisioni finanziarie</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeAssistantModal()" class="assistant-modal-close-btn" title="Chiudi finestra">&times;</button>
+            </div>
+
+            <!-- Modal Body: Persona Cards Grid -->
+            <div class="assistant-modal-grid">
+                
+                
+                <div class="persona-select-card active" 
+                     style="--card-accent: #38bdf8;"
+                     onclick="selectAssistantPersona('demetrio')">
+                    
+                    <div class="persona-card-top">
+                        <div class="persona-avatar-wrapper" style="border-color: #38bdf8;">
+                            
+                            <img src="/static/images/avatars/demetrio.jpg" alt="Demetrio" class="persona-avatar-img">
+                            
+                        </div>
+
+                        <div class="persona-title-group">
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                                <h3 class="persona-name">Demetrio</h3>
+                                
+                                <span class="persona-active-badge">✨ In Uso</span>
+                                
+                            </div>
+                            <span class="persona-role-title" style="color: #38bdf8;">
+                                Il Consulente Smart &amp; Diretto
+                            </span>
+                        </div>
+                    </div>
+
+                    <p class="persona-desc">
+                        Pragmatico e focalizzato sui numeri. Ti dice subito come stanno le cose e dove ottimizzare patrimonio e tasse.
+                    </p>
+
+                    <div class="persona-card-footer">
+                        
+                        <button type="button" class="persona-action-btn active" onclick="event.stopPropagation(); closeAssistantModal();">
+                            <span>✓</span> In Uso Attualmente
+                        </button>
+                        
+                    </div>
+                </div>
+                
+                
+                <div class="persona-select-card " 
+                     style="--card-accent: #f472b6;"
+                     onclick="selectAssistantPersona('anna')">
+                    
+                    <div class="persona-card-top">
+                        <div class="persona-avatar-wrapper" style="border-color: #f472b6;">
+                            
+                            <img src="/static/images/avatars/anna.jpg" alt="Anna" class="persona-avatar-img">
+                            
+                        </div>
+
+                        <div class="persona-title-group">
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                                <h3 class="persona-name">Anna</h3>
+                                
+                            </div>
+                            <span class="persona-role-title" style="color: #f472b6;">
+                                L&#39;Amica Precisa &amp; Rassicurante
+                            </span>
+                        </div>
+                    </div>
+
+                    <p class="persona-desc">
+                        Accogliente e protettiva. Ti fa sentire al sicuro spiegandoti ogni voce con delicatezza e semplicità.
+                    </p>
+
+                    <div class="persona-card-footer">
+                        
+                        <button type="button" class="persona-action-btn" onclick="event.stopPropagation(); selectAssistantPersona('anna');">
+                            <span>Attiva Anna</span> →
+                        </button>
+                        
+                    </div>
+                </div>
+                
+                
+                <div class="persona-select-card " 
+                     style="--card-accent: #fbbf24;"
+                     onclick="selectAssistantPersona('july')">
+                    
+                    <div class="persona-card-top">
+                        <div class="persona-avatar-wrapper" style="border-color: #fbbf24;">
+                            
+                            <img src="/static/images/avatars/july.jpg" alt="July" class="persona-avatar-img">
+                            
+                        </div>
+
+                        <div class="persona-title-group">
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                                <h3 class="persona-name">July</h3>
+                                
+                            </div>
+                            <span class="persona-role-title" style="color: #fbbf24;">
+                                La Coach Finanziaria Dinamica
+                            </span>
+                        </div>
+                    </div>
+
+                    <p class="persona-desc">
+                        Energica e motivante. Guarda avanti su crescita del patrimonio, fondo pensione e traguardi di risparmio.
+                    </p>
+
+                    <div class="persona-card-footer">
+                        
+                        <button type="button" class="persona-action-btn" onclick="event.stopPropagation(); selectAssistantPersona('july');">
+                            <span>Attiva July</span> →
+                        </button>
+                        
+                    </div>
+                </div>
+                
+                
+                <div class="persona-select-card " 
+                     style="--card-accent: #a78bfa;"
+                     onclick="selectAssistantPersona('commercialista')">
+                    
+                    <div class="persona-card-top">
+                        <div class="persona-avatar-wrapper" style="border-color: #a78bfa;">
+                            
+                            <img src="/static/images/avatars/dott_fiscale.jpg" alt="Dott. Fiscale" class="persona-avatar-img">
+                            
+                        </div>
+
+                        <div class="persona-title-group">
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                                <h3 class="persona-name">Dott. Fiscale</h3>
+                                
+                            </div>
+                            <span class="persona-role-title" style="color: #a78bfa;">
+                                Il Commercialista Istituzionale
+                            </span>
+                        </div>
+                    </div>
+
+                    <p class="persona-desc">
+                        Formale, rigoroso e puntiglioso. Certifica la regolarità delle trattenute e la quadratura contabile.
+                    </p>
+
+                    <div class="persona-card-footer">
+                        
+                        <button type="button" class="persona-action-btn" onclick="event.stopPropagation(); selectAssistantPersona('commercialista');">
+                            <span>Attiva Dott. Fiscale</span> →
+                        </button>
+                        
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- GLOBAL CATEGORY SEARCH & CLASSIFICATION GUIDE MODAL      -->
+    <!-- ======================================================== -->
+    <div id="categoryGuideModal" class="assistant-modal-backdrop" style="display: none;" onclick="handleCategoryGuideBackdropClick(event)">
+        <div class="assistant-modal-container" style="max-width: 820px;" onclick="event.stopPropagation()">
+            <!-- Modal Header -->
+            <div class="assistant-modal-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.6rem;">💡</span>
+                    <div>
+                        <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">Guida alla Categorizzazione Intelligente</h2>
+                        <p style="font-size: 0.76rem; color: var(--text-muted); margin: 2px 0 0 0;">Cerca qualsiasi spesa o servizio per scoprire la Macro-Categoria, Sottocategoria e Tag ideali</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeCategoryGuideModal()" class="assistant-modal-close-btn" title="Chiudi finestra">&times;</button>
+            </div>
+
+            <!-- Instant Search Input -->
+            <div style="margin-top: 16px; position: relative;">
+                <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 1.1rem; pointer-events: none; color: #94a3b8;">🔍</span>
+                <input type="text" 
+                       id="categoryGuideSearchInput" 
+                       placeholder="Cerca spesa o servizio (es. Render, Netflix, Iliad, Zara, Bollo, Farmacia, PAC...)" 
+                       oninput="filterCategoryGuide(this.value)"
+                       style="width: 100%; padding: 12px 16px 12px 42px; background: rgba(15, 23, 42, 0.7); border: 1.5px solid rgba(99, 102, 241, 0.4); border-radius: 12px; color: #fff; font-size: 0.9rem; font-weight: 600; outline: none; transition: all 0.2s ease;">
+            </div>
+
+            <!-- Quick Preset Chips -->
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 10px;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">Esempi frequenti:</span>
+                <button type="button" class="btn-guide-preset" onclick="setGuideSearch('Render')">🌐 Render / Cloud</button>
+                <button type="button" class="btn-guide-preset" onclick="setGuideSearch('Iliad')">📱 Iliad / SIM</button>
+                <button type="button" class="btn-guide-preset" onclick="setGuideSearch('Netflix')">📺 Netflix / Streaming</button>
+                <button type="button" class="btn-guide-preset" onclick="setGuideSearch('Zara')">🛍️ Zara / Shopping</button>
+                <button type="button" class="btn-guide-preset" onclick="setGuideSearch('Farmacia')">💊 Farmacia 730</button>
+                <button type="button" class="btn-guide-preset" onclick="setGuideSearch('Fondo Pensione')">📈 Fondo Pensione</button>
+                <button type="button" class="btn-guide-preset" onclick="setGuideSearch('')" style="color: #94a3b8;">🔄 Mostra Tutte (12)</button>
+            </div>
+
+            <!-- Search Results & Category Explorer Container -->
+            <div id="categoryGuideResultsBox" style="margin-top: 16px; max-height: 52vh; overflow-y: auto; padding-right: 4px;">
+                <!-- Dynamically populated via JS -->
+            </div>
+        </div>
+    </div>
+    
+
+    <!-- Global Interactive Chart Tooltip with Close 'X' button -->
+    <script>
+    function getOrCreateFiscTooltip(tooltipId) {
+        let tooltipEl = document.getElementById(tooltipId);
+        if (!tooltipEl) {
+            tooltipEl = document.createElement('div');
+            tooltipEl.id = tooltipId;
+            tooltipEl.className = 'fisc-chart-tooltip';
+            tooltipEl.style.display = 'none';
+            tooltipEl.style.opacity = '0';
+            document.body.appendChild(tooltipEl);
+            
+            tooltipEl.addEventListener('click', function(e) { e.stopPropagation(); });
+            tooltipEl.addEventListener('touchstart', function(e) { e.stopPropagation(); }, { passive: true });
+        }
+        return tooltipEl;
+    }
+
+    function closeFiscTooltip(tooltipId, event) {
+        if (event) {
+            event.stopPropagation();
+            if (event.preventDefault) event.preventDefault();
+        }
+        const tooltipEl = document.getElementById(tooltipId);
+        if (tooltipEl) {
+            tooltipEl.style.opacity = '0';
+            tooltipEl.style.display = 'none';
+            tooltipEl.dataset.closedByUser = 'true';
+        }
+    }
+
+    function createFiscTooltipHandler(tooltipId) {
+        return function(context) {
+            const { chart, tooltip } = context;
+            const tooltipEl = getOrCreateFiscTooltip(tooltipId);
+
+            if (tooltip.opacity === 0) {
+                if (tooltipEl.dataset.closedByUser !== 'true') {
+                    if (!('ontouchstart' in window)) {
+                        tooltipEl.style.opacity = '0';
+                        tooltipEl.style.display = 'none';
+                    }
+                }
+                return;
+            }
+
+            const currentDataIndex = tooltip.dataPoints && tooltip.dataPoints[0] ? tooltip.dataPoints[0].dataIndex : -1;
+            if (tooltipEl.dataset.lastIndex !== String(currentDataIndex)) {
+                tooltipEl.dataset.closedByUser = 'false';
+                tooltipEl.dataset.lastIndex = String(currentDataIndex);
+            }
+
+            if (tooltipEl.dataset.closedByUser === 'true') {
+                return;
+            }
+
+            if (tooltip.body) {
+                const titleLines = tooltip.title || [];
+                const bodyLines = tooltip.body.map(b => b.lines);
+                const afterBodyLines = tooltip.afterBody || [];
+
+                let html = '<div class="fisc-tt-header">';
+                html += '<div class="fisc-tt-title">' + (titleLines.join(' ') || 'Dettaglio') + '</div>';
+                html += `<button type="button" class="fisc-tt-close" onclick="closeFiscTooltip('${tooltipId}', event)" title="Chiudi finestra">&times;</button>`;
+                html += '</div>';
+
+                bodyLines.forEach(function(body, i) {
+                    const colors = tooltip.labelColors && tooltip.labelColors[i];
+                    let bg = colors ? (colors.borderColor || colors.backgroundColor) : '#38bdf8';
+                    if (bg === 'rgba(0,0,0,0)' || bg === 'transparent') {
+                        bg = colors.borderColor || '#38bdf8';
+                    }
+                    let dot = `<span class="fisc-tt-dot" style="background:${bg}"></span>`;
+                    html += `<div class="fisc-tt-row">${dot}<span>${body}</span></div>`;
+                });
+                html += '</div>';
+
+                if (afterBodyLines.length > 0) {
+                    html += '<div class="fisc-tt-footer">';
+                    afterBodyLines.forEach(function(line) {
+                        if (line && !line.startsWith('---')) {
+                            html += `<div>${line}</div>`;
+                        }
+                    });
+                    html += '</div>';
+                }
+
+                tooltipEl.innerHTML = html;
+            }
+
+            tooltipEl.style.display = 'block';
+            tooltipEl.style.opacity = '1';
+
+            const canvasRect = chart.canvas.getBoundingClientRect();
+            const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+            const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+            const ttWidth = tooltipEl.offsetWidth || 230;
+            const ttHeight = tooltipEl.offsetHeight || 130;
+
+            let left = canvasRect.left + scrollX + tooltip.caretX - (ttWidth / 2);
+            let top = canvasRect.top + scrollY + tooltip.caretY - ttHeight - 10;
+
+            const padding = 10;
+            if (left < padding) left = padding;
+            if (left + ttWidth > window.innerWidth - padding) {
+                left = window.innerWidth - ttWidth - padding;
+            }
+
+            if (top < scrollY + padding) {
+                top = canvasRect.top + scrollY + tooltip.caretY + 12;
+            }
+
+            tooltipEl.style.left = left + 'px';
+            tooltipEl.style.top = top + 'px';
+        };
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.fisc-chart-tooltip') && !e.target.closest('canvas')) {
+            document.querySelectorAll('.fisc-chart-tooltip').forEach(el => {
+                el.style.opacity = '0';
+                el.style.display = 'none';
+            });
+        }
+    });
+    document.addEventListener('touchstart', function(e) {
+        if (!e.target.closest('.fisc-chart-tooltip') && !e.target.closest('canvas')) {
+            document.querySelectorAll('.fisc-chart-tooltip').forEach(el => {
+                el.style.opacity = '0';
+                el.style.display = 'none';
+            });
+        }
+    }, { passive: true });
+
+    // Auto-dismiss floating toasts after 3.5 seconds
+    setTimeout(function() {
+        document.querySelectorAll('.fisc-toast').forEach(function(toast) {
+            toast.style.transition = 'all 0.4s ease';
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-10px)';
+            setTimeout(function() { toast.remove(); }, 400);
+        });
+    }, 3500);
+
+    // Announcement Banner Auto-Dismiss & Persistence
+    function closeAnnouncementBanner(annId) {
+        const banner = document.getElementById('system-announcement-banner');
+        if (banner) {
+            banner.style.transition = 'all 0.4s ease';
+            banner.style.opacity = '0';
+            banner.style.transform = 'translateY(-15px)';
+            setTimeout(function() { banner.style.display = 'none'; }, 400);
+            if (annId) {
+                sessionStorage.setItem('dismissed_ann_' + annId, 'true');
+            }
+        }
+    }
+
+    // Header Profile Dropdown Handlers
+    function toggleHeaderProfileDropdown(event) {
+        if (event) event.stopPropagation();
+        const dd = document.getElementById('headerProfileDropdown');
+        const trigger = document.getElementById('headerProfileTrigger');
+        const chev = document.getElementById('headerChevron');
+        if (!dd) return;
+        
+        const isClosed = dd.style.display === 'none' || dd.style.display === '';
+        if (isClosed) {
+            dd.style.display = 'block';
+            if (trigger) trigger.setAttribute('aria-expanded', 'true');
+            if (chev) chev.style.transform = 'rotate(180deg)';
+        } else {
+            dd.style.display = 'none';
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
+            if (chev) chev.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    function closeHeaderProfileDropdown() {
+        const dd = document.getElementById('headerProfileDropdown');
+        const trigger = document.getElementById('headerProfileTrigger');
+        const chev = document.getElementById('headerChevron');
+        if (dd && dd.style.display !== 'none') {
+            dd.style.display = 'none';
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
+            if (chev) chev.style.transform = 'rotate(0deg)';
+        }
+    }
+
+    // Dismiss profile dropdown on outside click/tap
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.header-profile-container')) {
+            closeHeaderProfileDropdown();
+        }
+    });
+    document.addEventListener('touchstart', function(e) {
+        if (!e.target.closest('.header-profile-container')) {
+            closeHeaderProfileDropdown();
+        }
+    }, { passive: true });
+
+    // ========================================================
+    // Global AI Assistant Selector Modal Handlers
+    // ========================================================
+    function openAssistantModal() {
+        closeHeaderProfileDropdown();
+        const modal = document.getElementById('assistantSelectorModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function closeAssistantModal() {
+        const modal = document.getElementById('assistantSelectorModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+
+    function handleAssistantModalBackdropClick(event) {
+        if (event.target.id === 'assistantSelectorModal') {
+            closeAssistantModal();
+        }
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeAssistantModal();
+            closeCategoryGuideModal();
+            closeHeaderProfileDropdown();
+        }
+    });
+
+    function selectAssistantPersona(personaKey) {
+        const nextUrl = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/assistant/set-persona/${personaKey}?next=${nextUrl}`;
+    }
+
+    // ========================================================
+    // Global Category Guide Modal Handlers & Search Engine
+    // ========================================================
+    const GLOBAL_CATEGORY_GUIDE_ITEMS = [{"category": "Digitale, Tech \u0026 Tel", "icon": "\ud83c\udf10", "note": "Server, database, hosting cloud per sviluppo", "subcategory": "Cloud, Server \u0026 Hosting", "tags": "#cloud_hosting", "term": "Render / Render.com"}, {"category": "Digitale, Tech \u0026 Tel", "icon": "\ud83c\udf10", "note": "Infrastruttura cloud e servizi backend", "subcategory": "Cloud, Server \u0026 Hosting", "tags": "#cloud_hosting", "term": "Vercel / Supabase / AWS"}, {"category": "Digitale, Tech \u0026 Tel", "icon": "\ud83c\udf10", "note": "Piattaforme di versioning e CI/CD", "subcategory": "Cloud, Server \u0026 Hosting", "tags": "#cloud_hosting", "term": "GitHub / GitLab"}, {"category": "Digitale, Tech \u0026 Tel", "icon": "\ud83d\udcde", "note": "Ricariche e canoni mensili SIM mobile", "subcategory": "Telefonia \u0026 SIM", "tags": "#telefonia", "term": "Iliad / ho. / Kena / Spusu"}, {"category": "Digitale, Tech \u0026 Tel", "icon": "\ud83d\udcde", "note": "Abbonamenti telefonici smartphone", "subcategory": "Telefonia \u0026 SIM", "tags": "#telefonia", "term": "TIM / Vodafone / WindTre Mobile"}, {"category": "Digitale, Tech \u0026 Tel", "icon": "\ud83c\udf10", "note": "Connessione internet fibra/FWA domestica", "subcategory": "Fibra \u0026 Internet Casa", "tags": "#fibra_internet", "term": "Fastweb / Eolo / Sky WiFi Casa"}, {"category": "Digitale, Tech \u0026 Tel", "icon": "\ud83e\udd16", "note": "Abbonamenti a intelligenze artificiali e LLM", "subcategory": "Tool AI \u0026 Software", "tags": "#software_ai", "term": "ChatGPT / OpenAI / Claude"}, {"category": "Digitale, Tech \u0026 Tel", "icon": "\ud83e\udd16", "note": "Software di produttivit\u00e0, grafica e suite office", "subcategory": "Tool AI \u0026 Software", "tags": "#software_ai", "term": "Microsoft 365 / Adobe / Canva"}, {"category": "Digitale, Tech \u0026 Tel", "icon": "\ud83d\udcfa", "note": "Abbonamenti streaming video e musica", "subcategory": "Streaming \u0026 Media", "tags": "#streaming", "term": "Netflix / Spotify / Disney+"}, {"category": "Digitale, Tech \u0026 Tel", "icon": "\ud83d\udcfa", "note": "Piattaforme video e servizi premium", "subcategory": "Streaming \u0026 Media", "tags": "#streaming", "term": "Amazon Prime / YouTube Premium"}, {"category": "Spesa \u0026 Alimentari", "icon": "\ud83d\uded2", "note": "Spesa alimentare di routine", "subcategory": "Supermercato", "tags": "#supermercato", "term": "Supermercato (Esselunga, Conad, Coop)"}, {"category": "Spesa \u0026 Alimentari", "icon": "\ud83d\uded2", "note": "Negozi di alimentari specifici", "subcategory": "Panetteria \u0026 Forno", "tags": "#panetteria_forno", "term": "Panetteria, Macelleria, Ortofrutta"}, {"category": "Casa \u0026 Immobili", "icon": "\ud83c\udfe0", "note": "Spesa principale abitazione", "subcategory": "Mutuo", "tags": "#mutuo", "term": "Rata Mutuo"}, {"category": "Casa \u0026 Immobili", "icon": "\ud83c\udfe0", "note": "Pagamento canone mensile affitto", "subcategory": "Affitto", "tags": "#affitto", "term": "Canone Affitto"}, {"category": "Casa \u0026 Immobili", "icon": "\ud83c\udfe0", "note": "Quote ordinarie e straordinarie condominio", "subcategory": "Condominio", "tags": "#condominio", "term": "Spese Condominiali"}, {"category": "Casa \u0026 Immobili", "icon": "\ud83c\udfe0", "note": "Mobili, arredo, bricolage e manutenzione fai-da-te", "subcategory": "Arredo \u0026 Brico", "tags": "#brico_arredo", "term": "IKEA / Leroy Merlin / Brico"}, {"category": "Bollette \u0026 Utenze", "icon": "\ud83d\udca1", "note": "Fornitura energia elettrica", "subcategory": "Luce \u0026 Gas", "tags": "#luce_gas", "term": "Bolletta Luce / Enel / Plenitude"}, {"category": "Bollette \u0026 Utenze", "icon": "\ud83d\udca1", "note": "Fornitura gas e teleriscaldamento", "subcategory": "Gas", "tags": "#gas", "term": "Bolletta Gas / Riscaldamento"}, {"category": "Bollette \u0026 Utenze", "icon": "\ud83d\udca1", "note": "Acquedotto e tassa rifiuti comunale", "subcategory": "Acqua \u0026 Rifiuti", "tags": "#acqua #rifiuti_tari", "term": "Bolletta Acqua / Rifiuti (TARI)"}, {"category": "Auto \u0026 Mobilit\u00e0", "icon": "\ud83d\ude97", "note": "Benzina, gasolio, metano o ricarica elettrica", "subcategory": "Carburante \u0026 Ricarica", "tags": "#carburante", "term": "Carburante (Q8, Eni, IP) / Ricarica EV"}, {"category": "Auto \u0026 Mobilit\u00e0", "icon": "\ud83d\ude97", "note": "Addebiti mensili telepass e caselli", "subcategory": "Telepass \u0026 Pedaggi", "tags": "#telepass", "term": "Telepass \u0026 Pedaggi Autostradali"}, {"category": "Auto \u0026 Mobilit\u00e0", "icon": "\ud83d\ude97", "note": "Polizze veicoli", "subcategory": "Assicurazione", "tags": "#assicurazione", "term": "Assicurazione Auto / Moto (RC Auto)"}, {"category": "Auto \u0026 Mobilit\u00e0", "icon": "\ud83d\ude97", "note": "Tassa di possesso regionale", "subcategory": "Bollo", "tags": "#bollo", "term": "Bollo Auto (Tassa Automobilistica)"}, {"category": "Auto \u0026 Mobilit\u00e0", "icon": "\ud83d\ude97", "note": "Manutenzione ordinaria del veicolo", "subcategory": "Tagliando \u0026 Manutenzione", "tags": "#tagliando_meccanico", "term": "Tagliando, Meccanico, Cambio Gomme"}, {"category": "Salute \u0026 Benessere", "icon": "\ud83e\ude7a", "note": "Medicinali con scontrino parlante detraibili al 19%", "subcategory": "Farmacia \u0026 Medicinali", "tags": "#detraibile_730 #farmacia", "term": "Scontrino Farmacia (con Codice Fiscale)"}, {"category": "Salute \u0026 Benessere", "icon": "\ud83e\ude7a", "note": "Visite specialistiche private o ticket ASL", "subcategory": "Visite Mediche \u0026 Esami", "tags": "#detraibile_730 #visite_esami", "term": "Visite Mediche, Esami, Laboratorio"}, {"category": "Salute \u0026 Benessere", "icon": "\ud83e\ude7a", "note": "Cure odontoiatriche e dispositivi medici", "subcategory": "Dentista \u0026 Ottico", "tags": "#detraibile_730 #dentista_ottico", "term": "Dentista, Ottico (Occhiali da vista)"}, {"category": "Salute \u0026 Benessere", "icon": "\ud83e\ude7a", "note": "Attivit\u00e0 fisica e benessere personale", "subcategory": "Palestra \u0026 Sport", "tags": "#palestra_sport", "term": "Palestra, Abbonamento Sport, Piscina"}, {"category": "Shopping \u0026 Abbigliamento", "icon": "\ud83d\udecd\ufe0f", "note": "Capi d\u0027abbigliamento, calzature e accessori", "subcategory": "Abbigliamento \u0026 Scarpe", "tags": "#abbigliamento", "term": "Zara, H\u0026M, OVS, Zalando, ASOS"}, {"category": "Shopping \u0026 Abbigliamento", "icon": "\ud83d\udecd\ufe0f", "note": "Smartphone, PC, TV ed elettrodomestici", "subcategory": "Elettronica \u0026 Gadget", "tags": "#elettronica", "term": "MediaWorld, Unieuro, Apple Store"}, {"category": "Shopping \u0026 Abbigliamento", "icon": "\ud83d\udecd\ufe0f", "note": "Ordini generici e articoli vari", "subcategory": "Acquisti Online Vari", "tags": "#amazon_online", "term": "Amazon (Acquisti Vari Online)"}, {"category": "Ristoranti \u0026 Bar", "icon": "\ud83c\udf7d\ufe0f", "note": "Cene e uscite gastronomiche", "subcategory": "Ristoranti", "tags": "#ristorante #pizzeria", "term": "Ristorante, Trattoria, Pizzeria, Sushi"}, {"category": "Ristoranti \u0026 Bar", "icon": "\ud83c\udf7d\ufe0f", "note": "Caff\u00e8, aperitivi e pause veloci", "subcategory": "Bar \u0026 Colazioni", "tags": "#bar_caffetteria", "term": "Bar, Colazione, Aperitivo, Gelateria"}, {"category": "Ristoranti \u0026 Bar", "icon": "\ud83c\udf7d\ufe0f", "note": "Cibo a domicilio o da asporto", "subcategory": "Fast Food \u0026 Asporto", "tags": "#delivery_asporto", "term": "Just Eat, Glovo, Deliveroo, UberEats"}, {"category": "Viaggi \u0026 Tempo Libero", "icon": "\u2708\ufe0f", "note": "Pernottamenti per vacanze o weekend", "subcategory": "Hotel \u0026 Alloggi", "tags": "#hotel_alloggi", "term": "Booking.com, Airbnb, Hotel"}, {"category": "Viaggi \u0026 Tempo Libero", "icon": "\u2708\ufe0f", "note": "Biglietti aerei o Frecciarossa per viaggi", "subcategory": "Voli \u0026 Treni Lunghi", "tags": "#voli_treni", "term": "Voli (Ryanair, EasyJet) / Treni Lunghi"}, {"category": "Viaggi \u0026 Tempo Libero", "icon": "\u2708\ufe0f", "note": "Spettacoli e intrattenimento dal vivo", "subcategory": "Cinema \u0026 Concerti", "tags": "#cinema_eventi", "term": "Cinema, Teatro, Concerti (TicketOne)"}, {"category": "Lavoro \u0026 Entrate", "icon": "\ud83d\udcbc", "note": "Entrata da lavoro dipendente", "subcategory": "Stipendio", "tags": "#stipendio", "term": "Stipendio Netto / Accredito Emolumenti"}, {"category": "Risparmio \u0026 Investimenti", "icon": "\ud83d\udcc8", "note": "Deducibile fino a 5.164,57 \u20ac nel 730", "subcategory": "Fondo Pensione", "tags": "#deducibile_pensione", "term": "Versamento Fondo Pensione Volontario"}, {"category": "Risparmio \u0026 Investimenti", "icon": "\ud83d\udcc8", "note": "Piani di accumulo e strumenti finanziari", "subcategory": "Investimenti \u0026 PAC", "tags": "#investimenti_pac", "term": "PAC ETF / Investimenti / Degiro / Directa"}, {"category": "Risparmio \u0026 Investimenti", "icon": "\ud83d\udd04", "note": "Spostamento interno di liquidit\u00e0 (neutro)", "subcategory": "Giroconto Interno", "tags": "#giroconto", "term": "Giroconto tra propri conti / Ricarica Carta"}, {"category": "Tasse, Fisco \u0026 Banche", "icon": "\ud83c\udfdb\ufe0f", "note": "Versamento tributi erariali e comunali", "subcategory": "F24 \u0026 Imposte", "tags": "#f24_imposte", "term": "F24 Imposte / IRPEF / IMU"}, {"category": "Tasse, Fisco \u0026 Banche", "icon": "\ud83c\udfdb\ufe0f", "note": "Costi di tenuta conto bancario e carte", "subcategory": "Canoni \u0026 Commissioni", "tags": "#canoni_commissioni", "term": "Canone Carta / Commissioni / Bollo C/C"}];
+    const GLOBAL_MACRO_CATEGORIES = {"Auto \u0026 Mobilit\u00e0": {"color": "#f59e0b", "icon": "\ud83d\ude97", "subcategories": ["Carburante \u0026 Ricarica", "Telepass \u0026 Pedaggi", "Assicurazione", "Bollo", "Tagliando \u0026 Manutenzione", "Mezzi Pubblici \u0026 Taxi", "Cambio Gomme"]}, "Bollette \u0026 Utenze": {"color": "#06b6d4", "icon": "\ud83d\udca1", "subcategories": ["Luce \u0026 Gas", "Gas", "Acqua \u0026 Rifiuti", "Riscaldamento"]}, "Casa \u0026 Immobili": {"color": "#3b82f6", "icon": "\ud83c\udfe0", "subcategories": ["Mutuo", "Affitto", "Condominio", "Manutenzione Casa", "Arredo \u0026 Brico", "Ristrutturazioni"]}, "Digitale, Tech \u0026 Tel": {"color": "#8b5cf6", "icon": "\ud83c\udf10", "subcategories": ["Cloud, Server \u0026 Hosting", "Telefonia \u0026 SIM", "Fibra \u0026 Internet Casa", "Tool AI \u0026 Software", "Streaming \u0026 Media"]}, "Lavoro \u0026 Entrate": {"color": "#a855f7", "icon": "\ud83d\udcbc", "subcategories": ["Stipendio", "Bonus \u0026 Premi", "Rimborsi Spese", "Prestazioni Occasionali", "Altre Entrate"]}, "Risparmio \u0026 Investimenti": {"color": "#059669", "icon": "\ud83d\udcc8", "subcategories": ["Fondo Pensione", "Investimenti \u0026 PAC", "Giroconto Interno", "Conto Deposito"]}, "Ristoranti \u0026 Bar": {"color": "#f97316", "icon": "\ud83c\udf7d\ufe0f", "subcategories": ["Ristoranti", "Pizzerie", "Bar \u0026 Colazioni", "Pranzi Lavoro", "Fast Food \u0026 Asporto"]}, "Salute \u0026 Benessere": {"color": "#ef4444", "icon": "\ud83e\ude7a", "subcategories": ["Farmacia \u0026 Medicinali", "Visite Mediche \u0026 Esami", "Dentista \u0026 Ottico", "Palestra \u0026 Sport", "Igiene \u0026 Cura Personale"]}, "Shopping \u0026 Abbigliamento": {"color": "#ec4899", "icon": "\ud83d\udecd\ufe0f", "subcategories": ["Abbigliamento \u0026 Scarpe", "Elettronica \u0026 Gadget", "Articoli Persona", "Acquisti Online Vari"]}, "Spesa \u0026 Alimentari": {"color": "#10b981", "icon": "\ud83d\uded2", "subcategories": ["Supermercato", "Panetteria \u0026 Forno", "Macelleria", "Ortofrutta", "Pescheria"]}, "Tasse, Fisco \u0026 Banche": {"color": "#6366f1", "icon": "\ud83c\udfdb\ufe0f", "subcategories": ["F24 \u0026 Imposte", "Canoni \u0026 Commissioni", "IMU \u0026 Tributi Locali", "Consulenze \u0026 CAF"]}, "Viaggi \u0026 Tempo Libero": {"color": "#14b8a6", "icon": "\u2708\ufe0f", "subcategories": ["Hotel \u0026 Alloggi", "Voli \u0026 Treni Lunghi", "Noleggio Auto", "Vacanze \u0026 Attivit\u00e0", "Cinema \u0026 Concerti", "Hobby \u0026 Sport Eventi"]}};
+
+    function openCategoryGuideModal(prefillQuery = '') {
+        closeHeaderProfileDropdown();
+        closeAssistantModal();
+        const modal = document.getElementById('categoryGuideModal');
+        const input = document.getElementById('categoryGuideSearchInput');
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            if (input) {
+                input.value = prefillQuery;
+                setTimeout(() => { input.focus(); input.select(); }, 150);
+            }
+            filterCategoryGuide(prefillQuery);
+        }
+    }
+
+    function closeCategoryGuideModal() {
+        const modal = document.getElementById('categoryGuideModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+
+    function handleCategoryGuideBackdropClick(event) {
+        if (event.target.id === 'categoryGuideModal') {
+            closeCategoryGuideModal();
+        }
+    }
+
+    function setGuideSearch(term) {
+        const input = document.getElementById('categoryGuideSearchInput');
+        if (input) {
+            input.value = term;
+            input.focus();
+        }
+        filterCategoryGuide(term);
+    }
+
+    function filterCategoryGuide(rawQuery) {
+        const q = (rawQuery || '').trim().toLowerCase();
+        const container = document.getElementById('categoryGuideResultsBox');
+        if (!container) return;
+
+        if (q.length === 0) {
+            // Render All 12 Macro-Categories Overview Cards
+            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 4px;">';
+            for (const [catName, catMeta] of Object.entries(GLOBAL_MACRO_CATEGORIES)) {
+                const accentColor = catMeta.color || '#6366f1';
+                html += `
+                    <div class="guide-cat-card" style="border-left: 4px solid ${accentColor};">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                            <strong style="color: #fff; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+                                <span>${catMeta.icon || '🏷️'}</span> ${catName}
+                            </strong>
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;">
+                            ${(catMeta.subcategories || []).map(s => `<span class="guide-subcat-badge" style="background: rgba(255,255,255,0.06);">${s}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            container.innerHTML = html;
+            return;
+        }
+
+        // Filter matched dictionary items
+        const matched = GLOBAL_CATEGORY_GUIDE_ITEMS.filter(item => {
+            const fullStr = `${item.term} ${item.category} ${item.subcategory} ${item.tags} ${item.note}`.toLowerCase();
+            return fullStr.includes(q);
+        });
+
+        if (matched.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 24px; color: var(--text-muted);">
+                    <div style="font-size: 2rem; margin-bottom: 6px;">🔍</div>
+                    <p style="font-size: 0.9rem; color: #cbd5e1; margin: 0;">Nessun risultato esatto per "<strong>${rawQuery}</strong>"</p>
+                    <p style="font-size: 0.78rem; margin-top: 4px;">Puoi comunque classificarla scegliendo una delle 12 Macro-Categorie principali.</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
+        matched.forEach(item => {
+            const catMeta = GLOBAL_MACRO_CATEGORIES[item.category] || { icon: item.icon || '🏷️', color: '#6366f1' };
+            const catColor = catMeta.color || '#6366f1';
+            const tagList = (item.tags || '').split(' ').filter(t => t.startsWith('#'));
+
+            html += `
+                <div class="guide-result-card" style="border-left: 4px solid ${catColor};">
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                        <div>
+                            <div style="font-size: 0.95rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+                                <span>${catMeta.icon || '🏷️'}</span> ${item.term}
+                            </div>
+                            <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 3px;">
+                                ${item.note || ''}
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <span class="guide-pill-cat" style="background: ${catColor}25; border: 1px solid ${catColor}60; color: ${catColor};">
+                                ${item.category}
+                            </span>
+                            <span class="guide-pill-subcat">
+                                ➔ ${item.subcategory}
+                            </span>
+                        </div>
+                    </div>
+                    ${tagList.length > 0 ? `
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);">
+                            <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Tag Consigliati:</span>
+                            ${tagList.map(t => `<span class="guide-pill-tag">${t}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    (function() {
+        const banner = document.getElementById('system-announcement-banner');
+        const pBar = document.getElementById('announcement-progress-bar');
+        if (banner) {
+            
+            const annId = '11';
+            if (sessionStorage.getItem('dismissed_ann_' + annId) !== 'true') {
+                banner.style.display = 'block';
+                banner.style.opacity = '0';
+                banner.style.transform = 'translateY(-10px)';
+                banner.style.transition = 'all 0.4s ease';
+                setTimeout(function() {
+                    banner.style.opacity = '1';
+                    banner.style.transform = 'translateY(0)';
+                    if (pBar) {
+                        pBar.style.transition = 'width 6.5s linear';
+                        pBar.style.width = '0%';
+                    }
+                }, 50);
+
+                setTimeout(function() {
+                    closeAnnouncementBanner(annId);
+                }, 6500);
+            }
+            
+        }
+    })();
+    </script>
+    <style>
+    @keyframes slideInToast {
+        from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    </style>
+</body>
+</html>

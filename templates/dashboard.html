@@ -1,0 +1,1958 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | FiscMoney{% endblock %}
+
+{% block content %}
+
+<!-- Executive Hero Greeting & Workspace Card -->
+<!-- Executive Hero Greeting & Workspace Card -->
+<div class="card hero-greeting-card" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)); border: 1px solid rgba(56, 189, 248, 0.35); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); padding: 18px 20px; border-radius: 16px; margin-bottom: 16px; position: relative; overflow: hidden;">
+    <!-- Ambient glow behind the logo -->
+    <div style="position: absolute; top: -40px; left: -40px; width: 160px; height: 160px; background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
+
+    <div class="hero-header-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <!-- Glowing FiscMoney Emblem -->
+            <div class="hero-emblem-box" style="position: relative; width: 48px; height: 48px; border-radius: 50%; padding: 2px; background: linear-gradient(135deg, #38bdf8, #0ea5e9, #f59e0b); box-shadow: 0 0 20px rgba(14, 165, 233, 0.4); flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FiscMoney" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: #0f172a;">
+            </div>
+            
+            <div>
+                <h1 class="hero-title-text" style="font-size: 1.25rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span id="heroDynamicGreeting">Bentornato</span>, <span>{{ session.get('user_name', 'Utente').split()[0] }}!</span> 👋
+                </h1>
+                <p class="hero-sub-text" style="color: var(--text-muted); font-size: 0.78rem; margin: 3px 0 0 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span id="heroCurrentDateStr">Oggi</span> &bull; 
+                    <span>💼 {{ active_workspace.name }}</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Workspace Type Badge & Privacy Control -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            {% set current_mode = active_workspace.sharing_mode if active_workspace and active_workspace.sharing_mode else 'FULL' %}
+            <span class="badge-tag" style="background: {% if active_workspace.type == 'FAMILY' %}rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: var(--accent-success);{% else %}rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); color: var(--accent-primary);{% endif %} padding: 5px 10px; font-weight: 700; font-size: 0.72rem; letter-spacing: 0.5px;">
+                {{ '👨‍👩‍👧‍👦 WORKSPACE FAMIGLIA' if active_workspace.type == 'FAMILY' else '👤 WORKSPACE SINGOLO' }}
+            </span>
+            {% if is_admin and profiles|length > 1 %}
+            <button type="button" onclick="openPrivacyModal()" class="badge-tag" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); color: #cbd5e1; font-size: 0.72rem; padding: 5px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; transition: all 0.2s ease;" title="Clicca per modificare la privacy del nucleo" onmouseover="this.style.background='rgba(56,189,248,0.15)'; this.style.borderColor='rgba(56,189,248,0.5)';" onmouseout="this.style.background='rgba(255,255,255,0.06)'; this.style.borderColor='rgba(255,255,255,0.18)';">
+                <span>🛡️ {% if current_mode == 'FULL' %}🟢 Trasparenza Totale{% elif current_mode == 'HYBRID' %}🟡 Ibrida{% else %}🛡️ Gestore{% endif %}</span>
+                <span style="font-size: 0.68rem; opacity: 0.75;">⚙️</span>
+            </button>
+            {% elif profiles|length > 1 %}
+            <span class="badge-tag" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; font-size: 0.72rem; padding: 5px 10px;" title="Livello di privacy del nucleo">
+                🛡️ {% if current_mode == 'FULL' %}🟢 Trasparenza Totale{% elif current_mode == 'HYBRID' %}🟡 Ibrida{% else %}🛡️ Gestore{% endif %}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Integrated Profile Filter Pills Bar (Mobile Scrollable) -->
+    <div class="hero-profile-pills-row" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span class="pill-label" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 2px;">Vista:</span>
+        
+        {% if is_admin or current_mode == 'FULL' %}
+        <a href="/workspace/filter/all" class="profile-pill {% if active_filter == 'all' %}active{% endif %}" style="margin: 0; padding: 6px 14px; font-weight: 700; border-radius: 10px;">
+            <span>👨‍👩‍👧‍👦</span>
+            <span>Tutta la Famiglia</span>
+        </a>
+        {% endif %}
+        
+        {% for p in profiles %}
+        <div style="display: inline-flex; align-items: center; background: {% if active_filter == p.id|string %}var(--accent-primary){% else %}rgba(255,255,255,0.04){% endif %}; border: 1px solid {% if active_filter == p.id|string %}var(--accent-primary){% else %}rgba(255,255,255,0.1){% endif %}; border-radius: 10px; padding: 2px 6px 2px 8px; gap: 6px;">
+            <a href="/workspace/filter/{{ p.id }}" style="text-decoration: none; color: #fff; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 6px; padding: 4px 2px;">
+                <span>{% if p.is_primary %}👤{% elif 'Figli' in (p.role_title or '') %}👶{% else %}👩{% endif %}</span>
+                <span>{{ p.name }}</span>
+            </a>
+            
+            {% if is_admin %}
+                {% if not p.is_primary and not p.linked_user_id %}
+                <!-- Instant 1-tap WhatsApp Invite pill badge -->
+                <button type="button" onclick="openInviteModal({{ p.id }}, '{{ p.name }}', '{{ p.invited_email or '' }}')" class="btn btn-sm" style="font-size: 0.65rem; font-weight: 800; padding: 3px 8px; border-radius: 6px; background: linear-gradient(135deg, #25D366, #128C7E); color: #fff; border: none; box-shadow: 0 2px 8px rgba(37, 211, 102, 0.4); display: inline-flex; align-items: center; gap: 3px;" title="Invia Link di Accesso WhatsApp a {{ p.name }}">
+                    <span>📲</span> <span>Invita</span>
+                </button>
+                {% elif p.linked_user_id %}
+                <span style="font-size: 0.6rem; color: var(--accent-success); margin-right: 2px;" title="Account Connesso">🟢</span>
+                {% endif %}
+                
+                {% if not p.is_primary %}
+                <button type="button" onclick="openDeleteProfileModal({{ p.id }}, '{{ p.name }}')" style="background: none; border: none; color: #f87171; font-size: 0.82rem; cursor: pointer; padding: 2px 4px; opacity: 0.75; display: inline-flex; align-items: center;" title="Elimina profilo {{ p.name }}">🗑️</button>
+                {% endif %}
+            {% endif %}
+        </div>
+        {% endfor %}
+        
+        {% if is_admin %}
+        <button class="profile-pill add-btn" onclick="openAddMemberModal()" style="margin: 0; padding: 6px 12px; font-weight: 700; border-radius: 10px; background: rgba(56, 189, 248, 0.1); border: 1px dashed rgba(56, 189, 248, 0.4); color: #38bdf8;">
+            <span>➕</span>
+            <span>Aggiungi Membro</span>
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- Nucleo Breakdown Mini-Cards (Visible in Full Family View) -->
+    {% if active_filter == 'all' and member_balances|length > 1 and (is_admin or current_mode != 'ADMIN_ONLY') %}
+    <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
+        {% for m in member_balances %}
+        <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 10px; min-width: 120px;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
+                    {% if m.is_primary %}👤{% elif 'Figli' in m.role_title %}👶{% else %}👩{% endif %}
+                </div>
+                <div>
+                    <div style="font-weight: 700; font-size: 0.85rem; color: #fff; display: flex; align-items: center; gap: 6px;">
+                        {{ m.name }}
+                        {% if m.is_primary %}
+                            <span class="badge-tag" style="font-size: 0.6rem; padding: 1px 5px; background: rgba(59, 130, 246, 0.15); color: var(--accent-primary);">Capo</span>
+                        {% elif m.linked_user_id %}
+                            <span class="badge-tag" style="font-size: 0.6rem; padding: 1px 5px; background: rgba(16, 185, 129, 0.15); color: var(--accent-success);">🟢 Connesso</span>
+                        {% endif %}
+                    </div>
+                    <div style="font-size: 0.68rem; color: var(--text-muted);">{{ m.accounts_count }} conti collegati</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+                <div style="text-align: right;">
+                    <div class="privacy-mask" style="font-weight: 800; font-size: 0.95rem; color: #fff;" title="Passa sopra per sbirciare">{{ m.total_balance|eur }}</div>
+                    {% if is_admin and not m.is_primary and not m.linked_user_id %}
+                    <button type="button" onclick="openInviteModal({{ m.id }}, '{{ m.name }}', '{{ m.invited_email or '' }}')" class="btn btn-sm" style="font-size: 0.65rem; padding: 2px 6px; margin-top: 2px; background: rgba(37, 211, 102, 0.15); border: 1px solid rgba(37, 211, 102, 0.4); color: #25d366; font-weight: 700; border-radius: 4px;">
+                        📲 Invita WhatsApp
+                    </button>
+                    {% endif %}
+                </div>
+                {% if is_admin and not m.is_primary %}
+                <button type="button" onclick="openDeleteProfileModal({{ m.id }}, '{{ m.name }}')" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; font-size: 0.85rem; border-radius: 6px; padding: 5px 8px; cursor: pointer; line-height: 1; display: inline-flex; align-items: center;" title="Elimina profilo {{ m.name }}">
+                    🗑️
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% elif active_filter == 'all' and member_balances|length <= 1 %}
+    <!-- Quick Invite CTA for Single User -->
+    <div style="margin-top: 12px; padding: 10px 14px; background: rgba(56, 189, 248, 0.06); border: 1px dashed rgba(56, 189, 248, 0.3); border-radius: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <span style="font-size: 0.78rem; color: #cbd5e1;">
+            💡 <strong>Gestisci il bilancio insieme:</strong> aggiungi la compagna per generare il link WhatsApp in 1 secondo!
+        </span>
+        <button type="button" onclick="openAddMemberModal()" class="btn btn-primary btn-sm" style="font-size: 0.75rem; font-weight: 700; padding: 5px 12px; border-radius: 6px;">
+            ➕ Aggiungi Membro 📲
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- UNIFIED ONBOARDING CHECKLIST HUB (Integrated Assistant Guidance) -->
+<style>
+@media (max-width: 640px) {
+    #aiOnboardingChecklistBanner {
+        padding: 14px 12px !important;
+        border-radius: 12px !important;
+    }
+    .onboarding-step-box {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        padding: 10px 10px !important;
+    }
+    .onboarding-step-box > div:first-child {
+        min-width: 0 !important;
+    }
+    .onboarding-step-box .btn,
+    .onboarding-step-box a.btn {
+        width: 100% !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+}
+</style>
+<div id="aiOnboardingChecklistBanner" class="card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92)); border: 1.5px solid rgba(99, 102, 241, 0.4); border-radius: 16px; padding: 18px 20px; margin-bottom: 20px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.45);">
+    
+    <!-- Top Header: Assistant Persona & Dismissal -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="position: relative; width: 46px; height: 46px; border-radius: 50%; padding: 2px; background: linear-gradient(135deg, #6366f1, #38bdf8); flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                {% if active_persona.image %}
+                <img src="{{ active_persona.image }}" alt="{{ active_persona.name }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                {% else %}
+                <span style="font-size: 1.4rem;">🚀</span>
+                {% endif %}
+            </div>
+            <div>
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span>{{ active_persona.name }}:</span>
+                    <span style="color: #7dd3fc;">"Piacere di conoscerti! Insegnami le tue spese in 60 secondi"</span>
+                </h3>
+                <p style="color: #94a3b8; font-size: 0.78rem; margin: 3px 0 0 0;">
+                    Segui questi 3 semplici passi. Man mano che procedi, ogni voce diventerà verde!
+                </p>
+            </div>
+        </div>
+
+        <button type="button" onclick="dismissOnboardingChecklist()" class="btn btn-sm" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; color: #94a3b8; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); cursor: pointer;" title="Nascondi Checklist">
+            ✕ Nascondi
+        </button>
+    </div>
+
+    <!-- 3 Interactive Checklist Steps -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        
+        <!-- STEP 1: Personalizzazione Profilo (60s) -->
+        {% set step1_done = workspace_personalization and workspace_personalization.onboarding_completed %}
+        <div class="onboarding-step-box" style="background: {% if step1_done %}rgba(16, 185, 129, 0.08){% else %}rgba(255, 255, 255, 0.03){% endif %}; border: 1px solid {% if step1_done %}rgba(16, 185, 129, 0.35){% else %}rgba(255, 255, 255, 0.08){% endif %}; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; transition: all 0.3s ease;">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 260px;">
+                <div style="width: 28px; height: 28px; border-radius: 50%; background: {% if step1_done %}#10b981{% else %}rgba(255,255,255,0.1){% endif %}; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; flex-shrink: 0;">
+                    {% if step1_done %}✓{% else %}1{% endif %}
+                </div>
+                <div>
+                    <div style="font-size: 0.88rem; font-weight: 700; color: {% if step1_done %}#34d399{% else %}#fff{% endif %};">
+                        1. Personalizza le tue abitudini (60 sec)
+                    </div>
+                    <div style="font-size: 0.76rem; color: #cbd5e1; margin-top: 2px;">
+                        {% if step1_done %}
+                            Regole Intelligenti attive! (Figli: {{ workspace_personalization.children_names or 'Nessuno' }} • Casa: {{ workspace_personalization.housing_type or 'Standard' }} • Auto: {{ workspace_personalization.vehicle_types or 'Standard' }})
+                        {% else %}
+                            Hai figli, casa, auto o animali? Dimmi cosa fa parte della tua vita e io catalogherò in automatico tutti i tuoi estratti conto senza farti fare nulla a mano.
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div>
+                {% if step1_done %}
+                <button type="button" onclick="openPersonalizationModal()" class="btn btn-sm" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 600; cursor: pointer;">
+                    ✏️ Modifica
+                </button>
+                {% else %}
+                <button type="button" onclick="openPersonalizationModal()" class="btn btn-sm" style="font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 8px; background: linear-gradient(135deg, #6366f1, #2563eb); color: #fff; border: none; box-shadow: 0 4px 12px rgba(99,102,241,0.4); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <span>⚡ Personalizza AI (60 sec)</span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- STEP 2: Caricamento Estratto Conto Bancario -->
+        {% set step2_done = total_transactions and total_transactions > 0 %}
+        <div class="onboarding-step-box" style="background: {% if step2_done %}rgba(16, 185, 129, 0.08){% else %}rgba(255, 255, 255, 0.03){% endif %}; border: 1px solid {% if step2_done %}rgba(16, 185, 129, 0.35){% else %}rgba(255, 255, 255, 0.08){% endif %}; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; transition: all 0.3s ease;">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 260px;">
+                <div style="width: 28px; height: 28px; border-radius: 50%; background: {% if step2_done %}#10b981{% else %}rgba(255,255,255,0.1){% endif %}; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; flex-shrink: 0;">
+                    {% if step2_done %}✓{% else %}2{% endif %}
+                </div>
+                <div>
+                    <div style="font-size: 0.88rem; font-weight: 700; color: {% if step2_done %}#34d399{% else %}#fff{% endif %};">
+                        2. Carica l'estratto conto delle tue transazioni
+                    </div>
+                    <div style="font-size: 0.76rem; color: #cbd5e1; margin-top: 2px;">
+                        {% if step2_done %}
+                            Estratto conto caricato con successo! ({{ total_transactions }} movimenti bancari elaborati e riconciliati)
+                        {% else %}
+                            Come si fa? Semplice: vai sull'home banking della tua banca, seleziona un periodo ed esporta l'estratto conto (PDF o Excel). Più sarà ampio il periodo, più dati avremo per le nostre analisi e per il calcolo del 730.
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div>
+                <button type="button" onclick="openUploadModal()" class="btn btn-sm" style="font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 8px; background: {% if step2_done %}rgba(16, 185, 129, 0.15){% else %}linear-gradient(135deg, #0ea5e9, #2563eb){% endif %}; color: {% if step2_done %}#34d399{% else %}#fff{% endif %}; border: {% if step2_done %}1px solid rgba(16, 185, 129, 0.3){% else %}none{% endif %}; box-shadow: {% if not step2_done %}0 4px 12px rgba(14,165,233,0.35){% else %}none{% endif %}; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <span>{% if step2_done %}📥 Carica Altro File{% else %}📥 Carica Estratto Conto{% endif %}</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 3: Categorizzazione / Triage Spese -->
+        {% set step3_done = step2_done and (uncategorized_tx_count == 0) %}
+        <div class="onboarding-step-box" style="background: {% if step3_done %}rgba(16, 185, 129, 0.08){% elif uncategorized_tx_count > 0 %}rgba(245, 158, 11, 0.08){% else %}rgba(255, 255, 255, 0.03){% endif %}; border: 1px solid {% if step3_done %}rgba(16, 185, 129, 0.35){% elif uncategorized_tx_count > 0 %}rgba(245, 158, 11, 0.35){% else %}rgba(255, 255, 255, 0.08){% endif %}; border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; transition: all 0.3s ease;">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 260px;">
+                <div style="width: 28px; height: 28px; border-radius: 50%; background: {% if step3_done %}#10b981{% elif uncategorized_tx_count > 0 %}#f59e0b{% else %}rgba(255,255,255,0.1){% endif %}; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 800; flex-shrink: 0;">
+                    {% if step3_done %}✓{% else %}3{% endif %}
+                </div>
+                <div>
+                    <div style="font-size: 0.88rem; font-weight: 700; color: {% if step3_done %}#34d399{% elif uncategorized_tx_count > 0 %}#fbbf24{% else %}#fff{% endif %};">
+                        3. Verifica e categorizzazione spese
+                    </div>
+                    <div style="font-size: 0.76rem; color: #cbd5e1; margin-top: 2px;">
+                        {% if not step2_done %}
+                            In attesa del caricamento dell'estratto conto bancario.
+                        {% elif uncategorized_tx_count > 0 %}
+                            ⚠️ Ci sono rimaste <strong>{{ uncategorized_tx_count }}</strong> voci da categorizzare o confermare insieme!
+                        {% else %}
+                            Tutte le spese sono state categorizzate e taggate al 100%!
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div>
+                {% if uncategorized_tx_count > 0 %}
+                <a href="/transactions" class="btn btn-sm" style="font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 8px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border: none; box-shadow: 0 4px 12px rgba(245,158,11,0.35); display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+                    <span>🏷️ Categorizza Voci ({{ uncategorized_tx_count }})</span>
+                </a>
+                {% elif step3_done %}
+                <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.75rem; font-weight: 700;">
+                    ✓ 100% Ordinate
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Celebration Banner if All 3 Done -->
+    {% if step1_done and step2_done and step3_done %}
+    <div style="margin-top: 14px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.15)); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.4rem;">🎉</span>
+            <span style="font-size: 0.88rem; font-weight: 800; color: #fff;">
+                Adesso goditi lo spettacolo... è più semplice di quanto sembri!
+            </span>
+        </div>
+        <button type="button" onclick="dismissOnboardingChecklist()" class="btn btn-sm" style="background: #10b981; color: #fff; font-weight: 700; border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.76rem; cursor: pointer;">
+            ✨ Ho Imparato, Nascondi Checklist
+        </button>
+    </div>
+    {% endif %}
+
+</div>
+
+
+<!-- AI Executive Assistant Hero Briefing Card -->
+{% if assistant_briefing %}
+<div class="card assistant-hero-card" id="persona-switcher-box" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)); border: 1.5px solid rgba(99, 102, 241, 0.4); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5); position: relative; overflow: hidden; margin-bottom: 16px;">
+    <!-- Subtle background accent glow -->
+    <div style="position: absolute; top: -30px; right: -30px; width: 140px; height: 140px; background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
+
+    <div class="assistant-header-row" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(99, 102, 241, 0.2); border: 2px solid {{ active_persona.badge_color or 'rgba(99, 102, 241, 0.5)' }}; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); flex-shrink: 0; overflow: hidden; cursor: pointer;" onclick="openAssistantModal()" title="Clicca per cambiare assistente">
+                {% if active_persona.image %}
+                <img src="{{ active_persona.image }}" alt="{{ active_persona.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                {{ assistant_briefing.avatar or assistant_briefing.persona_avatar or '🤖' }}
+                {% endif %}
+            </div>
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0; cursor: pointer;" onclick="openAssistantModal()" title="Clicca per cambiare assistente">
+                        {{ assistant_briefing.name or assistant_briefing.persona_name or 'Assistente AI' }}
+                    </h3>
+                    <span class="badge-tag" style="background: {{ active_persona.badge_bg or 'rgba(99, 102, 241, 0.2)' }}; color: {{ active_persona.badge_color or '#c7d2fe' }}; font-size: 0.7rem; font-weight: 700; border: 1px solid {{ active_persona.border_color or 'rgba(99, 102, 241, 0.35)' }};">
+                        {{ assistant_briefing.role_badge or assistant_briefing.persona_role or 'Consulente' }}
+                    </span>
+                </div>
+                <div style="color: #94a3b8; font-size: 0.75rem; margin-top: 2px;">
+                    Assistente Finanziario & Fiscale Intelligente
+                </div>
+            </div>
+        </div>
+
+        <!-- Assistant Modal Trigger Button -->
+        <button type="button" 
+                onclick="openAssistantModal()" 
+                class="btn-change-persona"
+                title="Cambia assistente virtuale">
+            <span>✨</span>
+            <span>Cambia Assistente</span>
+        </button>
+    </div>
+
+    <!-- Assistant Persona Speech Bubble -->
+    <div style="background: rgba(15, 23, 42, 0.6); border-radius: 12px; padding: 12px 14px; border: 1px solid rgba(255, 255, 255, 0.06); margin-bottom: 12px;">
+        <div style="font-weight: 700; color: #e2e8f0; font-size: 0.88rem; margin-bottom: 4px;">
+            {{ assistant_briefing.headline|safe }}
+        </div>
+        <p style="color: #cbd5e1; font-size: 0.8rem; line-height: 1.45; margin: 0;">
+            {{ assistant_briefing.overview|safe }}
+        </p>
+    </div>
+
+    <!-- Live Executive KPI Pill Bar (Responsive Grid) -->
+    <div class="assistant-kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 12px;">
+        <!-- Safe to spend -->
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 8px 10px;">
+            <div style="font-size: 0.68rem; color: var(--accent-success); font-weight: 700; text-transform: uppercase;">🎯 Safe-to-Spend Libero</div>
+            <div class="privacy-mask" style="font-size: 1.05rem; font-weight: 800; color: #fff; margin-top: 2px;" title="Passa sopra per sbirciare">
+                {% if cashflow %}{{ cashflow.monthly_safe_to_spend|eur }}{% else %}€ 0,00{% endif %}
+            </div>
+        </div>
+
+        <!-- Latest Salary & Tickets -->
+        <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 8px; padding: 8px 10px;">
+            <div style="font-size: 0.68rem; color: #93c5fd; font-weight: 700; text-transform: uppercase;">💶 Ultimo Stipendio Netto</div>
+            <div class="privacy-mask" style="font-size: 1.05rem; font-weight: 800; color: #fff; margin-top: 2px;" title="Passa sopra per sbirciare">
+                {% if latest_paystub %}
+                    {{ latest_paystub.net_salary|eur }}
+                    {% if latest_paystub.ticket_total and latest_paystub.ticket_total > 0 %}
+                    <span style="font-size: 0.7rem; color: #34d399; font-weight: 600;">+{{ latest_paystub.ticket_total|eur }} 🎟️</span>
+                    {% endif %}
+                {% else %}
+                    Nessun cedolino
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Latest 730 Refund / Debt -->
+        <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 8px 10px;">
+            <div style="font-size: 0.68rem; color: #fcd34d; font-weight: 700; text-transform: uppercase;">🏛️ Modello 730 ({{ latest_730.tax_year if latest_730 else 'Recente' }})</div>
+            <div class="privacy-mask" style="font-size: 1.05rem; font-weight: 800; color: {% if latest_730 and latest_730.tax_outcome_val > 0 %}#34d399{% elif latest_730 and latest_730.tax_outcome_val < 0 %}#f87171{% else %}#fff{% endif %}; margin-top: 2px;" title="Passa sopra per sbirciare">
+                {% if latest_730 %}
+                    {{ latest_730.tax_outcome_val|eur_sign }}
+                    <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 500;">({{ latest_730.tax_outcome_type }})</span>
+                {% else %}
+                    Da caricare
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Smart Recommendation Callout -->
+    {% if assistant_briefing.recommendation %}
+    <div style="display: flex; align-items: center; gap: 8px; background: rgba(99, 102, 241, 0.12); border: 1px dashed rgba(99, 102, 241, 0.35); border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; color: #e0e7ff;">
+        <span>💡</span>
+        <span>{{ assistant_briefing.recommendation|safe }}</span>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Financial Summary Card (Live Dynamic Metrics) -->
+<div class="card" style="margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+        <div>
+            {% if active_filter == 'all' %}
+                <h3 style="font-size: 1.15rem; font-weight: 800;">Patrimonio Complessivo Famiglia 🛡️</h3>
+                <p style="color: var(--text-muted); font-size: 0.8rem;">Vista aggregata di tutti i membri del nucleo</p>
+            {% else %}
+                <h3 style="font-size: 1.15rem; font-weight: 800;">Riepilogo: {{ selected_profile.name }} 👤</h3>
+                <p style="color: var(--text-muted); font-size: 0.8rem;">Ruolo: {{ selected_profile.role_title or 'Componente' }}</p>
+            {% endif %}
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <!-- In-Card Privacy Mode Button -->
+            <button type="button" onclick="togglePrivacyMode()" class="privacy-toggle-btn" style="font-size: 0.72rem; padding: 3px 9px;" title="Modalità Privacy: Nascondi/Mostra Saldo e Stipendio (Shift+P)">
+                <span class="privacy-icon-unmasked">👁️ Nascondi</span>
+                <span class="privacy-icon-masked" style="display: none;">🙈 Mostra</span>
+            </button>
+
+            {% if active_filter != 'all' and selected_profile and not selected_profile.is_primary %}
+                {% if not selected_profile.linked_user_id %}
+                <button type="button" onclick="openInviteModal({{ selected_profile.id }}, '{{ selected_profile.name }}', '{{ selected_profile.invited_email or '' }}')" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 4px 10px; border-color: rgba(37, 211, 102, 0.5); color: #25d366; font-weight: 700;">
+                    📲 Invita WhatsApp
+                </button>
+                {% endif %}
+                <button type="button" onclick="openDeleteProfileModal({{ selected_profile.id }}, '{{ selected_profile.name }}')" class="btn btn-sm" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171; font-size: 0.72rem; padding: 4px 10px; font-weight: 700;">
+                    🗑️ Elimina Profilo
+                </button>
+            {% endif %}
+            <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-success);">🟢 Dati Sincronizzati</span>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 8px;">
+        <!-- Liquid Balance -->
+        <div style="background: rgba(255,255,255,0.03); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: var(--text-muted); font-size: 0.75rem;">Saldo Liquido Attuale</span>
+                <span style="font-size: 0.8rem;">💳</span>
+            </div>
+            <div class="privacy-mask" style="font-size: 1.35rem; font-weight: 800; color: #fff; margin-top: 4px;" title="Passa sopra per sbirciare il saldo">{{ total_balance|eur }}</div>
+            <a href="/transactions" style="color: var(--accent-primary); font-size: 0.72rem; text-decoration: none; display: inline-block; margin-top: 4px;">Vedi tutti i conti →</a>
+        </div>
+
+        <!-- Latest Net Salary -->
+        <div style="background: rgba(59, 130, 246, 0.06); padding: 14px; border-radius: var(--radius-md); border: 1px solid rgba(59, 130, 246, 0.2);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #93c5fd; font-size: 0.75rem;">Ultimo Stipendio Cedolino</span>
+                <span style="font-size: 0.8rem;">📄</span>
+            </div>
+            <div class="privacy-mask" style="font-size: 1.35rem; font-weight: 800; color: #fff; margin-top: 4px;" title="Passa sopra per sbirciare lo stipendio">
+                {% if latest_paystub %}{{ latest_paystub.net_salary|eur }}{% else %}€ 0,00{% endif %}
+            </div>
+            <a href="/paystubs" style="color: var(--accent-primary); font-size: 0.72rem; text-decoration: none; display: inline-block; margin-top: 4px;">
+                {% if latest_paystub %}Periodo: {{ latest_paystub.period }} →{% else %}Carica Cedolino →{% endif %}
+            </a>
+        </div>
+
+        <!-- Latest 730 Tax Status -->
+        <div style="background: rgba(16, 185, 129, 0.06); padding: 14px; border-radius: var(--radius-md); border: 1px solid rgba(16, 185, 129, 0.2);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: var(--accent-success); font-size: 0.75rem;">Risultato Fiscale 730</span>
+                <span style="font-size: 0.8rem;">🏛️</span>
+            </div>
+            <div class="privacy-mask" style="font-size: 1.35rem; font-weight: 800; color: {% if latest_730 and latest_730.tax_outcome_val > 0 %}var(--accent-success){% elif latest_730 and latest_730.tax_outcome_val < 0 %}#f87171{% else %}#fff{% endif %}; margin-top: 4px;" title="Passa sopra per sbirciare">
+                {% if latest_730 %}{{ latest_730.tax_outcome_val|eur_sign }}{% else %}€ 0,00{% endif %}
+            </div>
+            <a href="/tax730" style="color: var(--accent-success); font-size: 0.72rem; text-decoration: none; display: inline-block; margin-top: 4px;">
+                {% if latest_730 %}Dichiarazione {{ latest_730.tax_year }} ({{ latest_730.tax_outcome_type }}) →{% else %}Archivio 730 AI →{% endif %}
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 5-Pillar Cockpit Quick Actions Navigation Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 16px;">
+    <!-- Pillar 1: Conti & Banche -->
+    <a href="/transactions" class="card" style="margin-bottom: 0; text-decoration: none; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); transition: all 0.2s ease; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 1.4rem;">💳</span>
+            <span class="badge-tag" style="font-size: 0.65rem;">{{ bank_groups|length }} Banche</span>
+        </div>
+        <div style="margin-top: 8px;">
+            <strong style="color: #fff; font-size: 0.9rem; display: block;">Conti & Movimenti</strong>
+            <span style="color: var(--text-muted); font-size: 0.72rem; line-height: 1.2; display: block; margin-top: 2px;">Riconciliazione entrate e spese</span>
+        </div>
+    </a>
+
+    <!-- Pillar 2: Cash Flow & Budget -->
+    <a href="/cashflow" class="card" style="margin-bottom: 0; text-decoration: none; border: 1px solid rgba(16, 185, 129, 0.2); background: rgba(16, 185, 129, 0.03); transition: all 0.2s ease; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 1.4rem;">🎯</span>
+            <span class="badge-tag" style="font-size: 0.65rem; background: rgba(16, 185, 129, 0.15); color: var(--accent-success);">Safe-to-Spend</span>
+        </div>
+        <div style="margin-top: 8px;">
+            <strong style="color: #fff; font-size: 0.9rem; display: block;">Cash Flow & Budget</strong>
+            <span style="color: var(--text-muted); font-size: 0.72rem; line-height: 1.2; display: block; margin-top: 2px;">Costi fissi e disponibilità residua</span>
+        </div>
+    </a>
+
+    <!-- Pillar 3: Focus & Mutuo -->
+    <a href="/focus" class="card" style="margin-bottom: 0; text-decoration: none; border: 1px solid rgba(14, 165, 233, 0.3); background: rgba(14, 165, 233, 0.04); transition: all 0.2s ease; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 1.4rem;">🎯</span>
+            <span class="badge-tag" style="font-size: 0.65rem; background: rgba(14, 165, 233, 0.15); color: #38bdf8;">Hub & Mutuo</span>
+        </div>
+        <div style="margin-top: 8px;">
+            <strong style="color: #fff; font-size: 0.9rem; display: block;">Focus & Mutuo</strong>
+            <span style="color: var(--text-muted); font-size: 0.72rem; line-height: 1.2; display: block; margin-top: 2px;">Ammortamento, Bersani & categorie</span>
+        </div>
+    </a>
+
+    <!-- Pillar 4: Buste Paga & Ticket -->
+    <a href="/paystubs" class="card" style="margin-bottom: 0; text-decoration: none; border: 1px solid rgba(59, 130, 246, 0.2); background: rgba(59, 130, 246, 0.03); transition: all 0.2s ease; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 1.4rem;">📄</span>
+            <span class="badge-tag" style="font-size: 0.65rem; background: rgba(59, 130, 246, 0.15); color: var(--accent-primary);">Cedolini & Ticket</span>
+        </div>
+        <div style="margin-top: 8px;">
+            <strong style="color: #fff; font-size: 0.9rem; display: block;">Buste Paga & TFR</strong>
+            <span style="color: var(--text-muted); font-size: 0.72rem; line-height: 1.2; display: block; margin-top: 2px;">Analisi trend, IRPEF e buoni pasto</span>
+        </div>
+    </a>
+
+    <!-- Pillar 5: Fisco & Modello 730 -->
+    <a href="/tax730" class="card" style="margin-bottom: 0; text-decoration: none; border: 1px solid rgba(245, 158, 11, 0.2); background: rgba(245, 158, 11, 0.03); transition: all 0.2s ease; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 1.4rem;">🏛️</span>
+            <span class="badge-tag" style="font-size: 0.65rem; background: rgba(245, 158, 11, 0.15); color: #f59e0b;">Audit & Ottimizzazione</span>
+        </div>
+        <div style="margin-top: 8px;">
+            <strong style="color: #fff; font-size: 0.9rem; display: block;">Fisco & Modello 730 AI</strong>
+            <span style="color: var(--text-muted); font-size: 0.72rem; line-height: 1.2; display: block; margin-top: 2px;">Detrazioni, deduzioni e piano d'azione</span>
+        </div>
+    </a>
+</div>
+
+<!-- DEDICATED WIDGET: Focus & Mutuo -->
+{% if mortgage_data %}
+<div class="card" style="background: radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(14, 165, 233, 0.35); box-shadow: 0 10px 28px rgba(0,0,0,0.35); margin-bottom: 16px; position: relative; overflow: hidden;">
+    
+    <!-- Top Row: Icon, Title, Short Description, and CTA -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(14, 165, 233, 0.18); border: 1px solid rgba(14, 165, 233, 0.35); display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
+                🎯
+            </div>
+            <div>
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    Focus & Mutuo
+                    <span class="badge-tag" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">
+                        Deep Dive Hub
+                    </span>
+                </h3>
+                <span style="font-size: 0.74rem; color: var(--text-muted);">
+                    {{ mortgage_data.mortgage.bank_name }} &bull; {{ mortgage_data.mortgage.name }} ({{ mortgage_data.mortgage.annual_interest_rate }}% TAN {{ mortgage_data.mortgage.interest_type }})
+                </span>
+            </div>
+        </div>
+        <a href="/focus" class="btn btn-sm" style="background: linear-gradient(135deg, #0ea5e9, #2563eb); color: #fff; font-weight: 700; border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; box-shadow: 0 2px 10px rgba(14, 165, 233, 0.35); display: inline-flex; align-items: center; gap: 6px;">
+            <span>🎯 Apri Focus & Mutuo</span>
+            <span>→</span>
+        </a>
+    </div>
+
+    <!-- Live Mortgage Progress Bar -->
+    <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; margin-bottom: 6px; flex-wrap: wrap; gap: 4px;">
+            <div>
+                <span style="color: var(--text-muted);">Debito Residuo:</span>
+                <strong style="color: #fff; font-size: 0.95rem; margin-left: 4px;">{{ mortgage_data.simulation.current_residual_debt|eur }}</strong>
+            </div>
+            <div style="text-align: right;">
+                <span style="color: #38bdf8; font-weight: 700;">{{ mortgage_data.simulation.repaid_capital_pct }}% Rimborsato</span>
+                <span style="color: var(--text-muted); font-size: 0.72rem; margin-left: 4px;">({{ mortgage_data.simulation.paid_installments_count }}/{{ mortgage_data.simulation.total_installments }} rate)</span>
+            </div>
+        </div>
+
+        <!-- Visual Progress Bar -->
+        <div style="width: 100%; height: 8px; background: rgba(255, 255, 255, 0.08); border-radius: 6px; overflow: hidden; position: relative;">
+            <div style="width: {{ mortgage_data.simulation.repaid_capital_pct }}%; height: 100%; background: linear-gradient(90deg, #0ea5e9, #38bdf8, #10b981); border-radius: 6px; box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);"></div>
+        </div>
+    </div>
+
+    <!-- Key Metrics Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 12px;">
+        <!-- Rata Mensile -->
+        <div style="background: rgba(0,0,0,0.25); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: 0.68rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">💶 Rata Mensile</div>
+            <div style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-top: 2px;">{{ mortgage_data.simulation.actual_installment|eur }}</div>
+            <small style="color: var(--text-muted); font-size: 0.68rem;">Scadenza: {{ mortgage_data.simulation.end_year }}</small>
+        </div>
+
+        <!-- Detrazione 730 -->
+        <div style="background: rgba(0,0,0,0.25); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2);">
+            <div style="font-size: 0.68rem; color: #34d399; font-weight: 700; text-transform: uppercase;">🏛️ Detrazione 730</div>
+            <div style="font-size: 1.15rem; font-weight: 800; color: #34d399; margin-top: 2px;">+{{ mortgage_data.tax_refund_estimated|eur }}</div>
+            <small style="color: var(--text-muted); font-size: 0.68rem;">19% su int. passivi</small>
+        </div>
+
+        <!-- Capitale Rimborsato -->
+        <div style="background: rgba(0,0,0,0.25); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: 0.68rem; color: #38bdf8; font-weight: 700; text-transform: uppercase;">🛡️ Capitale Rimborsato</div>
+            <div style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-top: 2px;">{{ mortgage_data.simulation.total_capital_paid|eur }}</div>
+            <small style="color: var(--text-muted); font-size: 0.68rem;">su {{ mortgage_data.mortgage.original_amount|eur }}</small>
+        </div>
+
+        <!-- Opportunità Bersani / Risparmio -->
+        <div style="background: rgba(99, 102, 241, 0.08); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.25);">
+            <div style="font-size: 0.68rem; color: #a5b4fc; font-weight: 700; text-transform: uppercase;">⚡ Surroga & Estinzione</div>
+            <div style="font-size: 0.92rem; font-weight: 800; color: #e0e7ff; margin-top: 3px;">Simulatore Attivo</div>
+            <small style="color: #c7d2fe; font-size: 0.68rem;">Calcolo ROI & Pareggio</small>
+        </div>
+    </div>
+
+    <!-- Active Categories Quick Access Footer Bar -->
+    {% if active_focus_categories and active_focus_categories|length > 0 %}
+    <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">Categorie in Focus:</span>
+            {% for cat in active_focus_categories %}
+            <a href="/focus" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 2px 8px; font-size: 0.72rem; color: #e2e8f0; transition: all 0.2s ease;">
+                <span>{% if 'Casa' in cat %}🏠{% elif 'Auto' in cat or 'Mobilit' in cat %}🚗{% elif 'Salute' in cat %}💊{% elif 'Alimentar' in cat %}🛒{% elif 'Utenz' in cat %}💡{% else %}🏷️{% endif %}</span>
+                <span>{{ cat }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        <a href="/focus" style="font-size: 0.72rem; color: #38bdf8; text-decoration: none; font-weight: 600;">
+            Esplora Categorie &rarr;
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endif %}
+
+<!-- Monthly Cash Flow & Safe-to-Spend Cockpit Card -->
+{% if cashflow %}
+<div class="card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(18, 24, 38, 0.95)); border: 1.5px solid rgba(16, 185, 129, 0.3); margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🎯</span>
+            <div>
+                <h3 style="font-size: 1rem; font-weight: 700; color: #fff; margin: 0;">Disponibilità Residua Mese (Safe-to-Spend)</h3>
+                <span style="font-size: 0.72rem; color: var(--text-muted);">Mese Corrente: {{ cashflow.year_month }} • {{ cashflow.days_remaining }} giorni rimanenti</span>
+            </div>
+        </div>
+        <a href="/cashflow" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 4px 10px; border-color: rgba(16, 185, 129, 0.4); color: var(--accent-success);">Apri Cruscotto →</a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 8px;">
+        <div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: var(--radius-md); border: 1px solid rgba(16, 185, 129, 0.2);">
+            <span style="color: var(--accent-success); font-size: 0.75rem; font-weight: 700;">✨ Safe-to-Spend Libero</span>
+            <div class="privacy-mask" style="font-size: 1.35rem; font-weight: 800; color: #fff; margin-top: 2px;" title="Passa sopra per sbirciare">{{ cashflow.monthly_safe_to_spend|eur }}</div>
+            <small class="privacy-mask" style="color: var(--text-muted); font-size: 0.7rem;" title="Passa sopra per sbirciare">~{{ cashflow.daily_safe_budget|eur }} / giorno</small>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <span style="color: #f59e0b; font-size: 0.75rem; font-weight: 700;">📌 Costi Fissi Questo Mese</span>
+            <div class="privacy-mask" style="font-size: 1.35rem; font-weight: 800; color: #f59e0b; margin-top: 2px;" title="Passa sopra per sbirciare">{{ (-cashflow.total_fixed_expenses_expected)|eur }}</div>
+            <small class="privacy-mask" style="color: var(--text-muted); font-size: 0.7rem;" title="Passa sopra per sbirciare">🟢 {{ cashflow.total_fixed_expenses_paid|eur }} • ⏳ {{ cashflow.total_fixed_expenses_pending|eur }}</small>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.25); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <span style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700;">💶 Entrate Attese (Stipendio)</span>
+            <div class="privacy-mask" style="font-size: 1.35rem; font-weight: 800; color: #fff; margin-top: 2px;" title="Passa sopra per sbirciare">{{ cashflow.expected_month_income|eur_sign }}</div>
+            <small class="privacy-mask" style="color: var(--text-muted); font-size: 0.7rem;" title="Passa sopra per sbirciare">Spese var: {{ (-cashflow.variable_expenses)|eur }}</small>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ======================================================== -->
+<!-- 📈 ANDAMENTO STORICO: ENTRATE, USCITE & TARGET RISPARMIO -->
+<!-- ======================================================== -->
+{% if trend_data and trend_data.months_list|length > 0 %}
+<div id="trend-history-card" class="card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1.5px solid rgba(59, 130, 246, 0.35); margin-bottom: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                📈
+            </div>
+            <div>
+                <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">
+                    Andamento Mensile: Entrate, Uscite & Target Risparmio
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.76rem; margin: 2px 0 0 0;">
+                    Monitoraggio storico delle entrate, spese complessive e quota di risparmio accantonata per mese
+                </p>
+            </div>
+        </div>
+
+        <!-- Dynamic In-Place Range Selector Buttons (No Page Reload / No Scroll Jump) -->
+        <div style="display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.35); padding: 3px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); flex-wrap: wrap;">
+            <button type="button" class="btn-trend-range {% if trend_data.months_count == 6 %}active{% endif %}" onclick="changeDashboardTrendRange(6, this)">
+                6 Mesi
+            </button>
+            <button type="button" class="btn-trend-range {% if trend_data.months_count == 12 %}active{% endif %}" onclick="changeDashboardTrendRange(12, this)">
+                12 Mesi
+            </button>
+            <button type="button" class="btn-trend-range {% if trend_data.months_count == 18 %}active{% endif %}" onclick="changeDashboardTrendRange(18, this)">
+                18 Mesi
+            </button>
+            <button type="button" class="btn-trend-range {% if trend_data.months_count == 24 %}active{% endif %}" onclick="changeDashboardTrendRange(24, this)">
+                24 Mesi (2 Anni)
+            </button>
+        </div>
+    </div>
+
+    <!-- 4 Period Key Highlights -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px;">
+        <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; padding: 10px 12px;">
+            <span style="font-size: 0.68rem; color: #86efac; font-weight: 700; text-transform: uppercase;">💶 Entrate nel Periodo</span>
+            <div id="trendKpiIncome" class="privacy-mask" style="font-size: 1.15rem; font-weight: 800; color: var(--accent-success); margin-top: 2px;" title="Passa sopra per sbirciare">
+                {{ trend_data.total_period_income|eur }}
+            </div>
+        </div>
+        <div style="background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 10px 12px;">
+            <span style="font-size: 0.68rem; color: #fca5a5; font-weight: 700; text-transform: uppercase;">💳 Spese nel Periodo</span>
+            <div id="trendKpiExpenses" class="privacy-mask" style="font-size: 1.15rem; font-weight: 800; color: #f87171; margin-top: 2px;" title="Passa sopra per sbirciare">
+                {{ trend_data.total_period_expenses|eur }}
+            </div>
+        </div>
+        <div style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 10px 12px;">
+            <span style="font-size: 0.68rem; color: #7dd3fc; font-weight: 700; text-transform: uppercase;">📈 Risparmio Netto Totale</span>
+            <div id="trendKpiSavings" class="privacy-mask" style="font-size: 1.15rem; font-weight: 800; color: {% if trend_data.total_period_savings >= 0 %}#38bdf8{% else %}#f87171{% endif %}; margin-top: 2px;" title="Passa sopra per sbirciare">
+                {{ trend_data.total_period_savings|eur_sign }}
+            </div>
+        </div>
+        <div style="background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 10px 12px;">
+            <span style="font-size: 0.68rem; color: #fde047; font-weight: 700; text-transform: uppercase;">🎯 Tasso Medio Risparmio</span>
+            <div id="trendKpiAvgRate" class="privacy-mask" style="font-size: 1.15rem; font-weight: 800; color: #f59e0b; margin-top: 2px;" title="Passa sopra per sbirciare">
+                {{ "%.1f"|format(trend_data.avg_savings_rate) }}%
+                <small style="font-size: 0.65rem; color: var(--text-muted); font-weight: 500;">(Target: 20%)</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Multi-Month Chart Canvas (Full 320px Height) -->
+    <div style="position: relative; width: 100%; height: 320px; margin-bottom: 8px;">
+        <canvas id="dashboardTrendChart"></canvas>
+    </div>
+
+    <!-- Interactive Toggle Buttons Legend & Hint Footer -->
+    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; font-size: 0.75rem; color: var(--text-muted); flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn-chart-toggle active" id="dbToggle_0" onclick="toggleDashboardSeries(0, this)" title="Attiva / Disattiva le Entrate">
+                <span class="indicator" style="width: 10px; height: 10px; background: #10b981; border-radius: 2px; display: inline-block;"></span> 
+                <span>Entrate</span>
+            </button>
+            <button type="button" class="btn-chart-toggle active" id="dbToggle_1" onclick="toggleDashboardSeries(1, this)" title="Attiva / Disattiva le Uscite">
+                <span class="indicator" style="width: 10px; height: 10px; background: #f87171; border-radius: 2px; display: inline-block;"></span> 
+                <span>Uscite</span>
+            </button>
+            <button type="button" class="btn-chart-toggle active" id="dbToggle_2" onclick="toggleDashboardSeries(2, this)" title="Attiva / Disattiva il Risparmio Netto">
+                <span class="indicator" style="width: 14px; height: 3px; background: #38bdf8; display: inline-block; border-radius: 2px;"></span> 
+                <span>Risparmio Netto</span>
+            </button>
+            <button type="button" class="btn-chart-toggle active" id="dbToggle_3" onclick="toggleDashboardSeries(3, this)" title="Attiva / Disattiva il Target Risparmio (20%)">
+                <span class="indicator" style="width: 14px; height: 3px; border-top: 2px dashed #c084fc; display: inline-block;"></span> 
+                <span>Target Risparmio (20%)</span>
+            </button>
+        </div>
+        <div style="font-size: 0.72rem;">
+            💡 <em>Clicca su una voce per nasconderla/mostrarla o su una barra per aprire il mese nel Cash Flow</em>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Macro Advisor: Analisi Finanziaria Globale Card -->
+{% if advisor_insights and advisor_insights|length > 0 %}
+<div class="card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1.5px solid rgba(59, 130, 246, 0.35); margin-bottom: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                🧠
+            </div>
+            <div>
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    Macro Advisor: Analisi Finanziaria Globale
+                    <span class="badge-tag" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">
+                        Executive Summary
+                    </span>
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.76rem; margin: 2px 0 0 0;">
+                    Considerazioni strategiche, autonomia patrimoniale, tasso di risparmio ed aree di ottimizzazione della spesa
+                </p>
+            </div>
+        </div>
+        <a href="/cashflow" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 4px 10px; border-color: rgba(59, 130, 246, 0.4); color: var(--accent-primary);">
+            Vedi Cash Flow Completo →
+        </a>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for ins in advisor_insights %}
+        <div class="advisor-insight-item advisor-{{ ins.type }}">
+            <div class="advisor-icon">{{ ins.icon }}</div>
+            <div class="advisor-content">
+                <div class="advisor-title">{{ ins.title }}</div>
+                <div class="advisor-text">{{ ins.text|safe }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Bank Institutions & Multi-Account Breakdown Card -->
+{% if bank_groups|length > 0 %}
+<div class="card" style="margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🏛️</span>
+            <h3 style="font-size: 1rem; font-weight: 700; color: #fff;">Istituti Bancari & Conti Collegati</h3>
+        </div>
+        <a href="/transactions" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 4px 10px;">Vedi Movimenti →</a>
+    </div>
+
+    <!-- Asset Allocation Progress Bar -->
+    <div style="margin-bottom: 14px; background: rgba(0,0,0,0.2); padding: 10px 12px; border-radius: var(--radius-md);">
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px;">
+            <span>Ripartizione Liquidità tra Istituti</span>
+            <span class="privacy-mask" style="color: #fff; font-weight: 600;" title="Passa sopra per sbirciare">{{ total_balance|eur }} Totali</span>
+        </div>
+        <div style="display: flex; height: 10px; border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.05); gap: 2px;">
+            {% for bg in bank_groups %}
+            <div style="width: {{ bg.percent }}%; background: {{ bg.color }}; transition: width 0.5s ease;" title="{{ bg.name }}: {{ bg.percent }}% ({{ bg.total_balance|eur }})"></div>
+            {% endfor %}
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px;">
+            {% for bg in bank_groups %}
+            <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: {{ bg.color }};"></span>
+                <span style="color: #fff; font-weight: 600;">{{ bg.name }}</span>
+                <span class="privacy-mask" style="color: var(--text-muted);" title="Passa sopra per sbirciare">{{ bg.percent }}% ({{ bg.total_balance|eur }})</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Grouped Bank Cards -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for bg in bank_groups %}
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-left: 4px solid {{ bg.color }}; border-radius: var(--radius-md); padding: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.2rem;">{{ bg.icon }}</span>
+                    <div>
+                        <strong style="color: #fff; font-size: 0.95rem;">{{ bg.name }}</strong>
+                        <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 6px;">{{ bg.accounts|length }} {{ 'conto/carta' if bg.accounts|length == 1 else 'conti/carte' }}</span>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="privacy-mask" style="font-weight: 800; font-size: 1.05rem; color: #fff;" title="Passa sopra per sbirciare">{{ bg.total_balance|eur }}</span>
+                </div>
+            </div>
+
+            <!-- Sub Accounts List -->
+            <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+                {% for acc in bg.accounts %}
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span>{% if acc.type == 'CARD' %}💳{% elif acc.type == 'SAVINGS' %}🐖{% else %}🏛️{% endif %}</span>
+                        <div>
+                            <div style="color: #fff; font-weight: 600;">{{ acc.name }}</div>
+                            <div style="color: var(--text-muted); font-size: 0.7rem;">
+                                {% if acc.iban %}IBAN: {{ acc.iban[:10] }}...{{ acc.iban[-4:] }}{% elif acc.account_number %}N. Conto: {{ acc.account_number }}{% elif acc.card_pan %}Carta: {{ acc.card_pan }}{% endif %}
+                                {% if acc.profile_name %} • <span style="color: var(--accent-primary);">{{ acc.profile_name }}</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="privacy-mask" style="color: var(--accent-success); font-weight: 700; font-size: 0.9rem;" title="Passa sopra per sbirciare">{{ acc.balance|eur }}</span>
+                        <div style="color: var(--text-muted); font-size: 0.65rem;">{{ acc.tx_count }} movimenti</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+
+
+
+
+<!-- Modal: Aggiungi Nuovo Membro (Ottimizzata Smartphone) -->
+<div id="addMemberModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 480px; width: 94%; max-height: calc(100vh - 32px); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 16px; border-radius: 16px; box-sizing: border-box; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: 0 25px 50px rgba(0,0,0,0.85);">
+        <div class="modal-header" style="margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.3rem;">👥</span>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">Aggiungi Membro al Nucleo</h3>
+            </div>
+            <button class="modal-close" onclick="closeAddMemberModal()" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #94a3b8; background: none; border: none; cursor: pointer;">&times;</button>
+        </div>
+        
+        <form action="/workspace/profile/add" method="POST">
+            <p style="color: var(--text-muted); font-size: 0.82rem; line-height: 1.45; margin-bottom: 16px;">
+                Crea un profilo membro (es. compagna, coniuge, figlio). Potrai associare i suoi conti bancari e generare il link per invitarla su <strong>WhatsApp</strong>.
+            </p>
+            
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label for="memberName" style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 6px;">Nome Membro *</label>
+                <input type="text" id="memberName" name="name" class="form-control" placeholder="es. Anna, Maria..." required style="font-size: 1rem; padding: 12px 14px; border-radius: 10px;">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label for="memberRole" style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 6px;">Ruolo nel Nucleo</label>
+                <select id="memberRole" name="role_title" class="form-control" style="font-size: 0.95rem; padding: 12px 14px; border-radius: 10px; background: #1e293b; color: #fff;">
+                    <option value="Compagna / Coniuge">Compagna / Coniuge</option>
+                    <option value="Figlio / Figlia">Figlio / Figlia</option>
+                    <option value="Genitore">Genitore</option>
+                    <option value="Altro Membro">Altro Membro</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 18px;">
+                <label for="memberTaxCode" style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 6px;">Codice Fiscale (Facoltativo)</label>
+                <input type="text" id="memberTaxCode" name="tax_code" class="form-control" placeholder="es. RSSMRA85M01H501Z" maxlength="16" style="font-size: 0.95rem; padding: 12px 14px; border-radius: 10px; text-transform: uppercase;">
+                <small style="color: var(--text-muted); font-size: 0.7rem; margin-top: 4px; display: block;">Utile per l'abbinamento automatico con modelli 730 e buste paga.</small>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" onclick="closeAddMemberModal()" style="flex: 1; padding: 12px; font-weight: 700; border-radius: 10px;">Annulla</button>
+                <button type="submit" class="btn btn-primary" style="flex: 1.5; padding: 12px; font-weight: 800; border-radius: 10px; box-shadow: 0 4px 14px rgba(56, 189, 248, 0.35);">Salva Membro ✨</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Invita Membro (WhatsApp & Link - 100% Ottimizzata Smartphone) -->
+<div id="inviteMemberModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 480px; width: 94%; max-height: calc(100vh - 32px); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 16px; border-radius: 16px; box-sizing: border-box; background: #0f172a; border: 1.5px solid rgba(37, 211, 102, 0.4); box-shadow: 0 25px 50px rgba(0,0,0,0.85);">
+        <div class="modal-header" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.4rem;">📲</span>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">Invita al Nucleo Familiare</h3>
+            </div>
+            <button class="modal-close" onclick="closeInviteModal()" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #94a3b8; background: none; border: none; cursor: pointer;">&times;</button>
+        </div>
+        
+        <div>
+            <p style="color: var(--text-muted); font-size: 0.84rem; margin-bottom: 16px; line-height: 1.45;">
+                Invia il link a <strong id="inviteMemberTargetName" style="color: #fff;"></strong>. Toccando il link da smartphone, potrà impostare la sua password o connettere il suo account già registrato.
+            </p>
+            
+            <!-- WhatsApp Action Card (Large Touch Area) -->
+            <div style="margin-bottom: 16px;">
+                <a id="inviteWhatsAppBtn" href="#" target="_blank" class="btn" style="width: 100%; min-height: 50px; display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(135deg, #25D366, #128C7E); color: #fff; font-weight: 800; font-size: 0.98rem; padding: 14px 18px; border-radius: 12px; box-shadow: 0 4px 16px rgba(37, 211, 102, 0.4); text-decoration: none; box-sizing: border-box;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink: 0;"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                    <span>Invia su WhatsApp 💬</span>
+                </a>
+            </div>
+
+            <!-- Direct Copyable Link Box (Responsive Stack) -->
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 14px;">
+                <label style="font-size: 0.74rem; font-weight: 700; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">
+                    🔗 Link Diretto da Condividere
+                </label>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <input type="text" id="inviteLinkInput" class="form-control" readonly style="flex: 1 1 200px; min-width: 0; font-size: 0.8rem; background: rgba(0,0,0,0.4); font-family: monospace; color: #38bdf8; padding: 10px 12px; border-radius: 8px;" value="Generazione link...">
+                    <button type="button" id="copyInviteLinkBtn" class="btn btn-secondary" onclick="copyInviteLink()" style="flex: 0 0 auto; padding: 0 16px; min-height: 42px; font-size: 0.85rem; font-weight: 700; border-radius: 8px;">
+                        📋 Copia
+                    </button>
+                </div>
+                <small id="copyInviteFeedback" style="display: none; color: var(--accent-success); font-size: 0.74rem; margin-top: 6px; font-weight: 700;">
+                    ✓ Link copiato negli appunti!
+                </small>
+            </div>
+
+            <!-- Optional: Associate Email -->
+            <div style="background: rgba(56, 189, 248, 0.05); border: 1px dashed rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 16px;">
+                <label for="inviteEmailInput" style="font-size: 0.74rem; font-weight: 700; color: #93c5fd; display: block; margin-bottom: 6px;">
+                    ✉️ Associa Email Membro (Facoltativo)
+                </label>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <input type="email" id="inviteEmailInput" class="form-control" placeholder="es. maria@email.com" style="flex: 1 1 180px; min-width: 0; font-size: 0.88rem; padding: 10px 12px; border-radius: 8px;">
+                    <button type="button" class="btn btn-secondary" onclick="updateInviteEmail()" style="flex: 0 0 auto; font-size: 0.8rem; padding: 0 14px; min-height: 40px; border-radius: 8px;">
+                        Salva Email
+                    </button>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; margin-top: 16px;">
+                <button type="button" class="btn btn-secondary" onclick="closeInviteModal()" style="width: 100%; min-height: 44px; font-weight: 700; border-radius: 10px;">Chiudi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Conferma Eliminazione Profilo (Ottimizzata Smartphone) -->
+<div id="deleteProfileModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 480px; width: 94%; max-height: calc(100vh - 32px); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 16px; border-radius: 16px; box-sizing: border-box; background: #0f172a; border: 1.5px solid rgba(239, 68, 68, 0.45); box-shadow: 0 25px 50px rgba(0,0,0,0.9);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+            <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(239, 68, 68, 0.15); border: 1.5px solid rgba(239, 68, 68, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0;">
+                ⚠️
+            </div>
+            <div>
+                <h3 style="font-size: 1.1rem; font-weight: 900; color: #fff; margin: 0;">Elimina Membro del Nucleo</h3>
+                <p style="color: #f87171; font-size: 0.72rem; margin: 2px 0 0 0; font-weight: 600;">Azione irreversibile</p>
+            </div>
+            <button class="modal-close" onclick="closeDeleteProfileModal()" style="margin-left: auto; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #94a3b8; background: none; border: none; cursor: pointer;">&times;</button>
+        </div>
+
+        <p style="color: #cbd5e1; font-size: 0.84rem; line-height: 1.45; margin-bottom: 12px;">
+            Stai per eliminare definitivamente il profilo di <strong id="deleteProfileModalName" style="color: #fff;"></strong> dal tuo nucleo familiare.
+        </p>
+
+        <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: var(--radius-md); padding: 12px; margin-bottom: 16px;">
+            <span style="font-size: 0.72rem; color: #fca5a5; font-weight: 800; text-transform: uppercase; display: block; margin-bottom: 6px;">
+                I seguenti dati collegati verranno eliminati:
+            </span>
+            <ul style="margin: 0; padding-left: 18px; color: #e2e8f0; font-size: 0.76rem; line-height: 1.5;">
+                <li>Tutti i <strong>conti e carte</strong> intestati a questo membro</li>
+                <li>Tutte le <strong>transazioni</strong> caricate su questi conti</li>
+                <li>Tutte le <strong>buste paga</strong> registrate</li>
+                <li>Tutte le <strong>dichiarazioni 730</strong> e spese detraibili collegate</li>
+            </ul>
+        </div>
+
+        <form id="deleteProfileForm" method="POST" action="">
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteProfileModal()" style="flex: 1; min-height: 44px; font-weight: 600; border-radius: 10px;">
+                    Annulla
+                </button>
+                <button type="submit" class="btn" style="flex: 1.5; min-height: 44px; background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; font-weight: 800; border: none; border-radius: 10px; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);">
+                    🗑️ Elimina
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Impostazioni Privacy & Condivisione Nucleo (Mobile Optimized) -->
+<div id="privacyModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 520px; width: 94%; max-height: calc(100vh - 32px); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 22px 18px; border-radius: 18px; box-sizing: border-box; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.35); box-shadow: 0 25px 50px rgba(0,0,0,0.9);">
+        <div class="modal-header" style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
+                    🛡️
+                </div>
+                <div>
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">Privacy & Condivisione</h3>
+                    <p style="color: var(--text-muted); font-size: 0.74rem; margin: 2px 0 0 0;">Regola il livello di visibilità tra i membri</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closePrivacyModal()" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #94a3b8; background: none; border: none; cursor: pointer;">&times;</button>
+        </div>
+
+        <form action="/workspace/settings/sharing" method="POST" id="modalSharingModeForm">
+            {% set current_mode = active_workspace.sharing_mode if active_workspace and active_workspace.sharing_mode else 'FULL' %}
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+                
+                <!-- Mode: FULL -->
+                <label style="cursor: pointer; display: block; margin: 0;">
+                    <input type="radio" name="sharing_mode" value="FULL" {% if current_mode == 'FULL' %}checked{% endif %} onchange="document.getElementById('modalSharingModeForm').submit();" style="display: none;">
+                    <div style="padding: 14px; border-radius: 12px; border: 2px solid {% if current_mode == 'FULL' %}var(--accent-success){% else %}rgba(255,255,255,0.08){% endif %}; background: {% if current_mode == 'FULL' %}rgba(16, 185, 129, 0.12){% else %}rgba(255,255,255,0.03){% endif %}; transition: all 0.2s ease;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="font-weight: 800; font-size: 0.9rem; color: #fff;">🟢 Trasparenza Totale</span>
+                            {% if current_mode == 'FULL' %}<span style="font-size: 0.7rem; background: var(--accent-success); color: #000; font-weight: 800; padding: 2px 8px; border-radius: 6px;">ATTIVO</span>{% endif %}
+                        </div>
+                        <div style="font-size: 0.76rem; color: #cbd5e1; line-height: 1.4;">Tutti i componenti vedono l'intero patrimonio aggregato e i movimenti di ciascun conto. Massima fiducia e condivisione.</div>
+                    </div>
+                </label>
+
+                <!-- Mode: HYBRID -->
+                <label style="cursor: pointer; display: block; margin: 0;">
+                    <input type="radio" name="sharing_mode" value="HYBRID" {% if current_mode == 'HYBRID' %}checked{% endif %} onchange="document.getElementById('modalSharingModeForm').submit();" style="display: none;">
+                    <div style="padding: 14px; border-radius: 12px; border: 2px solid {% if current_mode == 'HYBRID' %}#eab308{% else %}rgba(255,255,255,0.08){% endif %}; background: {% if current_mode == 'HYBRID' %}rgba(234, 179, 8, 0.12){% else %}rgba(255,255,255,0.03){% endif %}; transition: all 0.2s ease;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="font-weight: 800; font-size: 0.9rem; color: #fff;">🟡 Condivisione Ibrida</span>
+                            {% if current_mode == 'HYBRID' %}<span style="font-size: 0.7rem; background: #eab308; color: #000; font-weight: 800; padding: 2px 8px; border-radius: 6px;">ATTIVO</span>{% endif %}
+                        </div>
+                        <div style="font-size: 0.76rem; color: #cbd5e1; line-height: 1.4;">Ognuno vede i propri conti personali + solo i conti o spese contrassegnati come "Spese Comuni". Perfetto per autonomia individuale e gestione spese condivise.</div>
+                    </div>
+                </label>
+
+                <!-- Mode: ADMIN_ONLY -->
+                <label style="cursor: pointer; display: block; margin: 0;">
+                    <input type="radio" name="sharing_mode" value="ADMIN_ONLY" {% if current_mode == 'ADMIN_ONLY' %}checked{% endif %} onchange="document.getElementById('modalSharingModeForm').submit();" style="display: none;">
+                    <div style="padding: 14px; border-radius: 12px; border: 2px solid {% if current_mode == 'ADMIN_ONLY' %}var(--accent-primary){% else %}rgba(255,255,255,0.08){% endif %}; background: {% if current_mode == 'ADMIN_ONLY' %}rgba(59, 130, 246, 0.12){% else %}rgba(255,255,255,0.03){% endif %}; transition: all 0.2s ease;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="font-weight: 800; font-size: 0.9rem; color: #fff;">🛡️ Capofamiglia Gestore</span>
+                            {% if current_mode == 'ADMIN_ONLY' %}<span style="font-size: 0.7rem; background: var(--accent-primary); color: #fff; font-weight: 800; padding: 2px 8px; border-radius: 6px;">ATTIVO</span>{% endif %}
+                        </div>
+                        <div style="font-size: 0.76rem; color: #cbd5e1; line-height: 1.4;">Solo tu (Amministratore) vedi il patrimonio complessivo. Gli altri membri invitati vedono unicamente la propria sezione personale.</div>
+                    </div>
+                </label>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closePrivacyModal()" style="width: 100%; min-height: 44px; font-weight: 700; border-radius: 10px;">Chiudi</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Profilo di Personalizzazione Intelligente & AI Auto-Tagging -->
+<div id="personalizationModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 560px; width: 94%; max-height: calc(100vh - 32px); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 22px; border-radius: 16px; background: #0f172a; border: 1.5px solid rgba(99, 102, 241, 0.45); box-shadow: 0 25px 50px rgba(0,0,0,0.85);">
+        <div class="modal-header" style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 42px; height: 42px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg, #6366f1, #38bdf8); padding: 2px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
+                    {% if active_persona.image %}
+                    <img src="{{ active_persona.image }}" alt="{{ active_persona.name }}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                    {% else %}
+                    <span style="font-size: 1.3rem;">✨</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">Personalizzazione Intelligente AI</h3>
+                    <p style="color: #7dd3fc; font-size: 0.75rem; margin: 2px 0 0 0; font-weight: 600;">{{ active_persona.name }} configurerà i tuoi tag e regole automatiche</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closePersonalizationModal()" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #94a3b8; background: none; border: none; cursor: pointer;">&times;</button>
+        </div>
+
+        <form id="personalizationForm" onsubmit="event.preventDefault(); submitPersonalizationForm();">
+            <p style="color: #cbd5e1; font-size: 0.8rem; line-height: 1.45; margin-bottom: 16px; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 10px; padding: 10px 12px;">
+                🛡️ <strong>100% Facoltativo & Privato:</strong> Puoi inserire nomi reali, pseudonimi (es. <em>Junior, Cane</em>) o semplici etichette. I dati rimangono esclusivamente nel tuo spazio privato per auto-categorizzare le spese quotidiane.
+            </p>
+
+            <!-- 1. Figli & Famiglia -->
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label for="persChildrenNames" style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0; display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                    <span>👶 Figli / Minori a Carico (Opzionale)</span>
+                    <span style="font-size: 0.7rem; color: #38bdf8; font-weight: 500;">es. Luciano, Sofia</span>
+                </label>
+                <input type="text" id="persChildrenNames" name="children_names" class="form-control" 
+                       value="{{ workspace_personalization.children_names if workspace_personalization else '' }}" 
+                       placeholder="es. Luciano (oppure Bimbo 1, Figlio...)" 
+                       style="font-size: 0.92rem; padding: 10px 12px; border-radius: 8px; background: #1e293b; color: #fff;">
+                <small style="color: var(--text-muted); font-size: 0.7rem; margin-top: 3px; display: block;">
+                    💡 Negozi bimbi (<em>Original Marines, Chicco, Villa Bebè, Asilo</em>) verranno taggati subito con <strong>#nome</strong>.
+                </small>
+            </div>
+
+            <!-- 2. Casa & Abitazione -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                <div class="form-group" style="margin: 0;">
+                    <label for="persHousingType" style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 6px;">🏠 Casa</label>
+                    <select id="persHousingType" name="housing_type" class="form-control" style="font-size: 0.88rem; padding: 10px; border-radius: 8px; background: #1e293b; color: #fff;">
+                        <option value="MUTUO" {% if workspace_personalization and workspace_personalization.housing_type == 'MUTUO' %}selected{% endif %}>Casa con Mutuo</option>
+                        <option value="AFFITTO" {% if workspace_personalization and workspace_personalization.housing_type == 'AFFITTO' %}selected{% endif %}>In Affitto</option>
+                        <option value="PROPRIETA" {% if workspace_personalization and workspace_personalization.housing_type == 'PROPRIETA' %}selected{% endif %}>Proprietà (No Mutuo)</option>
+                        <option value="ALTRO" {% if workspace_personalization and workspace_personalization.housing_type == 'ALTRO' %}selected{% endif %}>Altro / Genitori</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label for="persMortgageBank" style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0; display: block; margin-bottom: 6px;">Banca Mutuo (Opzionale)</label>
+                    <input type="text" id="persMortgageBank" name="mortgage_bank" class="form-control" 
+                           value="{{ workspace_personalization.mortgage_bank if workspace_personalization else '' }}" 
+                           placeholder="es. Intesa, BCC..." 
+                           style="font-size: 0.88rem; padding: 10px; border-radius: 8px; background: #1e293b; color: #fff;">
+                </div>
+            </div>
+
+            <!-- 3. Mobilità & Veicoli -->
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label for="persVehicleTypes" style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0; display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                    <span>🚗 Mobilità & Veicoli</span>
+                    <span style="font-size: 0.7rem; color: #38bdf8; font-weight: 500;">es. Auto, Telepass</span>
+                </label>
+                <input type="text" id="persVehicleTypes" name="vehicle_types" class="form-control" 
+                       value="{{ workspace_personalization.vehicle_types if workspace_personalization else 'Auto, Telepass' }}" 
+                       placeholder="es. Auto di proprietà, Telepass, Scooter, Mezzi..." 
+                       style="font-size: 0.92rem; padding: 10px 12px; border-radius: 8px; background: #1e293b; color: #fff;">
+            </div>
+
+            <!-- 4. Animali Domestici -->
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label for="persPetsNames" style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0; display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                    <span>🐾 Animali Domestici (Opzionale)</span>
+                    <span style="font-size: 0.7rem; color: #38bdf8; font-weight: 500;">es. Luna, Thor</span>
+                </label>
+                <input type="text" id="persPetsNames" name="pets_names" class="form-control" 
+                       value="{{ workspace_personalization.pets_names if workspace_personalization else '' }}" 
+                       placeholder="es. Luna (oppure Cane, Gatto...)" 
+                       style="font-size: 0.92rem; padding: 10px 12px; border-radius: 8px; background: #1e293b; color: #fff;">
+                <small style="color: var(--text-muted); font-size: 0.7rem; margin-top: 3px; display: block;">
+                    💡 Negozi animali (<em>Arcaplanet, MaxiZoo</em>) e veterinari avranno il tag <strong>#nome #animali</strong>.
+                </small>
+            </div>
+
+            <!-- 5. Lavoro & Fondo Pensione -->
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 12px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.1rem;">📈</span>
+                        <div>
+                            <strong style="color: #fff; font-size: 0.82rem; display: block;">Fondo Pensione Integrativo</strong>
+                            <small style="color: var(--text-muted); font-size: 0.7rem;">Attiva suggerimenti automatici per deduzione fiscale 730.</small>
+                        </div>
+                    </div>
+                    <input type="checkbox" id="persHasPensionFund" name="has_pension_fund" {% if workspace_personalization and workspace_personalization.has_pension_fund %}checked{% endif %} style="width: 20px; height: 20px; accent-color: #6366f1; cursor: pointer;">
+                </div>
+            </div>
+
+            <!-- 6. Retroactive Checkbox -->
+            <div style="padding: 10px 12px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; display: flex; align-items: flex-start; gap: 10px; margin-bottom: 18px;">
+                <input type="checkbox" id="persApplyRetro" name="apply_retroactively" checked style="width: 18px; height: 18px; margin-top: 2px; accent-color: #38bdf8; cursor: pointer;">
+                <div>
+                    <label for="persApplyRetro" style="font-size: 0.82rem; color: #fff; cursor: pointer; font-weight: 700; line-height: 1.3;">
+                        ⚡ Applica subito le nuove regole alle spese già caricate
+                    </label>
+                    <small style="color: #94a3b8; font-size: 0.72rem; display: block; margin-top: 2px;">
+                        Aggiorna e tagga automaticamente in 1 click i movimenti pregressi nel tuo conto.
+                    </small>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closePersonalizationModal()" style="flex: 1; padding: 12px; font-weight: 700; border-radius: 10px;">Annulla</button>
+                <button type="submit" id="persSubmitBtn" class="btn btn-primary" style="flex: 1.8; padding: 12px; font-weight: 800; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #2563eb); border: none; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);">
+                    💾 Salva e Attiva Auto-Tagging ✨
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+
+function openPersonalizationModal() {
+    document.getElementById('personalizationModal').classList.add('open');
+}
+
+function closePersonalizationModal() {
+    document.getElementById('personalizationModal').classList.remove('open');
+}
+
+function dismissOnboardingChecklist() {
+    const banner = document.getElementById('aiOnboardingChecklistBanner');
+    if (banner) {
+        banner.style.display = 'none';
+        localStorage.setItem('fisc_onboarding_checklist_dismissed', '1');
+    }
+}
+
+function dismissPersonalizationBanner() {
+    dismissOnboardingChecklist();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (localStorage.getItem('fisc_onboarding_checklist_dismissed') === '1') {
+        const banner = document.getElementById('aiOnboardingChecklistBanner');
+        if (banner) {
+            banner.style.display = 'none';
+        }
+    }
+});
+
+async function submitPersonalizationForm() {
+    const submitBtn = document.getElementById('persSubmitBtn');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '⏳ Salvataggio & Auto-Tagging in corso...';
+    }
+
+    const payload = {
+        children_names: document.getElementById('persChildrenNames').value,
+        housing_type: document.getElementById('persHousingType').value,
+        mortgage_bank: document.getElementById('persMortgageBank').value,
+        vehicle_types: document.getElementById('persVehicleTypes').value,
+        pets_names: document.getElementById('persPetsNames').value,
+        has_pension_fund: document.getElementById('persHasPensionFund').checked ? 1 : 0,
+        apply_retroactively: document.getElementById('persApplyRetro').checked ? 1 : 0,
+        onboarding_completed: 1
+    };
+
+    try {
+        const resp = await fetch('/api/personalization', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const res = await resp.json();
+        if (res.success) {
+            closePersonalizationModal();
+            window.location.reload();
+        } else {
+            alert('Errore: ' + (res.error || 'Impossibile salvare il profilo'));
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '💾 Salva e Attiva Auto-Tagging ✨';
+            }
+        }
+    } catch(e) {
+        console.error("Personalization submit error:", e);
+        alert('Errore di connessione durante il salvataggio.');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '💾 Salva e Attiva Auto-Tagging ✨';
+        }
+    }
+}
+
+let currentInvitingProfileId = null;
+
+function openAddMemberModal() {
+    document.getElementById('addMemberModal').classList.add('open');
+    document.getElementById('memberName').focus();
+}
+
+function closeAddMemberModal() {
+    document.getElementById('addMemberModal').classList.remove('open');
+}
+
+function openInviteModal(profileId, profileName, currentEmail) {
+    currentInvitingProfileId = profileId;
+    document.getElementById('inviteMemberTargetName').innerText = profileName;
+    document.getElementById('inviteEmailInput').value = currentEmail || '';
+    document.getElementById('inviteLinkInput').value = 'Generazione link in corso...';
+    document.getElementById('copyInviteFeedback').style.display = 'none';
+    document.getElementById('inviteMemberModal').classList.add('open');
+
+    // Generate/fetch invitation token from API
+    fetch('/api/workspace/profile/invite/' + profileId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: currentEmail || '' })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('inviteLinkInput').value = data.invite_url;
+            document.getElementById('inviteWhatsAppBtn').href = data.whatsapp_url;
+        } else {
+            document.getElementById('inviteLinkInput').value = 'Errore: ' + (data.error || 'Impossibile creare link');
+        }
+    })
+    .catch(err => {
+        console.error('Error fetching invite link:', err);
+        document.getElementById('inviteLinkInput').value = 'Errore di connessione';
+    });
+}
+
+function closeInviteModal() {
+    document.getElementById('inviteMemberModal').classList.remove('open');
+}
+
+function copyInviteLink() {
+    const linkInput = document.getElementById('inviteLinkInput');
+    linkInput.select();
+    linkInput.setSelectionRange(0, 99999);
+    
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(linkInput.value).then(() => {
+            showCopyFeedback();
+        }).catch(() => {
+            document.execCommand('copy');
+            showCopyFeedback();
+        });
+    } else {
+        document.execCommand('copy');
+        showCopyFeedback();
+    }
+}
+
+function showCopyFeedback() {
+    const feedback = document.getElementById('copyInviteFeedback');
+    const btn = document.getElementById('copyInviteLinkBtn');
+    feedback.style.display = 'block';
+    btn.innerText = '✓ Copiato!';
+    btn.style.background = 'rgba(16, 185, 129, 0.2)';
+    btn.style.borderColor = 'var(--accent-success)';
+    btn.style.color = 'var(--accent-success)';
+    
+    setTimeout(() => {
+        btn.innerText = '📋 Copia';
+        btn.style.background = '';
+        btn.style.borderColor = '';
+        btn.style.color = '';
+    }, 2500);
+}
+
+function updateInviteEmail() {
+    if (!currentInvitingProfileId) return;
+    const email = document.getElementById('inviteEmailInput').value.trim();
+    
+    fetch('/api/workspace/profile/invite/' + currentInvitingProfileId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('Email associata con successo!');
+            document.getElementById('inviteLinkInput').value = data.invite_url;
+            document.getElementById('inviteWhatsAppBtn').href = data.whatsapp_url;
+        } else {
+            alert('Errore: ' + (data.error || 'Operazione fallita'));
+        }
+    });
+}
+
+function openDeleteProfileModal(profileId, profileName) {
+    document.getElementById('deleteProfileForm').action = '/workspace/profile/delete/' + profileId;
+    document.getElementById('deleteProfileModalName').innerText = profileName;
+    document.getElementById('deleteProfileModal').classList.add('open');
+}
+
+function closeDeleteProfileModal() {
+    document.getElementById('deleteProfileModal').classList.remove('open');
+}
+
+function openPrivacyModal() {
+    document.getElementById('privacyModal').classList.add('open');
+}
+
+function closePrivacyModal() {
+    document.getElementById('privacyModal').classList.remove('open');
+}
+
+// Close modals when clicking outside card
+['addMemberModal', 'inviteMemberModal', 'deleteProfileModal', 'privacyModal'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) {
+        el.addEventListener('click', function(e) {
+            if (e.target === this) {
+                if (id === 'addMemberModal') closeAddMemberModal();
+                if (id === 'inviteMemberModal') closeInviteModal();
+                if (id === 'deleteProfileModal') closeDeleteProfileModal();
+            }
+        });
+    }
+});
+
+function initDashboardTrendChart() {
+    if (typeof Chart === 'undefined') {
+        setTimeout(initDashboardTrendChart, 100);
+        return;
+    }
+
+    const trendCtx = document.getElementById('dashboardTrendChart');
+    if (trendCtx && !trendCtx.getAttribute('data-chart-rendered')) {
+        trendCtx.setAttribute('data-chart-rendered', 'true');
+        const trendLabels = {{ trend_data.chart_labels|tojson if trend_data else '[]' }};
+        const incomeData = {{ trend_data.income_series|tojson if trend_data else '[]' }};
+        const expenseData = {{ trend_data.expense_series|tojson if trend_data else '[]' }};
+        const savingsData = {{ trend_data.savings_series|tojson if trend_data else '[]' }};
+        const targetData = {{ trend_data.target_series|tojson if trend_data else '[]' }};
+        window.dashboardTrendMonthsList = {{ trend_data.months_list|tojson if trend_data else '[]' }};
+        
+        window.dashboardTrendChartInst = new Chart(trendCtx, {
+            type: 'bar',
+            data: {
+                labels: trendLabels,
+                datasets: [
+                    {
+                        label: 'Entrate (€)',
+                        data: incomeData,
+                        backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                        hoverBackgroundColor: '#10b981',
+                        borderRadius: 6,
+                        order: 2,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.6
+                    },
+                    {
+                        label: 'Uscite (€)',
+                        data: expenseData,
+                        backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                        hoverBackgroundColor: '#f87171',
+                        borderRadius: 6,
+                        order: 2,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.6
+                    },
+                    {
+                        type: 'line',
+                        label: 'Risparmio Netto (€)',
+                        data: savingsData,
+                        borderColor: '#38bdf8',
+                        backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                        segment: {
+                            borderColor: function(ctx) {
+                                const val = ctx.p1.parsed.y;
+                                if (val < 0) return '#ef4444';
+                                if (val <= 500) return '#f59e0b';
+                                return '#38bdf8';
+                            }
+                        },
+                        pointBackgroundColor: function(context) {
+                            const val = context.raw;
+                            if (val === null || val === undefined) return '#38bdf8';
+                            if (val < 0) return '#ef4444'; // 🔴 Rosso (< 0)
+                            if (val <= 500) return '#f59e0b'; // 🟠 Arancio (0 - 500)
+                            return '#10b981'; // 🟢 Verde (> 500)
+                        },
+                        pointBorderColor: function(context) {
+                            const val = context.raw;
+                            if (val < 0) return '#fca5a5';
+                            if (val <= 500) return '#fde047';
+                            return '#a7f3d0';
+                        },
+                        pointRadius: function(context) {
+                            const val = context.raw;
+                            if (val < 0) return 6.5;
+                            return 5;
+                        },
+                        pointHoverRadius: 8,
+                        borderWidth: 2.5,
+                        tension: 0.25,
+                        order: 1
+                    },
+                    {
+                        type: 'line',
+                        label: 'Target Risparmio (20%)',
+                        data: targetData,
+                        borderColor: '#c084fc',
+                        backgroundColor: '#c084fc',
+                        borderDash: [6, 6],
+                        pointBackgroundColor: '#c084fc',
+                        pointBorderColor: '#c084fc',
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        borderWidth: 2,
+                        fill: false,
+                        order: 0
+                    }
+                ]
+            },
+            plugins: [{
+                id: 'zeroDashedAndNegativePulsePlugin',
+                beforeDatasetsDraw: (chart) => {
+                    const yScale = chart.scales.y;
+                    const xScale = chart.scales.x;
+                    const ctx = chart.ctx;
+                    const monthsList = window.dashboardTrendMonthsList || [];
+
+                    // 0. Draw Highlight Column & Top Badge for Current Month (In Corso / Oggi)
+                    if (xScale && monthsList) {
+                        for (let i = 0; i < monthsList.length; i++) {
+                            if (monthsList[i].is_current_month) {
+                                const xCenter = xScale.getPixelForValue(i);
+                                const halfWidth = (xScale.width / monthsList.length) * 0.44;
+                                const colLeft = xCenter - halfWidth;
+                                const colWidth = halfWidth * 2;
+                                
+                                ctx.save();
+                                // Soft background highlight
+                                ctx.fillStyle = 'rgba(56, 189, 248, 0.08)';
+                                ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+                                ctx.lineWidth = 1.2;
+                                ctx.setLineDash([3, 3]);
+                                ctx.beginPath();
+                                if (ctx.roundRect) {
+                                    ctx.roundRect(colLeft, chart.chartArea.top, colWidth, chart.chartArea.height, 6);
+                                } else {
+                                    ctx.rect(colLeft, chart.chartArea.top, colWidth, chart.chartArea.height);
+                                }
+                                ctx.fill();
+                                ctx.stroke();
+
+                                // Top Pill Badge: 📍 In Corso
+                                const curBadgeText = "📍 In Corso";
+                                ctx.font = "bold 8.5px sans-serif";
+                                const curTextW = ctx.measureText(curBadgeText).width;
+                                const curBW = curTextW + 10;
+                                const curBH = 16;
+                                const curBX = xCenter - (curBW / 2);
+                                const curBY = chart.chartArea.top + 3;
+
+                                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                                ctx.strokeStyle = 'rgba(56, 189, 248, 0.7)';
+                                ctx.lineWidth = 1;
+                                ctx.setLineDash([]);
+                                ctx.beginPath();
+                                if (ctx.roundRect) {
+                                    ctx.roundRect(curBX, curBY, curBW, curBH, 4);
+                                } else {
+                                    ctx.rect(curBX, curBY, curBW, curBH);
+                                }
+                                ctx.fill();
+                                ctx.stroke();
+
+                                ctx.fillStyle = '#38bdf8';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText(curBadgeText, xCenter, curBY + (curBH / 2));
+                                ctx.restore();
+                                break;
+                            }
+                        }
+                    }
+
+                    // 1. Draw Year Transition Divider (e.g. Dic -> Gen / New Year)
+                    if (xScale && monthsList && monthsList.length > 1) {
+                        for (let i = 1; i < monthsList.length; i++) {
+                            const prevYm = monthsList[i-1].year_month || '';
+                            const currYm = monthsList[i].year_month || '';
+                            const prevYear = prevYm.split('-')[0];
+                            const currYear = currYm.split('-')[0];
+                            if (prevYear && currYear && prevYear !== currYear) {
+                                const x1 = xScale.getPixelForValue(i - 1);
+                                const x2 = xScale.getPixelForValue(i);
+                                const xMid = (x1 + x2) / 2;
+                                
+                                ctx.save();
+                                ctx.strokeStyle = 'rgba(192, 132, 252, 0.45)';
+                                ctx.lineWidth = 1.6;
+                                ctx.setLineDash([4, 4]);
+                                ctx.beginPath();
+                                ctx.moveTo(xMid, chart.chartArea.top);
+                                ctx.lineTo(xMid, chart.chartArea.bottom);
+                                ctx.stroke();
+
+                                // Badge Header
+                                const badgeText = `✨ Inizio ${currYear} (FY${currYear.slice(2)})`;
+                                ctx.font = 'bold 8.5px sans-serif';
+                                const textW = ctx.measureText(badgeText).width;
+                                const bW = textW + 10;
+                                const bH = 16;
+                                const bX = xMid - (bW / 2);
+                                const bY = chart.chartArea.top + 3;
+
+                                ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+                                ctx.strokeStyle = 'rgba(192, 132, 252, 0.6)';
+                                ctx.lineWidth = 1;
+                                ctx.setLineDash([]);
+                                ctx.beginPath();
+                                if (ctx.roundRect) {
+                                    ctx.roundRect(bX, bY, bW, bH, 4);
+                                } else {
+                                    ctx.rect(bX, bY, bW, bH);
+                                }
+                                ctx.fill();
+                                ctx.stroke();
+
+                                ctx.fillStyle = '#c084fc';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText(badgeText, xMid, bY + (bH / 2));
+                                ctx.restore();
+                            }
+                        }
+                    }
+
+                    // 2. Draw Zero Horizontal Line
+                    if (!yScale) return;
+                    const yZero = yScale.getPixelForValue(0);
+                    if (yZero >= yScale.top && yZero <= yScale.bottom) {
+                        ctx.save();
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+                        ctx.lineWidth = 1.8;
+                        ctx.setLineDash([6, 6]);
+                        ctx.beginPath();
+                        ctx.moveTo(chart.chartArea.left, yZero);
+                        ctx.lineTo(chart.chartArea.right, yZero);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                },
+                afterDatasetsDraw: (chart) => {
+                    const meta = chart.getDatasetMeta(2);
+                    if (!meta || meta.hidden) return;
+                    const ctx = chart.ctx;
+                    meta.data.forEach((element) => {
+                        const val = element.$context ? element.$context.raw : null;
+                        if (val !== null && val < 0) {
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.arc(element.x, element.y, 9, 0, Math.PI * 2);
+                            ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
+                            ctx.fill();
+                            ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
+                            ctx.lineWidth = 1.5;
+                            ctx.setLineDash([2, 2]);
+                            ctx.stroke();
+                            ctx.restore();
+                        }
+                    });
+                }
+            }],
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                onClick: (evt, elements) => {
+                    if (elements && elements.length > 0) {
+                        const index = elements[0].index;
+                        const monthsList = window.dashboardTrendMonthsList || [];
+                        if (monthsList && monthsList[index]) {
+                            window.location.href = `/cashflow?m=${monthsList[index].year_month}`;
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: {
+                            color: (c) => {
+                                const lbl = c.chart.data.labels[c.index] || '';
+                                return lbl.includes('📍') ? '#38bdf8' : '#94a3b8';
+                            },
+                            font: (c) => {
+                                const lbl = c.chart.data.labels[c.index] || '';
+                                return {
+                                    weight: lbl.includes('📍') ? '800' : '600',
+                                    size: lbl.includes('📍') ? 11.5 : 11
+                                };
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: function(context) {
+                                if (context.tick && context.tick.value === 0) return 'transparent';
+                                return 'rgba(255, 255, 255, 0.08)';
+                            }
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            callback: (val) => '€ ' + val.toLocaleString('it-IT')
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: false,
+                        external: createFiscTooltipHandler('dashboardTrendTooltip'),
+                        callbacks: {
+                            title: (items) => {
+                                if (items.length > 0) {
+                                    const idx = items[0].dataIndex;
+                                    const monthsList = window.dashboardTrendMonthsList || [];
+                                    const mObj = monthsList[idx];
+                                    if (mObj) {
+                                        return mObj.is_current_month ? `📍 ${mObj.month_name_it} (Mese in Corso)` : `📅 ${mObj.month_name_it}`;
+                                    }
+                                    return items[0].label;
+                                }
+                                return '';
+                            },
+                            afterBody: function(items) {
+                                if (items.length > 0) {
+                                    const idx = items[0].dataIndex;
+                                    const monthsList = window.dashboardTrendMonthsList || [];
+                                    const mObj = monthsList[idx];
+                                    if (!mObj) return '';
+                                    return [
+                                        `📊 Tasso: ${mObj.savings_rate}% ${mObj.is_target_met ? '🎉 Target OK' : ''}`
+                                    ];
+                                }
+                                return '';
+                            },
+                            label: function(context) {
+                                const val = context.parsed.y || 0;
+                                return `${context.dataset.label}: € ${val.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+async function changeDashboardTrendRange(monthsCount, btn) {
+    // 1. Update button styling without reloading or scrolling
+    document.querySelectorAll('.btn-trend-range').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    try {
+        const res = await fetch(`/api/dashboard/trend?range=${monthsCount}`);
+        const data = await res.json();
+        if (data.success && data.trend_data) {
+            const td = data.trend_data;
+            
+            // Format currency helpers
+            const formatEur = (val) => '€ ' + Number(val || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const formatEurSign = (val) => (val >= 0 ? '+€ ' : '-€ ') + Math.abs(Number(val || 0)).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // 2. Update KPI cards in-place
+            const elInc = document.getElementById('trendKpiIncome');
+            const elExp = document.getElementById('trendKpiExpenses');
+            const elSav = document.getElementById('trendKpiSavings');
+            const elAvg = document.getElementById('trendKpiAvgRate');
+
+            if (elInc) elInc.innerText = formatEur(td.total_period_income);
+            if (elExp) elExp.innerText = formatEur(td.total_period_expenses);
+            if (elSav) {
+                elSav.innerText = formatEurSign(td.total_period_savings);
+                elSav.style.color = td.total_period_savings >= 0 ? '#38bdf8' : '#f87171';
+            }
+            if (elAvg) {
+                elAvg.innerHTML = `${(td.avg_savings_rate || 0).toFixed(1)}% <small style="font-size: 0.65rem; color: var(--text-muted); font-weight: 500;">(Target: 20%)</small>`;
+            }
+
+            // 3. Update Chart datasets smoothly
+            if (window.dashboardTrendChartInst) {
+                window.dashboardTrendMonthsList = td.months_list;
+                window.dashboardTrendChartInst.data.labels = td.chart_labels;
+                window.dashboardTrendChartInst.data.datasets[0].data = td.income_series;
+                window.dashboardTrendChartInst.data.datasets[1].data = td.expense_series;
+                window.dashboardTrendChartInst.data.datasets[2].data = td.savings_series;
+                window.dashboardTrendChartInst.data.datasets[3].data = td.target_series;
+                window.dashboardTrendChartInst.update();
+            }
+        }
+    } catch (err) {
+        console.error("Errore aggiornamento trend:", err);
+    }
+}
+
+function toggleDashboardSeries(datasetIndex, btn) {
+    if (!window.dashboardTrendChartInst) return;
+    const isVisible = window.dashboardTrendChartInst.isDatasetVisible(datasetIndex);
+    window.dashboardTrendChartInst.setDatasetVisibility(datasetIndex, !isVisible);
+    window.dashboardTrendChartInst.update();
+    
+    if (isVisible) {
+        btn.classList.remove('active');
+        btn.classList.add('inactive');
+    } else {
+        btn.classList.remove('inactive');
+        btn.classList.add('active');
+    }
+}
+
+// Dynamic Time-Based Greeting & Localized Italian Date
+function initHeroGreeting() {
+    const greetingEl = document.getElementById('heroDynamicGreeting');
+    const dateEl = document.getElementById('heroCurrentDateStr');
+    
+    if (greetingEl) {
+        const hour = new Date().getHours();
+        if (hour >= 5 && hour < 13) {
+            greetingEl.innerText = 'Buongiorno';
+        } else if (hour >= 13 && hour < 19) {
+            greetingEl.innerText = 'Buon pomeriggio';
+        } else {
+            greetingEl.innerText = 'Buonasera';
+        }
+    }
+    
+    if (dateEl) {
+        const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+        const nowStr = new Date().toLocaleDateString('it-IT', options);
+        // Capitalize first letter
+        dateEl.innerText = nowStr.charAt(0).toUpperCase() + nowStr.slice(1);
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        initDashboardTrendChart();
+        initHeroGreeting();
+    });
+} else {
+    initDashboardTrendChart();
+    initHeroGreeting();
+}
+</script>
+
+<style>
+/* Trend Range Filter Buttons */
+.btn-trend-range {
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    font-size: 0.72rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-trend-range:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+}
+.btn-trend-range.active {
+    background: var(--accent-primary) !important;
+    color: #fff !important;
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+}
+
+/* Smartphone Responsive Optimizations for Top Cards */
+@media (max-width: 680px) {
+    .hero-greeting-card {
+        padding: 14px 14px !important;
+        border-radius: 14px !important;
+    }
+    .hero-header-row {
+        gap: 10px !important;
+        margin-bottom: 12px !important;
+    }
+    .hero-title-text {
+        font-size: 1.15rem !important;
+        line-height: 1.3 !important;
+    }
+    .hero-sub-text {
+        font-size: 0.75rem !important;
+    }
+    .hero-emblem-box {
+        width: 42px !important;
+        height: 42px !important;
+    }
+    .hero-profile-pills-row {
+        gap: 6px !important;
+        overflow-x: auto !important;
+        padding-bottom: 4px !important;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    .hero-profile-pills-row .pill-label {
+        display: none !important;
+    }
+    .hero-profile-pills-row::-webkit-scrollbar {
+        height: 3px;
+    }
+    .hero-profile-pills-row::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
+    }
+    .assistant-header-row {
+        gap: 10px !important;
+        margin-bottom: 10px !important;
+    }
+    .assistant-kpi-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+    }
+    .assistant-kpi-grid > div:last-child {
+        grid-column: span 2 !important;
+    }
+}
+</style>
+
+{% endblock %}
+

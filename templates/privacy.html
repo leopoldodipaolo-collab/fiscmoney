@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Informativa sulla Privacy & Sicurezza Dati | FiscMoney{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto; padding: 20px 0 60px 0;">
+
+    <!-- Header Hero Banner -->
+    <div class="card" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)); border: 1.5px solid rgba(56, 189, 248, 0.35); box-shadow: 0 10px 30px rgba(0,0,0,0.5); padding: 24px; border-radius: 16px; margin-bottom: 20px; text-align: center;">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(56, 189, 248, 0.15); border: 2px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 14px auto;">
+            🛡️
+        </div>
+        <h1 style="font-size: 1.6rem; font-weight: 800; color: #fff; margin: 0;">Informativa sulla Privacy & Sicurezza dei Dati</h1>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin: 6px 0 0 0;">
+            Come FiscMoney protegge, rispetta e custodisce le tue informazioni finanziarie e personali.
+        </p>
+        <div style="margin-top: 10px; display: inline-flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
+            <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--accent-success); font-size: 0.72rem; font-weight: 700;">
+                🟢 Zero Rivendita a Terzi
+            </span>
+            <span class="badge-tag" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); color: var(--accent-primary); font-size: 0.72rem; font-weight: 700;">
+                🔒 Nessuna Credenziale Bancaria Richiesta
+            </span>
+            <span class="badge-tag" style="background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc; font-size: 0.72rem; font-weight: 700;">
+                ⚖️ Conforme GDPR & Diritto all'Oblio
+            </span>
+        </div>
+    </div>
+
+    <!-- 1. I Pilastri della Sicurezza -->
+    <div class="card" style="margin-bottom: 16px;">
+        <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+            <span>1. I Principi Fondamentali di FiscMoney</span>
+        </h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 14px; border-radius: 10px;">
+                <div style="font-size: 1.2rem; margin-bottom: 6px;">🏦 Nessun Accesso Diretto ai Conti</div>
+                <p style="font-size: 0.78rem; color: #cbd5e1; line-height: 1.45; margin: 0;">
+                    FiscMoney <strong>non ti chiederà mai</strong> password di home banking, PIN o codici OTP. L'inserimento dati avviene esclusivamente tramite upload manuale e volontario di estratti conto (CSV/XLSX) o file PDF (730, Cedolini).
+                </p>
+            </div>
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 14px; border-radius: 10px;">
+                <div style="font-size: 1.2rem; margin-bottom: 6px;">🚫 Zero Pubblicità o Profilazione</div>
+                <p style="font-size: 0.78rem; color: #cbd5e1; line-height: 1.45; margin: 0;">
+                    Le tue abitudini di spesa non vengono <strong>mai vendute, cedute o condivise</strong> con agenzie pubblicitarie, istituti finanziari terzi o broker di dati.
+                </p>
+            </div>
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 14px; border-radius: 10px;">
+                <div style="font-size: 1.2rem; margin-bottom: 6px;">👨‍👩‍👧‍👦 Segregazione & Privacy Familiare</div>
+                <p style="font-size: 0.78rem; color: #cbd5e1; line-height: 1.45; margin: 0;">
+                    Ogni nucleo ha un database protetto e isolato. Anche all'interno della stessa famiglia, puoi configurare la modalità di condivisione (Trasparenza Totale, Ibrida o Gestore) per tutelare la riservatezza individuale.
+                </p>
+            </div>
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 14px; border-radius: 10px;">
+                <div style="font-size: 1.2rem; margin-bottom: 6px;">🔑 Crittografia Password Robusta</div>
+                <p style="font-size: 0.78rem; color: #cbd5e1; line-height: 1.45; margin: 0;">
+                    La tua password viene cifrata con algoritmi a senso unico (<em>scrypt</em> con salt crittografico). Nessuno, nemmeno gli amministratori di sistema, può visualizzare la tua password in chiaro.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Quali dati raccogliamo e perché -->
+    <div class="card" style="margin-bottom: 16px;">
+        <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 12px;">
+            2. Tipologia di Dati Trattati e Finalità
+        </h2>
+        <p style="color: #cbd5e1; font-size: 0.82rem; line-height: 1.5; margin-bottom: 12px;">
+            I dati trattati dalla piattaforma hanno l'esclusiva finalità di erogare i servizi di pianificazione finanziaria, calcolo del Safe-to-Spend e stima delle detrazioni fiscali:
+        </p>
+        <ul style="color: #cbd5e1; font-size: 0.82rem; line-height: 1.6; padding-left: 20px; margin: 0 0 12px 0;">
+            <li><strong>Dati di Account:</strong> Nome, indirizzo email e password cifrata per l'autenticazione.</li>
+            <li><strong>Dati Transazionali:</strong> Data, importo, descrizione movimento e categoria di spesa dei file che decidi di importare.</li>
+            <li><strong>Dati Fiscali & Cedolini (Opzionali):</strong> Voci di stipendio netto, imposte o crediti 730 per il calcolo delle detrazioni e delle proiezioni previdenziali.</li>
+        </ul>
+    </div>
+
+    <!-- 3. I tuoi Diritti (GDPR) e Cancellazione -->
+    <div class="card" style="margin-bottom: 16px;">
+        <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 12px;">
+            3. I Tuoi Diritti & Diritto all'Oblio
+        </h2>
+        <p style="color: #cbd5e1; font-size: 0.82rem; line-height: 1.5; margin-bottom: 10px;">
+            In conformità al Regolamento Generale sulla Protezione dei Dati (GDPR EU 2016/679):
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="background: rgba(16, 185, 129, 0.05); border-left: 3px solid var(--accent-success); padding: 10px 14px; border-radius: 6px; font-size: 0.8rem; color: #e2e8f0;">
+                <strong>🗑️ Cancellazione Totale:</strong> Puoi richiedere in qualsiasi momento la cancellazione definitiva del tuo profilo e di tutti i movimenti registrati, senza alcuna retention nascosta.
+            </div>
+            <div style="background: rgba(56, 189, 248, 0.05); border-left: 3px solid var(--accent-primary); padding: 10px 14px; border-radius: 6px; font-size: 0.8rem; color: #e2e8f0;">
+                <strong>📦 Portabilità dei Dati:</strong> Puoi esportare i tuoi dati e i movimenti in qualsiasi momento nei formati standard.
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Contatti & Supporto -->
+    <div class="card" style="background: rgba(0,0,0,0.25); border: 1px dashed rgba(255,255,255,0.15); text-align: center; padding: 20px;">
+        <p style="color: #94a3b8; font-size: 0.82rem; margin: 0 0 10px 0;">
+            Hai domande sulla gestione della privacy o desideri richiedere informazioni sui tuoi dati?
+        </p>
+        <a href="mailto:support@fiscmoney.it" class="btn btn-secondary btn-sm" style="font-size: 0.78rem; font-weight: 700;">
+            ✉️ Contatta il Titolare del Trattamento (support@fiscmoney.it)
+        </a>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,2545 @@
+{% extends "base.html" %}
+
+{% block title %}Focus Categorie & Mutuo - FiscMoney{% endblock %}
+
+{% block content %}
+<style>
+/* Responsive Mobile & Smartphone Optimization */
+.focus-container {
+    padding: 0 12px 40px 12px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.focus-top-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.july-cockpit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+}
+
+.july-kpi-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.july-kpi-box {
+    flex: 1 1 auto;
+    min-width: 120px;
+}
+
+.sim-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: 14px;
+}
+
+.tags-grid-box,
+.focus-tags-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.tag-focus-pill {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    word-break: break-word;
+}
+
+.focus-charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.focus-qa-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.advisor-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: 12px;
+}
+
+@media (max-width: 768px) {
+    .focus-container {
+        padding: 0 6px 30px 6px !important;
+        overflow-x: hidden !important;
+    }
+    .card.focus-category-card,
+    .card.card-mortgage-hub {
+        padding: 12px 10px 28px 10px !important;
+        margin-bottom: 14px !important;
+        overflow: hidden !important;
+    }
+    .focus-top-header {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 12px !important;
+    }
+    .focus-top-actions {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+    }
+    .focus-top-switcher {
+        width: 100%;
+        display: flex;
+    }
+    .focus-top-switcher a {
+        flex: 1;
+        text-align: center;
+    }
+    .july-cockpit-header {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 14px !important;
+    }
+    .july-kpi-row {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px !important;
+        width: 100%;
+    }
+    .july-kpi-row > div:last-child {
+        grid-column: span 2;
+    }
+    .tags-grid-box,
+    .focus-tags-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+        gap: 6px !important;
+    }
+    .tag-focus-pill {
+        padding: 6px 6px !important;
+    }
+    .focus-card-header {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+    .focus-card-toolbar {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .focus-preset-group {
+        flex: 1 1 auto;
+        display: flex;
+    }
+    .focus-preset-group button {
+        flex: 1;
+        text-align: center;
+        padding: 5px 4px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .tags-grid-box,
+    .focus-tags-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 6px !important;
+    }
+    .july-kpi-row {
+        grid-template-columns: 1fr !important;
+    }
+    .july-kpi-row > div:last-child {
+        grid-column: span 1 !important;
+    }
+    .focus-progress-dates {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 4px !important;
+    }
+    .sim-header-row {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+    .sim-amount-container {
+        width: 100% !important;
+    }
+    .sim-amount-container input {
+        width: 100% !important;
+    }
+}
+
+/* Bottom-Right Expand Triangle Ribbon / Badge */
+.card-expand-corner-badge {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(37, 99, 235, 0.4));
+    border-top: 1.5px solid rgba(56, 189, 248, 0.5);
+    border-left: 1.5px solid rgba(56, 189, 248, 0.5);
+    border-top-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    padding: 3px 10px 3px 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.35);
+    color: #38bdf8;
+    font-size: 0.70rem;
+    font-weight: 800;
+    user-select: none;
+}
+.card-expand-corner-badge:hover {
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.4), rgba(37, 99, 235, 0.7));
+    color: #fff;
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.6);
+}
+.card-expand-corner-badge.is-expanded {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #94a3b8;
+}
+.corner-triangle-icon {
+    font-size: 0.75rem;
+    display: inline-block;
+    transition: transform 0.25s ease;
+    animation: bounceDown 1.8s infinite ease-in-out;
+    color: #38bdf8;
+}
+.card-expand-corner-badge.is-expanded .corner-triangle-icon {
+    animation: none;
+    color: #94a3b8;
+}
+@keyframes bounceDown {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(3px); }
+}
+</style>
+
+<div class="container-fluid focus-container">
+
+    <!-- TOP HEADER & DUAL TAB SWITCHER (CASHFLOW vs FOCUS) -->
+    <div class="focus-top-header">
+        <div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.8rem;">🎯</span>
+                <div>
+                    <h2 style="font-size: 1.4rem; font-weight: 800; color: #fff; margin: 0;">
+                        Focus Tematico & Special Hub Mutuo
+                    </h2>
+                    <p style="color: var(--text-muted); font-size: 0.82rem; margin: 2px 0 0 0;">
+                        Analisi verticale modulare per centro di costo, consumi completi per tag e simulatore ammortamento mutuo
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="focus-top-actions" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <!-- Top Dual Switcher: Cash Flow vs Focus & Mutuo -->
+            <div class="focus-top-switcher" style="display: inline-flex; background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 4px; gap: 4px; box-shadow: 0 4px 14px rgba(0,0,0,0.35);">
+                <a href="/cashflow" class="btn btn-sm" style="background: transparent; color: #94a3b8; font-weight: 600; border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; transition: all 0.2s ease;">
+                    📊 Cash Flow
+                </a>
+                <a href="/focus" class="btn btn-sm" style="background: linear-gradient(135deg, var(--accent-primary), #2563eb); color: #fff; font-weight: 700; border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);">
+                    🎯 Focus & Mutuo
+                </a>
+            </div>
+
+            <!-- Add Category to Focus Modal Button -->
+            <button type="button" onclick="openAddCategoryModal()" class="btn btn-sm" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; padding: 6px 14px;">
+                <span>➕</span> Aggiungi Categoria
+            </button>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- SPECIAL HUB: ⚖️ BILANCIO DI COPPIA & PAREGGIO SPESE COMUNI -->
+    <!-- ======================================================== -->
+    {% if couple_split_data and couple_split_data.has_couple %}
+    <div class="card" id="coupleSplitCard" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)); border: 1.5px solid rgba(234, 179, 8, 0.35); box-shadow: 0 10px 30px rgba(0,0,0,0.45); margin-bottom: 20px; border-radius: 16px; position: relative; overflow: hidden; padding: 18px 20px;">
+        <!-- Ambient glow -->
+        <div style="position: absolute; top: -50px; left: -50px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(234, 179, 8, 0.15) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
+        
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(234, 179, 8, 0.15); border: 1.5px solid rgba(234, 179, 8, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0;">
+                    ⚖️
+                </div>
+                <div>
+                    <h3 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        Bilancio di Coppia & Pareggio Spese
+                        <span class="badge-tag" style="background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.4); color: #eab308; font-size: 0.68rem; padding: 3px 8px; font-weight: 800;">
+                            🤝 ZERO LITIGI
+                        </span>
+                    </h3>
+                    <p style="color: var(--text-muted); font-size: 0.76rem; margin: 2px 0 0 0;">
+                        Confronto spese condivise anticipate da <strong style="color: #38bdf8;">{{ couple_split_data.p1.name }}</strong> e <strong style="color: #ec4899;">{{ couple_split_data.p2.name }}</strong>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Period Filter Pills -->
+            <div style="display: inline-flex; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 3px; gap: 4px; flex-wrap: wrap;">
+                <button type="button" onclick="switchCoupleSplitPreset('THIS_MONTH', this)" class="btn btn-sm couple-preset-btn active" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; background: rgba(234, 179, 8, 0.2); color: #eab308; border: none;">Questo Mese</button>
+                <button type="button" onclick="switchCoupleSplitPreset('LAST_MONTH', this)" class="btn btn-sm couple-preset-btn" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; background: transparent; color: #94a3b8; border: none;">Mese Scorso</button>
+                <button type="button" onclick="switchCoupleSplitPreset('LAST_3_MONTHS', this)" class="btn btn-sm couple-preset-btn" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; background: transparent; color: #94a3b8; border: none;">3 Mesi</button>
+                <button type="button" onclick="switchCoupleSplitPreset('YEAR', this)" class="btn btn-sm couple-preset-btn" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; background: transparent; color: #94a3b8; border: none;">Anno</button>
+                <button type="button" onclick="switchCoupleSplitPreset('ALL', this)" class="btn btn-sm couple-preset-btn" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; background: transparent; color: #94a3b8; border: none;">Tutto</button>
+            </div>
+        </div>
+
+        <!-- Tug-of-War Balance Card -->
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 16px; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                <!-- Partner 1 -->
+                <div>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                        <span style="font-size: 1.1rem;">👤</span>
+                        <span id="csP1Name" style="font-weight: 800; font-size: 0.92rem; color: #38bdf8;">{{ couple_split_data.p1.name }}</span>
+                    </div>
+                    <div id="csP1Total" style="font-size: 1.35rem; font-weight: 900; color: #fff;">{{ couple_split_data.p1_total|eur }}</div>
+                    <div id="csP1Pct" style="font-size: 0.72rem; color: #94a3b8;">{{ couple_split_data.p1_pct }}% del totale comune</div>
+                </div>
+
+                <!-- Total Shared Center Box -->
+                <div style="text-align: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 6px 14px;">
+                    <span style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; display: block;">Totale Spese Comuni</span>
+                    <span id="csTotalShared" style="font-size: 1.1rem; font-weight: 800; color: #eab308;">{{ couple_split_data.total_shared|eur }}</span>
+                </div>
+
+                <!-- Partner 2 -->
+                <div style="text-align: right;">
+                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-bottom: 2px;">
+                        <span id="csP2Name" style="font-weight: 800; font-size: 0.92rem; color: #ec4899;">{{ couple_split_data.p2.name }}</span>
+                        <span style="font-size: 1.1rem;">👩</span>
+                    </div>
+                    <div id="csP2Total" style="font-size: 1.35rem; font-weight: 900; color: #fff;">{{ couple_split_data.p2_total|eur }}</div>
+                    <div id="csP2Pct" style="font-size: 0.72rem; color: #94a3b8;">{{ couple_split_data.p2_pct }}% del totale comune</div>
+                </div>
+            </div>
+
+            <!-- Comparison Bar -->
+            <div style="width: 100%; height: 12px; background: rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden; display: flex; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);">
+                <div id="csBarP1" style="width: {{ couple_split_data.p1_pct }}%; background: linear-gradient(90deg, #0284c7, #38bdf8); transition: width 0.4s ease;"></div>
+                <div id="csBarP2" style="width: {{ couple_split_data.p2_pct }}%; background: linear-gradient(90deg, #ec4899, #f43f5e); transition: width 0.4s ease;"></div>
+            </div>
+        </div>
+
+        <!-- Settlement & Equalizer Verdict Banner -->
+        <div id="csSettlementBox" style="background: {% if couple_split_data.settlement.status == 'EQUAL' %}rgba(16, 185, 129, 0.12){% else %}rgba(234, 179, 8, 0.12){% endif %}; border: 1.5px solid {% if couple_split_data.settlement.status == 'EQUAL' %}rgba(16, 185, 129, 0.4){% else %}rgba(234, 179, 8, 0.4){% endif %}; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.3rem;">{% if couple_split_data.settlement.status == 'EQUAL' %}🎉{% else %}💡{% endif %}</span>
+                <div>
+                    <div id="csSettlementTitle" style="font-weight: 800; font-size: 0.88rem; color: #fff;">
+                        {% if couple_split_data.settlement.status == 'EQUAL' %}
+                            Siete in perfetto pareggio 50/50!
+                        {% else %}
+                            {{ couple_split_data.settlement.message }}
+                        {% endif %}
+                    </div>
+                    <div style="font-size: 0.72rem; color: #cbd5e1;">
+                        Divisione equa al 50% sulle spese di casa e famiglia registrate
+                    </div>
+                </div>
+            </div>
+
+            <div id="csSettlementBadge" style="background: #eab308; color: #000; font-weight: 900; font-size: 1.05rem; padding: 6px 14px; border-radius: 8px; box-shadow: 0 4px 12px rgba(234, 179, 8, 0.35); display: {% if couple_split_data.settlement.amount > 0 %}block{% else %}none{% endif %};">
+                {{ couple_split_data.settlement.formatted_amount if couple_split_data.settlement.amount > 0 else '' }}
+            </div>
+        </div>
+
+        <!-- Category Breakdown Matrix -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 0.78rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">
+                    📊 Confronto Dettagliato per Categoria
+                </span>
+                <span id="csTxCount" style="font-size: 0.72rem; color: var(--text-muted);">
+                    {{ couple_split_data.transactions_count }} spese condivise nel periodo
+                </span>
+            </div>
+
+            <div id="csCategoryGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 10px;">
+                {% for c in couple_split_data.categories %}
+                <div class="couple-cat-card" onclick="openCoupleCategoryDrilldown('{{ c.name }}', '{{ c.icon }}')" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: all 0.2s ease;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-weight: 700; font-size: 0.82rem; color: #fff; display: flex; align-items: center; gap: 6px;">
+                            <span>{{ c.icon }}</span> {{ c.name }}
+                            <span style="font-size: 0.65rem; color: #eab308; background: rgba(234, 179, 8, 0.12); padding: 1px 5px; border-radius: 4px; font-weight: 700;">🔍 Dettagli</span>
+                        </span>
+                        <span style="font-weight: 800; font-size: 0.85rem; color: #fff;">{{ c.total|eur }}</span>
+                    </div>
+
+                    <!-- Dual Bar for Category -->
+                    <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; display: flex; margin-bottom: 4px;">
+                        <div style="width: {{ c.p1_percent }}%; background: #38bdf8;"></div>
+                        <div style="width: {{ c.p2_percent }}%; background: #ec4899;"></div>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-muted);">
+                        <span style="color: #38bdf8;">{{ couple_split_data.p1.name.split()[0] }}: {{ c.p1_amount|eur }} ({{ c.p1_percent }}%)</span>
+                        <span style="color: #ec4899;">{{ couple_split_data.p2.name.split()[0] }}: {{ c.p2_amount|eur }} ({{ c.p2_percent }}%)</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ======================================================== -->
+    <!-- 1. SPECIAL HUB MUTUO & CREDITO IMMOBILIARE (COLLAPSIBLE)  -->
+    <!-- ======================================================== -->
+    {% if mortgage_data %}
+    <div class="card card-mortgage-hub" style="background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.12), rgba(15, 23, 42, 0.85)); border: 1.5px solid rgba(59, 130, 246, 0.35); box-shadow: 0 10px 30px rgba(0,0,0,0.4); margin-bottom: 20px; position: relative; overflow: hidden; padding: 16px 18px 24px 18px;">
+        
+        <!-- Glow highlight -->
+        <div style="position: absolute; top: -60px; right: -60px; width: 160px; height: 160px; background: rgba(59, 130, 246, 0.2); filter: blur(50px); pointer-events: none;"></div>
+
+        <!-- Header (Clickable to Expand/Collapse) -->
+        <div class="focus-card-header" id="mortgageCardHeader" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; flex-wrap: wrap; gap: 12px; cursor: pointer;" onclick="toggleMortgageCard()">
+            <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">
+                    🏠
+                </div>
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">
+                            {{ mortgage_data.mortgage.name }}
+                        </h3>
+                        <span class="badge-tag" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); font-size: 0.7rem; font-weight: 700;">
+                            {{ mortgage_data.mortgage.bank_name }}
+                        </span>
+                        {% if mortgage_data.mortgage.is_primary_residence %}
+                        <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.7rem; font-weight: 700;">
+                            ✨ Prima Casa (730 Detraibile)
+                        </span>
+                        {% endif %}
+                    </div>
+                    <!-- Live Summary Chips in Header (always visible) -->
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
+                        <span style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; font-weight: 700; color: #f87171;">
+                            🛡️ Residuo: € {{ "{:,.2f}".format(mortgage_data.simulation.current_residual_debt)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}
+                        </span>
+                        <span style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; font-weight: 700; color: #34d399;">
+                            📈 Rimborsato: {{ mortgage_data.simulation.repaid_capital_pct }}% ({{ mortgage_data.simulation.paid_installments_count }}/{{ mortgage_data.simulation.total_installments }} rate)
+                        </span>
+                        <span style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; font-weight: 700; color: #38bdf8;">
+                            💶 Rata: € {{ "{:,.2f}".format(mortgage_data.simulation.actual_installment)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}/m
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div onclick="event.stopPropagation()" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <!-- Expand / Collapse Button -->
+                <button type="button" onclick="toggleMortgageCard()" id="mortgageExpandBtn" class="btn btn-sm" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; font-weight: 800; font-size: 0.78rem; padding: 6px 14px; border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 10px rgba(14, 165, 233, 0.4); transition: all 0.2s ease;">
+                    <span id="mortgageExpandArrow">▾ Espandi Dettaglio Mutuo</span>
+                </button>
+
+                <!-- Settings Button -->
+                <button type="button" onclick="openMortgageModal()" class="btn btn-secondary btn-sm" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; padding: 5px 10px; font-size: 0.75rem;">
+                    <span>⚙️</span> Configura
+                </button>
+            </div>
+        </div>
+
+        <!-- COLLAPSIBLE MORTGAGE BODY (Initially Closed for Cleaner View) -->
+        <div id="mortgageCardBody" style="display: none; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 16px; margin-top: 14px;">
+
+        <!-- BIG PROGRESS BAR: DEBITO RIMBORSATO vs RESIDUO -->
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 16px; margin-bottom: 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Capitale Restituito ad Oggi</span>
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #34d399; margin-top: 2px;">
+                        € {{ "{:,.2f}".format(mortgage_data.simulation.total_capital_paid)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}
+                        <span style="font-size: 0.85rem; font-weight: 700; color: #94a3b8;">({{ mortgage_data.simulation.repaid_capital_pct }}%)</span>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Debito Residuo Stimato</span>
+                    <div style="font-size: 1.4rem; font-weight: 800; color: #f87171; margin-top: 2px;">
+                        € {{ "{:,.2f}".format(mortgage_data.simulation.current_residual_debt)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}
+                        <span style="font-size: 0.75rem; font-weight: 600; color: #94a3b8;">su € {{ "{:,.0f}".format(mortgage_data.mortgage.original_amount)|replace(',', '.') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Bar -->
+            <div style="background: rgba(239, 68, 68, 0.25); border-radius: 10px; height: 14px; width: 100%; overflow: hidden; border: 1px solid rgba(255,255,255,0.08); position: relative;">
+                <div style="background: linear-gradient(90deg, #10b981, #059669); height: 100%; width: {{ mortgage_data.simulation.repaid_capital_pct }}%; border-radius: 10px; transition: width 0.6s ease;"></div>
+            </div>
+
+            <div class="focus-progress-dates" style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.72rem; color: #94a3b8; flex-wrap: wrap; gap: 6px;">
+                <span>📅 Inizio: <strong>{{ mortgage_data.mortgage.start_date }}</strong></span>
+                <span>⏳ Rate: <strong>{{ mortgage_data.simulation.paid_installments_count }} pagate</strong> / {{ mortgage_data.simulation.total_installments }} totali ({{ mortgage_data.simulation.remaining_installments }} rimanenti)</span>
+                <span>🏁 Scadenza Prevista: <strong>{{ mortgage_data.simulation.end_date }}</strong></span>
+            </div>
+        </div>
+
+        <!-- UNIFIED STRATEGIC ADVISOR COCKPIT & METRICS -->
+        <div style="background: radial-gradient(circle at top left, rgba(6, 182, 212, 0.12), rgba(30, 41, 59, 0.6)); border: 1.5px solid rgba(6, 182, 212, 0.3); border-radius: var(--radius-lg); padding: 18px; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);">
+            
+            <!-- Top Row: Advisor Profile Header + Integrated Live Strategic KPI Badges -->
+            <div class="july-cockpit-header">
+                
+                <!-- Left: Advisor Profile & Role -->
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div style="position: relative; width: 54px; height: 54px; border-radius: 50%; padding: 2px; background: linear-gradient(135deg, {{ persona.badge_color if persona else '#06b6d4' }}, #8b5cf6); box-shadow: 0 0 16px rgba(6, 182, 212, 0.45); flex-shrink: 0;">
+                        <img src="{{ persona.image if persona and persona.image else '/static/images/avatars/demetrio.jpg' }}" alt="{{ persona.name if persona else 'Consulente' }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                        <span style="position: absolute; bottom: 0; right: 0; width: 14px; height: 14px; background: #10b981; border: 2px solid #0f172a; border-radius: 50%;" title="Consulente Attivo"></span>
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-size: 1.15rem; font-weight: 800; color: #fff;">{{ persona.name if persona else 'Demetrio' }}</span>
+                            <span style="font-size: 0.72rem; font-weight: 700; background: {{ persona.badge_bg if persona else 'rgba(6, 182, 212, 0.18)' }}; color: {{ persona.badge_color if persona else '#38bdf8' }}; border: 1px solid {{ persona.border_color if persona else 'rgba(6, 182, 212, 0.35)' }}; border-radius: 6px; padding: 2px 8px;">
+                                {{ persona.title if persona else 'Il Consulente Smart & Diretto' }}
+                            </span>
+                            {% if mortgage_data.mortgage.is_primary_residence %}
+                            <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.7rem; font-weight: 700;">
+                                ✨ 730 Detraibile
+                            </span>
+                            {% endif %}
+                        </div>
+                        <p style="font-size: 0.76rem; color: #cbd5e1; margin: 3px 0 0 0;">
+                            {{ persona.role_desc if persona else 'Consulenza Strategica su abbattimento debito, detrazioni fiscali 730 e opzioni surroga a zero spese' }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Right: Integrated Key Financial Pillars -->
+                <div class="july-kpi-row">
+                    
+                    <div class="july-kpi-box" style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-md); padding: 8px 14px; text-align: right;">
+                        <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Rata Mensile Attuale</span>
+                        <div style="font-size: 1.15rem; font-weight: 800; color: #fff;">
+                            € {{ "{:,.2f}".format(mortgage_data.simulation.actual_installment)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}
+                        </div>
+                        <small style="color: #60a5fa; font-size: 0.68rem; font-weight: 600;">TAN {{ mortgage_data.mortgage.annual_interest_rate }}% ({{ mortgage_data.mortgage.interest_type }})</small>
+                    </div>
+
+                    <div class="july-kpi-box" style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--radius-md); padding: 8px 14px; text-align: right;">
+                        <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Interessi Maturati</span>
+                        <div style="font-size: 1.15rem; font-weight: 800; color: #f59e0b;">
+                            € {{ "{:,.2f}".format(mortgage_data.simulation.current_year_interest)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}
+                        </div>
+                        <small style="color: #94a3b8; font-size: 0.68rem;">Anno in corso</small>
+                    </div>
+
+                    <div class="july-kpi-box" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.15)); border: 1.5px solid rgba(16, 185, 129, 0.45); border-radius: var(--radius-md); padding: 8px 14px; text-align: right; box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);">
+                        <span style="font-size: 0.68rem; color: #34d399; font-weight: 800; text-transform: uppercase;">Detrazione 730 Stimata</span>
+                        <div style="font-size: 1.25rem; font-weight: 800; color: #34d399;">
+                            +€ {{ "{:,.2f}".format(mortgage_data.tax_refund_estimated)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}
+                        </div>
+                        <small style="color: #a7f3d0; font-size: 0.68rem; font-weight: 700;">19% IRPEF (Rigo E7)</small>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Bottom Row: July's Integrated Strategic Advice Grid -->
+            <div class="advisor-grid">
+                {% for tip in mortgage_data.advisor_tips %}
+                <div class="advisor-insight-item advisor-{{ tip.type }}" style="margin: 0; background: rgba(0,0,0,0.32); border-radius: var(--radius-md);">
+                    <div class="advisor-icon">{{ tip.icon }}</div>
+                    <div class="advisor-content">
+                        <div class="advisor-title">{{ tip.title }}</div>
+                        <div class="advisor-text" style="font-size: 0.78rem;">{{ tip.text|safe }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- AMORTIZATION CHART (ESTINZIONE NEL TEMPO & DEBITO)       -->
+        <!-- ======================================================== -->
+        <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 16px; margin-top: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    <div style="font-size: 0.88rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+                        <span>📈</span> Piano di Estinzione nel Tempo & Debito Residuo
+                    </div>
+                    <div style="font-size: 0.72rem; color: #94a3b8;">
+                        Evoluzione del capitale residuo anno per anno e ripartizione tra Quota Capitale e Quota Interessi
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; font-size: 0.72rem; flex-wrap: wrap;">
+                    <span style="display: flex; align-items: center; gap: 4px; color: #60a5fa;"><span style="display: inline-block; width: 10px; height: 10px; background: #3b82f6; border-radius: 2px;"></span> Quota Capitale</span>
+                    <span style="display: flex; align-items: center; gap: 4px; color: #f87171;"><span style="display: inline-block; width: 10px; height: 10px; background: #ef4444; border-radius: 2px;"></span> Quota Interessi</span>
+                    <span style="display: flex; align-items: center; gap: 4px; color: #fbbf24;"><span style="display: inline-block; width: 12px; height: 3px; background: #fbbf24;"></span> Debito Residuo</span>
+                    <span id="legendSimLine" style="display: none; align-items: center; gap: 4px; color: #10b981; font-weight: 700;"><span style="display: inline-block; width: 12px; height: 3px; background: #10b981;"></span> Con Bonifico Extra</span>
+                </div>
+            </div>
+            <div style="height: 250px; width: 100%; position: relative;">
+                <canvas id="mortgageAmortizationChart"></canvas>
+            </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- SIMULATORE BONIFICO STRAORDINARIO (ESTINZIONE PARZIALE) -->
+        <!-- ======================================================== -->
+        <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(6, 182, 212, 0.05)); border: 1.5px solid rgba(16, 185, 129, 0.28); border-radius: var(--radius-md); padding: 18px; margin-top: 16px;">
+            <div class="sim-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.3rem;">⚡</span>
+                    <div>
+                        <h4 style="color: #34d399; font-size: 0.95rem; font-weight: 800; margin: 0;">
+                            Simulatore Bonifico Straordinario Una Tantum (Estinzione Parziale)
+                        </h4>
+                        <p style="color: #94a3b8; font-size: 0.73rem; margin: 2px 0 0 0;">
+                            Scopri quanto guadagni e come abbatti gli interessi versando una somma straordinaria alla banca.
+                        </p>
+                    </div>
+                </div>
+                <div class="sim-amount-container" style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 0.75rem; color: #cbd5e1; font-weight: 700; white-space: nowrap;">Importo Bonifico:</span>
+                    <div style="position: relative; width: 140px; flex: 1;">
+                        <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 0.8rem; font-weight: 700;">€</span>
+                        <input type="number" id="extraPayInput" value="10000" step="500" min="0" max="{{ mortgage_data.simulation.current_residual_debt }}" style="width: 100%; padding: 4px 8px 4px 22px; font-size: 0.85rem; font-weight: 800; background: #0f172a; color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 6px;" oninput="runPrepaymentSimulation()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick pills -->
+            <div style="display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; align-items: center;">
+                <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 600;">Scelta rapida:</span>
+                <button type="button" onclick="setExtraPay(2500)" class="btn btn-sm btn-extra-pill" data-amt="2500" style="background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 0.7rem; padding: 2px 8px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">+ € 2.500</button>
+                <button type="button" onclick="setExtraPay(5000)" class="btn btn-sm btn-extra-pill" data-amt="5000" style="background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 0.7rem; padding: 2px 8px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">+ € 5.000</button>
+                <button type="button" onclick="setExtraPay(10000)" class="btn btn-sm btn-extra-pill active-pill" data-amt="10000" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 6px;">+ € 10.000</button>
+                <button type="button" onclick="setExtraPay(20000)" class="btn btn-sm btn-extra-pill" data-amt="20000" style="background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 0.7rem; padding: 2px 8px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">+ € 20.000</button>
+                <button type="button" onclick="setExtraPay(30000)" class="btn btn-sm btn-extra-pill" data-amt="30000" style="background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 0.7rem; padding: 2px 8px; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">+ € 30.000</button>
+            </div>
+
+            <!-- Comparative Strategy Results Grid -->
+            <div class="sim-results-grid">
+                
+                <!-- Strategy A: Riduzione Durata (Max Risparmio Interessi) -->
+                <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: var(--radius-md); padding: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                        <div style="font-size: 0.84rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+                            <span>🚀</span> Strategia A: Riduci la Durata (Stessa Rata)
+                        </div>
+                        <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 0.65rem; font-weight: 800; padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.4);">
+                            CONSIGLIATO (MAX RISPARMIO)
+                        </span>
+                    </div>
+                    <p style="font-size: 0.72rem; color: #94a3b8; margin: 0 0 10px 0;">
+                        Mantieni la rata mensile invariata a <strong>€ {{ "{:,.2f}".format(mortgage_data.simulation.actual_installment)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}</strong> ed estingui il mutuo prima del previsto.
+                    </p>
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+                            <span style="color: #cbd5e1;">Anticipo Estinzione:</span>
+                            <strong id="simStratA_earlyTime" style="color: #38bdf8; font-size: 0.9rem;">-</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+                            <span style="color: #cbd5e1;">Nuova Data Fine Mutuo:</span>
+                            <strong id="simStratA_newEndDate" style="color: #fff;">-</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px; margin-top: 2px;">
+                            <span style="color: #34d399; font-weight: 700;">Totale Interessi Risparmiati:</span>
+                            <strong id="simStratA_interestSaved" style="color: #34d399; font-size: 1.05rem; font-weight: 800;">+ € 0,00</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strategy B: Riduzione Rata Mensile (Migliora Cash Flow Immediato) -->
+                <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: var(--radius-md); padding: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                        <div style="font-size: 0.84rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+                            <span>💰</span> Strategia B: Riduci la Rata (Stessa Durata)
+                        </div>
+                        <span style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-size: 0.65rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(59, 130, 246, 0.3);">
+                            PER CASH FLOW MENSILE
+                        </span>
+                    </div>
+                    <p style="font-size: 0.72rem; color: #94a3b8; margin: 0 0 10px 0;">
+                        Mantieni la data di fine mutuo a <strong>{{ mortgage_data.simulation.end_date }}</strong> ma riduci immediatamente la spesa mensile.
+                    </p>
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+                            <span style="color: #cbd5e1;">Nuova Rata Mensile:</span>
+                            <strong id="simStratB_newInstallment" style="color: #60a5fa; font-size: 0.9rem;">-</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+                            <span style="color: #cbd5e1;">Liquidità Liberata al Mese:</span>
+                            <strong id="simStratB_monthlySavings" style="color: #38bdf8;">-</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px; margin-top: 2px;">
+                            <span style="color: #60a5fa; font-weight: 700;">Totale Interessi Risparmiati:</span>
+                            <strong id="simStratB_interestSaved" style="color: #60a5fa; font-size: 1.05rem; font-weight: 800;">+ € 0,00</strong>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ADVISOR PRACTICAL GUIDANCE & BREAK-EVEN ANALYSIS BOX -->
+            <div style="background: rgba(0,0,0,0.38); border: 1.5px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 16px; margin-top: 14px;">
+                
+                <!-- Top: Advisor Voice Header -->
+                <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 10px;">
+                    <div style="position: relative; width: 44px; height: 44px; border-radius: 50%; padding: 2px; background: linear-gradient(135deg, {{ persona.badge_color if persona else '#38bdf8' }}, #8b5cf6); flex-shrink: 0;">
+                        <img src="{{ persona.image if persona and persona.image else '/static/images/avatars/demetrio.jpg' }}" alt="{{ persona.name if persona else 'Consulente' }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                    </div>
+                    <div>
+                        <div style="font-size: 0.92rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+                            <span>💡</span> Guida Operativa di {{ persona.name if persona else 'Demetrio' }}: Come Muoverti con la Banca
+                        </div>
+                        <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 2px;">
+                            Consigli pratici su rimodulazione, normativa Bersani e analisi del punto di pareggio finanziario.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2-Column Guidance: Prassi Bancaria on Left + Punto di Pareggio on Right -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px;">
+                    
+                    <!-- Left: Regole e Prassi Bancaria -->
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 12px;">
+                        <div style="font-size: 0.78rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                            <span>📜</span> Regole & Contatto con la Banca
+                        </div>
+                        <ul style="margin: 0; padding-left: 18px; font-size: 0.75rem; color: #cbd5e1; display: flex; flex-direction: column; gap: 5px;">
+                            <li><strong>Simulazione Indicativa:</strong> I calcoli sono teorici. La banca calcolerà l'esatto conteggio considerando i giorni di rateo interessi maturati alla data del bonifico.</li>
+                            <li><strong>Zero Penali (L. Bersani 40/2007):</strong> Per legge, i mutui stipulati da persone fisiche non hanno alcun costo o penale di estinzione parziale o totale.</li>
+                            <li><strong>Cosa Chiedere alla Filiale:</strong> Richiedi per iscritto il <em>"Modulo di Estinzione Anticipata Parziale con ricalcolo del piano di ammortamento"</em> specificando se desideri ridurre la durata (Strat. A) o la rata (Strat. B).</li>
+                        </ul>
+                    </div>
+
+                    <!-- Right: Analisi Punto di Pareggio (Break-Even) & Rendimento -->
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 12px;">
+                        <div style="font-size: 0.78rem; font-weight: 800; color: #34d399; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                            <span>⚖️</span> Punto di Pareggio & Rendimento
+                        </div>
+                        <div style="font-size: 0.73rem; color: #cbd5e1; margin-bottom: 8px;">
+                            Conviene versare il bonifico alla banca o tenere la liquidità investita?
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.74rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 5px 8px; border-radius: 6px;">
+                                <span style="color: #94a3b8;">Rientro Capitale (Strategia B):</span>
+                                <strong id="simBreakEven_payback" style="color: #38bdf8;">-</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 5px 8px; border-radius: 6px;">
+                                <span style="color: #94a3b8;">Rendimento Netto Esentasse:</span>
+                                <strong id="simBreakEven_yield" style="color: #34d399;">TAN {{ mortgage_data.mortgage.annual_interest_rate }}% Garantito</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); padding: 5px 8px; border-radius: 6px;">
+                                <span style="color: #94a3b8;">ROI Risparmio (Strategia A):</span>
+                                <strong id="simBreakEven_roi" style="color: #fbbf24;">-</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- EXPANDABLE "TERRA-TERRA" EDUCATIONAL INFO POINT -->
+                <div style="margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
+                    <button type="button" onclick="toggleDrawer('terraTerraGuideDrawer', 'terraTerraGuideArrow')" style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 8px 12px; width: 100%; display: flex; justify-content: space-between; align-items: center; cursor: pointer; text-align: left; transition: all 0.2s ease;">
+                        <span style="font-size: 0.78rem; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+                            <span>📖</span> <span>Info Point del Consulente: Spiegazione "Terra-Terra" su cosa conviene fare</span>
+                        </span>
+                        <span id="terraTerraGuideArrow" style="font-size: 0.72rem; color: #38bdf8; transition: transform 0.2s ease;">▶ Clicca per approfondire</span>
+                    </button>
+
+                    <div id="terraTerraGuideDrawer" style="display: none; margin-top: 10px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 14px; font-size: 0.78rem; color: #cbd5e1; line-height: 1.55;">
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 14px;">
+                            
+                            <!-- Card 1: Il rendimento spiegato semplice -->
+                            <div style="background: rgba(0,0,0,0.3); border-left: 3px solid #34d399; padding: 10px 12px; border-radius: 6px;">
+                                <strong style="color: #34d399; font-size: 0.82rem; display: block; margin-bottom: 4px;">
+                                    1. 🛡️ Perché estinguere il mutuo è come investire a tasso garantito?
+                                </strong>
+                                <p style="margin: 0 0 6px 0;">
+                                    Quando restituisci soldi alla banca, <strong>elimini per sempre gli interessi</strong> su quella somma. Se il mutuo ha un tasso del <strong>{{ mortgage_data.mortgage.annual_interest_rate }}%</strong>, ogni euro rimborsato ti "rende" esattamente il {{ mortgage_data.mortgage.annual_interest_rate }}% netto, sicuro al 100% e senza dover pagare il 26% o 12,5% di tasse allo Stato.
+                                </p>
+                                <span style="font-size: 0.72rem; color: #94a3b8;">
+                                    👉 <em>Regola:</em> Se un BTP o un conto deposito ti offre meno del tasso del mutuo (al lordo delle tasse), ti rende di più abbattere il mutuo.
+                                </span>
+                            </div>
+
+                            <!-- Card 2: Come funziona il tempo di rientro -->
+                            <div style="background: rgba(0,0,0,0.3); border-left: 3px solid #38bdf8; padding: 10px 12px; border-radius: 6px;">
+                                <strong style="color: #38bdf8; font-size: 0.82rem; display: block; margin-bottom: 4px;">
+                                    2. ⏳ Come leggere il "Rientro Capitale" (Payback)?
+                                </strong>
+                                <p style="margin: 0 0 6px 0;">
+                                    Se scegli di <strong>ridurre la rata</strong>, dal mese prossimo pagherai meno (es. risparmi 126 €/mese). Il punto di pareggio indica in quanti mesi il risparmio mensile accumulato nel tuo conto eguaglierà l'intero importo del bonifico.
+                                </p>
+                                <span style="font-size: 0.72rem; color: #94a3b8;">
+                                    👉 Raggiunto quel mese, hai recuperato tutti i soldi anticipati e continui a pagare la rata ridotta fino alla fine.
+                                </span>
+                            </div>
+
+                            <!-- Card 3: Quale strategia scegliere -->
+                            <div style="background: rgba(0,0,0,0.3); border-left: 3px solid #fbbf24; padding: 10px 12px; border-radius: 6px;">
+                                <strong style="color: #fbbf24; font-size: 0.82rem; display: block; margin-bottom: 4px;">
+                                    3. 🚀 Strategia A (Riduci Anni) vs Strategia B (Riduci Rata): Cosa scegliere?
+                                </strong>
+                                <ul style="margin: 0; padding-left: 14px; display: flex; flex-direction: column; gap: 4px;">
+                                    <li><strong>Scegli Strategia A:</strong> Se vuoi massimizzare il risparmio monetario assoluto (tagli via gli anni finali che costano più interessi).</li>
+                                    <li><strong>Scegli Strategia B:</strong> Se preferisci avere più stipendio disponibile a fine mese da subito per spese familiari o serenità.</li>
+                                </ul>
+                            </div>
+
+                            <!-- Card 4: Quando NON conviene estinguere -->
+                            <div style="background: rgba(0,0,0,0.3); border-left: 3px solid #f87171; padding: 10px 12px; border-radius: 6px;">
+                                <strong style="color: #f87171; font-size: 0.82rem; display: block; margin-bottom: 4px;">
+                                    4. ⚠️ Quando NON conviene fare il bonifico alla banca?
+                                </strong>
+                                <ul style="margin: 0; padding-left: 14px; display: flex; flex-direction: column; gap: 4px;">
+                                    <li><strong>Fondo di Emergenza:</strong> Non usare mai tutti i tuoi risparmi per il mutuo. Tieni sempre da parte almeno 3-6 mesi di spese sul conto.</li>
+                                    <li><strong>Tassi bassi:</strong> Se hai un mutuo a tasso fisso all'1% o 1.5%, lasciarli in un BTP o conto deposito al 3.5% rende di più del costo del mutuo!</li>
+                                </ul>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- RECONCILED BANK PAYMENTS ACCORDION -->
+        {% if mortgage_data.actual_txs|length > 0 %}
+        <div style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
+            <div onclick="toggleDrawer('mutuoTxsDrawer', 'mutuoTxsArrow')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none;">
+                <div style="font-size: 0.78rem; color: #60a5fa; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                    <span>🧾</span> Visualizza rate rilevate dagli estratti conto bancari ({{ mortgage_data.actual_txs|length }} rate • Totale: € {{ "{:,.2f}".format(mortgage_data.actual_paid_sum)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }})
+                </div>
+                <span id="mutuoTxsArrow" style="font-size: 0.7rem; color: #94a3b8; transition: transform 0.2s ease;">▶</span>
+            </div>
+
+            <div id="mutuoTxsDrawer" style="display: none; margin-top: 10px; background: rgba(0,0,0,0.35); border-radius: 8px; padding: 10px;">
+                <div style="display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto;">
+                    {% for atx in mortgage_data.actual_txs %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.78rem;">
+                        <div>
+                            <span style="color: #fff; font-weight: 600;">{{ atx.description }}</span>
+                            <span style="color: #94a3b8; font-size: 0.7rem; margin-left: 6px;">📅 {{ atx.date }}</span>
+                        </div>
+                        <div style="color: #f87171; font-weight: 700;">
+                            -€ {{ "{:,.2f}".format(atx.amount)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        </div><!-- End mortgageCardBody -->
+
+        <!-- Bottom-Right Expand Triangle Ribbon / Badge (Invito all'apertura su smartphone e desktop) -->
+        <div id="cornerExpandBadge_mortgage" class="card-expand-corner-badge" onclick="event.stopPropagation(); toggleMortgageCard();" title="Tocca per espandere / chiudere i dettagli">
+            <span id="cornerExpandText_mortgage" class="corner-expand-text">Tocca per espandere</span>
+            <span id="cornerExpandIcon_mortgage" class="corner-triangle-icon">▼</span>
+        </div>
+    </div>
+    {% else %}
+    <div class="card" style="background: rgba(15, 23, 42, 0.6); border: 1.5px dashed rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">🏠</div>
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 6px;">Nessun Mutuo o Finanziamento Attivo</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem; max-width: 520px; margin: 0 auto 16px auto;">
+            Traccia il piano di ammortamento alla francese, calcola in tempo reale la detrazione 730 degli interessi passivi e simula estinzioni parziali o surroghe con un click.
+        </p>
+        <button type="button" class="btn btn-primary btn-sm" onclick="openMortgageModal()" style="font-weight: 700; border-radius: 8px; padding: 8px 18px; display: inline-flex; align-items: center; gap: 6px;">
+            <span>➕</span> <span>Configura Mutuo / Finanziamento</span>
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- ======================================================== -->
+    <!-- 2. MODULAR VERTICAL CATEGORY CARDS (WITH INDEPENDENT TIMEFRAME) -->
+    <!-- ======================================================== -->
+    {% if categories_data|length > 0 %}
+        {% for cat in categories_data %}
+        {% set card_idx = loop.index %}
+        <div class="card focus-category-card" id="cardContainer_{{ card_idx }}" data-cat-name="{{ cat.category_name }}" data-card-idx="{{ card_idx }}" style="position: relative; background: rgba(15, 23, 42, 0.7); border: 1.5px solid var(--border-color); border-left: 5px solid {{ cat.color }}; margin-bottom: 16px; padding: 14px 18px 28px 18px; transition: all 0.3s ease;">
+            
+            <!-- Remove Card Button (Always positioned safely in the TOP-RIGHT corner) -->
+            <form method="POST" action="/focus/categories/toggle" style="margin: 0; position: absolute; top: 12px; right: 12px; z-index: 5;" onclick="event.stopPropagation();">
+                <input type="hidden" name="category_name" value="{{ cat.category_name }}">
+                <input type="hidden" name="action" value="remove">
+                <button type="submit" class="btn btn-secondary btn-sm" title="Rimuovi card dal focus" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #94a3b8; width: 26px; height: 26px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; font-size: 0.75rem;">
+                    ✕
+                </button>
+            </form>
+
+            <!-- Category Header & Independent Timeframe Toolbar (Click header to Expand/Collapse) -->
+            <div class="focus-card-header" id="cardHeader_{{ card_idx }}" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; flex-wrap: wrap; gap: 12px; cursor: pointer; padding-right: 36px;" onclick="toggleCategoryCard('{{ card_idx }}')">
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <span style="font-size: 1.6rem;">{{ cat.icon }}</span>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">
+                                Focus: {{ cat.category_name }}
+                            </h3>
+                            <span id="presetBadge_{{ card_idx }}" class="badge-tag" style="background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 0.72rem; font-weight: 700;">
+                                {{ cat.preset_label }}
+                            </span>
+                        </div>
+                        <!-- Live Summary Chips in Header (always visible) -->
+                        <div id="cardSummaryPreview_{{ card_idx }}" style="display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
+                            <span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; font-weight: 700; color: #fff;">
+                                💳 Tot: <span id="hdrTot_{{ card_idx }}">€ {{ "{:,.2f}".format(cat.total_spent)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}</span>
+                            </span>
+                            <span style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 6px; padding: 2px 8px; font-size: 0.75rem; font-weight: 700; color: #38bdf8;">
+                                📊 Med: <span id="hdrAvg_{{ card_idx }}">€ {{ "{:,.2f}".format(cat.monthly_avg)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}/m</span>
+                            </span>
+                            <span style="color: var(--text-muted); font-size: 0.72rem;">
+                                (<span id="hdrCnt_{{ card_idx }}">{{ cat.tx_count }}</span> mov.)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Header Actions: Expand/Collapse CTA (stopPropagation prevents triggering header click) -->
+                <div class="focus-card-header-actions" onclick="event.stopPropagation()" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <!-- Expand / Collapse Action Button -->
+                    <button type="button" onclick="toggleCategoryCard('{{ card_idx }}')" id="cardExpandBtn_{{ card_idx }}" class="btn btn-sm" style="background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff; font-weight: 800; font-size: 0.76rem; padding: 5px 12px; border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.4); transition: all 0.2s ease;">
+                        <span id="cardExpandArrow_{{ card_idx }}">▾ Espandi Dettaglio</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- COLLAPSIBLE CARD BODY (Initially Closed for Cleaner View) -->
+            <div id="cardBody_{{ card_idx }}" class="focus-card-body" style="display: none; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 16px; margin-top: 14px;">
+                
+                <!-- Independent Timeframe Filter Bar (Only visible when card is expanded) -->
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 8px 12px; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                    <div style="font-size: 0.76rem; font-weight: 700; color: #cbd5e1; display: flex; align-items: center; gap: 6px;">
+                        <span>⏱️</span> <span>Filtro Temporale Analisi:</span>
+                    </div>
+
+                    <div class="focus-card-toolbar" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <!-- Preset pills for this card -->
+                        <div class="focus-preset-group" style="display: inline-flex; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 2px;">
+                            <button type="button" onclick="updateCardTimeframe('{{ card_idx }}', '{{ cat.category_name }}', '2M')" class="btn btn-sm btn-preset-pill btn-preset-{{ card_idx }} {% if cat.preset == '2M' %}active-pill{% endif %}" data-preset="2M" style="font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border: none; border-radius: 6px;">
+                                2M
+                            </button>
+                            <button type="button" onclick="updateCardTimeframe('{{ card_idx }}', '{{ cat.category_name }}', '6M')" class="btn btn-sm btn-preset-pill btn-preset-{{ card_idx }} {% if cat.preset == '6M' %}active-pill{% endif %}" data-preset="6M" style="font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border: none; border-radius: 6px;">
+                                6M
+                            </button>
+                            <button type="button" onclick="updateCardTimeframe('{{ card_idx }}', '{{ cat.category_name }}', '12M')" class="btn btn-sm btn-preset-pill btn-preset-{{ card_idx }} {% if cat.preset == '12M' %}active-pill{% endif %}" data-preset="12M" style="font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border: none; border-radius: 6px;">
+                                1 Anno
+                            </button>
+                            <button type="button" onclick="updateCardTimeframe('{{ card_idx }}', '{{ cat.category_name }}', 'ALL')" class="btn btn-sm btn-preset-pill btn-preset-{{ card_idx }} {% if cat.preset == 'ALL' %}active-pill{% endif %}" data-preset="ALL" style="font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border: none; border-radius: 6px;">
+                                Tutto
+                            </button>
+                        </div>
+
+                        <!-- Custom Range Dropdowns for this card -->
+                        <div style="display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 2px 6px; flex-wrap: wrap;">
+                            <span style="font-size: 0.68rem; color: #94a3b8;">Da:</span>
+                            <select id="fromYm_{{ card_idx }}" style="padding: 2px 4px; font-size: 0.72rem; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px;">
+                                {% for m in available_months|reverse %}
+                                <option value="{{ m.ym if m.ym is defined else m }}" {% if (m.ym if m.ym is defined else m) == cat.from_ym %}selected{% endif %}>
+                                    {{ m.label if m.label is defined else m }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <span style="font-size: 0.68rem; color: #94a3b8;">A:</span>
+                            <select id="toYm_{{ card_idx }}" style="padding: 2px 4px; font-size: 0.72rem; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 4px;">
+                                {% for m in available_months %}
+                                <option value="{{ m.ym if m.ym is defined else m }}" {% if (m.ym if m.ym is defined else m) == cat.to_ym %}selected{% endif %}>
+                                    {{ m.label if m.label is defined else m }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" onclick="applyCustomCardRange('{{ card_idx }}', '{{ cat.category_name }}')" style="background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(59, 130, 246, 0.5); color: #60a5fa; font-size: 0.7rem; padding: 3px 8px; border-radius: 4px; font-weight: 700; cursor: pointer;">
+                                🔍
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- CARD METRICS SUMMARY & DIRECT Q&A BOXES -->
+                <div class="focus-qa-grid">
+                    
+                    <!-- Main Spend Pill -->
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 12px 14px;">
+                        <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">
+                            Spesa Totale nel Periodo
+                        </div>
+                        <div id="totSpent_{{ card_idx }}" style="font-size: 1.4rem; font-weight: 800; color: #fff; margin-top: 2px;">
+                            € {{ "{:,.2f}".format(cat.total_spent)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}
+                        </div>
+                        <small id="avgSpent_{{ card_idx }}" style="color: #94a3b8; font-size: 0.72rem; display: block; margin-top: 2px;">
+                            Media: € {{ "{:,.2f}".format(cat.monthly_avg)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}/mese ({{ cat.tx_count }} movimenti)
+                        </small>
+                    </div>
+
+                    <!-- Direct Answers -->
+                    {% for ans in cat.answers %}
+                    <div class="qna-box-{{ card_idx }}" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 12px 14px;">
+                        <div style="font-size: 0.74rem; color: #cbd5e1; font-weight: 700;">
+                            {{ ans.question }}
+                        </div>
+                        <div style="font-size: 1.3rem; font-weight: 800; color: {{ cat.color }}; margin: 3px 0 1px 0;">
+                            {{ ans.answer }}
+                        </div>
+                        <small style="color: #94a3b8; font-size: 0.7rem; display: block;">
+                            {{ ans.detail }}
+                        </small>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- ======================================================== -->
+                <!-- ALL TAGS COMPLETE ANALYSIS MATRIX                        -->
+                <!-- ======================================================== -->
+                <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <div style="font-size: 0.82rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+                            <span>🏷️</span> Mappatura Completa dei Tag di "{{ cat.category_name }}"
+                        </div>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">
+                            💡 Clicca su un tag per filtrare l'elenco movimenti in basso
+                        </span>
+                    </div>
+
+                    <!-- Complete Grid of All Standard + Custom Tags -->
+                    <div class="tags-grid-box" id="tagsGrid_{{ card_idx }}">
+                        {% for tg in cat.all_tags_analysis %}
+                        <div onclick="filterDrawerByTag('drawer_{{ card_idx }}', '{{ tg.code }}', this)" 
+                             class="tag-focus-pill"
+                             style="background: {% if tg.has_activity %}rgba(255,255,255,0.04){% else %}rgba(0,0,0,0.2){% endif %}; border: 1px solid {% if tg.has_activity %}rgba(255,255,255,0.1){% else %}rgba(255,255,255,0.03){% endif %}; border-left: 3px solid {% if tg.has_activity %}{{ cat.color }}{% else %}#475569{% endif %}; border-radius: 8px; padding: 6px 8px; cursor: pointer; transition: all 0.2s ease; min-width: 0; box-sizing: border-box;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 4px; min-width: 0;">
+                                <span style="font-size: 0.74rem; font-weight: 700; color: {% if tg.has_activity %}#fff{% else %}#64748b{% endif %}; display: flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    <span style="flex-shrink: 0;">{{ tg.icon }}</span> <span style="overflow: hidden; text-overflow: ellipsis;">{{ tg.label }}</span>
+                                </span>
+                                <span style="font-size: 0.62rem; color: #94a3b8; font-weight: 600; flex-shrink: 0; white-space: nowrap;">
+                                    {{ tg.tx_count }} mov.
+                                </span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 4px; min-width: 0;">
+                                <div style="min-width: 0; overflow: hidden;">
+                                    <span style="font-size: 0.88rem; font-weight: 800; color: {% if tg.has_activity %}#38bdf8{% else %}#475569{% endif %}; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        € {{ "{:,.2f}".format(tg.total_amount)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}
+                                    </span>
+                                    <span style="font-size: 0.64rem; color: #94a3b8; font-weight: 600; display: block; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        Med: € {{ "{:,.2f}".format(tg.monthly_avg)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}/m
+                                    </span>
+                                </div>
+                                <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600; flex-shrink: 0;">
+                                    {{ tg.percent }}%
+                                </span>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                                <div style="background: {{ cat.color }}; height: 100%; width: {{ tg.percent }}%;"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- ======================================================== -->
+                <!-- CHARTS & SUBCATEGORY VISUALIZATION                       -->
+                <!-- ======================================================== -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; margin-bottom: 16px;">
+                    
+                    <!-- Monthly Trend Stacked Bar Chart -->
+                    <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px;">
+                        <div style="font-size: 0.8rem; font-weight: 700; color: #fff; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span>📊</span> <span>Evoluzione Mensile Spesa</span>
+                            </div>
+                            <span style="font-size: 0.65rem; color: #38bdf8; font-weight: 700; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 4px; padding: 2px 6px;">
+                                ⚡ Mese in corso
+                            </span>
+                        </div>
+                        <div style="position: relative; width: 100%; height: 180px;">
+                            <canvas id="barChart_{{ card_idx }}"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Donut Breakdown by Subcategory -->
+                    <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px;">
+                        <div style="font-size: 0.8rem; font-weight: 700; color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                            <span>🍩</span> Ripartizione Sotto-voci
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="position: relative; width: 130px; height: 130px; flex-shrink: 0;">
+                                <canvas id="donutChart_{{ card_idx }}"></canvas>
+                            </div>
+                            <div id="subcatList_{{ card_idx }}" style="flex: 1; display: flex; flex-direction: column; gap: 4px; max-height: 140px; overflow-y: auto;">
+                                {% for s in cat.subcat_breakdown %}
+                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem;">
+                                    <span style="color: #cbd5e1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;" title="{{ s.name }}">
+                                        {{ s.name }}
+                                    </span>
+                                    <span style="color: #fff; font-weight: 700;">
+                                        € {{ "{:,.2f}".format(s.amount)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }} ({{ s.percent }}%)
+                                    </span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ======================================================== -->
+                <!-- RECENT TRANSACTIONS ACCORDION IN THIS CATEGORY           -->
+                <!-- ======================================================== -->
+                {% if cat.transactions|length > 0 %}
+                <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+                    <div onclick="toggleDrawer('drawer_{{ card_idx }}', 'arrow_{{ card_idx }}')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none;">
+                        <div style="font-size: 0.76rem; color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                            <span>🧾</span> Visualizza movimenti recenti ({{ cat.transactions|length }} transazioni)
+                        </div>
+                        <span id="arrow_{{ card_idx }}" style="font-size: 0.68rem; color: #94a3b8; transition: transform 0.2s ease;">▶</span>
+                    </div>
+
+                    <div id="drawer_{{ card_idx }}" style="display: none; margin-top: 8px; background: rgba(0,0,0,0.35); border-radius: 8px; padding: 8px 12px;">
+                        <div id="txsList_{{ card_idx }}" style="display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto;">
+                            {% for tx in cat.transactions %}
+                            <div class="tx-row-item" data-tags="{{ tx.tags }}" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.76rem;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="color: #94a3b8; font-size: 0.7rem;">{{ tx.date }}</span>
+                                    <strong style="color: #fff;">{{ tx.description }}</strong>
+                                    <span class="badge-tag" style="background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 0.65rem;">{{ tx.subcategory }}</span>
+                                    {% if tx.tags %}<span style="color: #60a5fa; font-size: 0.68rem;">{{ tx.tags }}</span>{% endif %}
+                                </div>
+                                <span style="color: #f87171; font-weight: 700;">
+                                    -€ {{ "{:,.2f}".format(tx.amount)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div><!-- End cardBody_{{ card_idx }} -->
+
+            <!-- Bottom-Right Expand Triangle Ribbon / Badge (Invito all'apertura su smartphone e desktop) -->
+            <div id="cornerExpandBadge_{{ card_idx }}" class="card-expand-corner-badge" onclick="event.stopPropagation(); toggleCategoryCard('{{ card_idx }}');" title="Tocca per espandere / chiudere i dettagli">
+                <span id="cornerExpandText_{{ card_idx }}" class="corner-expand-text">Tocca per espandere</span>
+                <span id="cornerExpandIcon_{{ card_idx }}" class="corner-triangle-icon">▼</span>
+            </div>
+
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="card" style="text-align: center; padding: 40px 20px; background: rgba(15, 23, 42, 0.5);">
+            <span style="font-size: 2.5rem; display: block; margin-bottom: 10px;">🎯</span>
+            <h3 style="color: #fff; font-size: 1.1rem; font-weight: 700;">Nessuna Categoria Aggiunta al Focus</h3>
+            <p style="color: #94a3b8; font-size: 0.82rem; max-width: 440px; margin: 6px auto 16px auto;">
+                Personalizza il tuo cruscotto aggiungendo le macro-categorie su cui desideri effettuare un'analisi verticale periodica.
+            </p>
+            <button type="button" onclick="openAddCategoryModal()" class="btn btn-primary btn-sm">
+                ➕ Aggiungi Categoria al Focus
+            </button>
+        </div>
+    {% endif %}
+
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: CONFIGURA PARAMETRI MUTUO                         -->
+<!-- ======================================================== -->
+<div id="mortgageConfigModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 520px;">
+        <div class="modal-header">
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+                <span>⚙️</span> Parametri Contrattuali Mutuo
+            </h3>
+            <button class="modal-close" onclick="closeMortgageModal()">&times;</button>
+        </div>
+        
+        <form action="/focus/mortgage/save" method="POST">
+            <div class="form-group">
+                <label for="mName">Nome Mutuo / Descrizione *</label>
+                <input type="text" id="mName" name="name" class="form-control" value="{{ mortgage_data.mortgage.name if mortgage_data else 'Mutuo Prima Casa' }}" placeholder="es. Mutuo Prima Casa" required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label for="mBank">Istituto Bancario / Erogante</label>
+                    <input type="text" id="mBank" name="bank_name" class="form-control" value="{{ mortgage_data.mortgage.bank_name if mortgage_data else '' }}" placeholder="es. Intesa Sanpaolo" required>
+                </div>
+                <div class="form-group">
+                    <label for="mOrigAmt">Importo Originale Finanziato (€) *</label>
+                    <input type="number" step="0.01" id="mOrigAmt" name="original_amount" class="form-control" value="{{ mortgage_data.mortgage.original_amount if mortgage_data else '' }}" placeholder="es. 180000" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label for="mStartDate">Data Inizio Mutuo *</label>
+                    <input type="date" id="mStartDate" name="start_date" class="form-control" value="{{ mortgage_data.mortgage.start_date if mortgage_data else '' }}" required>
+                    <small style="color: #94a3b8; font-size: 0.68rem;">Anche antecedente agli estratti conto importati.</small>
+                </div>
+                <div class="form-group">
+                    <label for="mDuration">Durata Totale (Anni) *</label>
+                    <input type="number" step="1" id="mDuration" name="duration_years" class="form-control" value="{{ ((mortgage_data.mortgage.duration_months / 12)|round|int) if mortgage_data else 25 }}" placeholder="25" required>
+                    <small style="color: #94a3b8; font-size: 0.68rem;">es. 20, 25 o 30 anni.</small>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label for="mRate">Tasso Attuale (TAN in %) *</label>
+                    <input type="number" step="0.01" id="mRate" name="annual_interest_rate" class="form-control" value="{{ mortgage_data.mortgage.annual_interest_rate if mortgage_data else 3.20 }}" placeholder="3.20" required>
+                </div>
+                <div class="form-group">
+                    <label for="mType">Tipologia Tasso</label>
+                    <select id="mType" name="interest_type" class="form-control" style="background: #1e293b; color: #fff;">
+                        <option value="FIXED" {% if not mortgage_data or mortgage_data.mortgage.interest_type == 'FIXED' %}selected{% endif %}>🔒 Tasso Fisso</option>
+                        <option value="VARIABLE" {% if mortgage_data and mortgage_data.mortgage.interest_type == 'VARIABLE' %}selected{% endif %}>⚡ Tasso Variabile</option>
+                        <option value="CAP" {% if mortgage_data and mortgage_data.mortgage.interest_type == 'CAP' %}selected{% endif %}>🛡️ Variabile con CAP</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="mInst">Importo Rata Mensile Corrente (€) *</label>
+                <input type="number" step="0.01" id="mInst" name="monthly_installment" class="form-control" value="{{ mortgage_data.mortgage.monthly_installment if mortgage_data else '' }}" placeholder="es. 750.00" required>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.85rem;">
+                    <input type="checkbox" name="is_primary_residence" value="1" {% if not mortgage_data or mortgage_data.mortgage.is_primary_residence %}checked{% endif %}>
+                    <span>🏠 Si tratta di mutuo per acquisto Prima Casa (abilita detrazione 19% 730)</span>
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" onclick="closeMortgageModal()" style="width: 40%;">Annulla</button>
+                <button type="submit" class="btn btn-primary" style="width: 60%;">Salva Parametri Mutuo</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: AGGIUNGI CATEGORIA AL FOCUS                       -->
+<!-- ======================================================== -->
+<div id="addCategoryModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 460px;">
+        <div class="modal-header">
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+                <span>➕</span> Aggiungi Categoria al Focus
+            </h3>
+            <button class="modal-close" onclick="closeAddCategoryModal()">&times;</button>
+        </div>
+        
+        <p style="color: #94a3b8; font-size: 0.8rem; margin: 0 0 14px 0;">
+            Seleziona una delle macro-categorie per aggiungere la card interattiva con grafici e drill-down al tuo cruscotto:
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            {% for c_name, c_meta in all_macro_categories.items() %}
+            <form method="POST" action="/focus/categories/toggle" style="margin: 0;">
+                <input type="hidden" name="category_name" value="{{ c_name }}">
+                <input type="hidden" name="action" value="add">
+                <button type="submit" class="btn btn-secondary" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-left: 4px solid {{ c_meta.color }}; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">{{ c_meta.icon }}</span>
+                        <strong style="color: #fff; font-size: 0.88rem;">{{ c_name }}</strong>
+                    </div>
+                    <span style="color: #34d399; font-size: 0.75rem; font-weight: 700;">
+                        {% if c_name in active_cat_names %}✓ Già Presente{% else %}+ Aggiungi{% endif %}
+                    </span>
+                </button>
+            </form>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: DETTAGLIO SPESE CATEGORIA BILANCIO DI COPPIA     -->
+<!-- ======================================================== -->
+<div id="coupleCategoryModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="modal-card" style="max-width: 680px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 0; background: #0f172a; border: 1.5px solid rgba(234, 179, 8, 0.35); border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(180deg, #1e293b, #0f172a); padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span id="csModalCatIcon" style="font-size: 1.6rem;">📦</span>
+                <div>
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;" id="csModalCatTitle">Casa & Immobili</h3>
+                    <p style="color: var(--text-muted); font-size: 0.75rem; margin: 2px 0 0 0;" id="csModalCatPeriod">Questo Mese • Gestione Spese Condivise</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeCoupleCategoryModal()" style="font-size: 1.6rem; color: #94a3b8; background: none; border: none; cursor: pointer; line-height: 1;">&times;</button>
+        </div>
+
+        <!-- KPI Mini Strip -->
+        <div style="background: rgba(0,0,0,0.35); padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Totale Categoria</span>
+                <div id="csModalTotalAmt" style="font-size: 1.15rem; font-weight: 900; color: #fff;">€ 0,00</div>
+            </div>
+            <div style="display: flex; gap: 16px; font-size: 0.75rem;">
+                <div style="text-align: right;">
+                    <span style="color: #38bdf8; font-weight: 700;" id="csModalP1Name">Leopoldo</span>
+                    <div id="csModalP1Amt" style="font-weight: 800; color: #fff;">€ 0,00</div>
+                </div>
+                <div style="text-align: right;">
+                    <span style="color: #ec4899; font-weight: 700;" id="csModalP2Name">Nunzia</span>
+                    <div id="csModalP2Amt" style="font-weight: 800; color: #fff;">€ 0,00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Tabs & Bulk Actions Toolbar -->
+        <div style="padding: 10px 20px; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <!-- Filter Tabs -->
+            <div style="display: flex; gap: 4px; background: rgba(0,0,0,0.4); padding: 3px; border-radius: 8px;">
+                <button type="button" class="btn btn-sm cs-tab-btn active" id="csTabAll" onclick="filterCoupleModalTx('all')" style="font-size: 0.72rem; padding: 4px 8px; border-radius: 6px; font-weight: 700; background: rgba(234, 179, 8, 0.2); color: #eab308; border: none; cursor: pointer;">Tutte (<span id="csCountAll">0</span>)</button>
+                <button type="button" class="btn btn-sm cs-tab-btn" id="csTabShared" onclick="filterCoupleModalTx('shared')" style="font-size: 0.72rem; padding: 4px 8px; border-radius: 6px; font-weight: 700; background: transparent; color: #94a3b8; border: none; cursor: pointer;">🤝 Comuni (<span id="csCountShared">0</span>)</button>
+                <button type="button" class="btn btn-sm cs-tab-btn" id="csTabPersonal" onclick="filterCoupleModalTx('personal')" style="font-size: 0.72rem; padding: 4px 8px; border-radius: 6px; font-weight: 700; background: transparent; color: #94a3b8; border: none; cursor: pointer;">👤 Personali (<span id="csCountPersonal">0</span>)</button>
+            </div>
+
+            <!-- Bulk Toggle Buttons -->
+            <div style="display: flex; gap: 6px;">
+                <button type="button" onclick="bulkSetCoupleModalCategory(1)" class="btn btn-sm" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; cursor: pointer;">
+                    ⚡ Rendi Tutte Comuni
+                </button>
+                <button type="button" onclick="bulkSetCoupleModalCategory(0)" class="btn btn-sm" style="background: rgba(255, 255, 255, 0.05); color: #94a3b8; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; cursor: pointer;">
+                    👤 Tutte Personali
+                </button>
+            </div>
+        </div>
+
+        <!-- Scrollable Transactions Body -->
+        <div style="flex: 1; overflow-y: auto; padding: 14px 20px; max-height: 52vh;" id="csModalTxList">
+            <!-- Dynamic rows rendered here -->
+        </div>
+
+        <!-- Footer -->
+        <div style="padding: 12px 20px; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.72rem; color: var(--text-muted);">💡 Il cambio di stato aggiorna istantaneamente il saldo del pareggio.</span>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="closeCoupleCategoryModal()" style="font-size: 0.78rem; font-weight: 700; padding: 5px 14px; border-radius: 6px; background: rgba(255,255,255,0.08); color: #fff; border: 1px solid rgba(255,255,255,0.15); cursor: pointer;">Chiudi</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.couple-cat-card:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(234, 179, 8, 0.45) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+.active-pill {
+    background: var(--accent-primary) !important;
+    color: #fff !important;
+}
+.btn-preset-pill {
+    background: transparent;
+    color: #94a3b8;
+}
+.tag-focus-pill:hover {
+    background: rgba(255,255,255,0.08) !important;
+    transform: translateY(-1px);
+}
+
+/* SMARTPHONE & TABLET RESPONSIVE STYLES */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 0 8px 60px 8px !important;
+    }
+    .focus-top-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+    }
+    .focus-top-actions {
+        width: 100% !important;
+        justify-content: space-between !important;
+    }
+    .july-cockpit-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 12px !important;
+    }
+    .july-kpi-badges-row {
+        width: 100% !important;
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)) !important;
+        gap: 8px !important;
+    }
+    .july-kpi-item {
+        text-align: left !important;
+        padding: 8px 10px !important;
+    }
+    .mortgage-dates-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 4px !important;
+    }
+    .focus-card-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+    .focus-toolbar-container {
+        width: 100% !important;
+        justify-content: flex-start !important;
+        gap: 6px !important;
+    }
+    .card.focus-category-card {
+        padding: 14px 10px !important;
+    }
+    .sim-results-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .july-kpi-badges-row {
+        grid-template-columns: 1fr 1fr !important;
+    }
+    .july-kpi-badges-row > div:last-child {
+        grid-column: span 2;
+    }
+    .tags-grid-box {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+    }
+    .tag-focus-pill {
+        padding: 6px 8px !important;
+    }
+    .extra-pay-input-box {
+        width: 100% !important;
+    }
+}
+</style>
+
+<!-- JAVASCRIPT: ASYNC PER-CARD TIMEFRAME UPDATES & CHARTS -->
+<script>
+const chartInstances = {};
+
+// Custom Chart.js Plugin: Draws a dashed cyan bounding box and '📍 In Corso' badge on the current month column
+const currentMonthHighlightPlugin = {
+    id: 'currentMonthHighlight',
+    afterDraw(chart) {
+        const curIdx = chart.config.options.currentMonthIndex;
+        if (curIdx === undefined || curIdx === null || curIdx < 0) return;
+        
+        const meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data || !meta.data[curIdx]) return;
+        
+        const barElem = meta.data[curIdx];
+        const { ctx, chartArea } = chart;
+        if (!chartArea) return;
+
+        const xCenter = barElem.x;
+        const barW = Math.max(28, (barElem.width || 20) + 12);
+        const left = xCenter - barW / 2;
+        const top = chartArea.top + 2;
+        const bottom = chartArea.bottom;
+        const height = bottom - top;
+
+        ctx.save();
+
+        // 1. Dashed Cyan Bounding Box around Current Month Column
+        ctx.setLineDash([4, 3]);
+        ctx.lineWidth = 1.3;
+        ctx.strokeStyle = '#38bdf8';
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.04)';
+        
+        if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(left, top, barW, height, 5);
+            ctx.fill();
+            ctx.stroke();
+        } else {
+            ctx.fillRect(left, top, barW, height);
+            ctx.strokeRect(left, top, barW, height);
+        }
+
+        // 2. Floating Pill Badge "📍 In Corso" at the Top of the Column
+        ctx.setLineDash([]);
+        const badgeText = "📍 In Corso";
+        ctx.font = "bold 9px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        const textMetrics = ctx.measureText(badgeText);
+        const badgeW = Math.max(textMetrics.width + 10, 56);
+        const badgeH = 16;
+        const badgeX = xCenter - badgeW / 2;
+        const badgeY = top + 2;
+
+        ctx.fillStyle = "#090d16";
+        ctx.strokeStyle = "#38bdf8";
+        ctx.lineWidth = 1.1;
+        if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 4);
+            ctx.fill();
+            ctx.stroke();
+        } else {
+            ctx.fillRect(badgeX, badgeY, badgeW, badgeH);
+            ctx.strokeRect(badgeX, badgeY, badgeW, badgeH);
+        }
+
+        ctx.fillStyle = "#38bdf8";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(badgeText, xCenter, badgeY + badgeH / 2);
+
+        ctx.restore();
+    }
+};
+
+function toggleCategoryCard(cardIdx) {
+    const body = document.getElementById(`cardBody_${cardIdx}`);
+    const arrow = document.getElementById(`cardExpandArrow_${cardIdx}`);
+    const cardHeader = document.getElementById(`cardHeader_${cardIdx}`);
+    const cornerText = document.getElementById(`cornerExpandText_${cardIdx}`);
+    const cornerIcon = document.getElementById(`cornerExpandIcon_${cardIdx}`);
+    const cornerBadge = document.getElementById(`cornerExpandBadge_${cardIdx}`);
+    if (!body) return;
+    
+    const isClosed = (body.style.display === 'none' || body.style.display === '');
+    if (isClosed) {
+        body.style.display = 'block';
+        if (arrow) arrow.innerHTML = '▴ Chiudi Dettaglio';
+        if (cardHeader) cardHeader.style.paddingBottom = '14px';
+        if (cornerText) cornerText.innerText = 'Chiudi';
+        if (cornerIcon) {
+            cornerIcon.innerText = '▲';
+            cornerIcon.style.animation = 'none';
+        }
+        if (cornerBadge) cornerBadge.classList.add('is-expanded');
+        
+        // Ensure chart canvases resize correctly when card body becomes visible
+        setTimeout(() => {
+            if (chartInstances[`bar_${cardIdx}`]) chartInstances[`bar_${cardIdx}`].resize();
+            if (chartInstances[`donut_${cardIdx}`]) chartInstances[`donut_${cardIdx}`].resize();
+        }, 50);
+    } else {
+        body.style.display = 'none';
+        if (arrow) arrow.innerHTML = '▾ Espandi Dettaglio';
+        if (cardHeader) cardHeader.style.paddingBottom = '0px';
+        if (cornerText) cornerText.innerText = 'Tocca per espandere';
+        if (cornerIcon) {
+            cornerIcon.innerText = '▼';
+            cornerIcon.style.animation = 'bounceDown 1.8s infinite ease-in-out';
+        }
+        if (cornerBadge) cornerBadge.classList.remove('is-expanded');
+    }
+}
+
+function toggleMortgageCard() {
+    const body = document.getElementById('mortgageCardBody');
+    const arrow = document.getElementById('mortgageExpandArrow');
+    const cardHeader = document.getElementById('mortgageCardHeader');
+    const cornerText = document.getElementById('cornerExpandText_mortgage');
+    const cornerIcon = document.getElementById('cornerExpandIcon_mortgage');
+    const cornerBadge = document.getElementById('cornerExpandBadge_mortgage');
+    if (!body) return;
+    
+    const isClosed = (body.style.display === 'none' || body.style.display === '');
+    if (isClosed) {
+        body.style.display = 'block';
+        if (arrow) arrow.innerHTML = '▴ Chiudi Dettaglio Mutuo';
+        if (cardHeader) cardHeader.style.paddingBottom = '18px';
+        if (cornerText) cornerText.innerText = 'Chiudi';
+        if (cornerIcon) {
+            cornerIcon.innerText = '▲';
+            cornerIcon.style.animation = 'none';
+        }
+        if (cornerBadge) cornerBadge.classList.add('is-expanded');
+        
+        // Resize mortgage amortization chart upon expansion
+        setTimeout(() => {
+            if (mortgageChartInstance) mortgageChartInstance.resize();
+        }, 50);
+    } else {
+        body.style.display = 'none';
+        if (arrow) arrow.innerHTML = '▾ Espandi Dettaglio Mutuo';
+        if (cardHeader) cardHeader.style.paddingBottom = '0px';
+        if (cornerText) cornerText.innerText = 'Tocca per espandere';
+        if (cornerIcon) {
+            cornerIcon.innerText = '▼';
+            cornerIcon.style.animation = 'bounceDown 1.8s infinite ease-in-out';
+        }
+        if (cornerBadge) cornerBadge.classList.remove('is-expanded');
+    }
+}
+
+function toggleDrawer(drawerId, arrowId) {
+    const d = document.getElementById(drawerId);
+    const a = document.getElementById(arrowId);
+    if (!d) return;
+    if (d.style.display === 'none' || d.style.display === '') {
+        d.style.display = 'block';
+        if (a) a.style.transform = 'rotate(90deg)';
+    } else {
+        d.style.display = 'none';
+        if (a) a.style.transform = 'rotate(0deg)';
+    }
+}
+
+function filterDrawerByTag(drawerId, tagCode, pillElem) {
+    const drawer = document.getElementById(drawerId);
+    if (drawer) {
+        drawer.style.display = 'block';
+        const rows = drawer.querySelectorAll('.tx-row-item');
+        rows.forEach(r => {
+            const rawTags = r.getAttribute('data-tags') || '';
+            if (rawTags.includes(tagCode)) {
+                r.style.display = 'flex';
+                r.style.background = 'rgba(59, 130, 246, 0.15)';
+            } else {
+                r.style.display = 'none';
+                r.style.background = 'transparent';
+            }
+        });
+    }
+}
+
+function formatEurJs(val) {
+    return (val || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ASYNC PER-CARD TIMEFRAME UPDATE
+async function updateCardTimeframe(cardIdx, categoryName, preset, fromYm = '', toYm = '') {
+    // Update active pill styling
+    const pills = document.querySelectorAll(`.btn-preset-${cardIdx}`);
+    pills.forEach(p => {
+        if (p.getAttribute('data-preset') === preset) {
+            p.classList.add('active-pill');
+        } else {
+            p.classList.remove('active-pill');
+        }
+    });
+
+    const cardElem = document.getElementById(`cardContainer_${cardIdx}`);
+    if (cardElem) cardElem.style.opacity = '0.6';
+
+    try {
+        let url = `/api/focus/category-data?category_name=${encodeURIComponent(categoryName)}&preset=${preset}`;
+        if (fromYm && toYm) {
+            url += `&from_ym=${fromYm}&to_ym=${toYm}`;
+        }
+        const res = await fetch(url);
+        const json = await res.json();
+        
+        if (json.success && json.data) {
+            const d = json.data;
+            
+            // 1. Update Badge & Spend (both in card body and header summary preview)
+            const pBadge = document.getElementById(`presetBadge_${cardIdx}`);
+            if (pBadge) pBadge.innerText = d.preset_label;
+
+            const totElem = document.getElementById(`totSpent_${cardIdx}`);
+            if (totElem) totElem.innerText = `€ ${formatEurJs(d.total_spent)}`;
+
+            const avgElem = document.getElementById(`avgSpent_${cardIdx}`);
+            if (avgElem) avgElem.innerText = `Media: € ${formatEurJs(d.monthly_avg)}/mese (${d.tx_count} movimenti)`;
+
+            const hdrTot = document.getElementById(`hdrTot_${cardIdx}`);
+            if (hdrTot) hdrTot.innerText = `€ ${formatEurJs(d.total_spent)}`;
+
+            const hdrAvg = document.getElementById(`hdrAvg_${cardIdx}`);
+            if (hdrAvg) hdrAvg.innerText = `€ ${formatEurJs(d.monthly_avg)}/m`;
+
+            const hdrCnt = document.getElementById(`hdrCnt_${cardIdx}`);
+            if (hdrCnt) hdrCnt.innerText = `${d.tx_count}`;
+
+            // 2. Re-render All Tags Grid
+            const tagsGrid = document.getElementById(`tagsGrid_${cardIdx}`);
+            if (tagsGrid && d.all_tags_analysis) {
+                tagsGrid.innerHTML = d.all_tags_analysis.map(tg => `
+                    <div onclick="filterDrawerByTag('drawer_${cardIdx}', '${tg.code}', this)" 
+                         class="tag-focus-pill"
+                         style="background: ${tg.has_activity ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.2)'}; border: 1px solid ${tg.has_activity ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)'}; border-left: 3px solid ${tg.has_activity ? d.color : '#475569'}; border-radius: 8px; padding: 6px 8px; cursor: pointer; transition: all 0.2s ease; min-width: 0; box-sizing: border-box;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 4px; min-width: 0;">
+                            <span style="font-size: 0.74rem; font-weight: 700; color: ${tg.has_activity ? '#fff' : '#64748b'}; display: flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                <span style="flex-shrink: 0;">${tg.icon}</span> <span style="overflow: hidden; text-overflow: ellipsis;">${tg.label}</span>
+                            </span>
+                            <span style="font-size: 0.62rem; color: #94a3b8; font-weight: 600; flex-shrink: 0; white-space: nowrap;">
+                                ${tg.tx_count} mov.
+                            </span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 4px; min-width: 0;">
+                            <div style="min-width: 0; overflow: hidden;">
+                                <span style="font-size: 0.88rem; font-weight: 800; color: ${tg.has_activity ? '#38bdf8' : '#475569'}; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    € ${formatEurJs(tg.total_amount)}
+                                </span>
+                                <span style="font-size: 0.64rem; color: #94a3b8; font-weight: 600; display: block; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    Med: € ${formatEurJs(tg.monthly_avg)}/m
+                                </span>
+                            </div>
+                            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600; flex-shrink: 0;">
+                                ${tg.percent}%
+                            </span>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                            <div style="background: ${d.color}; height: 100%; width: ${tg.percent}%;"></div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // 3. Re-render Subcategory List
+            const subList = document.getElementById(`subcatList_${cardIdx}`);
+            if (subList && d.subcat_breakdown) {
+                subList.innerHTML = d.subcat_breakdown.map(s => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem;">
+                        <span style="color: #cbd5e1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;" title="${s.name}">
+                            ${s.name}
+                        </span>
+                        <span style="color: #fff; font-weight: 700;">
+                            € ${formatEurJs(s.amount)} (${s.percent}%)
+                        </span>
+                    </div>
+                `).join('');
+            }
+
+            // 4. Update Bar & Donut Charts
+            if (chartInstances[`bar_${cardIdx}`]) {
+                chartInstances[`bar_${cardIdx}`].data.labels = d.chart_months_labels;
+                chartInstances[`bar_${cardIdx}`].data.datasets = d.chart_datasets;
+                chartInstances[`bar_${cardIdx}`].options.currentMonthIndex = d.current_month_index;
+                chartInstances[`bar_${cardIdx}`].update();
+            }
+
+            if (chartInstances[`donut_${cardIdx}`]) {
+                chartInstances[`donut_${cardIdx}`].data.labels = d.donut_labels;
+                chartInstances[`donut_${cardIdx}`].data.datasets[0].data = d.donut_values;
+                chartInstances[`donut_${cardIdx}`].data.datasets[0].backgroundColor = d.donut_colors;
+                chartInstances[`donut_${cardIdx}`].update();
+            }
+        }
+    } catch (e) {
+        console.error("Error updating card timeframe:", e);
+    } finally {
+        if (cardElem) cardElem.style.opacity = '1';
+    }
+}
+
+function applyCustomCardRange(cardIdx, categoryName) {
+    const fromVal = document.getElementById(`fromYm_${cardIdx}`).value;
+    const toVal = document.getElementById(`toYm_${cardIdx}`).value;
+    updateCardTimeframe(cardIdx, categoryName, 'CUSTOM', fromVal, toVal);
+}
+
+function openMortgageModal() {
+    document.getElementById('mortgageConfigModal').classList.add('open');
+}
+
+function closeMortgageModal() {
+    document.getElementById('mortgageConfigModal').classList.remove('open');
+}
+
+function openAddCategoryModal() {
+    document.getElementById('addCategoryModal').classList.add('open');
+}
+
+function closeAddCategoryModal() {
+    document.getElementById('addCategoryModal').classList.remove('open');
+}
+
+window.addEventListener('click', function(e) {
+    const mModal = document.getElementById('mortgageConfigModal');
+    const cModal = document.getElementById('addCategoryModal');
+    if (e.target === mModal) closeMortgageModal();
+    if (e.target === cModal) closeAddCategoryModal();
+});
+
+// ========================================================
+// MORTGAGE AMORTIZATION & PREPAYMENT SIMULATOR ENGINE
+// ========================================================
+const MORTGAGE_CONSTS = {% if mortgage_data %}{
+    originalAmount: {{ mortgage_data.mortgage.original_amount|tojson }},
+    residualDebt: {{ mortgage_data.simulation.current_residual_debt|tojson }},
+    installment: {{ mortgage_data.simulation.actual_installment|tojson }},
+    annualRate: {{ mortgage_data.mortgage.annual_interest_rate|tojson }},
+    remainingMonths: {{ mortgage_data.simulation.remaining_installments|tojson }},
+    paidMonths: {{ mortgage_data.simulation.paid_installments_count|tojson }},
+    totalMonths: {{ mortgage_data.simulation.total_installments|tojson }},
+    chartYears: {{ mortgage_data.simulation.chart_years|tojson }} || [],
+    chartResidual: {{ mortgage_data.simulation.chart_residual|tojson }} || [],
+    chartCapital: {{ mortgage_data.simulation.chart_capital|tojson }} || [],
+    chartInterest: {{ mortgage_data.simulation.chart_interest|tojson }} || [],
+    endDateStr: {{ mortgage_data.simulation.end_date|tojson }} || ''
+}{% else %}null{% endif %};
+
+let mortgageChartInstance = null;
+
+function setExtraPay(amt) {
+    const input = document.getElementById('extraPayInput');
+    if (input) {
+        input.value = amt;
+        document.querySelectorAll('.btn-extra-pill').forEach(btn => {
+            if (parseInt(btn.getAttribute('data-amt')) === amt) {
+                btn.classList.add('active-pill');
+                btn.style.background = 'rgba(16, 185, 129, 0.2)';
+                btn.style.color = '#34d399';
+                btn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+            } else {
+                btn.classList.remove('active-pill');
+                btn.style.background = 'rgba(255,255,255,0.06)';
+                btn.style.color = '#cbd5e1';
+                btn.style.borderColor = 'rgba(255,255,255,0.1)';
+            }
+        });
+        runPrepaymentSimulation();
+    }
+}
+
+function runPrepaymentSimulation() {
+    try {
+        const input = document.getElementById('extraPayInput');
+        if (!input || !MORTGAGE_CONSTS) return;
+        let extraAmt = parseFloat(input.value) || 0;
+        const curDebt = MORTGAGE_CONSTS.residualDebt || 0;
+        if (extraAmt > curDebt) {
+            extraAmt = curDebt;
+            input.value = extraAmt;
+        }
+
+        const r = (MORTGAGE_CONSTS.annualRate / 100.0) / 12.0;
+        const M_old = MORTGAGE_CONSTS.remainingMonths || 1;
+        
+        // Base installment needed to amortize curDebt in M_old months
+        const R_base = (r > 0 && M_old > 0) 
+            ? (curDebt * (r * Math.pow(1 + r, M_old)) / (Math.pow(1 + r, M_old) - 1))
+            : (curDebt / M_old);
+
+        const P_new = Math.max(0, curDebt - extraAmt);
+        const oldTotalFuturePayment = R_base * M_old;
+        const oldFutureInterest = Math.max(0, oldTotalFuturePayment - curDebt);
+
+        // ----------------------------------------------------
+        // STRATEGY A: REDUCE DURATION (SAME INSTALLMENT R_base)
+        // ----------------------------------------------------
+        let savedMonths = 0;
+        let newMonths = 0;
+        let interestSaved_A = 0;
+        let newEndDateStr = MORTGAGE_CONSTS.endDateStr;
+
+        if (P_new <= 0) {
+            savedMonths = M_old;
+            newMonths = 0;
+            interestSaved_A = oldFutureInterest;
+            newEndDateStr = "Estinto Subito! 🎉";
+        } else if (r > 0 && R_base > 0) {
+            const numerator = 1 - (r * P_new / R_base);
+            if (numerator > 0) {
+                const nTheoretical = - Math.log(numerator) / Math.log(1 + r);
+                newMonths = Math.ceil(nTheoretical);
+                savedMonths = Math.max(0, M_old - newMonths);
+
+                const newTotalFuturePayment = R_base * newMonths;
+                const newFutureInterest = Math.max(0, newTotalFuturePayment - P_new);
+                interestSaved_A = Math.max(0, oldFutureInterest - newFutureInterest);
+
+                const today = new Date();
+                const targetDate = new Date(today.getFullYear(), today.getMonth() + newMonths, 1);
+                const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+                const yyyy = targetDate.getFullYear();
+                newEndDateStr = `${mm}/${yyyy}`;
+            }
+        }
+
+        const yearsSaved = Math.floor(savedMonths / 12);
+        const monthsRemainder = savedMonths % 12;
+        let timeSavedStr = "";
+        if (yearsSaved > 0 && monthsRemainder > 0) {
+            timeSavedStr = `${yearsSaved} Anni e ${monthsRemainder} Mesi`;
+        } else if (yearsSaved > 0) {
+            timeSavedStr = `${yearsSaved} Anni`;
+        } else {
+            timeSavedStr = `${monthsRemainder} Mesi`;
+        }
+
+        const earlyElem = document.getElementById('simStratA_earlyTime');
+        if (earlyElem) earlyElem.innerText = extraAmt > 0 ? `⏱️ Anticipo di ${timeSavedStr}` : '-';
+
+        const endElem = document.getElementById('simStratA_newEndDate');
+        if (endElem) endElem.innerText = extraAmt > 0 ? `📅 ${newEndDateStr}` : MORTGAGE_CONSTS.endDateStr;
+
+        const intAElem = document.getElementById('simStratA_interestSaved');
+        if (intAElem) intAElem.innerText = `+ € ${formatEurJs(interestSaved_A)}`;
+
+        // ----------------------------------------------------
+        // STRATEGY B: REDUCE INSTALLMENT (SAME DURATION M_old)
+        // ----------------------------------------------------
+        let newInstallment = R_base;
+        let monthlySavings = 0;
+        let interestSaved_B = 0;
+
+        if (P_new <= 0) {
+            newInstallment = 0;
+            monthlySavings = R_base;
+            interestSaved_B = oldFutureInterest;
+        } else if (r > 0 && M_old > 0) {
+            newInstallment = P_new * (r * Math.pow(1 + r, M_old)) / (Math.pow(1 + r, M_old) - 1);
+            monthlySavings = Math.max(0, R_base - newInstallment);
+
+            const newTotalFuturePayment_B = newInstallment * M_old;
+            const newFutureInterest_B = Math.max(0, newTotalFuturePayment_B - P_new);
+            interestSaved_B = Math.max(0, oldFutureInterest - newFutureInterest_B);
+        }
+
+        const instElem = document.getElementById('simStratB_newInstallment');
+        if (instElem) instElem.innerText = extraAmt > 0 ? `€ ${formatEurJs(newInstallment)} /mese` : `€ ${formatEurJs(R_base)} /mese`;
+
+        const savElem = document.getElementById('simStratB_monthlySavings');
+        if (savElem) savElem.innerText = extraAmt > 0 ? `+ € ${formatEurJs(monthlySavings)} /mese` : '-';
+
+        const intBElem = document.getElementById('simStratB_interestSaved');
+        if (intBElem) intBElem.innerText = `+ € ${formatEurJs(interestSaved_B)}`;
+
+        // ----------------------------------------------------
+        // BREAK-EVEN & FINANCIAL YIELD ANALYSIS
+        // ----------------------------------------------------
+        const paybackElem = document.getElementById('simBreakEven_payback');
+        if (paybackElem) {
+            if (extraAmt > 0 && monthlySavings > 0) {
+                const totalPaybackMonths = Math.ceil(extraAmt / monthlySavings);
+                const pbYears = Math.floor(totalPaybackMonths / 12);
+                const pbMonths = totalPaybackMonths % 12;
+                let pbStr = `${totalPaybackMonths} mesi`;
+                if (pbYears > 0) {
+                    pbStr = `${pbYears} anni ${pbMonths > 0 ? 'e ' + pbMonths + ' m' : ''} (${totalPaybackMonths} mesi)`;
+                }
+                paybackElem.innerText = pbStr;
+            } else {
+                paybackElem.innerText = '-';
+            }
+        }
+
+        const roiElem = document.getElementById('simBreakEven_roi');
+        if (roiElem) {
+            if (extraAmt > 0) {
+                const roiPct = ((interestSaved_A / extraAmt) * 100).toFixed(1);
+                roiElem.innerText = `+${roiPct}% risparmiati su € ${formatEurJs(extraAmt)}`;
+            } else {
+                roiElem.innerText = '-';
+            }
+        }
+
+        const yieldElem = document.getElementById('simBreakEven_yield');
+        if (yieldElem) {
+            const nominalTan = MORTGAGE_CONSTS.annualRate || 0;
+            const equivGross = (nominalTan / 0.875).toFixed(2);
+            yieldElem.innerText = `TAN ${nominalTan}% netto (pari a BTP al ${equivGross}%)`;
+        }
+
+        // ----------------------------------------------------
+        // UPDATE CHART SIMULATION CURVE
+        // ----------------------------------------------------
+        if (mortgageChartInstance && mortgageChartInstance.data && mortgageChartInstance.data.datasets) {
+            const legendSim = document.getElementById('legendSimLine');
+            if (extraAmt > 0 && MORTGAGE_CONSTS.chartYears.length > 0) {
+                if (legendSim) legendSim.style.display = 'inline-flex';
+
+                const currentYear = new Date().getFullYear();
+                const simCurve = [];
+                let simP = curDebt - extraAmt;
+                
+                for (let i = 0; i < MORTGAGE_CONSTS.chartYears.length; i++) {
+                    const yr = parseInt(MORTGAGE_CONSTS.chartYears[i]);
+                    if (yr < currentYear) {
+                        simCurve.push(MORTGAGE_CONSTS.chartResidual[i]);
+                    } else if (yr === currentYear) {
+                        simCurve.push(Math.round(simP));
+                    } else {
+                        for (let m = 0; m < 12; m++) {
+                            if (simP <= 0) { simP = 0; break; }
+                            const intQ = simP * r;
+                            const capQ = R_base - intQ;
+                            simP = Math.max(0, simP - capQ);
+                        }
+                        simCurve.push(Math.round(simP));
+                    }
+                }
+
+                if (mortgageChartInstance.data.datasets[3]) {
+                    mortgageChartInstance.data.datasets[3].data = simCurve;
+                    mortgageChartInstance.data.datasets[3].hidden = false;
+                }
+            } else {
+                if (legendSim) legendSim.style.display = 'none';
+                if (mortgageChartInstance.data.datasets[3]) {
+                    mortgageChartInstance.data.datasets[3].data = new Array(MORTGAGE_CONSTS.chartYears.length).fill(null);
+                    mortgageChartInstance.data.datasets[3].hidden = true;
+                }
+            }
+            mortgageChartInstance.update();
+        }
+    } catch (err) {
+        console.error("Error in runPrepaymentSimulation:", err);
+    }
+}
+
+// INITIALIZE DYNAMIC CHARTS FOR CATEGORIES & MORTGAGE
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof Chart === 'undefined') {
+        console.error("Chart.js library is not loaded.");
+        return;
+    }
+
+    // 0. MORTGAGE AMORTIZATION CHART
+    try {
+        const mChartCtx = document.getElementById('mortgageAmortizationChart');
+        if (mChartCtx && MORTGAGE_CONSTS && MORTGAGE_CONSTS.chartYears && MORTGAGE_CONSTS.chartYears.length > 0) {
+            mortgageChartInstance = new Chart(mChartCtx, {
+                data: {
+                    labels: MORTGAGE_CONSTS.chartYears,
+                    datasets: [
+                        {
+                            type: 'bar',
+                            label: 'Quota Capitale',
+                            data: MORTGAGE_CONSTS.chartCapital,
+                            backgroundColor: '#3b82f6',
+                            stack: 'yearly',
+                            yAxisID: 'y',
+                            order: 2
+                        },
+                        {
+                            type: 'bar',
+                            label: 'Quota Interessi',
+                            data: MORTGAGE_CONSTS.chartInterest,
+                            backgroundColor: '#ef4444',
+                            stack: 'yearly',
+                            yAxisID: 'y',
+                            order: 2
+                        },
+                        {
+                            type: 'line',
+                            label: 'Debito Residuo Standard',
+                            data: MORTGAGE_CONSTS.chartResidual,
+                            borderColor: '#fbbf24',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2.5,
+                            pointRadius: 2,
+                            pointHoverRadius: 5,
+                            tension: 0.15,
+                            yAxisID: 'y1',
+                            order: 1
+                        },
+                        {
+                            type: 'line',
+                            label: 'Debito con Bonifico Extra',
+                            data: new Array(MORTGAGE_CONSTS.chartYears.length).fill(null),
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                            borderWidth: 3,
+                            borderDash: [5, 4],
+                            pointRadius: 3,
+                            pointHoverRadius: 6,
+                            tension: 0.15,
+                            yAxisID: 'y1',
+                            hidden: true,
+                            order: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: { color: 'rgba(255,255,255,0.03)' },
+                            ticks: { color: '#94a3b8', font: { size: 10, weight: '600' } }
+                        },
+                        y: {
+                            type: 'linear',
+                            position: 'left',
+                            stacked: true,
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { size: 10 },
+                                callback: function(v) { return '€ ' + (v / 1000).toFixed(0) + 'k'; }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Rata Annuale (€)',
+                                color: '#64748b',
+                                font: { size: 10 }
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'right',
+                            grid: { display: false },
+                            ticks: {
+                                color: '#fbbf24',
+                                font: { size: 10, weight: '600' },
+                                callback: function(v) { return '€ ' + (v / 1000).toFixed(0) + 'k'; }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Debito Residuo (€)',
+                                color: '#fbbf24',
+                                font: { size: 10 }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleColor: '#fff',
+                            bodyColor: '#cbd5e1',
+                            borderColor: 'rgba(255,255,255,0.12)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(c) {
+                                    if (c.parsed.y === null || c.parsed.y === undefined) return null;
+                                    return c.dataset.label + ': € ' + c.parsed.y.toLocaleString('it-IT', {minimumFractionDigits: 2});
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    } catch (err) {
+        console.error("Error initializing mortgageChart:", err);
+    }
+
+    // Run initial simulation calculation
+    try {
+        runPrepaymentSimulation();
+    } catch (err) {
+        console.error("Error running initial prepayment simulation:", err);
+    }
+
+    {% for cat in categories_data %}
+    try {
+        // 1. Stacked Bar Chart for {{ cat.category_name }}
+        const barCtx_{{ loop.index }} = document.getElementById('barChart_{{ loop.index }}');
+        if (barCtx_{{ loop.index }}) {
+            chartInstances[`bar_{{ loop.index }}`] = new Chart(barCtx_{{ loop.index }}, {
+                type: 'bar',
+                data: {
+                    labels: {{ cat.chart_months_labels|tojson }},
+                    datasets: {{ cat.chart_datasets|tojson }}
+                },
+                plugins: [currentMonthHighlightPlugin],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    currentMonthIndex: {{ cat.current_month_index|tojson }},
+                    layout: {
+                        padding: {
+                            top: 20 // Space for the floating '📍 In Corso' badge
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { size: 10, weight: '600' } }
+                        },
+                        y: {
+                            stacked: true,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { 
+                                color: '#94a3b8', 
+                                font: { size: 10 },
+                                callback: function(v) { return '€ ' + v; }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: { color: '#cbd5e1', font: { size: 10 }, boxWidth: 10 }
+                        },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleColor: '#fff',
+                            bodyColor: '#cbd5e1',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(c) {
+                                    return c.dataset.label + ': € ' + c.parsed.y.toLocaleString('it-IT', {minimumFractionDigits: 2});
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 2. Donut Chart for {{ cat.category_name }}
+        const donutCtx_{{ loop.index }} = document.getElementById('donutChart_{{ loop.index }}');
+        if (donutCtx_{{ loop.index }}) {
+            chartInstances[`donut_{{ loop.index }}`] = new Chart(donutCtx_{{ loop.index }}, {
+                type: 'doughnut',
+                data: {
+                    labels: {{ cat.donut_labels|tojson }},
+                    datasets: [{
+                        data: {{ cat.donut_values|tojson }},
+                        backgroundColor: {{ cat.donut_colors|tojson }},
+                        borderWidth: 2,
+                        borderColor: '#0f172a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleColor: '#fff',
+                            bodyColor: '#cbd5e1',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            callbacks: {
+                                label: function(c) {
+                                    const val = c.parsed || 0;
+                                    const tot = c.dataset.data.reduce((a, b) => a + b, 0);
+                                    const pct = tot > 0 ? ((val / tot) * 100).toFixed(1) : 0;
+                                    return ' € ' + val.toLocaleString('it-IT', {minimumFractionDigits: 2}) + ' (' + pct + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    } catch (err) {
+        console.error("Error initializing category charts for {{ cat.category_name }}:", err);
+    }
+    {% endfor %}
+});
+
+// Couple Split Dynamic Preset Switcher & Drilldown Engine
+let currentCouplePreset = 'THIS_MONTH';
+let currentModalCategory = '';
+let currentModalCategoryIcon = '📦';
+let currentModalTxData = [];
+let currentModalFilter = 'all';
+
+function switchCoupleSplitPreset(preset, btn) {
+    if (preset) currentCouplePreset = preset;
+    
+    if (btn) {
+        document.querySelectorAll('.couple-preset-btn').forEach(b => {
+            b.classList.remove('active');
+            b.style.background = 'transparent';
+            b.style.color = '#94a3b8';
+        });
+        btn.classList.add('active');
+        btn.style.background = 'rgba(234, 179, 8, 0.2)';
+        btn.style.color = '#eab308';
+    }
+
+    fetch('/api/couple-split/data?preset=' + currentCouplePreset)
+        .then(r => r.json())
+        .then(res => {
+            if (!res.success || !res.data || !res.data.has_couple) return;
+            const d = res.data;
+            
+            const fmt = (n) => '€ ' + (Number(n) || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            
+            document.getElementById('csP1Total').innerText = fmt(d.p1_total);
+            document.getElementById('csP1Pct').innerText = d.p1_pct + '% del totale comune';
+            
+            document.getElementById('csP2Total').innerText = fmt(d.p2_total);
+            document.getElementById('csP2Pct').innerText = d.p2_pct + '% del totale comune';
+            
+            document.getElementById('csTotalShared').innerText = fmt(d.total_shared);
+            
+            document.getElementById('csBarP1').style.width = d.p1_pct + '%';
+            document.getElementById('csBarP2').style.width = d.p2_pct + '%';
+            
+            // Settlement Box
+            const sBox = document.getElementById('csSettlementBox');
+            const sTitle = document.getElementById('csSettlementTitle');
+            const sBadge = document.getElementById('csSettlementBadge');
+            
+            if (d.settlement.status === 'EQUAL') {
+                sBox.style.background = 'rgba(16, 185, 129, 0.12)';
+                sBox.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                sTitle.innerText = '🎉 Siete in perfetto pareggio 50/50!';
+                if (sBadge) sBadge.style.display = 'none';
+            } else {
+                sBox.style.background = 'rgba(234, 179, 8, 0.12)';
+                sBox.style.borderColor = 'rgba(234, 179, 8, 0.4)';
+                sTitle.innerText = d.settlement.message;
+                if (sBadge) {
+                    sBadge.style.display = 'block';
+                    sBadge.innerText = d.settlement.formatted_amount;
+                }
+            }
+            
+            // Categories
+            document.getElementById('csTxCount').innerText = d.transactions_count + ' spese condivise nel periodo';
+            const catGrid = document.getElementById('csCategoryGrid');
+            if (catGrid && d.categories) {
+                let html = '';
+                const p1First = d.p1.name.split(' ')[0];
+                const p2First = d.p2.name.split(' ')[0];
+                
+                d.categories.forEach(c => {
+                    html += `
+                    <div class="couple-cat-card" onclick="openCoupleCategoryDrilldown('${c.name.replace(/'/g, "\\'")}', '${c.icon}')" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: all 0.2s ease;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="font-weight: 700; font-size: 0.82rem; color: #fff; display: flex; align-items: center; gap: 6px;">
+                                <span>${c.icon}</span> ${c.name}
+                                <span style="font-size: 0.65rem; color: #eab308; background: rgba(234, 179, 8, 0.12); padding: 1px 5px; border-radius: 4px; font-weight: 700;">🔍 Dettagli</span>
+                            </span>
+                            <span style="font-weight: 800; font-size: 0.85rem; color: #fff;">${fmt(c.total)}</span>
+                        </div>
+                        <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; display: flex; margin-bottom: 4px;">
+                            <div style="width: ${c.p1_percent}%; background: #38bdf8;"></div>
+                            <div style="width: ${c.p2_percent}%; background: #ec4899;"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.68rem; color: var(--text-muted);">
+                            <span style="color: #38bdf8;">${p1First}: ${fmt(c.p1_amount)} (${c.p1_percent}%)</span>
+                            <span style="color: #ec4899;">${p2First}: ${fmt(c.p2_amount)} (${c.p2_percent}%)</span>
+                        </div>
+                    </div>`;
+                });
+                catGrid.innerHTML = html || '<div style="color: var(--text-muted); font-size: 0.8rem; padding: 10px;">Nessuna spesa comune registrata in questo periodo.</div>';
+            }
+        })
+        .catch(err => console.error("Error switching couple split preset:", err));
+}
+
+// Couple Category Drill-Down Functions
+function openCoupleCategoryDrilldown(catName, catIcon = '📦') {
+    currentModalCategory = catName;
+    currentModalCategoryIcon = catIcon;
+    const modal = document.getElementById('coupleCategoryModal');
+    if (!modal) return;
+    
+    document.getElementById('csModalCatTitle').innerText = catName;
+    document.getElementById('csModalCatIcon').innerText = catIcon;
+    
+    const activePresetBtn = document.querySelector('.couple-preset-btn.active');
+    const periodName = activePresetBtn ? activePresetBtn.innerText : 'Periodo Selezionato';
+    document.getElementById('csModalCatPeriod').innerText = `${periodName} • Dettaglio Spese & Ripartizione`;
+    document.getElementById('csModalTxList').innerHTML = '<div style="text-align: center; padding: 35px 10px; color: var(--text-muted);"><span style="font-size: 1.6rem; display: block; margin-bottom: 8px;">⏳</span>Caricamento movimenti in corso...</div>';
+    
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    
+    // Reset tabs
+    currentModalFilter = 'all';
+    document.querySelectorAll('.cs-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        btn.style.background = 'transparent';
+        btn.style.color = '#94a3b8';
+    });
+    const tabAll = document.getElementById('csTabAll');
+    if (tabAll) {
+        tabAll.classList.add('active');
+        tabAll.style.background = 'rgba(234, 179, 8, 0.2)';
+        tabAll.style.color = '#eab308';
+    }
+    
+    loadCoupleCategoryTransactions();
+}
+
+function closeCoupleCategoryModal() {
+    const modal = document.getElementById('coupleCategoryModal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+async function loadCoupleCategoryTransactions() {
+    try {
+        const res = await fetch(`/api/couple-split/category-transactions?category=${encodeURIComponent(currentModalCategory)}&preset=${currentCouplePreset}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+            const d = json.data;
+            currentModalTxData = d.transactions || [];
+            
+            const fmt = (n) => '€ ' + (Number(n) || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('csModalTotalAmt').innerText = fmt(d.total_amount);
+            document.getElementById('csModalP1Name').innerText = (d.p1.name ? d.p1.name.split(' ')[0] : 'Partner 1') + ' (Comune)';
+            document.getElementById('csModalP1Amt').innerText = fmt(d.p1_shared);
+            document.getElementById('csModalP2Name').innerText = (d.p2.name ? d.p2.name.split(' ')[0] : 'Partner 2') + ' (Comune)';
+            document.getElementById('csModalP2Amt').innerText = fmt(d.p2_shared);
+            
+            const sharedCount = currentModalTxData.filter(t => t.is_shared === 1).length;
+            const personalCount = currentModalTxData.length - sharedCount;
+            document.getElementById('csCountAll').innerText = currentModalTxData.length;
+            document.getElementById('csCountShared').innerText = sharedCount;
+            document.getElementById('csCountPersonal').innerText = personalCount;
+            
+            renderCoupleModalTxList();
+        } else {
+            document.getElementById('csModalTxList').innerHTML = '<div style="color: #f87171; text-align: center; padding: 20px;">Errore nel caricamento delle transazioni.</div>';
+        }
+    } catch (e) {
+        console.error(e);
+        document.getElementById('csModalTxList').innerHTML = '<div style="color: #f87171; text-align: center; padding: 20px;">Errore di connessione.</div>';
+    }
+}
+
+function filterCoupleModalTx(filterType) {
+    currentModalFilter = filterType;
+    document.querySelectorAll('.cs-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        btn.style.background = 'transparent';
+        btn.style.color = '#94a3b8';
+    });
+    const activeBtn = document.getElementById(filterType === 'all' ? 'csTabAll' : (filterType === 'shared' ? 'csTabShared' : 'csTabPersonal'));
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+        activeBtn.style.background = 'rgba(234, 179, 8, 0.2)';
+        activeBtn.style.color = '#eab308';
+    }
+    renderCoupleModalTxList();
+}
+
+function renderCoupleModalTxList() {
+    const container = document.getElementById('csModalTxList');
+    if (!container) return;
+    
+    let filtered = currentModalTxData;
+    if (currentModalFilter === 'shared') {
+        filtered = currentModalTxData.filter(t => t.is_shared === 1);
+    } else if (currentModalFilter === 'personal') {
+        filtered = currentModalTxData.filter(t => t.is_shared === 0);
+    }
+    
+    if (filtered.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 35px 10px; color: var(--text-muted); font-size: 0.85rem;"><span style="font-size: 1.8rem; display: block; margin-bottom: 6px;">🍃</span>Nessun movimento presente per questa selezione.</div>';
+        return;
+    }
+    
+    let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+    filtered.forEach(tx => {
+        const isSh = (tx.is_shared === 1);
+        html += `
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid ${isSh ? 'rgba(234, 179, 8, 0.25)' : 'rgba(255,255,255,0.06)'}; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+            <div style="flex: 1; overflow: hidden;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 3px; flex-wrap: wrap;">
+                    <span style="font-size: 0.72rem; color: var(--text-muted); font-variant-numeric: tabular-nums;">${tx.date}</span>
+                    <span style="font-size: 0.68rem; background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); padding: 1px 6px; border-radius: 4px; font-weight: 700;">${tx.profile_name}</span>
+                    <small style="font-size: 0.68rem; color: var(--text-muted);">${tx.account_name}</small>
+                </div>
+                <div style="font-size: 0.82rem; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${tx.description}">${tx.description}</div>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                <strong style="font-size: 0.92rem; font-weight: 800; color: #f87171; font-variant-numeric: tabular-nums;">${tx.formatted_amount}</strong>
+                
+                <button type="button" 
+                        onclick="toggleModalTxShared(${tx.id}, this)"
+                        style="background: ${isSh ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255,255,255,0.05)'}; color: ${isSh ? '#fbbf24' : 'var(--text-muted)'}; border: 1px solid ${isSh ? 'rgba(245, 158, 11, 0.4)' : 'rgba(255,255,255,0.1)'}; font-size: 0.72rem; padding: 5px 9px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 800; transition: all 0.2s;">
+                    ${isSh ? '🤝 Comune' : '👤 Pers.'}
+                </button>
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+async function toggleModalTxShared(txId, btn) {
+    try {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        const res = await fetch(`/api/transactions/${txId}/toggle-shared`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success || data.status === 'ok') {
+            const isShared = (data.is_shared === 1 || data.is_shared === true);
+            
+            // Update local cache
+            const target = currentModalTxData.find(t => t.id === txId);
+            if (target) target.is_shared = isShared ? 1 : 0;
+            
+            // Reload modal stats & list
+            loadCoupleCategoryTransactions();
+            
+            // Sync main Focus card stats live in background
+            switchCoupleSplitPreset(currentCouplePreset);
+        } else {
+            alert('Errore durante l\'aggiornamento: ' + (data.error || 'Sconosciuto'));
+        }
+    } catch (e) {
+        console.error(e);
+        alert('Errore di connessione');
+    } finally {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+    }
+}
+
+async function bulkSetCoupleModalCategory(targetState) {
+    const promptMsg = targetState === 1 
+        ? `Rendere TUTTE le spese di "${currentModalCategory}" come Spese Comuni (50/50)?` 
+        : `Rendere TUTTE le spese di "${currentModalCategory}" come Spese Personali?`;
+        
+    if (!confirm(promptMsg)) return;
+    
+    try {
+        const res = await fetch('/api/couple-split/bulk-toggle-shared', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                category: currentModalCategory,
+                target_state: targetState,
+                preset: currentCouplePreset
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            loadCoupleCategoryTransactions();
+            switchCoupleSplitPreset(currentCouplePreset);
+        } else {
+            alert('Errore: ' + (data.error || 'Operazione non riuscita'));
+        }
+    } catch (e) {
+        console.error(e);
+        alert('Errore di connessione');
+    }
+}
+
+window.addEventListener('click', function(e) {
+    const coupleModal = document.getElementById('coupleCategoryModal');
+    if (e.target === coupleModal) closeCoupleCategoryModal();
+});
+</script>
+
+{% endblock %}

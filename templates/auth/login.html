@@ -1,0 +1,1430 @@
+{% extends "base.html" %}
+
+{% block title %}FiscMoney | Intelligence Finanziaria, Cash Flow e Fisco 730{% endblock %}
+
+{% block content %}
+<div class="auth-landing-wrapper">
+    <!-- Ambient Background Glow Effects -->
+    <div class="glow-orb glow-orb-1"></div>
+    <div class="glow-orb glow-orb-2"></div>
+    <div class="glow-orb glow-orb-3"></div>
+
+    <!-- ========================================================== -->
+    <!-- HERO & AUTH SECTION                                        -->
+    <!-- ========================================================== -->
+    <div class="auth-grid-card" id="authBox">
+        <!-- Left Hero Showcase Pane (Desktop) -->
+        <div class="auth-hero-pane">
+            <div class="auth-hero-brand">
+                <div class="auth-logo-badge">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FiscMoney Logo" class="auth-logo-img">
+                </div>
+                <div>
+                    <h1 class="auth-hero-title">Fisc<span style="color: var(--accent-primary, #ef4444);">Money</span></h1>
+                    <span class="auth-hero-subtitle">Financial & Tax Intelligence Hub</span>
+                </div>
+            </div>
+
+            <h2 class="auth-main-hook">
+                Il controllo totale dei tuoi soldi e delle tue tasse. <span style="color: #fef08a;">Senza fogli Excel.</span>
+            </h2>
+
+            <p class="auth-hero-lead">
+                Dall'estratto conto al Modello 730: importa i movimenti bancari, monitora entrate e uscite e scopri in automatico tutte le detrazioni fiscali che ti spettano.
+            </p>
+
+            <!-- 60-Day Trial Special Callout Card -->
+            <div class="auth-trial-pill">
+                <div class="trial-pill-badge">✨ 60 GIORNI PRO</div>
+                <div>
+                    <strong style="color: #fff; font-size: 0.88rem; display: block;">Prova Gratuita Completa Inclusa</strong>
+                    <span style="color: #cbd5e1; font-size: 0.78rem;">Tutte le funzionalità PRO sbloccate per 2 mesi. Nessuna carta richiesta.</span>
+                </div>
+            </div>
+
+            <!-- Feature Bullet Pills -->
+            <div class="auth-features-list">
+                <div class="auth-feature-item">
+                    <span class="feature-icon">⚡</span>
+                    <div>
+                        <strong>Smart Import Multi-Banca</strong>
+                        <p>Trascina il file della tua banca: categorizzazione istantanea con regole intelligenti.</p>
+                    </div>
+                </div>
+
+                <div class="auth-feature-item">
+                    <span class="feature-icon">🏛️</span>
+                    <div>
+                        <strong>Fisco, Cedolini & Modello 730</strong>
+                        <p>Riconoscimento automatico spese sanitarie, interessi mutuo e detrazioni IRPEF 19%.</p>
+                    </div>
+                </div>
+
+                <div class="auth-feature-item">
+                    <span class="feature-icon">🛡️</span>
+                    <div>
+                        <strong>100% Privato & Zero Password di Banca</strong>
+                        <p>Non chiediamo mai le credenziali del tuo conto. I tuoi dati restano esclusivamente tuoi.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="auth-hero-footer">
+                <span>© 2026 FiscMoney &bull; <a href="/privacy" target="_blank" style="color: #94a3b8; text-decoration: underline;">Informativa Privacy & GDPR</a></span>
+            </div>
+        </div>
+
+        <!-- Right Interactive Form Pane -->
+        <div class="auth-form-pane">
+            <!-- Mobile-only compact brand bar -->
+            <div class="mobile-brand-bar">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="mobile-logo-mini">
+                <div>
+                    <div style="font-weight: 800; font-size: 1.25rem; color: #fff; line-height: 1.1;">Fisc<span style="color: var(--accent-primary, #ef4444);">Money</span></div>
+                    <div style="font-size: 0.7rem; color: #fbbf24; font-weight: 700;">✨ 60 Giorni PRO Inclusi &bull; Senza Carta</div>
+                </div>
+            </div>
+
+            <!-- Segmented Tab Switcher -->
+            <div class="auth-tab-bar">
+                <button type="button" id="tabBtnLogin" class="auth-tab-btn active" onclick="switchAuthTab('login')">
+                    <span>🔑</span> Accedi
+                </button>
+                <button type="button" id="tabBtnRegister" class="auth-tab-btn" onclick="switchAuthTab('register')">
+                    <span>✨</span> Registrati <span class="tab-badge-free">60gg Free</span>
+                </button>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 1: FORM LOGIN                         -->
+            <!-- ========================================== -->
+            <div id="authPaneLogin" class="auth-pane-content active">
+                <div class="auth-pane-header">
+                    <h2>Bentornato!</h2>
+                    <p>Inserisci le tue credenziali per accedere al tuo workspace.</p>
+                </div>
+
+                <form method="POST" action="/login" class="auth-form-body">
+                    <div class="auth-input-group">
+                        <label for="loginEmail">Email</label>
+                        <div class="input-with-icon">
+                            <span class="input-icon">✉️</span>
+                            <input type="email" id="loginEmail" name="email" class="auth-input" placeholder="nome@esempio.it" required autofocus autocomplete="email">
+                        </div>
+                    </div>
+
+                    <div class="auth-input-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <label for="loginPassword" style="margin-bottom: 0;">Password</label>
+                            <span style="font-size: 0.72rem; color: #94a3b8;" title="Se hai dimenticato la password, contatta l'amministratore per un reset immediato.">Persa? <span style="color: #38bdf8;">Chiedi all'Admin</span></span>
+                        </div>
+                        <div class="input-with-icon">
+                            <span class="input-icon">🔒</span>
+                            <input type="password" id="loginPassword" name="password" class="auth-input" placeholder="••••••••" required autocomplete="current-password">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="auth-submit-btn">
+                        <span>Accedi a FiscMoney</span>
+                        <span style="font-size: 1.1rem; transition: transform 0.2s;">➔</span>
+                    </button>
+                </form>
+
+                <div class="auth-switch-prompt">
+                    Non hai ancora un account?
+                    <a href="javascript:void(0)" onclick="switchAuthTab('register')" style="color: var(--accent-primary, #ef4444); font-weight: 700; text-decoration: underline; margin-left: 4px;">Inizia la Prova Gratuita (60gg)</a>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- TAB 2: FORM REGISTRAZIONE                  -->
+            <!-- ========================================== -->
+            <div id="authPaneRegister" class="auth-pane-content">
+                <div class="auth-pane-header">
+                    <h2>Crea il tuo Account</h2>
+                    <p>60 giorni di piano PRO completo senza alcun impegno.</p>
+                </div>
+
+                <form method="POST" action="/register" class="auth-form-body">
+                    <div class="auth-input-group">
+                        <label for="regFullName">Nome Completo</label>
+                        <div class="input-with-icon">
+                            <span class="input-icon">👤</span>
+                            <input type="text" id="regFullName" name="full_name" class="auth-input" placeholder="Mario Rossi" required autocomplete="name">
+                        </div>
+                    </div>
+
+                    <div class="auth-input-group">
+                        <label for="regEmail">Email</label>
+                        <div class="input-with-icon">
+                            <span class="input-icon">✉️</span>
+                            <input type="email" id="regEmail" name="email" class="auth-input" placeholder="mario.rossi@email.it" required autocomplete="email">
+                        </div>
+                    </div>
+
+                    <div class="auth-input-group">
+                        <label for="regPassword">Password di Sicurezza</label>
+                        <div class="input-with-icon">
+                            <span class="input-icon">🔒</span>
+                            <input type="password" id="regPassword" name="password" minlength="8" class="auth-input" placeholder="Min. 8 caratteri, numero e simbolo" required autocomplete="new-password">
+                        </div>
+                        <!-- Live Password Complexity Checklist -->
+                        <div class="pwd-requirements-box" id="pwdRequirementsBox">
+                            <div class="pwd-req-item" id="reqLength">
+                                <span class="req-icon">○</span> Minimo 8 caratteri
+                            </div>
+                            <div class="pwd-req-item" id="reqNumber">
+                                <span class="req-icon">○</span> 1 numero (0-9)
+                            </div>
+                            <div class="pwd-req-item" id="reqSpecial">
+                                <span class="req-icon">○</span> 1 simbolo speciale (!@#$%&*)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="auth-privacy-box">
+                        <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; font-size: 0.76rem; color: #cbd5e1; line-height: 1.35;">
+                            <input type="checkbox" name="privacy_consent" value="1" required style="margin-top: 2px; accent-color: var(--accent-primary, #ef4444); width: 16px; height: 16px; flex-shrink: 0;">
+                            <span>Accetto l'<a href="/privacy" target="_blank" style="color: #38bdf8; text-decoration: underline; font-weight: 600;">Informativa Privacy</a>. Dati privati, crittografati e non ceduti a terzi.</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="auth-submit-btn reg-btn">
+                        <span>Attiva Licenza PRO (60 Giorni)</span>
+                        <span style="font-size: 1.1rem; transition: transform 0.2s;">✨</span>
+                    </button>
+                </form>
+
+                <div class="auth-switch-prompt">
+                    Hai già un account registrato?
+                    <a href="javascript:void(0)" onclick="switchAuthTab('login')" style="color: #38bdf8; font-weight: 700; text-decoration: underline; margin-left: 4px;">Accedi qui</a>
+                </div>
+            </div>
+
+            <!-- Trust Badges -->
+            <div class="auth-trust-strip">
+                <div class="trust-item">
+                    <span>🔒</span> Crittografia Forte
+                </div>
+                <div class="trust-item">
+                    <span>🛡️</span> Zero Carte
+                </div>
+                <div class="trust-item">
+                    <span>📜</span> GDPR Compliant
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================================== -->
+    <!-- SUPPORTED BANKS TICKER STRIP                               -->
+    <!-- ========================================================== -->
+    <div class="banks-strip-container">
+        <div class="banks-strip-label">
+            <span>⚡ COMPATIBILITÀ DIRETTA CON ESTRATTI CONTO DI OLTRE 15 BANCHE ITALIANE ED EUROPEE</span>
+        </div>
+        <div class="banks-badges-wrapper">
+            <span class="bank-badge">🏦 Intesa Sanpaolo</span>
+            <span class="bank-badge">💳 Fineco Bank</span>
+            <span class="bank-badge">⚡ Revolut</span>
+            <span class="bank-badge">🏛️ UniCredit</span>
+            <span class="bank-badge">🌿 BCC & Iccrea</span>
+            <span class="bank-badge">📱 Illimity Bank</span>
+            <span class="bank-badge">📮 Poste Italiane (Postepay / Bancoposta)</span>
+            <span class="bank-badge">🌐 BBVA</span>
+            <span class="bank-badge">🏢 BNL / Hello bank!</span>
+            <span class="bank-badge">💼 Banca Mediolanum</span>
+            <span class="bank-badge">🪙 Amex & Carte di Credito</span>
+            <span class="bank-badge">📄 Formati CSV / XLS / XLSX</span>
+        </div>
+    </div>
+
+
+    <!-- ========================================================== -->
+    <!-- 3 PILLARS VALUE SHOWCASE                                   -->
+    <!-- ========================================================== -->
+    <div class="landing-showcase-section">
+        <div class="section-heading">
+            <span class="section-tag">PERCHÉ SCEGLIERE FISCMONEY</span>
+            <h2 class="section-title">Tre potenti motori in una sola interfaccia</h2>
+            <p class="section-subtitle">Tutto ciò che serve per non perdere mai più un euro in spese inutili o detrazioni fiscali non richieste.</p>
+        </div>
+
+        <div class="pillars-grid">
+            <!-- Pillar 1 -->
+            <div class="pillar-card">
+                <div class="pillar-icon-box" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">
+                    📊
+                </div>
+                <h3 class="pillar-title">Cash Flow & Budgeting Intelligente</h3>
+                <p class="pillar-desc">
+                    Importa gli estratti conto in 3 secondi. Il motore categorizza automaticamente le transazioni (stipendi, bollette, spesa, mutuo) e ti mostra l'andamento del tuo patrimonio netto mese per mese.
+                </p>
+                <ul class="pillar-checklist">
+                    <li>✓ Grafici entrate/uscite e tasso di risparmio in tempo reale</li>
+                    <li>✓ Rilevamento automatico di spese ricorrenti e abbonamenti</li>
+                    <li>✓ Regole personalizzate per categorizzare qualsiasi voce</li>
+                </ul>
+            </div>
+
+            <!-- Pillar 2 -->
+            <div class="pillar-card highlight-pillar">
+                <div class="pillar-badge-popular">PIÙ AMATO DAGLI UTENTI</div>
+                <div class="pillar-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.35);">
+                    🏛️
+                </div>
+                <h3 class="pillar-title">Fisco, Cedolini & Detrazioni 730</h3>
+                <p class="pillar-desc">
+                    FiscMoney analizza le tue spese e identifica in automatico quelle che puoi scaricare dalle tasse (farmaci, visite specialistiche, interessi mutuo prima casa, previdenza complementare).
+                </p>
+                <ul class="pillar-checklist">
+                    <li>✓ Calcolo istantaneo del rimborso IRPEF spettante (19%)</li>
+                    <li>✓ Monitoraggio franchigia sanitaria e massimali di legge</li>
+                    <li>✓ Archivio cedolini e buste paga con storico netto e lordo</li>
+                </ul>
+            </div>
+
+            <!-- Pillar 3 -->
+            <div class="pillar-card">
+                <div class="pillar-icon-box" style="background: rgba(52, 211, 153, 0.12); color: #34d399; border-color: rgba(52, 211, 153, 0.3);">
+                    👨‍👩‍👧
+                </div>
+                <h3 class="pillar-title">Workspace Singolo o Familiare</h3>
+                <p class="pillar-desc">
+                    Gestisci le tue finanze personali in totale autonomia oppure crea un workspace condiviso per coordinare il budget di coppia o di famiglia, mantenendo la massima riservatezza.
+                </p>
+                <ul class="pillar-checklist">
+                    <li>✓ Profili separati per ciascun membro della famiglia</li>
+                    <li>✓ Modalità Privacy "Shift+P" per oscurare le cifre in pubblico</li>
+                    <li>✓ Esportazione completa Excel e backup del database con 1 clic</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================================== -->
+    <!-- TESTIMONIALS & REAL FEEDBACK                               -->
+    <!-- ========================================================== -->
+    <div class="testimonials-section">
+        <div class="section-heading">
+            <span class="section-tag">RISULTATI & TESTIMONIANZE REALI</span>
+            <h2 class="section-title">Cosa dicono i nostri primi utilizzatori</h2>
+            <p class="section-subtitle">Dall'addio ai fogli Excel al recupero delle detrazioni fiscali: ecco l'impatto reale di FiscMoney.</p>
+        </div>
+
+        <div class="testimonials-grid">
+            <!-- Review 1: Excel replacement -->
+            <div class="testimonial-card">
+                <div class="testimonial-rating">
+                    <span class="stars">★★★★★</span>
+                    <span class="outcome-tag outcome-time">⏱️ -4 Ore/Mese</span>
+                </div>
+                <p class="testimonial-text">
+                    “Usavo un foglio Excel da oltre 5 anni che a fine mese diventava puntualmente un incubo da aggiornare. Con FiscMoney trascino l'estratto conto e in 10 secondi ho tutto categorizzato con grafici e patrimonio netto. Non tornerei mai indietro.”
+                </p>
+                <div class="testimonial-author">
+                    <div class="author-avatar" style="background: linear-gradient(135deg, #38bdf8, #0284c7);">MT</div>
+                    <div>
+                        <strong class="author-name">Marco T.</strong>
+                        <span class="author-role">Ingegnere &bull; Utente Beta</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review 2: IRPEF 730 recovery -->
+            <div class="testimonial-card highlight-testimonial">
+                <div class="testimonial-rating">
+                    <span class="stars">★★★★★</span>
+                    <span class="outcome-tag outcome-money">💰 +420€ Detrazioni 730</span>
+                </div>
+                <p class="testimonial-text">
+                    “A maggio il 730 era sempre una corsa contro il tempo tra scontrini della farmacia e fatture di visite private dimenticate. Il modulo 730 mi ha trovato oltre 400€ di spese detraibili che altrimenti non avrei portato al CAF!”
+                </p>
+                <div class="testimonial-author">
+                    <div class="author-avatar" style="background: linear-gradient(135deg, #f59e0b, #d97706);">ER</div>
+                    <div>
+                        <strong class="author-name">Elena R.</strong>
+                        <span class="author-role">Project Manager &bull; Mamma</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review 3: Missing expenses / cash flow discovery -->
+            <div class="testimonial-card">
+                <div class="testimonial-rating">
+                    <span class="stars">★★★★★</span>
+                    <span class="outcome-tag outcome-budget">🎯 -180€ Spese Inutili</span>
+                </div>
+                <p class="testimonial-text">
+                    “Analizzando il cash flow mese per mese mi sono accorto di mancanze e di oltre 180€ di addebiti ricorrenti e abbonamenti doppi che continuavano a scalare soldi senza che me ne accorgessi. Ti cambia davvero la consapevolezza delle spese.”
+                </p>
+                <div class="testimonial-author">
+                    <div class="author-avatar" style="background: linear-gradient(135deg, #34d399, #059669);">DM</div>
+                    <div>
+                        <strong class="author-name">Davide M.</strong>
+                        <span class="author-role">Consulente IT &bull; Tester</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review 4: Couple / Family peace of mind -->
+            <div class="testimonial-card highlight-testimonial">
+                <div class="testimonial-rating">
+                    <span class="stars">★★★★★</span>
+                    <span class="outcome-tag outcome-couple">💑 Zero Litigi di Coppia</span>
+                </div>
+                <p class="testimonial-text">
+                    “Da quando usiamo FiscMoney non litigo più con mia moglie per i conti di casa: sappiamo esattamente quanto ho speso io, quanto ha speso lei e quanto a fine mese dobbiamo conguagliarci 😉. Ha salvato la serenità del nostro budget familiare!”
+                </p>
+                <div class="testimonial-author">
+                    <div class="author-avatar" style="background: linear-gradient(135deg, #f43f5e, #ec4899);">LG</div>
+                    <div>
+                        <strong class="author-name">Luca &amp; Giulia</strong>
+                        <span class="author-role">Coppia &bull; Workspace Familiare</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================================== -->
+    <!-- 3-STEP QUICK ONBOARDING HOW IT WORKS                       -->
+    <!-- ========================================================== -->
+    <div class="how-it-works-section">
+        <div class="section-heading">
+            <span class="section-tag">SEMPLICE & VELOCE</span>
+            <h2 class="section-title">Come iniziare in 3 semplici passaggi</h2>
+        </div>
+
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h4>Crea il tuo Account</h4>
+                <p>Inserisci nome ed email. Sei subito operativo con 60 giorni di licenza PRO completa senza dover inserire carte di credito.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h4>Trascina i tuoi Movimenti</h4>
+                <p>Scarica l'estratto conto dalla tua banca o home banking in formato CSV/Excel e rilascialo nella schermata di import.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h4>Scopri Risparmi e Tasse</h4>
+                <p>Visualizza all'istante grafici di cash flow, categorie di spesa e l'anteprima delle detrazioni fiscali per il tuo prossimo 730.</p>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ========================================================== -->
+    <!-- BOTTOM CALL TO ACTION BANNER                               -->
+    <!-- ========================================================== -->
+    <div class="bottom-cta-banner">
+        <div class="cta-banner-content">
+            <div class="cta-pill">✨ PROVA GRATUITA 60 GIORNI SENZA VINCOLI</div>
+            <h3 class="cta-title">Prendi il controllo del tuo patrimonio oggi stesso.</h3>
+            <p class="cta-subtitle">Unisciti agli utenti che usano FiscMoney per gestire conti, monitorare il cash flow e ottimizzare le detrazioni fiscali.</p>
+            <button type="button" onclick="scrollToAuthAndRegister()" class="cta-main-btn">
+                <span>Inizia la Prova Gratuita di 60 Giorni</span>
+                <span style="font-size: 1.2rem;">➔</span>
+            </button>
+            <div style="font-size: 0.76rem; color: #94a3b8; margin-top: 10px;">
+                🔒 Nessuna carta richiesta &bull; Setup in 30 secondi &bull; 100% Riservato
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ========================================================== */
+/* BASE & AMBIENT STYLES                                      */
+/* ========================================================== */
+.auth-landing-wrapper {
+    position: relative;
+    max-width: 1060px;
+    margin: 20px auto 60px auto;
+    padding: 0 16px;
+    z-index: 1;
+    box-sizing: border-box;
+}
+
+/* Glowing Ambient Orbs */
+.glow-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(85px);
+    opacity: 0.32;
+    pointer-events: none;
+    z-index: 0;
+    animation: floatOrb 14s ease-in-out infinite alternate;
+}
+
+.glow-orb-1 {
+    width: 360px;
+    height: 360px;
+    background: radial-gradient(circle, rgba(239, 68, 68, 0.55) 0%, transparent 70%);
+    top: -40px;
+    left: -40px;
+}
+
+.glow-orb-2 {
+    width: 380px;
+    height: 380px;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.4) 0%, transparent 70%);
+    top: 400px;
+    right: -40px;
+    animation-delay: -7s;
+}
+
+.glow-orb-3 {
+    width: 280px;
+    height: 280px;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.3) 0%, transparent 70%);
+    bottom: 200px;
+    left: 20%;
+    animation-delay: -3.5s;
+}
+
+@keyframes floatOrb {
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(30px, -20px) scale(1.08); }
+    100% { transform: translate(-20px, 25px) scale(0.95); }
+}
+
+/* ========================================================== */
+/* AUTH CARD (2-COLUMN)                                       */
+/* ========================================================== */
+.auth-grid-card {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 24px;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(239, 68, 68, 0.12);
+    overflow: hidden;
+    margin-bottom: 36px;
+}
+
+/* Left Hero Pane */
+.auth-hero-pane {
+    padding: 36px 32px;
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.55) 0%, rgba(15, 23, 42, 0.85) 100%);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.auth-hero-brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.auth-logo-img {
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    object-fit: cover;
+}
+
+.auth-hero-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+    margin: 0;
+    line-height: 1.1;
+}
+
+.auth-hero-subtitle {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #94a3b8;
+    font-weight: 700;
+    display: block;
+    margin-top: 3px;
+}
+
+.auth-main-hook {
+    font-size: 1.22rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.35;
+    margin: 10px 0 10px 0;
+}
+
+.auth-hero-lead {
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    line-height: 1.5;
+    margin: 0 0 18px 0;
+}
+
+/* 60-Day Trial Callout */
+.auth-trial-pill {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.18) 0%, rgba(239, 68, 68, 0.18) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    border-radius: 14px;
+    padding: 11px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.12);
+}
+
+.trial-pill-badge {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #000;
+    font-weight: 900;
+    font-size: 0.72rem;
+    padding: 4px 8px;
+    border-radius: 8px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+/* Feature List */
+.auth-features-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.auth-feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.feature-icon {
+    font-size: 1.1rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.auth-feature-item strong {
+    font-size: 0.82rem;
+    color: #f1f5f9;
+    display: block;
+    margin-bottom: 1px;
+}
+
+.auth-feature-item p {
+    font-size: 0.74rem;
+    color: #94a3b8;
+    margin: 0;
+    line-height: 1.35;
+}
+
+.auth-hero-footer {
+    font-size: 0.72rem;
+    color: #64748b;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Right Interactive Form Pane */
+.auth-form-pane {
+    padding: 32px 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: rgba(15, 23, 42, 0.6);
+}
+
+.mobile-brand-bar {
+    display: none;
+}
+
+/* Segmented Tab Bar */
+.auth-tab-bar {
+    display: flex;
+    background: rgba(0, 0, 0, 0.35);
+    padding: 4px;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 18px;
+    gap: 4px;
+}
+
+.auth-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 0.86rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    min-height: 42px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.auth-tab-btn:hover {
+    color: #fff;
+}
+
+.auth-tab-btn.active {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.tab-badge-free {
+    background: rgba(245, 158, 11, 0.25);
+    color: #fef08a;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-weight: 800;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+/* Panes */
+.auth-pane-content {
+    display: none;
+    animation: fadeInTab 0.25s ease;
+}
+
+.auth-pane-content.active {
+    display: block;
+}
+
+@keyframes fadeInTab {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.auth-pane-header {
+    margin-bottom: 16px;
+}
+
+.auth-pane-header h2 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 3px 0;
+}
+
+.auth-pane-header p {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    margin: 0;
+}
+
+/* Form inputs */
+.auth-form-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.auth-input-group label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    margin-bottom: 4px;
+}
+
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 12px;
+    font-size: 0.95rem;
+    pointer-events: none;
+    opacity: 0.75;
+}
+
+.auth-input {
+    width: 100%;
+    background: rgba(30, 41, 59, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 11px;
+    color: #fff;
+    padding: 12px 12px 12px 38px;
+    font-size: 16px; /* Prevents iOS auto-zoom */
+    line-height: 1.2;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+}
+
+.auth-input:focus {
+    outline: none;
+    background: rgba(30, 41, 59, 0.95);
+    border-color: var(--accent-primary, #ef4444);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+}
+
+.auth-privacy-box {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 9px 11px;
+    margin: 2px 0;
+}
+
+/* Submit Buttons */
+.auth-submit-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.92rem;
+    padding: 13px 18px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    transition: all 0.25s ease;
+    margin-top: 4px;
+    min-height: 48px;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.auth-submit-btn:hover, .auth-submit-btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 25px rgba(239, 68, 68, 0.55);
+}
+
+.auth-submit-btn.reg-btn {
+    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+}
+
+.auth-submit-btn.reg-btn:hover, .auth-submit-btn.reg-btn:active {
+    box-shadow: 0 10px 25px rgba(245, 158, 11, 0.5);
+}
+
+.auth-switch-prompt {
+    text-align: center;
+    font-size: 0.78rem;
+    color: #94a3b8;
+    margin-top: 12px;
+}
+
+/* Trust Strip */
+.auth-trust-strip {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trust-item {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+
+/* ========================================================== */
+/* BANKS TICKER STRIP                                         */
+/* ========================================================== */
+.banks-strip-container {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 16px 20px;
+    margin-bottom: 48px;
+    text-align: center;
+}
+
+.banks-strip-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    color: #94a3b8;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+}
+
+.banks-badges-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+
+.bank-badge {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.bank-badge:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+
+/* ========================================================== */
+/* 3 PILLARS SHOWCASE                                         */
+/* ========================================================== */
+.landing-showcase-section {
+    margin-bottom: 54px;
+}
+
+.section-heading {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.section-tag {
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    color: var(--accent-primary, #ef4444);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.section-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 8px 0;
+    line-height: 1.2;
+}
+
+.section-subtitle {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    max-width: 620px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+.pillars-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.pillar-card {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 26px 22px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    transition: transform 0.25s ease, border-color 0.25s ease;
+}
+
+.pillar-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.pillar-card.highlight-pillar {
+    border-color: rgba(245, 158, 11, 0.4);
+    background: linear-gradient(165deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);
+    box-shadow: 0 12px 35px rgba(245, 158, 11, 0.12);
+}
+
+.pillar-badge-popular {
+    position: absolute;
+    top: -12px;
+    right: 20px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #000;
+    font-size: 0.64rem;
+    font-weight: 900;
+    padding: 3px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+}
+
+.pillar-icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    margin-bottom: 16px;
+}
+
+.pillar-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 10px 0;
+}
+
+.pillar-desc {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    line-height: 1.55;
+    margin-bottom: 18px;
+    flex-grow: 1;
+}
+
+.pillar-checklist {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 14px;
+}
+
+.pillar-checklist li {
+    font-size: 0.76rem;
+    color: #cbd5e1;
+    line-height: 1.35;
+}
+
+
+/* ========================================================== */
+/* TESTIMONIALS & REAL FEEDBACK                               */
+/* ========================================================== */
+.testimonials-section {
+    margin-bottom: 54px;
+}
+
+.testimonials-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.testimonial-card {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    transition: transform 0.25s ease, border-color 0.25s ease;
+    position: relative;
+}
+
+.testimonial-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.testimonial-card.highlight-testimonial {
+    border-color: rgba(245, 158, 11, 0.35);
+    background: linear-gradient(165deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.9) 100%);
+}
+
+.testimonial-rating {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.stars {
+    color: #fbbf24;
+    font-size: 0.95rem;
+    letter-spacing: 2px;
+}
+
+.outcome-tag {
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.outcome-time {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.outcome-money {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fef08a;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.outcome-budget {
+    background: rgba(52, 211, 153, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(52, 211, 153, 0.3);
+}
+
+.outcome-couple {
+    background: rgba(244, 63, 94, 0.15);
+    color: #fda4af;
+    border: 1px solid rgba(244, 63, 94, 0.35);
+}
+
+.testimonial-text {
+    font-size: 0.82rem;
+    color: #cbd5e1;
+    line-height: 1.55;
+    margin: 0 0 18px 0;
+    font-style: italic;
+    flex-grow: 1;
+}
+
+.testimonial-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 14px;
+}
+
+.author-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    flex-shrink: 0;
+}
+
+.author-name {
+    font-size: 0.84rem;
+    color: #fff;
+    display: block;
+}
+
+.author-role {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    display: block;
+}
+
+
+/* ========================================================== */
+/* HOW IT WORKS 3-STEP                                        */
+/* ========================================================== */
+.how-it-works-section {
+    margin-bottom: 50px;
+}
+
+.steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+
+.step-card {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 18px;
+    padding: 22px 18px;
+    text-align: center;
+}
+
+.step-number {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.8), rgba(245, 158, 11, 0.8));
+    color: #fff;
+    font-weight: 900;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px auto;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+}
+
+.step-card h4 {
+    font-size: 0.98rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 6px 0;
+}
+
+.step-card p {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    line-height: 1.45;
+    margin: 0;
+}
+
+
+/* ========================================================== */
+/* BOTTOM CTA BANNER                                          */
+/* ========================================================== */
+.bottom-cta-banner {
+    background: radial-gradient(circle at center, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 22px;
+    padding: 36px 24px;
+    text-align: center;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(239, 68, 68, 0.15);
+}
+
+.cta-pill {
+    display: inline-block;
+    background: rgba(245, 158, 11, 0.2);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #fef08a;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+}
+
+.cta-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 8px 0;
+}
+
+.cta-subtitle {
+    font-size: 0.88rem;
+    color: #cbd5e1;
+    max-width: 560px;
+    margin: 0 auto 20px auto;
+    line-height: 1.45;
+}
+
+.cta-main-btn {
+    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+    color: #fff;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 14px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.25s ease;
+}
+
+.cta-main-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(245, 158, 11, 0.55);
+}
+
+
+/* ========================================================== */
+/* RESPONSIVE BREAKPOINTS                                     */
+/* ========================================================== */
+@media (max-width: 860px) {
+    .auth-landing-wrapper {
+        margin: 10px auto 30px auto;
+        padding: 0 10px;
+    }
+
+    .auth-grid-card {
+        grid-template-columns: 1fr;
+        border-radius: 20px;
+    }
+
+    .auth-hero-pane {
+        display: none;
+    }
+
+    .mobile-brand-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .mobile-logo-mini {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .auth-form-pane {
+        padding: 20px 16px;
+    }
+
+    .pillars-grid, .steps-grid, .testimonials-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .section-title {
+        font-size: 1.35rem;
+    }
+
+    .cta-title {
+        font-size: 1.25rem;
+    }
+}
+
+/* Password Requirements Live Box */
+.pwd-requirements-box {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    margin-top: 6px;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.28);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pwd-req-item {
+    font-size: 0.7rem;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+}
+
+.pwd-req-item .req-icon {
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+.pwd-req-item.valid {
+    color: #34d399;
+    font-weight: 700;
+}
+
+.pwd-req-item.valid .req-icon {
+    color: #34d399;
+}
+</style>
+
+<script>
+function switchAuthTab(mode) {
+    const btnLogin = document.getElementById('tabBtnLogin');
+    const btnRegister = document.getElementById('tabBtnRegister');
+    const paneLogin = document.getElementById('authPaneLogin');
+    const paneRegister = document.getElementById('authPaneRegister');
+
+    if (mode === 'register') {
+        btnLogin.classList.remove('active');
+        btnRegister.classList.add('active');
+        paneLogin.classList.remove('active');
+        paneRegister.classList.add('active');
+        window.location.hash = 'register';
+        const nameInput = document.getElementById('regFullName');
+        if (nameInput) nameInput.focus();
+    } else {
+        btnRegister.classList.remove('active');
+        btnLogin.classList.add('active');
+        paneRegister.classList.remove('active');
+        paneLogin.classList.add('active');
+        history.replaceState(null, null, ' ');
+        const emailInput = document.getElementById('loginEmail');
+        if (emailInput) emailInput.focus();
+    }
+}
+
+function scrollToAuthAndRegister() {
+    switchAuthTab('register');
+    const box = document.getElementById('authBox');
+    if (box) {
+        box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+// Live Password Complexity Checker
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.location.hash === '#register' || window.location.search.includes('register')) {
+        switchAuthTab('register');
+    }
+
+    const regPwdInput = document.getElementById('regPassword');
+    if (regPwdInput) {
+        regPwdInput.addEventListener('input', function() {
+            const val = this.value;
+            const hasLength = val.length >= 8;
+            const hasNumber = /\d/.test(val);
+            const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':",.<>/?\\|`~]/.test(val);
+
+            updateReqItem('reqLength', hasLength);
+            updateReqItem('reqNumber', hasNumber);
+            updateReqItem('reqSpecial', hasSpecial);
+        });
+    }
+});
+
+function updateReqItem(id, isValid) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const icon = el.querySelector('.req-icon');
+    if (isValid) {
+        el.classList.add('valid');
+        if (icon) icon.innerText = '✓';
+    } else {
+        el.classList.remove('valid');
+        if (icon) icon.innerText = '○';
+    }
+}
+</script>
+{% endblock %}

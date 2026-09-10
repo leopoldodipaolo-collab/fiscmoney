@@ -1,0 +1,881 @@
+{% extends "base.html" %}
+
+{% block title %}Dettaglio Cedolino {{ "%02d"|format(paystub.month) }}/{{ paystub.year }} | FiscMoney{% endblock %}
+
+{% block content %}
+
+<style>
+/* Modern Professional Paystub Detail Styles */
+.btn-back-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 24px;
+    padding: 6px 14px 6px 10px;
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    margin-bottom: 8px;
+    backdrop-filter: blur(8px);
+}
+.btn-back-pill:hover, .btn-back-pill:active {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.4);
+    color: #60a5fa;
+    transform: translateX(-3px);
+}
+.btn-back-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 0.85rem;
+    line-height: 1;
+}
+.paystub-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.title-with-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.paystub-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.header-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.btn-action-pill {
+    padding: 7px 13px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+.btn-glossary {
+    background: rgba(56, 189, 248, 0.12);
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.3);
+}
+.btn-edit {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-color: #334155;
+}
+.btn-delete {
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+.assistant-speech-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: center;
+}
+.net-highlight-card {
+    text-align: right;
+    min-width: 175px;
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 14px 18px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+}
+.salary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 8px;
+    transition: background 0.15s;
+    cursor: pointer;
+}
+.salary-row:hover, .salary-row:active {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Mobile Responsiveness for Small Screens */
+@media (max-width: 768px) {
+    .paystub-detail-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .header-left {
+        width: 100%;
+    }
+    .paystub-title {
+        font-size: 1.2rem;
+    }
+    .header-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+    .header-actions .btn-action-pill {
+        justify-content: center;
+        padding: 9px 8px;
+        font-size: 0.78rem;
+        width: 100%;
+    }
+    .header-actions form {
+        width: 100%;
+    }
+    .assistant-speech-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+    .net-highlight-card {
+        text-align: left;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 14px;
+        background: rgba(15, 23, 42, 0.85);
+        border-color: rgba(16, 185, 129, 0.35);
+    }
+    .net-highlight-card .net-value-box {
+        text-align: right;
+    }
+}
+</style>
+
+<!-- Breadcrumb & Top Action Bar -->
+<div class="paystub-detail-header">
+    <div class="header-left">
+        <a href="/paystubs?profile_id={{ profile.id }}&year={{ paystub.year }}" class="btn-back-pill">
+            <span class="btn-back-arrow">←</span>
+            <span>Tutti i Cedolini</span>
+        </a>
+        <div class="title-with-badge">
+            <h1 class="paystub-title">
+                <span>📄 Busta Paga: {{ month_name }} {{ paystub.year }}</span>
+            </h1>
+            <span class="badge-tag" style="background: rgba(59, 130, 246, 0.15); color: var(--accent-primary);">{{ profile.name }}</span>
+        </div>
+    </div>
+
+    <div class="header-actions">
+        <button type="button" onclick="openAssistantModal()" class="btn-action-pill" style="background: {{ assistant_briefing.persona.badge_bg }}; color: {{ assistant_briefing.persona.badge_color }}; border: 1px solid {{ assistant_briefing.persona.border_color }};">
+            <span>{{ assistant_briefing.persona.avatar }}</span>
+            <span>{{ assistant_briefing.persona.name }}</span>
+        </button>
+        <button type="button" onclick="openGlossaryModal()" class="btn-action-pill btn-glossary">
+            <span>📖</span>
+            <span>Guida Voci</span>
+        </button>
+        <a href="/paystubs/new?profile_id={{ profile.id }}&edit_id={{ paystub.id }}" class="btn-action-pill btn-edit">
+            <span>✏️</span>
+            <span>Modifica</span>
+        </a>
+        <form method="POST" action="/paystubs/{{ paystub.id }}/delete" onsubmit="return confirm('Sei sicuro di voler eliminare questo cedolino?');" style="margin: 0;">
+            <button type="submit" class="btn-action-pill btn-delete">
+                <span>🗑️</span>
+                <span>Elimina</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- AI Virtual Assistant Persona Briefing Hero Card -->
+<div class="card" style="margin-bottom: 16px; border: 1px solid {% if assistant_briefing.has_anomalies %}#ef4444{% else %}{{ assistant_briefing.persona.border_color }}{% endif %}; background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), {% if assistant_briefing.has_anomalies %}rgba(239, 68, 68, 0.15){% else %}{{ assistant_briefing.persona.badge_bg }}{% endif %}); position: relative; overflow: hidden;">
+    
+    <!-- Top Row: Persona Info -->
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 10px; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: {{ assistant_briefing.persona.badge_bg }}; border: 2px solid {{ assistant_briefing.persona.badge_color }}; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 4px 14px {{ assistant_briefing.persona.badge_bg }}; flex-shrink: 0; overflow: hidden; cursor: pointer;" onclick="openAssistantModal()" title="Assistente: {{ assistant_briefing.persona.name }}">
+                {% if assistant_briefing.persona.image %}
+                <img src="{{ assistant_briefing.persona.image }}" alt="{{ assistant_briefing.persona.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                {{ assistant_briefing.persona.avatar }}
+                {% endif %}
+            </div>
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <h3 style="font-size: 1.08rem; font-weight: 800; color: #fff; margin: 0;">{{ assistant_briefing.persona.name }}</h3>
+                    <span class="badge-tag" style="background: {{ assistant_briefing.persona.badge_bg }}; color: {{ assistant_briefing.persona.badge_color }}; border: 1px solid {{ assistant_briefing.persona.border_color }}; font-size: 0.72rem; font-weight: 700; padding: 2px 8px; border-radius: 6px;">
+                        {{ assistant_briefing.persona.title }}
+                    </span>
+                </div>
+                <span style="font-size: 0.76rem; color: var(--text-muted);">{{ assistant_briefing.persona.role_desc }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Middle: Personalized Speech Bubble & Net Highlight -->
+    <div class="assistant-speech-grid">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+                <h4 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">
+                    {{ assistant_briefing.headline }}
+                </h4>
+                <span class="badge-tag" style="background: {% if assistant_briefing.has_anomalies %}rgba(239, 68, 68, 0.25); color: #f87171; border: 1px solid #ef4444;{% elif assistant_briefing.is_matched %}rgba(16, 185, 129, 0.2); color: #34d399;{% else %}rgba(245, 158, 11, 0.2); color: #fbbf24;{% endif %} font-size: 0.74rem; font-weight: 800;">
+                    {{ assistant_briefing.status_tag }}
+                </span>
+            </div>
+
+            <p style="color: #e2e8f0; font-size: 0.9rem; line-height: 1.5; margin-bottom: 6px;">
+                {{ assistant_briefing.p1|safe }}
+            </p>
+            <p style="color: #cbd5e1; font-size: 0.86rem; line-height: 1.45; margin-bottom: 12px;">
+                {{ assistant_briefing.p2|safe }}
+            </p>
+
+            <!-- Highlights Bullets -->
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                {% for b in assistant_briefing.bullets %}
+                <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(51, 65, 85, 0.8); border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; color: #e2e8f0;">
+                    {{ b|safe }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Right: Net Amount Badge -->
+        <div class="net-highlight-card">
+            <div>
+                <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700;">Netto Cedolino</span>
+                <div style="font-size: 1.65rem; font-weight: 900; color: #10b981; line-height: 1.2; margin-top: 2px;">
+                    {{ paystub.net_amount|eur }}
+                </div>
+            </div>
+            <div class="net-value-box">
+                {% if paystub.matched_tx_id %}
+                <span style="font-size: 0.7rem; color: #34d399; display: inline-flex; align-items: center; gap: 3px; margin-top: 4px;" title="Bonifico riconciliato con successo">
+                    <span>✓</span> Bonifico abbinato
+                </span>
+                {% elif bank_coverage and bank_coverage.coverage_status == 'NOT_IMPORTED' %}
+                <span style="font-size: 0.68rem; color: #94a3b8; display: inline-flex; align-items: center; gap: 3px; margin-top: 4px;" title="Estratto conto bancario non ancora importato per questo mese">
+                    <span>⏳</span> Estratto conto non caricato
+                </span>
+                {% elif bank_coverage and bank_coverage.is_partial %}
+                <span style="font-size: 0.68rem; color: #f59e0b; display: inline-flex; align-items: center; gap: 3px; margin-top: 4px;" title="Estratto conto parziale fino al {{ bank_coverage.max_date_it }}">
+                    <span>⏳</span> Estratto conto parziale (al {{ bank_coverage.max_date_it }})
+                </span>
+                {% else %}
+                <span style="font-size: 0.7rem; color: #ef4444; display: inline-flex; align-items: center; gap: 3px; margin-top: 4px;" title="Estratto conto presente ma bonifico non trovato">
+                    <span>⚠️</span> Bonifico non trovato
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Paystub Guardian: Detected Anomalies & Resolution Action Center -->
+{% if anomalies %}
+<div class="card" style="margin-bottom: 16px; border: 1px solid #ef4444; background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(15, 23, 42, 0.95)); border-left: 5px solid #ef4444;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.4rem;">🛡️</span>
+            <div>
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0;">
+                    Cane da Guardia FiscMoney: {{ anomalies|length }} Anomali{{ 'a' if anomalies|length == 1 else 'e' }} Rilevat{{ 'a' if anomalies|length == 1 else 'e' }}
+                </h3>
+                <span style="font-size: 0.76rem; color: #fca5a5;">Abbiamo identificato delle discrepanze che potrebbero farti perdere soldi o contributi previdenziali.</span>
+            </div>
+        </div>
+        <span class="badge-tag" style="background: rgba(239, 68, 68, 0.25); color: #f87171; font-weight: 800; font-size: 0.78rem;">
+            Azione Raccomandata
+        </span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for a in anomalies %}
+        <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid {{ a.badge_color }}; border-radius: 10px; padding: 14px; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.3rem;">{{ a.icon }}</span>
+                    <strong style="color: #fff; font-size: 0.95rem;">{{ a.title }}</strong>
+                </div>
+                <span class="badge-tag" style="background: rgba(239, 68, 68, 0.2); color: {{ a.badge_color }}; font-size: 0.72rem; font-weight: 700;">
+                    {{ a.severity_label }}
+                </span>
+            </div>
+
+            <p style="color: #e2e8f0; font-size: 0.88rem; margin: 0 0 6px 0; line-height: 1.45;">
+                {{ a.what }}
+            </p>
+            <div style="color: #fbbf24; font-size: 0.82rem; font-weight: 600; margin-bottom: 10px;">
+                💰 <strong>Impatto economico:</strong> {{ a.impact }}
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-top: 1px dashed rgba(255, 255, 255, 0.1); padding-top: 10px;">
+                <span style="font-size: 0.78rem; color: var(--text-muted);">
+                    👉 <strong>Cosa fare:</strong> {{ a.action }}
+                </span>
+                <button type="button" onclick="openHrTemplateModal({{ loop.index0 }})" class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; background: #0284c7; color: #fff; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                    <span>✉️</span>
+                    <span>Mostra Modulo per Ufficio HR / Paghe</span>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Month-over-Month Diff Engine Card -->
+{% if diff_info and diff_info.has_prev %}
+<div class="card" style="margin-bottom: 16px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8)); border: 1px solid #334155;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 style="font-size: 0.95rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 6px;">
+            <span>🔍 Perché questo mese è diverso? (vs {{ diff_info.prev_month_name }} {{ diff_info.prev_year }})</span>
+        </h3>
+        <span class="badge-tag" style="background: {% if diff_info.net_diff >= 0 %}rgba(16, 185, 129, 0.15); color: #34d399;{% else %}rgba(239, 68, 68, 0.15); color: #f87171;{% endif %} font-size: 0.8rem; font-weight: 700;">
+            {{ diff_info.net_diff|eur_sign }} Netto
+        </span>
+    </div>
+
+    <p style="color: #cbd5e1; font-size: 0.88rem; margin-bottom: 12px; line-height: 1.4;">
+        {{ diff_info.summary_text|safe }}
+    </p>
+
+    {% if diff_info.diffs %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px;">
+        {% for d in diff_info.diffs %}
+        <div style="background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(51, 65, 85, 0.6); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">{{ d.label }}</span>
+            <span style="font-size: 0.82rem; font-weight: 700; color: {% if d.type == 'positive' %}#34d399{% else %}#f87171{% endif %};">
+                {{ d.explanation }}
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Grid: 4 Modern Responsive Anatomy Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); gap: 16px; margin-bottom: 20px;">
+
+    <!-- Card 1: Competenze Lorde -->
+    <div class="card" style="margin-bottom: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #334155; padding-bottom: 8px;">
+            <h3 style="font-size: 1rem; font-weight: 800; color: #38bdf8; margin: 0; display: flex; align-items: center; gap: 6px;">
+                <span>💼 Competenze Lorde</span>
+            </h3>
+            <span style="font-size: 1.15rem; font-weight: 800; color: #fff;">{{ paystub.gross_amount|eur }}</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem;">
+            {% if paystub.base_salary > 0 %}
+            <div class="salary-row" onclick="showFieldInfo('paga_base')" title="Clicca per spiegazione">
+                <span class="field-label">Paga Base / Tabellare <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #fff; font-weight: 600;">{{ paystub.base_salary|eur }}</span>
+            </div>
+            {% endif %}
+
+            {% if paystub.contingenza > 0 %}
+            <div class="salary-row" onclick="showFieldInfo('paga_base')" title="Clicca per spiegazione">
+                <span class="field-label">Contingenza & E.D.R. <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #fff; font-weight: 600;">{{ paystub.contingenza|eur }}</span>
+            </div>
+            {% endif %}
+
+            {% if paystub.superminimo > 0 %}
+            <div class="salary-row" onclick="showFieldInfo('superminimo')" title="Clicca per spiegazione">
+                <span class="field-label">Superminimo Individuale <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #38bdf8; font-weight: 700;">{{ paystub.superminimo|eur }}</span>
+            </div>
+            {% endif %}
+
+            {% if paystub.scatti_anzianita > 0 %}
+            <div class="salary-row" onclick="showFieldInfo('scatti_anzianita')" title="Clicca per spiegazione">
+                <span class="field-label">Scatti di Anzianità <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #fff; font-weight: 600;">{{ paystub.scatti_anzianita|eur }}</span>
+            </div>
+            {% endif %}
+
+            {% if paystub.overtime_amount > 0 %}
+            <div class="salary-row" onclick="showFieldInfo('paga_base')" title="Clicca per spiegazione">
+                <span class="field-label" style="color: #38bdf8;">Straordinari & Maggiorazioni <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #38bdf8; font-weight: 700;">+{{ paystub.overtime_amount|eur }}</span>
+            </div>
+            {% endif %}
+
+            {% if paystub.bonuses > 0 %}
+            <div class="salary-row" onclick="showFieldInfo('premi_bonus')" title="Clicca per spiegazione Bonus & Premi" style="background: rgba(56, 189, 248, 0.08); padding: 6px 8px; border-radius: 6px; border: 1px dashed rgba(56, 189, 248, 0.35);">
+                <span class="field-label" style="color: #38bdf8; font-weight: 700;">Bonus M.B.O. / Premio di Risultato 🏆 <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #38bdf8; font-weight: 800;">+{{ paystub.bonuses|eur }}</span>
+            </div>
+            {% endif %}
+
+            {% if paystub.fringe_benefit > 0 %}
+            <div class="salary-row" onclick="showFieldInfo('paga_base')" title="Clicca per spiegazione">
+                <span class="field-label" style="color: #a855f7;">Fringe Benefit / Welfare <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #c084fc; font-weight: 700;">{{ paystub.fringe_benefit|eur }}</span>
+            </div>
+            {% endif %}
+
+            {% if (paystub.ticket_count or 0) > 0 or (paystub.ticket_total_value or 0) > 0 %}
+            <div class="salary-row" onclick="showFieldInfo('buoni_pasto')" title="Clicca per spiegazione Welfare & Buoni Pasto" style="background: rgba(16, 185, 129, 0.08); padding: 6px 8px; border-radius: 6px; border: 1px dashed rgba(16, 185, 129, 0.35);">
+                <span class="field-label" style="color: #34d399; font-weight: 700;">
+                    Buoni Pasto ({{ paystub.ticket_count|int }} ticket) 🥪 <span class="info-bubble">ℹ️</span>
+                </span>
+                <span style="color: #34d399; font-weight: 800;">
+                    +{{ (paystub.ticket_total_value or (paystub.ticket_count * 8.0))|eur }} <small style="font-size: 0.7rem; font-weight: normal; color: #a7f3d0;">esenti</small>
+                </span>
+            </div>
+            {% endif %}
+
+            {% if paystub.other_additions > 0 %}
+            <div class="salary-row">
+                <span class="field-label">Altre Competenze</span>
+                <span style="color: #fff; font-weight: 600;">{{ paystub.other_additions|eur }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Card 2: Trattenute Fiscali & Previdenziali -->
+    <div class="card" style="margin-bottom: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #334155; padding-bottom: 8px;">
+            <h3 style="font-size: 1rem; font-weight: 800; color: #ef4444; margin: 0; display: flex; align-items: center; gap: 6px;">
+                <span>🏛️ Trattenute & Fisco</span>
+            </h3>
+            <span style="font-size: 1.15rem; font-weight: 800; color: #ef4444;">
+                -{{ ((paystub.inps_tax or 0) + (paystub.irpef_net or paystub.irpef_tax or 0) + (paystub.regional_tax or 0) + (paystub.municipal_tax or 0) + (paystub.other_deductions or 0) + (paystub.pension_fund_contrib_employee or 0))|eur }}
+            </span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem;">
+            <div class="salary-row" onclick="showFieldInfo('inps')" title="Clicca per spiegazione">
+                <span class="field-label">Contributi INPS c/dipendente <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #38bdf8; font-weight: 600;">-{{ paystub.inps_tax|eur }}</span>
+            </div>
+
+            {% if paystub.irpef_gross > 0 %}
+            <div class="salary-row" onclick="showFieldInfo('irpef_lorda')" title="Clicca per spiegazione">
+                <span class="field-label">IRPEF Lorda <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #94a3b8;">{{ paystub.irpef_gross|eur }}</span>
+            </div>
+            {% endif %}
+
+            {% if paystub.tax_deductions > 0 %}
+            <div class="salary-row" onclick="showFieldInfo('detrazioni')" title="Clicca per spiegazione">
+                <span class="field-label" style="color: #10b981;">Detrazioni Lavoro Dipendente <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #10b981; font-weight: 700;">+{{ paystub.tax_deductions|eur }}</span>
+            </div>
+            {% endif %}
+
+            <div class="salary-row" onclick="showFieldInfo('irpef_netta')" title="Clicca per spiegazione">
+                <span class="field-label" style="font-weight: 700; color: #fff;">IRPEF Netta Trattenuta <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #fbbf24; font-weight: 700;">-{{ (paystub.irpef_net or paystub.irpef_tax)|eur }}</span>
+            </div>
+
+            {% if paystub.regional_tax > 0 %}
+            <div class="salary-row" onclick="showFieldInfo('addizionali')" title="Clicca per spiegazione">
+                <span class="field-label">Addizionale Regionale <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #ef4444; font-weight: 600;">-{{ paystub.regional_tax|eur }}</span>
+            </div>
+            {% endif %}
+
+            {% if paystub.municipal_tax > 0 %}
+            <div class="salary-row" onclick="showFieldInfo('addizionali')" title="Clicca per spiegazione">
+                <span class="field-label">Addizionale Comunale <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #ef4444; font-weight: 600;">-{{ paystub.municipal_tax|eur }}</span>
+            </div>
+            {% endif %}
+
+            {% if paystub.trattamento_integrativo > 0 %}
+            <div class="salary-row">
+                <span class="field-label" style="color: #10b981;">Trattamento Integrativo (100€)</span>
+                <span style="color: #10b981; font-weight: 700;">+{{ paystub.trattamento_integrativo|eur }}</span>
+            </div>
+            {% endif %}
+
+            {% if paystub.other_deductions > 0 %}
+            <div class="salary-row">
+                <span class="field-label">Altre Trattenute</span>
+                <span style="color: #ef4444; font-weight: 600;">-{{ paystub.other_deductions|eur }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Card 3: Fondo Pensione Complementare (FONDAPI, COMETA, ecc.) -->
+    <div class="card" style="margin-bottom: 0; border: 1px solid rgba(14, 165, 233, 0.3); background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(14, 165, 233, 0.05));">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #334155; padding-bottom: 8px;">
+            <h3 style="font-size: 1rem; font-weight: 800; color: #38bdf8; margin: 0; display: flex; align-items: center; gap: 6px;">
+                <span>🚀 Fondo Pensione</span>
+                <span class="badge-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 0.72rem;">
+                    {{ paystub.pension_fund_name or paystub.tfr_fund_type or 'FONDAPI' }}
+                </span>
+            </h3>
+            <span style="font-size: 0.85rem; color: #10b981; font-weight: 700; cursor: pointer;" onclick="showFieldInfo('fondo_pensione')" title="Informazioni previdenza integrativa">
+                <span class="info-bubble">ℹ️ Come funziona</span>
+            </span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem;">
+            
+            <div class="salary-row" onclick="showFieldInfo('fondo_pensione')">
+                <span class="field-label">Contributo Dipendente (Trattenuto) <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #38bdf8; font-weight: 700;">
+                    -{{ (paystub.pension_fund_contrib_employee or 0)|eur }}
+                </span>
+            </div>
+
+            <div class="salary-row" onclick="showFieldInfo('fondo_pensione')" style="background: {% if (paystub.pension_fund_contrib_company or 0) > 0 %}rgba(16, 185, 129, 0.08){% else %}rgba(239, 68, 68, 0.08){% endif %}; padding: 6px 8px; border-radius: 6px; border: 1px dashed {% if (paystub.pension_fund_contrib_company or 0) > 0 %}rgba(16, 185, 129, 0.3){% else %}rgba(239, 68, 68, 0.4){% endif %};">
+                <span class="field-label" style="color: {% if (paystub.pension_fund_contrib_company or 0) > 0 %}#34d399{% else %}#f87171{% endif %}; font-weight: 700;">
+                    Contributo Azienda (Gratis!) 🎁 <span class="info-bubble">ℹ️</span>
+                </span>
+                <span style="color: {% if (paystub.pension_fund_contrib_company or 0) > 0 %}#34d399{% else %}#f87171{% endif %}; font-weight: 800;">
+                    +{{ (paystub.pension_fund_contrib_company or 0)|eur }}
+                </span>
+            </div>
+
+            <div class="salary-row" onclick="showFieldInfo('tfr')">
+                <span class="field-label">Quota TFR Mensile al Fondo <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #c084fc; font-weight: 700;">
+                    +{{ (paystub.pension_fund_tfr_month or paystub.tfr_month or 0)|eur }}
+                </span>
+            </div>
+
+            <div style="margin-top: 6px; border-top: 1px solid #334155; padding-top: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: var(--text-muted); font-size: 0.8rem;">Posizione Totale Fondo:</span>
+                    <span style="color: #38bdf8; font-weight: 900; font-size: 1.05rem;">
+                        {{ (paystub.pension_fund_total or paystub.tfr_accumulated_total or 0)|eur }}
+                    </span>
+                </div>
+                <small style="color: #94a3b8; font-size: 0.72rem; display: block; margin-top: 4px;">
+                    🛡️ Deducibile nel Modello 730 fino a <strong>5.164,57 €/anno</strong>.
+                </small>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Card 4: TFR & Ferie / Permessi -->
+    <div class="card" style="margin-bottom: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid #334155; padding-bottom: 8px;">
+            <h3 style="font-size: 1rem; font-weight: 800; color: #c084fc; margin: 0; display: flex; align-items: center; gap: 6px;">
+                <span>🏖️ TFR & Banca Ore</span>
+            </h3>
+            <span style="font-size: 0.85rem; color: var(--text-muted); cursor: pointer;" onclick="showFieldInfo('ferie_rol')">
+                <span class="info-bubble">ℹ️</span>
+            </span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem;">
+            <div class="salary-row" onclick="showFieldInfo('tfr')">
+                <span class="field-label">TFR Maturato nel Mese <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #e9d5ff; font-weight: 600;">+{{ paystub.tfr_month|eur }}</span>
+            </div>
+
+            <div class="salary-row" onclick="showFieldInfo('ferie_rol')">
+                <span class="field-label">Ferie Residue <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #fbbf24; font-weight: 700;">{{ paystub.ferie_residue_ore }} ore</span>
+            </div>
+
+            <div class="salary-row" onclick="showFieldInfo('ferie_rol')">
+                <span class="field-label">ROL / Permessi Residui <span class="info-bubble">ℹ️</span></span>
+                <span style="color: #fbbf24; font-weight: 700;">{{ paystub.rol_residui_ore }} ore</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; color: var(--text-muted); background: rgba(15, 23, 42, 0.6); padding: 8px 10px; border-radius: 6px; margin-top: 4px; border: 1px solid #334155;">
+                <span style="font-size: 0.78rem;">Valore Economico Ore:</span>
+                <span style="color: #10b981; font-weight: 800;">≈ {{ ((paystub.ferie_residue_ore + paystub.rol_residui_ore) * (paystub.net_amount / 168.0))|eur }}</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal: Glossary & Field Explanations -->
+<div id="glossaryModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; padding: 20px;">
+    <div class="modal-card" style="background: #1e293b; border: 1px solid #334155; border-radius: 14px; max-width: 600px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); padding: 24px;">
+        
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 1px solid #334155; padding-bottom: 12px;">
+            <div>
+                <span id="modalIcon" style="font-size: 1.8rem; margin-right: 6px;">ℹ️</span>
+                <h2 id="modalTitle" style="font-size: 1.25rem; font-weight: 800; color: #fff; display: inline-block; margin: 0;">Spiegazione Voce</h2>
+            </div>
+            <button type="button" onclick="closeGlossaryModal()" style="background: transparent; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; padding: 4px 8px;">✕</button>
+        </div>
+
+        <!-- Content Body -->
+        <div id="modalBody" style="display: flex; flex-direction: column; gap: 14px; font-size: 0.92rem; color: #e2e8f0; line-height: 1.5;">
+            
+            <div style="background: rgba(15, 23, 42, 0.6); padding: 12px 14px; border-radius: 8px; border-left: 3px solid #38bdf8;">
+                <h4 style="font-size: 0.85rem; text-transform: uppercase; color: #38bdf8; margin: 0 0 4px 0; font-weight: 800;">📘 Che cos'è</h4>
+                <p id="modalWhat" style="margin: 0; color: #cbd5e1;"></p>
+            </div>
+
+            <div style="background: rgba(15, 23, 42, 0.6); padding: 12px 14px; border-radius: 8px; border-left: 3px solid #f59e0b;">
+                <h4 style="font-size: 0.85rem; text-transform: uppercase; color: #f59e0b; margin: 0 0 4px 0; font-weight: 800;">📐 Come si calcola</h4>
+                <p id="modalHow" style="margin: 0; color: #cbd5e1;"></p>
+            </div>
+
+            <div style="background: rgba(16, 185, 129, 0.1); padding: 12px 14px; border-radius: 8px; border-left: 3px solid #10b981;">
+                <h4 style="font-size: 0.85rem; text-transform: uppercase; color: #34d399; margin: 0 0 4px 0; font-weight: 800;">💡 Il Consiglio FiscMoney</h4>
+                <p id="modalTip" style="margin: 0; color: #a7f3d0; font-weight: 500;"></p>
+            </div>
+
+        </div>
+
+        <!-- Full Glossary View (if opened via top button) -->
+        <div id="fullGlossaryList" style="display: none; flex-direction: column; gap: 12px; margin-top: 10px;">
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 8px;">
+                Tocca qualsiasi termine per approfondire il significato e i vantaggi fiscali:
+            </p>
+            {% for key, item in glossary.items() %}
+            <div onclick="showFieldInfo('{{ key }}')" style="background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(56, 189, 248, 0.1)'" onmouseout="this.style.background='rgba(15, 23, 42, 0.6)'">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.2rem;">{{ item.icon }}</span>
+                    <div>
+                        <div style="font-weight: 700; color: #fff; font-size: 0.9rem;">{{ item.title }}</div>
+                        <div style="color: var(--text-muted); font-size: 0.78rem;">{{ item.what[:75] }}...</div>
+                    </div>
+                </div>
+                <span style="color: #38bdf8; font-size: 0.85rem;">Dettagli →</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Footer -->
+        <div style="margin-top: 20px; text-align: right; border-top: 1px solid #334155; padding-top: 12px;">
+            <button type="button" onclick="closeGlossaryModal()" class="btn-primary" style="padding: 8px 18px; font-size: 0.85rem; border-radius: 8px; cursor: pointer;">
+                Chiudi
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal: Choose Assistant Persona -->
+<div id="assistantModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; padding: 20px;">
+    <div class="modal-card" style="background: #1e293b; border: 1px solid #334155; border-radius: 14px; max-width: 620px; width: 100%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); padding: 24px;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #334155; padding-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.6rem;">🤖</span>
+                <h2 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin: 0;">Scegli il tuo Assistente Personale</h2>
+            </div>
+            <button type="button" onclick="closeAssistantModal()" style="background: transparent; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer;">✕</button>
+        </div>
+
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
+            Seleziona la personalità che preferisci per analizzare i tuoi cedolini, monitorare il conto e darti consigli finanziari:
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 20px;">
+            {% for p_key, p_val in personas.items() %}
+            <form method="POST" action="/assistant/switch" style="margin: 0;">
+                <input type="hidden" name="persona" value="{{ p_key }}">
+                <input type="hidden" name="profile_id" value="{{ profile.id }}">
+                <input type="hidden" name="next" value="/paystubs/{{ paystub.id }}?persona={{ p_key }}">
+                
+                <button type="submit" style="width: 100%; text-align: left; background: {% if p_key == current_persona %}rgba(56, 189, 248, 0.12){% else %}rgba(15, 23, 42, 0.6){% endif %}; border: 1px solid {% if p_key == current_persona %}{{ p_val.badge_color }}{% else %}#334155{% endif %}; border-radius: 10px; padding: 12px 14px; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='{{ p_val.badge_color }}'" onmouseout="this.style.borderColor='{% if p_key == current_persona %}{{ p_val.badge_color }}{% else %}#334155{% endif %}'">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                        <span style="font-size: 1.6rem;">{{ p_val.avatar }}</span>
+                        <div>
+                            <div style="font-weight: 800; color: #fff; font-size: 0.95rem;">{{ p_val.name }}</div>
+                            <div style="font-size: 0.75rem; color: {{ p_val.badge_color }}; font-weight: 700;">{{ p_val.title }}</div>
+                        </div>
+                        {% if p_key == current_persona %}
+                        <span style="margin-left: auto; font-size: 0.72rem; background: {{ p_val.badge_color }}; color: #0f172a; padding: 2px 6px; border-radius: 4px; font-weight: 800;">ATTIVO</span>
+                        {% endif %}
+                    </div>
+                    <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0; line-height: 1.35;">
+                        {{ p_val.role_desc }}
+                    </p>
+                </button>
+            </form>
+            {% endfor %}
+        </div>
+
+        <div style="text-align: right; border-top: 1px solid #334155; padding-top: 12px;">
+            <button type="button" onclick="closeAssistantModal()" class="btn-secondary" style="padding: 8px 18px; font-size: 0.85rem; border-radius: 8px; cursor: pointer;">
+                Chiudi
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal: HR Resolution Letter Template -->
+<div id="hrTemplateModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); z-index: 9999; justify-content: center; align-items: center; padding: 20px;">
+    <div class="modal-card" style="background: #1e293b; border: 1px solid #334155; border-radius: 14px; max-width: 650px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); padding: 24px;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #334155; padding-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.5rem;">✉️</span>
+                <h2 id="hrModalTitle" style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">Modulo Richiesta Chiarimenti HR</h2>
+            </div>
+            <button type="button" onclick="closeHrTemplateModal()" style="background: transparent; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer;">✕</button>
+        </div>
+
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 12px;">
+            Puoi copiare questo testo già precompilato e inviarlo via email o messaggio al tuo Ufficio Risorse Umane o Consulente del Lavoro:
+        </p>
+
+        <textarea id="hrTemplateText" readonly style="width: 100%; height: 220px; background: #0f172a; color: #e2e8f0; border: 1px solid #334155; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 0.85rem; line-height: 1.45; resize: none; margin-bottom: 16px;"></textarea>
+
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" onclick="closeHrTemplateModal()" class="btn-secondary" style="padding: 8px 16px; font-size: 0.85rem; border-radius: 8px; cursor: pointer;">
+                Chiudi
+            </button>
+            <button type="button" onclick="copyHrTemplate()" id="btnCopyHr" class="btn-primary" style="padding: 8px 18px; font-size: 0.85rem; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                <span>📋</span>
+                <span>Copia Testo negli Appunti</span>
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<style>
+.salary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: background 0.15s ease-in-out;
+}
+.salary-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+.field-label {
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.info-bubble {
+    font-size: 0.72rem;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+.salary-row:hover .info-bubble {
+    opacity: 1;
+    transform: scale(1.1);
+}
+</style>
+
+<script>
+const GLOSSARY_DATA = {{ glossary|tojson }};
+const ANOMALIES_DATA = {{ anomalies|tojson if anomalies else '[]' }};
+
+function showFieldInfo(fieldKey) {
+    const item = GLOSSARY_DATA[fieldKey];
+    if (!item) return;
+
+    document.getElementById('modalIcon').innerText = item.icon || 'ℹ️';
+    document.getElementById('modalTitle').innerText = item.title;
+    document.getElementById('modalWhat').innerText = item.what;
+    document.getElementById('modalHow').innerText = item.how;
+    document.getElementById('modalTip').innerText = item.tip;
+
+    document.getElementById('modalBody').style.display = 'flex';
+    document.getElementById('fullGlossaryList').style.display = 'none';
+
+    const modal = document.getElementById('glossaryModal');
+    modal.style.display = 'flex';
+}
+
+function openGlossaryModal() {
+    document.getElementById('modalIcon').innerText = '📖';
+    document.getElementById('modalTitle').innerText = 'Guida Completa alla Lettura della Busta Paga';
+    document.getElementById('modalBody').style.display = 'none';
+    document.getElementById('fullGlossaryList').style.display = 'flex';
+
+    const modal = document.getElementById('glossaryModal');
+    modal.style.display = 'flex';
+}
+
+function closeGlossaryModal() {
+    document.getElementById('glossaryModal').style.display = 'none';
+}
+
+function openAssistantModal() {
+    document.getElementById('assistantModal').style.display = 'flex';
+}
+
+function closeAssistantModal() {
+    document.getElementById('assistantModal').style.display = 'none';
+}
+
+function openHrTemplateModal(anomalyIndex) {
+    const a = ANOMALIES_DATA[anomalyIndex];
+    if (!a) return;
+
+    document.getElementById('hrModalTitle').innerText = a.title;
+    document.getElementById('hrTemplateText').value = a.hr_template || '';
+
+    const btn = document.getElementById('btnCopyHr');
+    btn.innerHTML = '<span>📋</span><span>Copia Testo negli Appunti</span>';
+    btn.style.background = '';
+
+    document.getElementById('hrTemplateModal').style.display = 'flex';
+}
+
+function closeHrTemplateModal() {
+    document.getElementById('hrTemplateModal').style.display = 'none';
+}
+
+function copyHrTemplate() {
+    const txt = document.getElementById('hrTemplateText');
+    txt.select();
+    txt.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(txt.value).then(() => {
+        const btn = document.getElementById('btnCopyHr');
+        btn.innerHTML = '<span>✅</span><span>Testo Copiato!</span>';
+        btn.style.background = '#10b981';
+        setTimeout(() => {
+            btn.innerHTML = '<span>📋</span><span>Copia Testo negli Appunti</span>';
+            btn.style.background = '';
+        }, 3000);
+    });
+}
+
+// Close on backdrop click
+document.getElementById('glossaryModal').addEventListener('click', function(e) {
+    if (e.target === this) closeGlossaryModal();
+});
+document.getElementById('assistantModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAssistantModal();
+});
+document.getElementById('hrTemplateModal').addEventListener('click', function(e) {
+    if (e.target === this) closeHrTemplateModal();
+});
+</script>
+
+{% endblock %}

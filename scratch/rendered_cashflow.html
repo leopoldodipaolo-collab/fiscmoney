@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cash Flow & Costi Fissi | FiscMoney</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#0b0f19">
+</head>
+<body>
+
+    
+    <!-- App Header -->
+    <header class="app-header">
+        <a href="/dashboard" class="brand-logo">
+            Fisc<span>Money</span>
+        </a>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            
+            <a href="/dashboard#persona-switcher-box" class="badge-tag" style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.35); color: #c7d2fe; text-decoration: none; display: flex; align-items: center; gap: 4px; font-weight: 700;" title="Assistente Attivo: Leo () - Clicca per cambiare">
+                <span>🚀</span>
+                <span>Leo</span>
+            </a>
+            
+            
+            <span class="badge-tag">leo.19@live.it</span>
+            <a href="/logout" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">Esci</a>
+        </div>
+    </header>
+    
+
+    <!-- Main Content -->
+    <main class="container">
+        
+            
+        
+
+        
+
+<!-- Header & Month Switcher -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+    <div>
+        <h2 style="font-size: 1.3rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+            
+                <span>🎯</span> Cash Flow & Safe-to-Spend (Settembre 2026)
+            
+        </h2>
+        <p style="color: var(--text-muted); font-size: 0.8rem;">
+            
+                Monitoraggio spese fisse, scadenze del mese e disponibilità spendibile in tempo reale (Safe-to-Spend)
+            
+        </p>
+    </div>
+    
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <!-- Month Selector Dropdown with Extended Italian Months -->
+        <form method="GET" action="/cashflow" id="monthSelectForm" style="margin: 0;">
+            <select name="m" class="form-control" onchange="document.getElementById('monthSelectForm').submit()" style="background: #1e293b; color: #fff; border-color: rgba(59, 130, 246, 0.4); font-size: 0.85rem; font-weight: 600; padding: 6px 12px; cursor: pointer;">
+                
+                <option value="2026-09" selected>
+                    📅 Settembre 2026 (Mese Corrente)
+                </option>
+                
+                <option value="2026-08" >
+                    📅 Agosto 2026 
+                </option>
+                
+                <option value="2026-07" >
+                    📅 Luglio 2026 
+                </option>
+                
+            </select>
+        </form>
+        
+        
+        <button class="btn btn-sm" onclick="openAddFixedCostModal()" style="background: linear-gradient(135deg, var(--accent-primary), #2563eb); font-size: 0.8rem;">
+            ➕ Nuovo Costo Fisso
+        </button>
+        
+    </div>
+</div>
+
+<!-- Profile Filter Pills Bar -->
+<div class="profile-bar-container">
+    <a href="/workspace/filter/all" class="profile-pill ">
+        <span>👨‍👩‍👧‍👦</span>
+        <span>Tutta la Famiglia</span>
+    </a>
+    
+    <a href="/workspace/filter/2" class="profile-pill active">
+        <span>👤</span>
+        <span>Leopoldo Di Paolo</span>
+    </a>
+    
+</div>
+
+<!-- Smart Anomaly & Churn Alerts Banner (Only Current Month) -->
+
+
+<!-- ======================================================== -->
+<!-- HERO CARD: MESE CORRENTE (SAFE-TO-SPEND) VS PASSATO (CONSUNTIVO RISPARMIO) -->
+<!-- ======================================================== -->
+
+<!-- 🟢 CURRENT MONTH HERO: SAFE-TO-SPEND COCKPIT -->
+<div class="card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(16, 185, 129, 0.35); margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.2rem;">🎯</span>
+                <span style="color: var(--accent-success); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800;">
+                    Disponibilità Residua del Mese (Safe-to-Spend)
+                </span>
+            </div>
+            
+            <div style="font-size: 2.2rem; font-weight: 800; color: #fff; margin-top: 4px; letter-spacing: -0.5px;">
+                € 1.455,21
+            </div>
+            
+            <p style="color: var(--text-main); font-size: 0.85rem; margin-top: 4px; max-width: 580px; line-height: 1.4;">
+                Basato sul tuo <strong>flusso di reddito mensile atteso</strong>: puoi spendere liberamente <strong style="color: var(--accent-success); font-size: 1rem;">€ 63,27 / giorno</strong> per i restanti <strong>23 giorni</strong> del mese (per svago, spesa e shopping) senza sforare il budget delle spese fisse!
+            </p>
+        </div>
+
+        <!-- Monthly Budget Breakdown Box -->
+        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 14px; min-width: 270px; flex: 1; max-width: 420px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Calcolo Budget Mese (2026-09)</span>
+                <span class="badge-tag" style="font-size: 0.65rem; background: rgba(59, 130, 246, 0.15); color: var(--accent-primary);">Clicca per dettagli</span>
+            </div>
+            
+            <!-- Inflow Row -->
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px; padding: 4px 6px; border-radius: 4px;">
+                <span style="color: var(--text-muted);">💶 Entrate Attese (Stipendio / Base)</span>
+                <strong style="color: #fff;">+€ 3.064,44</strong>
+            </div>
+
+            <!-- Fixed Costs Row (Clickable Trigger) -->
+            <div onclick="toggleCascade('cascadeFixedCosts', 'arrowFixed')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 6px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); transition: all 0.2s ease;" title="Clicca per aprire le singole voci di costo fisso">
+                <div style="display: flex; align-items: center; gap: 6px; color: #f59e0b;">
+                    <span id="arrowFixed" style="font-size: 0.7rem; transition: transform 0.2s ease;">▶</span>
+                    <span style="font-weight: 600;">📌 Costi Fissi Questo Mese</span>
+                </div>
+                <strong style="color: #f59e0b;">-€ 1.169,48</strong>
+            </div>
+
+            <!-- Cascade Drawer: Fixed Costs Breakdown -->
+            <div id="cascadeFixedCosts" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 8px; max-height: 220px; overflow-y: auto;">
+                <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase;">
+                    Dettaglio Costi Fissi (6 voci):
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    
+                    
+                    
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                            <span>⏳</span>
+                            <span style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">Mutuo Prima Casa (BCC)</span>
+                            <span style="color: var(--text-muted); font-size: 0.65rem;">(g.4)</span>
+                        </div>
+                        <div style="text-align: right; white-space: nowrap;">
+                            <strong style="color: #f59e0b;">
+                                € 1.050,00
+                            </strong>
+                            <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">
+                                In attesa
+                            </span>
+                        </div>
+                    </div>
+                    
+                    
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                            <span>⏳</span>
+                            <span style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">Canone Mensile Carta BPER</span>
+                            <span style="color: var(--text-muted); font-size: 0.65rem;">(g.7)</span>
+                        </div>
+                        <div style="text-align: right; white-space: nowrap;">
+                            <strong style="color: #f59e0b;">
+                                € 0,50
+                            </strong>
+                            <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">
+                                In attesa
+                            </span>
+                        </div>
+                    </div>
+                    
+                    
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                            <span>⏳</span>
+                            <span style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">SIM Mobile (Iliad)</span>
+                            <span style="color: var(--text-muted); font-size: 0.65rem;">(g.24)</span>
+                        </div>
+                        <div style="text-align: right; white-space: nowrap;">
+                            <strong style="color: #f59e0b;">
+                                € 7,99
+                            </strong>
+                            <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">
+                                In attesa
+                            </span>
+                        </div>
+                    </div>
+                    
+                    
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                            <span>⏳</span>
+                            <span style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">Fibra Casa (Iliad)</span>
+                            <span style="color: var(--text-muted); font-size: 0.65rem;">(g.29)</span>
+                        </div>
+                        <div style="text-align: right; white-space: nowrap;">
+                            <strong style="color: #f59e0b;">
+                                € 25,99
+                            </strong>
+                            <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">
+                                In attesa
+                            </span>
+                        </div>
+                    </div>
+                    
+                    
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                            <span>⏳</span>
+                            <span style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">Telepass &amp; Pedaggi Autostrada</span>
+                            <span style="color: var(--text-muted); font-size: 0.65rem;">(g.30)</span>
+                        </div>
+                        <div style="text-align: right; white-space: nowrap;">
+                            <strong style="color: #f59e0b;">
+                                € 85,00
+                            </strong>
+                            <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">
+                                In attesa
+                            </span>
+                        </div>
+                    </div>
+                    
+                    
+                </div>
+            </div>
+
+            <!-- Planned Deadlines Row (if any) -->
+            
+
+            <!-- Variable Expenses Row (Clickable Trigger) -->
+            <div onclick="toggleCascade('cascadeVariableExpenses', 'arrowVar')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 8px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); transition: all 0.2s ease;" title="Clicca per aprire la lista delle spese variabili del mese">
+                <div style="display: flex; align-items: center; gap: 6px; color: #f87171;">
+                    <span id="arrowVar" style="font-size: 0.7rem; transition: transform 0.2s ease;">▶</span>
+                    <span style="font-weight: 600;">💳 Spese Variabili Già Sostenute</span>
+                </div>
+                <strong style="color: #f87171;">-€ 439,75</strong>
+            </div>
+
+            <!-- Cascade Drawer: Variable Expenses Breakdown -->
+            <div id="cascadeVariableExpenses" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 8px; max-height: 240px; overflow-y: auto;">
+                <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase;">
+                    Transazioni Variabili del Mese (3 spese):
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="overflow: hidden; padding-right: 8px;">
+                            <div style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;" title="CRF EXP VIT4845 AQUILA ITA Operazione carta ****8815 del 29.08.2026">CRF EXP VIT4845 AQUILA ITA Operazione carta ****8815 del 29.08.2026</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">📅 2026-09-01 • Svago &amp; Ristoranti</div>
+                        </div>
+                        <div style="text-align: right; white-space: nowrap;">
+                            <strong style="color: #f87171;">-€ 1,42</strong>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="overflow: hidden; padding-right: 8px;">
+                            <div style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;" title="ESSEGI SAS ORICOLA ITA Operazione carta ****8815 del 28.08.2026">ESSEGI SAS ORICOLA ITA Operazione carta ****8815 del 28.08.2026</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">📅 2026-09-01 • Svago &amp; Ristoranti</div>
+                        </div>
+                        <div style="text-align: right; white-space: nowrap;">
+                            <strong style="color: #f87171;">-€ 50,03</strong>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="overflow: hidden; padding-right: 8px;">
+                            <div style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;" title="PAGAMENTO">PAGAMENTO</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">📅 2026-09-01 • Svago &amp; Ristoranti</div>
+                        </div>
+                        <div style="text-align: right; white-space: nowrap;">
+                            <strong style="color: #f87171;">-€ 388,30</strong>
+                        </div>
+                    </div>
+                    
+                </div>
+                
+            </div>
+
+            <!-- Total Safe-to-Spend Row -->
+            <div style="border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 6px; display: flex; justify-content: space-between; font-size: 0.85rem;">
+                <span style="color: var(--accent-success); font-weight: 700;">= Safe-to-Spend Rimasto</span>
+                <strong style="color: var(--accent-success); font-weight: 800;">€ 1.455,21</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- ======================================================== -->
+<!-- 4 KEY METRICS OF THE MONTH (CURRENT VS PAST TENSE)       -->
+<!-- ======================================================== -->
+<div class="kpi-grid" style="margin-bottom: 16px;">
+    
+        <!-- 1. Entrate Mese Corrente -->
+        <div class="kpi-card" style="border-left: 3px solid var(--accent-success);">
+            <span class="kpi-label">💶 Entrate Attese Mese</span>
+            <div class="kpi-value amount-income">+€ 3.064,44</div>
+            <small style="color: var(--text-muted); font-size: 0.7rem;">
+                Stipendio base / media ultimi 3 mesi
+            </small>
+        </div>
+
+        <!-- 2. Spese Sostenute Finora -->
+        <div class="kpi-card" style="border-left: 3px solid #f87171;">
+            <span class="kpi-label">💳 Spese Sostenute Finora</span>
+            <div class="kpi-value amount-expense">-€ 439,75</div>
+            <small style="color: var(--text-muted); font-size: 0.7rem;">
+                Fisse: € 0,00 • Var: € 439,75
+            </small>
+        </div>
+
+        <!-- 3. Costi Fissi & Scadenze Previsti -->
+        <div class="kpi-card" style="border-left: 3px solid #f59e0b;">
+            <span class="kpi-label">📌 Fissi & Scadenze Mese</span>
+            <div class="kpi-value" style="color: #f59e0b;">€ 1.169,48</div>
+            <small style="color: var(--text-muted); font-size: 0.7rem;">
+                🟢 € 0,00 pagati • ⏳ € 1.169,48 residui
+            </small>
+        </div>
+
+        <!-- 4. Riserva Liquida Totale -->
+        <div class="kpi-card" style="border-left: 3px solid var(--accent-primary);">
+            <span class="kpi-label">🏦 Riserva Liquida Conti</span>
+            <div class="kpi-value" style="color: var(--accent-primary);">€ 18.363,51</div>
+            <small style="color: var(--text-muted); font-size: 0.7rem;">
+                Patrimonio liquido accumulato (Totalone)
+            </small>
+        </div>
+    
+</div>
+
+<!-- ======================================================== -->
+<!-- 📈 ANDAMENTO MENSILE: ENTRATE, USCITE & TARGET RISPARMIO -->
+<!-- ======================================================== -->
+
+<div class="card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1.5px solid rgba(59, 130, 246, 0.35); margin-bottom: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                📈
+            </div>
+            <div>
+                <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">
+                    Andamento Mensile: Entrate, Uscite & Target Risparmio
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.76rem; margin: 2px 0 0 0;">
+                    Monitoraggio storico delle entrate, spese complessive e quota di risparmio accantonata per mese
+                </p>
+            </div>
+        </div>
+
+        <!-- Range Filter Buttons (6 Mesi vs 12 Mesi) -->
+        <div style="display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.35); padding: 3px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+            <a href="/cashflow?trend_range=6&m=2026-09" 
+               style="text-decoration: none; font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 600; transition: all 0.2s ease; color: var(--text-muted); background: transparent;">
+                6 Mesi
+            </a>
+            <a href="/cashflow?trend_range=12&m=2026-09" 
+               style="text-decoration: none; font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 600; transition: all 0.2s ease; background: var(--accent-primary); color: #fff;">
+                12 Mesi
+            </a>
+        </div>
+    </div>
+
+    <!-- 4 Period Key Highlights -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px;">
+        <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; padding: 10px 12px;">
+            <span style="font-size: 0.68rem; color: #86efac; font-weight: 700; text-transform: uppercase;">💶 Entrate nel Periodo</span>
+            <div style="font-size: 1.15rem; font-weight: 800; color: var(--accent-success); margin-top: 2px;">
+                € 7.710,27
+            </div>
+        </div>
+        <div style="background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 10px 12px;">
+            <span style="font-size: 0.68rem; color: #fca5a5; font-weight: 700; text-transform: uppercase;">💳 Spese nel Periodo</span>
+            <div style="font-size: 1.15rem; font-weight: 800; color: #f87171; margin-top: 2px;">
+                € 3.360,40
+            </div>
+        </div>
+        <div style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 10px 12px;">
+            <span style="font-size: 0.68rem; color: #7dd3fc; font-weight: 700; text-transform: uppercase;">📈 Risparmio Netto Totale</span>
+            <div style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; margin-top: 2px;">
+                +€ 4.349,87
+            </div>
+        </div>
+        <div style="background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 10px 12px;">
+            <span style="font-size: 0.68rem; color: #fde047; font-weight: 700; text-transform: uppercase;">🎯 Tasso Medio Risparmio</span>
+            <div style="font-size: 1.15rem; font-weight: 800; color: #f59e0b; margin-top: 2px;">
+                56.4%
+                <small style="font-size: 0.65rem; color: var(--text-muted); font-weight: 500;">(Target: 20%)</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Multi-Month Chart Canvas -->
+    <div style="position: relative; width: 100%; height: 320px; margin-bottom: 8px;">
+        <canvas id="monthlyTrendChart"></canvas>
+    </div>
+
+    <!-- Interactive Hint Footer -->
+    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; font-size: 0.72rem; color: var(--text-muted); flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #10b981; border-radius: 2px; display: inline-block;"></span> Entrate</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; background: #f87171; border-radius: 2px; display: inline-block;"></span> Uscite</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 12px; height: 2px; background: #38bdf8; display: inline-block;"></span> Risparmio Netto</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 12px; height: 2px; border-top: 2px dashed #f59e0b; display: inline-block;"></span> Target Risparmio (20%)</span>
+        </div>
+        <div>
+            💡 <em>Clicca su una colonna per aprire il consuntivo di quel mese</em>
+        </div>
+    </div>
+</div>
+
+
+<!-- ======================================================== -->
+<!-- INTERACTIVE EXPENSE COMPOSITION & CATEGORY DRILL-DOWN    -->
+<!-- ======================================================== -->
+
+<div class="card" style="background: rgba(15, 23, 42, 0.7); border: 1.5px solid var(--border-color); margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.3rem;">📊</span>
+            <div>
+                <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">
+                    Composizione & Categorie di Spesa di Settembre 2026
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.78rem; margin: 2px 0 0 0;">
+                    Ripartizione analitica per macro-categoria con drill-down spese e confronto mese precedente
+                </p>
+            </div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            
+                <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-success); border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.72rem; font-weight: 700;">
+                    
+                        ▼ -84.2% (-€ 2.350,59) vs Agosto 2026
+                    
+                </span>
+            
+            <span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; font-size: 0.72rem;">
+                📌 Fissi: 0.0%
+            </span>
+            <span class="badge-tag" style="background: rgba(239, 68, 68, 0.15); color: #f87171; font-size: 0.72rem;">
+                💳 Variabili: 100.0%
+            </span>
+        </div>
+    </div>
+
+    <!-- Main 2-Column Layout: Donut Chart on Left + Interactive Cards on Right -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; align-items: start;">
+        
+        <!-- Left: Donut Chart & Monthly Total Card -->
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div style="position: relative; width: 100%; max-width: 240px; height: 240px; display: flex; align-items: center; justify-content: center;">
+                <canvas id="categoryDonutChart"></canvas>
+            </div>
+            
+            <div style="margin-top: 14px; text-align: center; width: 100%; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Spese Totali del Mese</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #fff; margin-top: 2px;">€ 439,75</div>
+                
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+                    Mese prec. (Agosto 2026): <strong style="color: #cbd5e1;">€ 2.790,34</strong>
+                </div>
+                
+            </div>
+        </div>
+
+        <!-- Right: Interactive Category List with Accordion Drill-down -->
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-left: 4px solid #ec4899; border-radius: var(--radius-md); overflow: hidden; transition: all 0.2s ease;">
+                
+                <!-- Category Summary Header (Clickable) -->
+                <div onclick="toggleCategoryDrawer('catDrawer1', 'catArrow1')" 
+                     style="padding: 12px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; user-select: none;"
+                     onmouseover="this.style.background='rgba(255,255,255,0.02)';"
+                     onmouseout="this.style.background='transparent';">
+                    
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.3rem;">🍕</span>
+                        <div>
+                            <strong style="color: #fff; font-size: 0.92rem; display: block;">Svago &amp; Ristoranti</strong>
+                            <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                                
+                                    
+                                        <span style="font-size: 0.68rem; color: #34d399; font-weight: 600;">▼ -60.1% (-€ 662,32) vs Agosto 2026</span>
+                                    
+                                
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="text-align: right;">
+                            <div style="font-weight: 800; font-size: 1.05rem; color: #fff;">€ 439,75</div>
+                            <span style="color: var(--text-muted); font-size: 0.72rem; font-weight: 600;">100.0% del totale</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; color: #cbd5e1;">
+                            <span>3 movimenti</span>
+                            <span id="catArrow1" style="font-size: 0.65rem; transition: transform 0.2s ease;">▶</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress percentage bar -->
+                <div style="background: rgba(255,255,255,0.04); height: 4px; width: 100%;">
+                    <div style="background: #ec4899; height: 100%; width: 100.0%;"></div>
+                </div>
+
+                <!-- Accordion Drawer: Transaction List for this category -->
+                <div id="catDrawer1" style="display: none; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(255,255,255,0.05); padding: 10px 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                        <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">
+                            Dettaglio spese in Svago &amp; Ristoranti (3):
+                        </div>
+                        
+                        <!-- Instant Sort Switcher -->
+                        <div style="display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.05); padding: 2px 4px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+                            <span style="font-size: 0.65rem; color: var(--text-muted); padding-left: 2px;">Ordina:</span>
+                            <button type="button" onclick="sortDrawerItems('catList1', 'amount', this)" class="btn-sort" style="background: rgba(59, 130, 246, 0.3); border: 1px solid rgba(59, 130, 246, 0.6); color: #fff; font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; cursor: pointer;">
+                                🔢 Importo
+                            </button>
+                            <button type="button" onclick="sortDrawerItems('catList1', 'date', this)" class="btn-sort" style="background: transparent; border: 1px solid transparent; color: #94a3b8; font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; cursor: pointer;">
+                                📅 Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="catList1" style="display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto;">
+                        
+                        <div class="drawer-tx-item" data-amount="388.3" data-date="2026-09-01" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: rgba(255,255,255,0.02); border-radius: 6px; font-size: 0.78rem; border: 1px solid rgba(255,255,255,0.03);">
+                            <div style="overflow: hidden; padding-right: 8px;">
+                                <div style="color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px;" title="PAGAMENTO">
+                                    PAGAMENTO
+                                </div>
+                                <div style="color: var(--text-muted); font-size: 0.68rem; margin-top: 1px;">
+                                    📅 2026-09-01
+                                </div>
+                            </div>
+                            <div style="text-align: right; white-space: nowrap;">
+                                <strong style="color: #f87171; font-weight: 700;">-€ 388,30</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="drawer-tx-item" data-amount="50.03" data-date="2026-09-01" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: rgba(255,255,255,0.02); border-radius: 6px; font-size: 0.78rem; border: 1px solid rgba(255,255,255,0.03);">
+                            <div style="overflow: hidden; padding-right: 8px;">
+                                <div style="color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px;" title="ESSEGI SAS ORICOLA ITA Operazione carta ****8815 del 28.08.2026">
+                                    ESSEGI SAS ORICOLA ITA Operazione carta ****8815 del 28.08.2026
+                                </div>
+                                <div style="color: var(--text-muted); font-size: 0.68rem; margin-top: 1px;">
+                                    📅 2026-09-01
+                                </div>
+                            </div>
+                            <div style="text-align: right; white-space: nowrap;">
+                                <strong style="color: #f87171; font-weight: 700;">-€ 50,03</strong>
+                            </div>
+                        </div>
+                        
+                        <div class="drawer-tx-item" data-amount="1.42" data-date="2026-09-01" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: rgba(255,255,255,0.02); border-radius: 6px; font-size: 0.78rem; border: 1px solid rgba(255,255,255,0.03);">
+                            <div style="overflow: hidden; padding-right: 8px;">
+                                <div style="color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px;" title="CRF EXP VIT4845 AQUILA ITA Operazione carta ****8815 del 29.08.2026">
+                                    CRF EXP VIT4845 AQUILA ITA Operazione carta ****8815 del 29.08.2026
+                                </div>
+                                <div style="color: var(--text-muted); font-size: 0.68rem; margin-top: 1px;">
+                                    📅 2026-09-01
+                                </div>
+                            </div>
+                            <div style="text-align: right; white-space: nowrap;">
+                                <strong style="color: #f87171; font-weight: 700;">-€ 1,42</strong>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+
+<!-- ======================================================== -->
+<!-- PROACTIVE DEADLINES CATALOG (1-CLICK) - ONLY CURRENT MONTH -->
+<!-- ======================================================== -->
+
+<div class="card" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(168, 85, 247, 0.35); margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.25rem;">💡</span>
+            <div>
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0;">
+                    Catalogo Rapido Scadenze & Tasse (1-Click)
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.75rem; margin: 2px 0 0 0;">
+                    Spese stagionali, bolli o tributi da programmare per <strong>2026-09</strong>? Clicca una voce per aggiungerla istantaneamente al budget del mese!
+                </p>
+            </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="openAddDeadlineModalManual()" style="font-size: 0.75rem; padding: 4px 10px; border-color: rgba(168, 85, 247, 0.4); color: #c084fc;">
+            ➕ Altra Scadenza Personalizzata
+        </button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+        
+        <div onclick='openCatalogModal({"category": "Auto \u0026 Trasporti", "default_amount": 240.0, "default_day": 30, "description": "Tassa automobilistica regionale (si ripete ogni anno nello stesso mese)", "icon": "\ud83d\ude97", "id_key": "bollo_auto", "name": "Bollo Auto / Moto", "pattern": "bollo|aci|pagopa", "recurrence": "ANNUAL"})' 
+             style="background: rgba(255,255,255,0.03); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: var(--radius-md); padding: 10px 12px; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;"
+             onmouseover="this.style.background='rgba(168, 85, 247, 0.15)'; this.style.borderColor='#c084fc'; this.style.transform='translateY(-2px)';"
+             onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(168, 85, 247, 0.2)'; this.style.transform='translateY(0)';"
+             title="Tassa automobilistica regionale (si ripete ogni anno nello stesso mese)">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.3rem;">🚗</span>
+                    <strong style="color: #fff; font-size: 0.82rem; line-height: 1.2;">Bollo Auto / Moto</strong>
+                </div>
+                <span class="badge-tag" style="background: rgba(168, 85, 247, 0.2); color: #e9d5ff; font-size: 0.65rem; font-weight: 700; white-space: nowrap;">+ Aggiungi</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.72rem;">
+                <span style="color: var(--text-muted);">Auto &amp; Trasporti</span>
+                <strong style="color: #c084fc; font-size: 0.85rem;">~€ 240,00</strong>
+            </div>
+        </div>
+        
+        <div onclick='openCatalogModal({"category": "Casa \u0026 Utenze", "default_amount": 185.0, "default_day": 30, "description": "Tributo comunale sui rifiuti (Acconto o Saldo annuale)", "icon": "\ud83c\udfdb\ufe0f", "id_key": "tari", "name": "Tassa Rifiuti (TARI)", "pattern": "tari|rifiuti|tributi|pagopa", "recurrence": "ANNUAL"})' 
+             style="background: rgba(255,255,255,0.03); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: var(--radius-md); padding: 10px 12px; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;"
+             onmouseover="this.style.background='rgba(168, 85, 247, 0.15)'; this.style.borderColor='#c084fc'; this.style.transform='translateY(-2px)';"
+             onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(168, 85, 247, 0.2)'; this.style.transform='translateY(0)';"
+             title="Tributo comunale sui rifiuti (Acconto o Saldo annuale)">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.3rem;">🏛️</span>
+                    <strong style="color: #fff; font-size: 0.82rem; line-height: 1.2;">Tassa Rifiuti (TARI)</strong>
+                </div>
+                <span class="badge-tag" style="background: rgba(168, 85, 247, 0.2); color: #e9d5ff; font-size: 0.65rem; font-weight: 700; white-space: nowrap;">+ Aggiungi</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.72rem;">
+                <span style="color: var(--text-muted);">Casa &amp; Utenze</span>
+                <strong style="color: #c084fc; font-size: 0.85rem;">~€ 185,00</strong>
+            </div>
+        </div>
+        
+        <div onclick='openCatalogModal({"category": "Auto \u0026 Trasporti", "default_amount": 79.0, "default_day": 28, "description": "Revisione ministeriale obbligatoria ogni 2 anni (Biennale)", "icon": "\ud83d\udd27", "id_key": "revisione_auto", "name": "Revisione Auto (MCTC)", "pattern": "revisione|mctc|officina", "recurrence": "BIENNIAL"})' 
+             style="background: rgba(255,255,255,0.03); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: var(--radius-md); padding: 10px 12px; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;"
+             onmouseover="this.style.background='rgba(168, 85, 247, 0.15)'; this.style.borderColor='#c084fc'; this.style.transform='translateY(-2px)';"
+             onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(168, 85, 247, 0.2)'; this.style.transform='translateY(0)';"
+             title="Revisione ministeriale obbligatoria ogni 2 anni (Biennale)">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.3rem;">🔧</span>
+                    <strong style="color: #fff; font-size: 0.82rem; line-height: 1.2;">Revisione Auto (MCTC)</strong>
+                </div>
+                <span class="badge-tag" style="background: rgba(168, 85, 247, 0.2); color: #e9d5ff; font-size: 0.65rem; font-weight: 700; white-space: nowrap;">+ Aggiungi</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.72rem;">
+                <span style="color: var(--text-muted);">Auto &amp; Trasporti</span>
+                <strong style="color: #c084fc; font-size: 0.85rem;">~€ 79,00</strong>
+            </div>
+        </div>
+        
+        <div onclick='openCatalogModal({"category": "Auto \u0026 Trasporti", "default_amount": 380.0, "default_day": 15, "description": "Polizza veicolo (annuale o semestrale)", "icon": "\ud83d\udee1\ufe0f", "id_key": "assicurazione_rc", "name": "Assicurazione RC Auto / Moto", "pattern": "assicuraz|allianz|unipol|genial|prima|linear", "recurrence": "ANNUAL"})' 
+             style="background: rgba(255,255,255,0.03); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: var(--radius-md); padding: 10px 12px; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;"
+             onmouseover="this.style.background='rgba(168, 85, 247, 0.15)'; this.style.borderColor='#c084fc'; this.style.transform='translateY(-2px)';"
+             onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(168, 85, 247, 0.2)'; this.style.transform='translateY(0)';"
+             title="Polizza veicolo (annuale o semestrale)">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.3rem;">🛡️</span>
+                    <strong style="color: #fff; font-size: 0.82rem; line-height: 1.2;">Assicurazione RC Auto / Moto</strong>
+                </div>
+                <span class="badge-tag" style="background: rgba(168, 85, 247, 0.2); color: #e9d5ff; font-size: 0.65rem; font-weight: 700; white-space: nowrap;">+ Aggiungi</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.72rem;">
+                <span style="color: var(--text-muted);">Auto &amp; Trasporti</span>
+                <strong style="color: #c084fc; font-size: 0.85rem;">~€ 380,00</strong>
+            </div>
+        </div>
+        
+        <div onclick='openCatalogModal({"category": "Svago \u0026 Ristoranti", "default_amount": 250.0, "default_day": 15, "description": "Spese per corredo scolastico e testi (si ripropone ogni Settembre)", "icon": "\ud83c\udf92", "id_key": "scuola_libri", "name": "Libri Scolastici \u0026 Iscrizioni", "pattern": "librer|scuol|cartol", "recurrence": "ANNUAL"})' 
+             style="background: rgba(255,255,255,0.03); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: var(--radius-md); padding: 10px 12px; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;"
+             onmouseover="this.style.background='rgba(168, 85, 247, 0.15)'; this.style.borderColor='#c084fc'; this.style.transform='translateY(-2px)';"
+             onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(168, 85, 247, 0.2)'; this.style.transform='translateY(0)';"
+             title="Spese per corredo scolastico e testi (si ripropone ogni Settembre)">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.3rem;">🎒</span>
+                    <strong style="color: #fff; font-size: 0.82rem; line-height: 1.2;">Libri Scolastici &amp; Iscrizioni</strong>
+                </div>
+                <span class="badge-tag" style="background: rgba(168, 85, 247, 0.2); color: #e9d5ff; font-size: 0.65rem; font-weight: 700; white-space: nowrap;">+ Aggiungi</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.72rem;">
+                <span style="color: var(--text-muted);">Svago &amp; Ristoranti</span>
+                <strong style="color: #c084fc; font-size: 0.85rem;">~€ 250,00</strong>
+            </div>
+        </div>
+        
+        <div onclick='openCatalogModal({"category": "Auto \u0026 Trasporti", "default_amount": 50.0, "default_day": 15, "description": "Montaggio pneumatici stagionali (Nov / Apr)", "icon": "\ud83d\udede", "id_key": "cambio_gomme", "name": "Cambio Gomme Stagionale", "pattern": "gomm|pneumat", "recurrence": "ANNUAL"})' 
+             style="background: rgba(255,255,255,0.03); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: var(--radius-md); padding: 10px 12px; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;"
+             onmouseover="this.style.background='rgba(168, 85, 247, 0.15)'; this.style.borderColor='#c084fc'; this.style.transform='translateY(-2px)';"
+             onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(168, 85, 247, 0.2)'; this.style.transform='translateY(0)';"
+             title="Montaggio pneumatici stagionali (Nov / Apr)">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.3rem;">🛞</span>
+                    <strong style="color: #fff; font-size: 0.82rem; line-height: 1.2;">Cambio Gomme Stagionale</strong>
+                </div>
+                <span class="badge-tag" style="background: rgba(168, 85, 247, 0.2); color: #e9d5ff; font-size: 0.65rem; font-weight: 700; white-space: nowrap;">+ Aggiungi</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.72rem;">
+                <span style="color: var(--text-muted);">Auto &amp; Trasporti</span>
+                <strong style="color: #c084fc; font-size: 0.85rem;">~€ 50,00</strong>
+            </div>
+        </div>
+        
+        <div onclick='openCatalogModal({"category": "Salute \u0026 Benessere", "default_amount": 180.0, "default_day": 20, "description": "Visite sanitarie programmate annuali (detraibili 730)", "icon": "\ud83e\ude7a", "id_key": "visita_dentista", "name": "Controllo Dentista / Visita Speciale", "pattern": "dentist|stomatolog|odontoiatr|visita", "recurrence": "ANNUAL"})' 
+             style="background: rgba(255,255,255,0.03); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: var(--radius-md); padding: 10px 12px; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;"
+             onmouseover="this.style.background='rgba(168, 85, 247, 0.15)'; this.style.borderColor='#c084fc'; this.style.transform='translateY(-2px)';"
+             onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(168, 85, 247, 0.2)'; this.style.transform='translateY(0)';"
+             title="Visite sanitarie programmate annuali (detraibili 730)">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.3rem;">🩺</span>
+                    <strong style="color: #fff; font-size: 0.82rem; line-height: 1.2;">Controllo Dentista / Visita Speciale</strong>
+                </div>
+                <span class="badge-tag" style="background: rgba(168, 85, 247, 0.2); color: #e9d5ff; font-size: 0.65rem; font-weight: 700; white-space: nowrap;">+ Aggiungi</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.72rem;">
+                <span style="color: var(--text-muted);">Salute &amp; Benessere</span>
+                <strong style="color: #c084fc; font-size: 0.85rem;">~€ 180,00</strong>
+            </div>
+        </div>
+        
+        <div onclick='openCatalogModal({"category": "Risparmio \u0026 Futuro", "default_amount": 500.0, "default_day": 20, "description": "Versamento deducibile a fine anno per saturare il tetto 730 di 5.164 \u20ac", "icon": "\ud83d\udcc8", "id_key": "fondo_pensione", "name": "Versamento Fondo Pensione (Deduzione 730)", "pattern": "pensione|fondo|cometa|fonchim|secondapensione", "recurrence": "ANNUAL"})' 
+             style="background: rgba(255,255,255,0.03); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: var(--radius-md); padding: 10px 12px; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;"
+             onmouseover="this.style.background='rgba(168, 85, 247, 0.15)'; this.style.borderColor='#c084fc'; this.style.transform='translateY(-2px)';"
+             onmouseout="this.style.background='rgba(255,255,255,0.03)'; this.style.borderColor='rgba(168, 85, 247, 0.2)'; this.style.transform='translateY(0)';"
+             title="Versamento deducibile a fine anno per saturare il tetto 730 di 5.164 €">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.3rem;">📈</span>
+                    <strong style="color: #fff; font-size: 0.82rem; line-height: 1.2;">Versamento Fondo Pensione (Deduzione 730)</strong>
+                </div>
+                <span class="badge-tag" style="background: rgba(168, 85, 247, 0.2); color: #e9d5ff; font-size: 0.65rem; font-weight: 700; white-space: nowrap;">+ Aggiungi</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.72rem;">
+                <span style="color: var(--text-muted);">Risparmio &amp; Futuro</span>
+                <strong style="color: #c084fc; font-size: 0.85rem;">~€ 500,00</strong>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+
+
+<!-- ======================================================== -->
+<!-- SCADENZE PROGRAMMATE ATTIVE PER QUESTO MESE               -->
+<!-- ======================================================== -->
+
+
+<!-- ======================================================== -->
+<!-- CHECKLIST COSTI FISSI & SPESE RICORRENTI (PAGATE VS DA PAGARE) -->
+<!-- ======================================================== -->
+<div class="card" style="margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">📋</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff;">
+                
+                    Spese Fisse & Ricorrenti Mensili
+                
+            </h3>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 0.75rem;">
+            <span style="color: var(--accent-success); font-weight: 600;">
+                🟢 Pagati: € 0,00
+            </span>
+            
+            <span style="color: #f59e0b; font-weight: 600;">
+                ⏳ Da Pagare: € 1.169,48
+            </span>
+            
+        </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: var(--radius-md); background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.25);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="font-size: 1.3rem;">
+                    ⏳
+                </div>
+                <div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                        Stipendio Mensile (SMC Italia)
+                        
+                            <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-success); font-size: 0.65rem;">Entrata Fissa</span>
+                        
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                        <span>📂 Lavoro &amp; Entrate</span>
+                        <span>•</span>
+                        <span>Scadenza: Giorno 30 del mese</span>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="text-align: right;">
+                    <div style="font-weight: 800; font-size: 1.05rem; color: var(--accent-success);">
+                        
+                            +€ 3.064,44
+                        
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">
+                        
+                            <span style="color: #f59e0b;">In attesa di addebito</span>
+                        
+                    </div>
+                </div>
+
+                <form action="/fixed-costs/delete/41" method="POST" onsubmit="return confirm('Rimuovere questo costo fisso dalle regole?');" style="margin: 0;">
+                    <button type="submit" class="btn-danger-icon" title="Elimina Regola" style="background: none; border: none; cursor: pointer; opacity: 0.6;">🗑️</button>
+                </form>
+            </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: var(--radius-md); background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.25);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="font-size: 1.3rem;">
+                    ⏳
+                </div>
+                <div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                        Mutuo Prima Casa (BCC)
+                        
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                        <span>📂 Casa &amp; Utenze</span>
+                        <span>•</span>
+                        <span>Scadenza: Giorno 4 del mese</span>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="text-align: right;">
+                    <div style="font-weight: 800; font-size: 1.05rem; color: #f59e0b;">
+                        
+                            -€ 1.050,00
+                        
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">
+                        
+                            <span style="color: #f59e0b;">In attesa di addebito</span>
+                        
+                    </div>
+                </div>
+
+                <form action="/fixed-costs/delete/35" method="POST" onsubmit="return confirm('Rimuovere questo costo fisso dalle regole?');" style="margin: 0;">
+                    <button type="submit" class="btn-danger-icon" title="Elimina Regola" style="background: none; border: none; cursor: pointer; opacity: 0.6;">🗑️</button>
+                </form>
+            </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: var(--radius-md); background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.25);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="font-size: 1.3rem;">
+                    ⏳
+                </div>
+                <div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                        Canone Mensile Carta BPER
+                        
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                        <span>📂 Tasse &amp; Finanza</span>
+                        <span>•</span>
+                        <span>Scadenza: Giorno 7 del mese</span>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="text-align: right;">
+                    <div style="font-weight: 800; font-size: 1.05rem; color: #f59e0b;">
+                        
+                            -€ 0,50
+                        
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">
+                        
+                            <span style="color: #f59e0b;">In attesa di addebito</span>
+                        
+                    </div>
+                </div>
+
+                <form action="/fixed-costs/delete/40" method="POST" onsubmit="return confirm('Rimuovere questo costo fisso dalle regole?');" style="margin: 0;">
+                    <button type="submit" class="btn-danger-icon" title="Elimina Regola" style="background: none; border: none; cursor: pointer; opacity: 0.6;">🗑️</button>
+                </form>
+            </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: var(--radius-md); background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.25);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="font-size: 1.3rem;">
+                    ⏳
+                </div>
+                <div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                        SIM Mobile (Iliad)
+                        
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                        <span>📂 Casa &amp; Utenze</span>
+                        <span>•</span>
+                        <span>Scadenza: Giorno 24 del mese</span>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="text-align: right;">
+                    <div style="font-weight: 800; font-size: 1.05rem; color: #f59e0b;">
+                        
+                            -€ 7,99
+                        
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">
+                        
+                            <span style="color: #f59e0b;">In attesa di addebito</span>
+                        
+                    </div>
+                </div>
+
+                <form action="/fixed-costs/delete/38" method="POST" onsubmit="return confirm('Rimuovere questo costo fisso dalle regole?');" style="margin: 0;">
+                    <button type="submit" class="btn-danger-icon" title="Elimina Regola" style="background: none; border: none; cursor: pointer; opacity: 0.6;">🗑️</button>
+                </form>
+            </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: var(--radius-md); background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.25);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="font-size: 1.3rem;">
+                    ⏳
+                </div>
+                <div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                        Fibra Casa (Iliad)
+                        
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                        <span>📂 Casa &amp; Utenze</span>
+                        <span>•</span>
+                        <span>Scadenza: Giorno 29 del mese</span>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="text-align: right;">
+                    <div style="font-weight: 800; font-size: 1.05rem; color: #f59e0b;">
+                        
+                            -€ 25,99
+                        
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">
+                        
+                            <span style="color: #f59e0b;">In attesa di addebito</span>
+                        
+                    </div>
+                </div>
+
+                <form action="/fixed-costs/delete/37" method="POST" onsubmit="return confirm('Rimuovere questo costo fisso dalle regole?');" style="margin: 0;">
+                    <button type="submit" class="btn-danger-icon" title="Elimina Regola" style="background: none; border: none; cursor: pointer; opacity: 0.6;">🗑️</button>
+                </form>
+            </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: var(--radius-md); background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.25);">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="font-size: 1.3rem;">
+                    ⏳
+                </div>
+                <div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                        Telepass &amp; Pedaggi Autostrada
+                        
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                        <span>📂 Auto &amp; Trasporti</span>
+                        <span>•</span>
+                        <span>Scadenza: Giorno 30 del mese</span>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="text-align: right;">
+                    <div style="font-weight: 800; font-size: 1.05rem; color: #f59e0b;">
+                        
+                            -€ 85,00
+                        
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">
+                        
+                            <span style="color: #f59e0b;">In attesa di addebito</span>
+                        
+                    </div>
+                </div>
+
+                <form action="/fixed-costs/delete/39" method="POST" onsubmit="return confirm('Rimuovere questo costo fisso dalle regole?');" style="margin: 0;">
+                    <button type="submit" class="btn-danger-icon" title="Elimina Regola" style="background: none; border: none; cursor: pointer; opacity: 0.6;">🗑️</button>
+                </form>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Skipped / Non-Due Items in this specific month (e.g. Enel bimestral) -->
+    
+    <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border-color);">
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px;">
+            <span>⏭️ Spese Ricorrenti non previste in questo mese (Stagionali / Bimestrali):</span>
+            <span class="badge-tag" style="font-size: 0.65rem;">1 escluse</span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                <span>💤</span>
+                <strong style="color: #cbd5e1;">Bolletta Luce &amp; Gas (Enel Energia)</strong>
+                <span>(~€ 162,60)</span>
+                <span style="font-size: 0.65rem; color: var(--accent-primary);">
+                    Bimestrale (Mesi Pari)
+                    
+                </span>
+            </div>
+            
+        </div>
+    </div>
+    
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: AGGIUNGI COSTO FISSO / SPESA RICORRENTE           -->
+<!-- ======================================================== -->
+<div id="addFixedCostModal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff;">➕ Aggiungi Spesa Ricorrente / Costo Fisso</h3>
+            <button class="modal-close" onclick="closeAddFixedCostModal()">&times;</button>
+        </div>
+        
+        <form action="/fixed-costs/add" method="POST">
+            <div class="form-group">
+                <label for="fcName">Nome Spesa Ricorrente *</label>
+                <input type="text" id="fcName" name="name" class="form-control" placeholder="es. Affitto, Rata Auto, Netflix, Enel..." required autofocus>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label for="fcAmount">Importo Previsto (€) *</label>
+                    <input type="number" step="0.01" id="fcAmount" name="expected_amount" class="form-control" placeholder="es. 150.00" required>
+                </div>
+                <div class="form-group">
+                    <label for="fcDueDay">Giorno Scadenza (1-31)</label>
+                    <input type="number" min="1" max="31" id="fcDueDay" name="due_day" class="form-control" value="1" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label for="fcCategory">Categoria Macro</label>
+                    <select id="fcCategory" name="category" class="form-control" style="background: #1e293b; color: #fff;">
+                        <option value="Casa & Utenze">🏠 Casa & Utenze</option>
+                        <option value="Auto & Trasporti">🚗 Auto & Trasporti</option>
+                        <option value="Tasse & Finanza">🏛️ Tasse & Finanza</option>
+                        <option value="Svago & Ristoranti">🍽️ Svago & Abbonamenti</option>
+                        <option value="Salute & Benessere">🩺 Salute & Palestra</option>
+                        <option value="Lavoro & Entrate">💼 Lavoro & Stipendio</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="fcFrequency">Frequenza & Cadenza</label>
+                    <select id="fcFrequency" name="frequency" class="form-control" style="background: #1e293b; color: #fff;">
+                        <option value="MONTHLY">📅 Mensile (Tutti i mesi)</option>
+                        <option value="BIMONTHLY_EVEN">⚡ Bimestrale Mesi Pari (Feb, Apr, Giu, Ago, Ott, Dic)</option>
+                        <option value="BIMONTHLY_ODD">⚡ Bimestrale Mesi Dispari (Gen, Mar, Mag, Lug, Set, Nov)</option>
+                        <option value="QUARTERLY">📊 Trimestrale (Mar, Giu, Set, Dic)</option>
+                        <option value="ANNUAL">📆 Annuale (1 volta l'anno)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="fcPattern">Parola Chiave per Riconoscimento Automatico (Facoltativa)</label>
+                <input type="text" id="fcPattern" name="match_pattern" class="form-control" placeholder="es. telepass, enel, netflix, mutuo">
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Il sistema controllerà le descrizioni bancarie per segnare la spesa come "Pagata" appena compare sull'estratto conto.</small>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.85rem;">
+                    <input type="checkbox" name="is_income" value="1">
+                    <span>Si tratta di un'entrata fissa ricorrente (es. Stipendio, Pensione, Affitto percepito)</span>
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 24px;">
+                <button type="button" class="btn btn-secondary" onclick="closeAddFixedCostModal()" style="width: 40%;">Annulla</button>
+                <button type="submit" class="btn" style="width: 60%;">Salva Costo Fisso</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: AGGIUNGI SCADENZA STRAORDINARIA / TASSA           -->
+<!-- ======================================================== -->
+<div id="addDeadlineModal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3 id="dlModalTitle" style="font-size: 1.15rem; font-weight: 800; color: #fff;">📅 Programma Scadenza / Tassa del Mese</h3>
+            <button class="modal-close" onclick="closeAddDeadlineModal()">&times;</button>
+        </div>
+        
+        <form action="/deadlines/add" method="POST">
+            <div class="form-group">
+                <label for="dlName">Nome Scadenza / Tassa *</label>
+                <input type="text" id="dlName" name="name" class="form-control" placeholder="es. Bollo Auto, TARI, Revisione, Assicurazione..." required autofocus>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label for="dlAmount">Importo Previsto (€) *</label>
+                    <input type="number" step="0.01" id="dlAmount" name="expected_amount" class="form-control" placeholder="es. 240.00" required>
+                </div>
+                <div class="form-group">
+                    <label for="dlDueDay">Giorno Scadenza Stimato</label>
+                    <input type="number" min="1" max="31" id="dlDueDay" name="due_day" class="form-control" value="15" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label for="dlCategory">Categoria</label>
+                    <select id="dlCategory" name="category" class="form-control" style="background: #1e293b; color: #fff;">
+                        <option value="Auto & Trasporti">🚗 Auto & Trasporti</option>
+                        <option value="Casa & Utenze">🏠 Casa & Utenze</option>
+                        <option value="Tasse & Finanza">🏛️ Tasse & Finanza</option>
+                        <option value="Svago & Ristoranti">🍽️ Svago & Corsi</option>
+                        <option value="Salute & Benessere">🩺 Salute & Visite</option>
+                        <option value="Risparmio & Futuro">📈 Risparmio & Fondo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dlRecurrence">Ricorrenza Futura</label>
+                    <select id="dlRecurrence" name="recurrence" class="form-control" style="background: #1e293b; color: #fff;">
+                        <option value="ANNUAL">🔁 Annuale (Ogni anno nello stesso mese)</option>
+                        <option value="BIENNIAL">🔁 Biennale (Ogni 2 anni - es. Revisione)</option>
+                        <option value="SEMIANNUAL">🔁 Semestrale (Ogni 6 mesi)</option>
+                        <option value="ONE_OFF">⛔ Una Tantum (Solo per questo mese)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="dlYearMonth">Mese di Partenza / Riferimento</label>
+                <input type="month" id="dlYearMonth" name="year_month" class="form-control" value="2026-09" required style="background: #1e293b; color: #fff;">
+            </div>
+
+            <div class="form-group">
+                <label for="dlPattern">Parola Chiave per Auto-Riconciliazione da Estratto Conto</label>
+                <input type="text" id="dlPattern" name="match_pattern" class="form-control" placeholder="es. bollo|aci|pagopa oppure tari|rifiuti">
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Quando importerai l'estratto conto bancario con questa causale, FiscMoney segnerà automaticamente la spesa come "Pagata" e utilizzerà l'importo esatto addebitato!</small>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 24px;">
+                <button type="button" class="btn btn-secondary" onclick="closeAddDeadlineModal()" style="width: 40%;">Annulla</button>
+                <button type="submit" class="btn" style="width: 60%; background: linear-gradient(135deg, #a855f7, #7c3aed);">🎯 Salva Scadenza nel Budget</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function toggleCascade(elementId, arrowId) {
+    const el = document.getElementById(elementId);
+    const arrow = document.getElementById(arrowId);
+    if (!el) return;
+    
+    if (el.style.display === 'none' || el.style.display === '') {
+        el.style.display = 'block';
+        if (arrow) arrow.innerText = '▼';
+    } else {
+        el.style.display = 'none';
+        if (arrow) arrow.innerText = '▶';
+    }
+}
+
+function toggleCategoryDrawer(drawerId, arrowId) {
+    const el = document.getElementById(drawerId);
+    const arrow = document.getElementById(arrowId);
+    if (!el) return;
+    
+    if (el.style.display === 'none' || el.style.display === '') {
+        el.style.display = 'block';
+        if (arrow) arrow.innerText = '▼';
+    } else {
+        el.style.display = 'none';
+        if (arrow) arrow.innerText = '▶';
+    }
+}
+
+function sortDrawerItems(listId, criterion, btn) {
+    const list = document.getElementById(listId);
+    if (!list) return;
+    
+    // Update button active state
+    const parent = btn.parentElement;
+    parent.querySelectorAll('.btn-sort').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.borderColor = 'transparent';
+        b.style.color = '#94a3b8';
+    });
+    btn.style.background = 'rgba(59, 130, 246, 0.3)';
+    btn.style.borderColor = 'rgba(59, 130, 246, 0.6)';
+    btn.style.color = '#fff';
+    
+    const items = Array.from(list.children);
+    items.sort((a, b) => {
+        if (criterion === 'amount') {
+            const amtA = parseFloat(a.getAttribute('data-amount')) || 0;
+            const amtB = parseFloat(b.getAttribute('data-amount')) || 0;
+            return amtB - amtA; // Descending: largest amounts first
+        } else if (criterion === 'date') {
+            const dtA = a.getAttribute('data-date') || '';
+            const dtB = b.getAttribute('data-date') || '';
+            return dtB.localeCompare(dtA); // Descending: most recent first
+        }
+        return 0;
+    });
+    
+    items.forEach(item => list.appendChild(item));
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('categoryDonutChart');
+    if (ctx) {
+        const labels = ["\ud83c\udf55 Svago \u0026 Ristoranti"];
+        const values = [439.75];
+        const colors = ["#ec4899"];
+        
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: colors,
+                    borderWidth: 2,
+                    borderColor: '#0f172a',
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '68%',
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleColor: '#fff',
+                        bodyColor: '#cbd5e1',
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        padding: 10,
+                        callbacks: {
+                            label: function(context) {
+                                const val = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+                                return ` € ${val.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})} (${pct}%)`;
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // 2. Initialize Multi-Month Historical Trend Chart
+    const trendCtx = document.getElementById('monthlyTrendChart');
+    if (trendCtx) {
+        const trendLabels = ["Ott 25", "Nov 25", "Dic 25", "Gen 26", "Feb 26", "Mar 26", "Apr 26", "Mag 26", "Giu 26", "Lug 26", "Ago 26", "Set 26"];
+        const incomeData = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4645.83, 3064.44, 0.0];
+        const expenseData = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 130.31, 2790.34, 439.75];
+        const savingsData = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4515.52, 274.1, -439.75];
+        const targetData = [300.0, 300.0, 300.0, 300.0, 300.0, 300.0, 300.0, 300.0, 300.0, 929.17, 612.89, 300.0];
+        const monthsList = [{"expenses": 0.0, "income": 0.0, "is_target_met": false, "label": "Ott 25", "month_name_it": "Ott 2025", "net_savings": 0.0, "savings_rate": 0.0, "target_savings": 300.0, "tx_count": 0, "year_month": "2025-10"}, {"expenses": 0.0, "income": 0.0, "is_target_met": false, "label": "Nov 25", "month_name_it": "Nov 2025", "net_savings": 0.0, "savings_rate": 0.0, "target_savings": 300.0, "tx_count": 0, "year_month": "2025-11"}, {"expenses": 0.0, "income": 0.0, "is_target_met": false, "label": "Dic 25", "month_name_it": "Dic 2025", "net_savings": 0.0, "savings_rate": 0.0, "target_savings": 300.0, "tx_count": 0, "year_month": "2025-12"}, {"expenses": 0.0, "income": 0.0, "is_target_met": false, "label": "Gen 26", "month_name_it": "Gen 2026", "net_savings": 0.0, "savings_rate": 0.0, "target_savings": 300.0, "tx_count": 0, "year_month": "2026-01"}, {"expenses": 0.0, "income": 0.0, "is_target_met": false, "label": "Feb 26", "month_name_it": "Feb 2026", "net_savings": 0.0, "savings_rate": 0.0, "target_savings": 300.0, "tx_count": 0, "year_month": "2026-02"}, {"expenses": 0.0, "income": 0.0, "is_target_met": false, "label": "Mar 26", "month_name_it": "Mar 2026", "net_savings": 0.0, "savings_rate": 0.0, "target_savings": 300.0, "tx_count": 0, "year_month": "2026-03"}, {"expenses": 0.0, "income": 0.0, "is_target_met": false, "label": "Apr 26", "month_name_it": "Apr 2026", "net_savings": 0.0, "savings_rate": 0.0, "target_savings": 300.0, "tx_count": 0, "year_month": "2026-04"}, {"expenses": 0.0, "income": 0.0, "is_target_met": false, "label": "Mag 26", "month_name_it": "Mag 2026", "net_savings": 0.0, "savings_rate": 0.0, "target_savings": 300.0, "tx_count": 0, "year_month": "2026-05"}, {"expenses": 0.0, "income": 0.0, "is_target_met": false, "label": "Giu 26", "month_name_it": "Giu 2026", "net_savings": 0.0, "savings_rate": 0.0, "target_savings": 300.0, "tx_count": 0, "year_month": "2026-06"}, {"expenses": 130.31, "income": 4645.83, "is_target_met": true, "label": "Lug 26", "month_name_it": "Lug 2026", "net_savings": 4515.52, "savings_rate": 97.2, "target_savings": 929.17, "tx_count": 4, "year_month": "2026-07"}, {"expenses": 2790.34, "income": 3064.44, "is_target_met": false, "label": "Ago 26", "month_name_it": "Ago 2026", "net_savings": 274.1, "savings_rate": 8.9, "target_savings": 612.89, "tx_count": 36, "year_month": "2026-08"}, {"expenses": 439.75, "income": 0.0, "is_target_met": false, "label": "Set 26", "month_name_it": "Set 2026", "net_savings": -439.75, "savings_rate": 0.0, "target_savings": 300.0, "tx_count": 3, "year_month": "2026-09"}];
+        
+        new Chart(trendCtx, {
+            type: 'bar',
+            data: {
+                labels: trendLabels,
+                datasets: [
+                    {
+                        label: 'Entrate (€)',
+                        data: incomeData,
+                        backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                        hoverBackgroundColor: '#10b981',
+                        borderRadius: 6,
+                        order: 2,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.6
+                    },
+                    {
+                        label: 'Uscite (€)',
+                        data: expenseData,
+                        backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                        hoverBackgroundColor: '#f87171',
+                        borderRadius: 6,
+                        order: 2,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.6
+                    },
+                    {
+                        type: 'line',
+                        label: 'Risparmio Netto (€)',
+                        data: savingsData,
+                        borderColor: '#38bdf8',
+                        backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                        pointBackgroundColor: '#38bdf8',
+                        pointBorderColor: '#fff',
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        borderWidth: 2.5,
+                        tension: 0.25,
+                        order: 1
+                    },
+                    {
+                        type: 'line',
+                        label: 'Target Risparmio (20%)',
+                        data: targetData,
+                        borderColor: '#f59e0b',
+                        borderDash: [6, 6],
+                        pointBackgroundColor: '#f59e0b',
+                        pointRadius: 3,
+                        pointHoverRadius: 5,
+                        borderWidth: 2,
+                        fill: false,
+                        order: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                onClick: (evt, elements) => {
+                    if (elements && elements.length > 0) {
+                        const index = elements[0].index;
+                        if (monthsList && monthsList[index]) {
+                            const targetYm = monthsList[index].year_month;
+                            window.location.href = `/cashflow?m=${targetYm}`;
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.05)'
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: { weight: 'bold' }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.08)'
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            callback: function(val) {
+                                return '€ ' + val.toLocaleString('it-IT');
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        titleColor: '#fff',
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyColor: '#cbd5e1',
+                        borderColor: 'rgba(56, 189, 248, 0.3)',
+                        borderWidth: 1.5,
+                        padding: 12,
+                        boxPadding: 6,
+                        usePointStyle: true,
+                        callbacks: {
+                            title: function(items) {
+                                if (items.length > 0) {
+                                    const idx = items[0].dataIndex;
+                                    const mObj = monthsList[idx];
+                                    return mObj ? `📅 ${mObj.month_name_it}` : items[0].label;
+                                }
+                                return '';
+                            },
+                            afterBody: function(items) {
+                                if (items.length > 0) {
+                                    const idx = items[0].dataIndex;
+                                    const mObj = monthsList[idx];
+                                    if (!mObj) return '';
+                                    const statusEmoji = mObj.is_target_met ? '🎉 Target Raggiunto!' : (mObj.net_savings >= 0 ? '👍 In Attivo' : '⚠️ Disavanzo');
+                                    return [
+                                        `-------------------`,
+                                        `📊 Tasso Risparmio: ${mObj.savings_rate}%`,
+                                        `🎯 Stato: ${statusEmoji}`
+                                    ];
+                                }
+                                return '';
+                            },
+                            label: function(context) {
+                                const val = context.parsed.y || 0;
+                                const fVal = val.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                return ` ${context.dataset.label}: € ${fVal}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+
+function openAddFixedCostModal() {
+    document.getElementById('addFixedCostModal').classList.add('open');
+    document.getElementById('fcName').focus();
+}
+
+function closeAddFixedCostModal() {
+    document.getElementById('addFixedCostModal').classList.remove('open');
+}
+
+function openAddDeadlineModalManual() {
+    document.getElementById('dlModalTitle').innerText = "📅 Programma Scadenza / Tassa del Mese";
+    document.getElementById('dlName').value = "";
+    document.getElementById('dlAmount').value = "";
+    document.getElementById('dlDueDay').value = "15";
+    document.getElementById('dlPattern').value = "";
+    document.getElementById('dlRecurrence').value = "ANNUAL";
+    document.getElementById('addDeadlineModal').classList.add('open');
+    document.getElementById('dlName').focus();
+}
+
+function openCatalogModal(catalogItem) {
+    document.getElementById('dlModalTitle').innerText = `${catalogItem.icon} Programma ${catalogItem.name}`;
+    document.getElementById('dlName').value = catalogItem.name;
+    document.getElementById('dlAmount').value = catalogItem.default_amount;
+    document.getElementById('dlDueDay').value = catalogItem.default_day;
+    document.getElementById('dlCategory').value = catalogItem.category;
+    document.getElementById('dlPattern').value = catalogItem.pattern;
+    document.getElementById('dlRecurrence').value = catalogItem.recurrence || "ANNUAL";
+    document.getElementById('addDeadlineModal').classList.add('open');
+    document.getElementById('dlAmount').focus();
+}
+
+function closeAddDeadlineModal() {
+    document.getElementById('addDeadlineModal').classList.remove('open');
+}
+
+// Close modals when clicking outside card
+window.addEventListener('click', function(e) {
+    const fcModal = document.getElementById('addFixedCostModal');
+    const dlModal = document.getElementById('addDeadlineModal');
+    if (e.target === fcModal) {
+        closeAddFixedCostModal();
+    }
+    if (e.target === dlModal) {
+        closeAddDeadlineModal();
+    }
+});
+</script>
+
+
+    </main>
+
+    
+    <!-- Bottom Mobile Navigation -->
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="nav-item ">
+            <span class="nav-icon">📊</span>
+            <span>Dashboard</span>
+        </a>
+        <a href="/cashflow" class="nav-item active">
+            <span class="nav-icon">🎯</span>
+            <span>Cash Flow</span>
+        </a>
+        <a href="/transactions" class="nav-item ">
+            <span class="nav-icon">💳</span>
+            <span>Conti & Spese</span>
+        </a>
+        <a href="/paystubs" class="nav-item ">
+            <span class="nav-icon">📄</span>
+            <span>Cedolino</span>
+        </a>
+        <a href="/tax730" class="nav-item ">
+            <span class="nav-icon">🏛️</span>
+            <span>730</span>
+        </a>
+        <a href="/projections" class="nav-item ">
+            <span class="nav-icon">🚀</span>
+            <span>Futuro</span>
+        </a>
+    </nav>
+    
+
+</body>
+</html>

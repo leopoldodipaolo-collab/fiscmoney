@@ -1,0 +1,912 @@
+{% extends "base.html" %}
+
+{% block title %}Executive Suite Super-Admin | FiscMoney{% endblock %}
+
+{% block content %}
+
+<!-- Executive Header -->
+<div class="card" style="border: 1px solid rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.95)); margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, #f59e0b, #d97706); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; box-shadow: 0 0 20px rgba(245, 158, 11, 0.4);">
+                👑
+            </div>
+            <div>
+                <h1 style="font-size: 1.45rem; font-weight: 800; color: #fbbf24; margin: 0; letter-spacing: -0.5px;">
+                    FiscMoney Executive Suite
+                </h1>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 2px 0 0 0;">
+                    Piattaforma SaaS (<strong>fiscmoney.it</strong>) &bull; Controllo Licenze, Telemetria & Master Intelligence
+                </p>
+            </div>
+        </div>
+        
+        <!-- Action Quick-Tools -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <a href="/admin/system/backup" class="btn btn-secondary" style="font-size: 0.82rem; padding: 8px 14px; border-color: rgba(245, 158, 11, 0.4); color: #fbbf24; display: flex; align-items: center; gap: 6px;">
+                <span>💾</span> Backup Snapshot DB
+            </a>
+            <form action="/admin/system/vacuum" method="POST" style="margin:0;">
+                <button type="submit" class="btn btn-secondary" style="font-size: 0.82rem; padding: 8px 14px; display: flex; align-items: center; gap: 6px;" title="Ottimizza spazio e indici SQLite">
+                    <span>⚡</span> Ottimizza DB
+                </button>
+            </form>
+            <form action="/admin/global-rules/propagate" method="POST" style="margin:0;" onsubmit="return confirm('Propagare tutte le regole globali mancanti a tutti i workspace attivi?');">
+                <button type="submit" class="btn btn-primary" style="font-size: 0.82rem; padding: 8px 14px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; color: #000; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+                    <span>🧠</span> Propaga Regole Globali
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Global Telemetry & Platform KPI Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px;">
+    <!-- Card 1: Users & Subscriptions -->
+    <div class="card" style="margin-bottom: 0; padding: 14px; border-left: 4px solid #38bdf8;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Utenti SaaS</span>
+            <span style="font-size: 1.1rem;">👥</span>
+        </div>
+        <div style="font-size: 1.6rem; font-weight: 800; color: #fff; margin: 4px 0;">{{ total_users }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; gap: 6px; flex-wrap: wrap;">
+            <span style="color: #38bdf8;">Free: {{ plan_counts.get('FREE', 0) }}</span>
+            <span style="color: #10b981;">Pro: {{ plan_counts.get('PRO_ANNUAL', 0) }}</span>
+            <span style="color: #fbbf24;">Life: {{ plan_counts.get('LIFETIME', 0) }}</span>
+        </div>
+    </div>
+
+    <!-- Card 2: Workspaces -->
+    <div class="card" style="margin-bottom: 0; padding: 14px; border-left: 4px solid #10b981;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Workspace & Profili</span>
+            <span style="font-size: 1.1rem;">🏢</span>
+        </div>
+        <div style="font-size: 1.6rem; font-weight: 800; color: #10b981; margin: 4px 0;">{{ total_workspaces }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">
+            <span>{{ total_profiles }} profili totali ({{ family_workspaces }} Famiglia)</span>
+        </div>
+    </div>
+
+    <!-- Card 3: Financial Volume -->
+    <div class="card" style="margin-bottom: 0; padding: 14px; border-left: 4px solid #f59e0b;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Volume Transato</span>
+            <span style="font-size: 1.1rem;">💳</span>
+        </div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #fbbf24; margin: 4px 0;">{{ total_volume | eur }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">
+            <span>{{ total_tx }} movimenti su {{ total_accounts }} conti</span>
+        </div>
+    </div>
+
+    <!-- Card 4: Documents (Paystubs & 730) -->
+    <div class="card" style="margin-bottom: 0; padding: 14px; border-left: 4px solid #a855f7;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Documenti Fiscali</span>
+            <span style="font-size: 1.1rem;">📑</span>
+        </div>
+        <div style="font-size: 1.6rem; font-weight: 800; color: #c084fc; margin: 4px 0;">{{ total_paystubs + total_tax_730 }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">
+            <span>{{ total_paystubs }} Cedolini &bull; {{ total_tax_730 }} Modelli 730</span>
+        </div>
+    </div>
+
+    <!-- Card 5: Master Intelligence Rules -->
+    <div class="card" style="margin-bottom: 0; padding: 14px; border-left: 4px solid #ec4899;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Master Rules AI</span>
+            <span style="font-size: 1.1rem;">🧠</span>
+        </div>
+        <div style="font-size: 1.6rem; font-weight: 800; color: #f472b6; margin: 4px 0;">{{ total_global_rules }}</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">
+            <span>Regole universali categorizzazione</span>
+        </div>
+    </div>
+
+    <!-- Card 6: Database & Storage Health -->
+    <div class="card" style="margin-bottom: 0; padding: 14px; border-left: 4px solid #6366f1;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Storage DB</span>
+            <span style="font-size: 1.1rem;">💾</span>
+        </div>
+        <div style="font-size: 1.6rem; font-weight: 800; color: #818cf8; margin: 4px 0;">{{ db_size_mb }} MB</div>
+        <div style="font-size: 0.75rem; color: #10b981; font-weight: 600;">
+            <span>🟢 SQLite WAL Attivo</span>
+        </div>
+    </div>
+</div>
+
+<!-- Suite Navigation Tabs -->
+<div style="display: flex; gap: 8px; margin-bottom: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; overflow-x: auto;">
+    <button type="button" class="admin-tab-btn active" onclick="switchAdminTab('users-tab', this)" style="background: transparent; border: none; color: #fff; font-weight: 700; font-size: 0.92rem; padding: 8px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+        <span>👥</span> Utenti & Abbonamenti ({{ total_users }})
+    </button>
+    <button type="button" class="admin-tab-btn" onclick="switchAdminTab('rules-tab', this)" style="background: transparent; border: none; color: var(--text-muted); font-weight: 600; font-size: 0.92rem; padding: 8px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+        <span>🧠</span> Master Rules AI ({{ total_global_rules }})
+    </button>
+    <button type="button" class="admin-tab-btn" onclick="switchAdminTab('announcements-tab', this)" style="background: transparent; border: none; color: var(--text-muted); font-weight: 600; font-size: 0.92rem; padding: 8px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+        <span>📢</span> Broadcast & Annunci ({{ announcements|length }})
+    </button>
+    <button type="button" class="admin-tab-btn" onclick="switchAdminTab('audits-tab', this)" style="background: transparent; border: none; color: var(--text-muted); font-weight: 600; font-size: 0.92rem; padding: 8px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+        <span>🛡️</span> Registro Audit Trail
+    </button>
+</div>
+
+<!-- ========================================== -->
+<!-- TAB 1: USERS & SUBSCRIPTION MANAGEMENT    -->
+<!-- ========================================== -->
+<div id="users-tab" class="admin-tab-content">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">Anagrafica Clienti & Licenze SaaS</h2>
+                <p style="color: var(--text-muted); font-size: 0.8rem; margin: 2px 0 0 0;">Gestisci abbonamenti, permessi e avvia sessioni di assistenza remota protetta</p>
+            </div>
+            
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="text" id="adminUserSearch" onkeyup="filterAdminUsers()" placeholder="🔍 Cerca utente per email o nome..." style="background: rgba(15,23,42,0.6); border: 1px solid var(--border-color); color: #fff; padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; width: 260px;">
+                <select id="adminPlanFilter" onchange="filterAdminUsers()" style="background: rgba(15,23,42,0.6); border: 1px solid var(--border-color); color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem;">
+                    <option value="">Tutti i Piani</option>
+                    <option value="FREE">Free</option>
+                    <option value="PRO_ANNUAL">Pro Annuale (100€)</option>
+                    <option value="LIFETIME">Lifetime</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table id="adminUsersTable" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">
+                        <th style="padding: 12px 10px;">Utente</th>
+                        <th style="padding: 12px 10px;">Piano & Stato</th>
+                        <th style="padding: 12px 10px;">Workspace / Profili</th>
+                        <th style="padding: 12px 10px;">Movimenti</th>
+                        <th style="padding: 12px 10px;">Registrato il</th>
+                        <th style="padding: 12px 10px; text-align: right;">Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users_list %}
+                    <tr class="user-row" data-name="{{ u.full_name|lower }}" data-email="{{ u.email|lower }}" data-plan="{{ u.subscription_plan|default('FREE') }}" style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+                        <td style="padding: 12px 10px;">
+                            <div style="font-weight: 700; color: #fff;">{{ u.full_name }}</div>
+                            <div style="font-size: 0.78rem; color: var(--text-muted);">{{ u.email }}</div>
+                            {% if u.role == 'SUPER_ADMIN' %}
+                            <span class="badge-tag" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; font-size: 0.7rem; margin-top: 3px; display: inline-block;">👑 Super Admin</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 10px;">
+                            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                {% if u.subscription_plan == 'PRO_ANNUAL' %}
+                                <span class="badge-tag" style="background: rgba(16, 185, 129, 0.2); color: #10b981; font-weight: 700;">🟢 PRO (100€/a)</span>
+                                {% elif u.subscription_plan == 'LIFETIME' %}
+                                <span class="badge-tag" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; font-weight: 700;">👑 LIFETIME</span>
+                                {% else %}
+                                <span class="badge-tag" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8;">FREE</span>
+                                {% endif %}
+                                
+                                {% if u.subscription_status == 'SUSPENDED' %}
+                                <span class="badge-tag" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; font-size: 0.7rem;">Sospeso</span>
+                                {% elif u.subscription_status == 'EXPIRED' %}
+                                <span class="badge-tag" style="background: rgba(234, 179, 8, 0.2); color: #eab308; font-size: 0.7rem;">Scaduto</span>
+                                {% endif %}
+                            </div>
+                            <div style="font-size: 0.72rem; color: var(--text-muted);">
+                                {% if u.subscription_expires_at %}Scade: {{ u.subscription_expires_at[:10] }}{% else %}Scadenza: Illimitata{% endif %}
+                            </div>
+                        </td>
+                        <td style="padding: 12px 10px;">
+                            <span style="font-weight: 600; color: #38bdf8;">{{ u.ws_count }} WS</span> &bull; 
+                            <span style="color: var(--text-muted);">{{ u.profile_count }} Profili</span>
+                        </td>
+                        <td style="padding: 12px 10px;">
+                            <span style="font-weight: 600; color: #fff;">{{ u.tx_count }} tx</span> &bull;
+                            <span style="font-size: 0.75rem; color: var(--text-muted);">{{ u.account_count }} conti</span>
+                        </td>
+                        <td style="padding: 12px 10px; font-size: 0.78rem; color: var(--text-muted);">
+                            <div>{{ u.created_at[:10] if u.created_at else '-' }}</div>
+                            {% if u.last_login_at %}
+                            <div style="font-size: 0.7rem; color: #64748b;">Ultimo: {{ u.last_login_at[:10] }}</div>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 10px; text-align: right;">
+                            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 6px;">
+                                <!-- Edit Plan Button -->
+                                <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem;" 
+                                        data-userid="{{ u.id }}"
+                                        data-username="{{ u.full_name }}"
+                                        data-plan="{{ u.subscription_plan|default('FREE') }}"
+                                        data-status="{{ u.subscription_status|default('ACTIVE') }}"
+                                        data-role="{{ u.role }}"
+                                        data-expiry="{{ u.subscription_expires_at or '' }}"
+                                        onclick="openEditPlanModalFromBtn(this)" 
+                                        title="Modifica Piano & Scadenza">
+                                    ✏️ Piano
+                                </button>
+                                
+                                <!-- Reset Password Button -->
+                                <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;" 
+                                        data-userid="{{ u.id }}"
+                                        data-username="{{ u.full_name }}"
+                                        data-email="{{ u.email }}"
+                                        onclick="openResetPasswordModalFromBtn(this)" 
+                                        title="Reimposta Password">
+                                    🔑 Pwd
+                                </button>
+
+                                <!-- Support Impersonation Button -->
+                                {% if u.id != session.get('user_id') %}
+                                <form action="/admin/users/{{ u.id }}/impersonate" method="POST" style="margin: 0;" onsubmit="return confirm('Vuoi avviare la modalità assistenza per l\'utente {{ u.full_name }}?');">
+                                    <button type="submit" class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem; border-color: rgba(245, 158, 11, 0.4); color: #fbbf24;" title="Avvia sessione di supporto per questo utente">
+                                        🛡️ Assisti
+                                    </button>
+                                </form>
+                                {% endif %}
+
+                                <!-- Delete GDPR Button -->
+                                {% if u.id != session.get('user_id') and u.id != 1 and u.role != 'SUPER_ADMIN' %}
+                                <button type="button" class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.75rem; border-color: rgba(239, 68, 68, 0.4); color: #ef4444;" 
+                                        data-userid="{{ u.id }}"
+                                        data-username="{{ u.full_name }}"
+                                        data-email="{{ u.email }}"
+                                        onclick="openDeleteUserModalFromBtn(this)" 
+                                        title="Elimina Utente (GDPR)">
+                                    🗑️
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- TAB 2: MASTER RULES INTELLIGENCE           -->
+<!-- ========================================== -->
+<div id="rules-tab" class="admin-tab-content" style="display: none;">
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span>Catalogo Regole Master Globali</span>
+                    <span id="rulesCountBadge" class="badge-tag" style="background: rgba(236, 72, 153, 0.18); border: 1px solid rgba(236, 72, 153, 0.4); color: #f472b6; font-size: 0.75rem;">
+                        {{ global_rules|length }} Regole Attive
+                    </span>
+                </h2>
+                <p style="color: var(--text-muted); font-size: 0.8rem; margin: 2px 0 0 0;">Regole predefinite applicate automaticamente a tutti i workspace per massimizzare la precisione dell'AI</p>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <input type="text" id="adminRuleSearch" onkeyup="filterGlobalRules()" placeholder="🔍 Cerca per pattern, categoria o tag..." style="background: #1e293b; border: 1px solid var(--border-color); color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 0.82rem; min-width: 260px;">
+                <button type="button" class="btn btn-primary" onclick="openNewRuleModal()" style="font-size: 0.82rem; padding: 8px 14px; background: linear-gradient(135deg, #ec4899, #d946ef); border: none; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                    <span>➕</span> Nuova Regola Globale
+                </button>
+            </div>
+        </div>
+
+        <div style="overflow-x: auto; max-height: 600px; overflow-y: auto;">
+            <table id="adminRulesTable" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                <thead style="position: sticky; top: 0; background: #0f172a; z-index: 5;">
+                    <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">
+                        <th style="padding: 10px;">Pattern Riconoscimento</th>
+                        <th style="padding: 10px;">Macro-Categoria</th>
+                        <th style="padding: 10px;">Sotto-Categoria</th>
+                        <th style="padding: 10px;">Smart Tags</th>
+                        <th style="padding: 10px;">Detraibile 730</th>
+                        <th style="padding: 10px; text-align: right;">Azioni</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for gr in global_rules %}
+                    <tr class="global-rule-row" 
+                        data-pattern="{{ gr.pattern|lower }}" 
+                        data-category="{{ gr.category|lower }}" 
+                        data-subcat="{{ (gr.sub_category or '')|lower }}" 
+                        data-tags="{{ (gr.tags or '')|lower }}"
+                        style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 10px;">
+                            <span class="badge-tag" style="background: rgba(236, 72, 153, 0.15); border: 1px solid rgba(236, 72, 153, 0.4); color: #f472b6; font-weight: 700;">
+                                {{ gr.pattern }}
+                            </span>
+                        </td>
+                        <td style="padding: 10px; font-weight: 600; color: #fff;">{{ gr.category }}</td>
+                        <td style="padding: 10px; color: var(--text-muted);">{{ gr.sub_category or '-' }}</td>
+                        <td style="padding: 10px; font-size: 0.75rem; color: #94a3b8;">{{ gr.tags or '-' }}</td>
+                        <td style="padding: 10px;">
+                            {% if gr.is_tax_deductible %}
+                            <span class="badge-tag" style="background: rgba(16, 185, 129, 0.2); color: #10b981; font-weight: 700;">🩺 Detraibile 19%</span>
+                            {% else %}
+                            <span style="color: #64748b; font-size: 0.75rem;">No</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 10px; text-align: right;">
+                            <div style="display: inline-flex; align-items: center; gap: 6px;">
+                                <button type="button" class="btn btn-secondary" 
+                                        onclick="openEditRuleModalFromBtn(this)"
+                                        data-ruleid="{{ gr.id }}"
+                                        data-pattern="{{ gr.pattern }}"
+                                        data-category="{{ gr.category }}"
+                                        data-subcat="{{ gr.sub_category or '' }}"
+                                        data-tags="{{ gr.tags or '' }}"
+                                        data-taxded="{{ 1 if gr.is_tax_deductible else 0 }}"
+                                        data-priority="{{ gr.priority or 10 }}"
+                                        style="padding: 4px 8px; font-size: 0.72rem; color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">
+                                    ✏️
+                                </button>
+                                <form action="/admin/global-rules/{{ gr.id }}/delete" method="POST" style="margin:0;" onsubmit="return confirm('Eliminare la regola globale per {{ gr.pattern }}?');">
+                                    <button type="submit" class="btn btn-secondary" style="padding: 4px 8px; font-size: 0.72rem; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
+                                        🗑️
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- TAB 3: BROADCAST & SYSTEM ANNOUNCEMENTS   -->
+<!-- ========================================== -->
+<div id="announcements-tab" class="admin-tab-content" style="display: none;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+        <!-- Left: Create Announcement Form -->
+        <div class="card">
+            <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 14px;">📢 Crea Nuovo Avviso Broadcast</h2>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 14px;">Il messaggio comparirà istantaneamente in cima a tutte le schermate degli utenti</p>
+            
+            <form action="/admin/announcements/save" method="POST">
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">Titolo Avviso</label>
+                    <input type="text" name="title" required placeholder="Es. Aggiornamento Fiscale 2026 completato" style="width: 100%; background: rgba(15,23,42,0.8); border: 1px solid var(--border-color); color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem;">
+                </div>
+                
+                <div style="margin-bottom: 12px;">
+                    <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">Messaggio Dettagliato</label>
+                    <textarea name="message" required rows="3" placeholder="Es. Abbiamo introdotto le nuove tabelle delle aliquote IRPEF per la dichiarazione 730..." style="width: 100%; background: rgba(15,23,42,0.8); border: 1px solid var(--border-color); color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; font-family: inherit;"></textarea>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                    <div>
+                        <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">Livello Gravità</label>
+                        <select name="level" style="width: 100%; background: rgba(15,23,42,0.8); border: 1px solid var(--border-color); color: #fff; padding: 8px 10px; border-radius: 8px; font-size: 0.85rem;">
+                            <option value="INFO">ℹ️ Informativo (Blu)</option>
+                            <option value="WARNING">⚠️ Avviso/Warning (Giallo)</option>
+                            <option value="DANGER">🚨 Critico/Manutenzione (Rosso)</option>
+                        </select>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 22px;">
+                        <input type="checkbox" id="annActive" name="is_active" value="1" checked style="width: 18px; height: 18px; accent-color: #f59e0b; cursor: pointer;">
+                        <label for="annActive" style="font-size: 0.85rem; color: #fff; font-weight: 600; cursor: pointer;">Attiva subito</label>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" style="width: 100%; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; color: #000; font-weight: 800; padding: 10px;">
+                    Pubblica Avviso Broadcast
+                </button>
+            </form>
+        </div>
+
+        <!-- Right: Existing Announcements List -->
+        <div class="card">
+            <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 14px;">Storico Avvisi</h2>
+            
+            {% if not announcements %}
+            <p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px 0;">Nessun avviso pubblicato finora.</p>
+            {% else %}
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                {% for a in announcements %}
+                <div style="padding: 12px; border-radius: 10px; background: rgba(15,23,42,0.6); border: 1px solid {% if a.is_active %}rgba(245,158,11,0.5){% else %}var(--border-color){% endif %};">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                        <div>
+                            <span class="badge-tag" style="{% if a.level == 'DANGER' %}background: rgba(239,68,68,0.2); color: #ef4444;{% elif a.level == 'WARNING' %}background: rgba(245,158,11,0.2); color: #f59e0b;{% else %}background: rgba(56,189,248,0.2); color: #38bdf8;{% endif %} font-size: 0.72rem; font-weight: 700;">
+                                {{ a.level }}
+                            </span>
+                            <strong style="color: #fff; font-size: 0.9rem; margin-left: 6px;">{{ a.title }}</strong>
+                        </div>
+                        <span class="badge-tag" style="{% if a.is_active %}background: rgba(16,185,129,0.2); color: #10b981;{% else %}background: rgba(100,116,139,0.2); color: #64748b;{% endif %} font-size: 0.7rem;">
+                            {{ '🟢 ATTIVO' if a.is_active else 'DISATTIVO' }}
+                        </span>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 0.8rem; margin: 4px 0 8px 0;">{{ a.message }}</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #64748b;">
+                        <span>Data: {{ a.created_at[:16] if a.created_at else '-' }}</span>
+                        <div style="display: flex; gap: 6px;">
+                            <form action="/admin/announcements/{{ a.id }}/toggle" method="POST" style="margin:0;">
+                                <button type="submit" class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.72rem;">
+                                    {{ 'Disattiva' if a.is_active else 'Attiva' }}
+                                </button>
+                            </form>
+                            <form action="/admin/announcements/{{ a.id }}/delete" method="POST" style="margin:0;" onsubmit="return confirm('Eliminare questo avviso?');">
+                                <button type="submit" class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.72rem; color: #ef4444;">
+                                    🗑️
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- TAB 4: AUDIT LOGS & COMPLIANCE             -->
+<!-- ========================================== -->
+<div id="audits-tab" class="admin-tab-content" style="display: none;">
+    <div class="card">
+        <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 4px;">🛡️ Registro Cronologico Audit Trail</h2>
+        <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 16px;">Tracciamento immutabile di tutte le operazioni amministrative per sicurezza e compliance GDPR</p>
+        
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.82rem;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.5px;">
+                        <th style="padding: 10px;">Timestamp</th>
+                        <th style="padding: 10px;">Azione</th>
+                        <th style="padding: 10px;">Admin Esecutore</th>
+                        <th style="padding: 10px;">Target Utente</th>
+                        <th style="padding: 10px;">Dettagli Operazione</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in recent_audits %}
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 10px; color: var(--text-muted); white-space: nowrap; font-size: 0.75rem;">
+                            {{ log.created_at[:19] if log.created_at else '-' }}
+                        </td>
+                        <td style="padding: 10px;">
+                            <span class="badge-tag" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 700; font-size: 0.72rem;">
+                                {{ log.action }}
+                            </span>
+                        </td>
+                        <td style="padding: 10px; font-weight: 600; color: #fff;">
+                            {{ log.admin_name or log.admin_email or ('Admin #' ~ log.admin_user_id) }}
+                        </td>
+                        <td style="padding: 10px; color: var(--text-muted);">
+                            {% if log.target_user_name %}
+                            {{ log.target_user_name }} ({{ log.target_user_email }})
+                            {% elif log.target_user_id %}
+                            User #{{ log.target_user_id }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td style="padding: 10px; color: #94a3b8; font-size: 0.78rem;">
+                            {{ log.details }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">Nessun log registrato.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<!-- ========================================== -->
+<!-- MODAL: EDIT USER SUBSCRIPTION PLAN         -->
+<!-- ========================================== -->
+<div id="editPlanModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center;">
+    <div style="background: #0f172a; border: 1px solid rgba(245, 158, 11, 0.5); border-radius: 16px; padding: 24px; width: 90%; max-width: 480px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #fbbf24; margin: 0;">✏️ Modifica Piano & Licenza</h3>
+            <button type="button" onclick="closeEditPlanModal()" style="background: transparent; border: none; color: #fff; font-size: 1.4rem; cursor: pointer;">&times;</button>
+        </div>
+        
+        <form id="editPlanForm" method="POST">
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
+                Stai modificando il profilo di: <strong id="editPlanUserName" style="color: #fff;"></strong>
+            </p>
+            
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">Piano Tariffario</label>
+                <select id="editPlanSelect" name="subscription_plan" style="width: 100%; background: #1e293b; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px;">
+                    <option value="FREE">Free (Base)</option>
+                    <option value="PRO_ANNUAL">Pro Annuale (100€ / anno)</option>
+                    <option value="LIFETIME">Lifetime / Fondatore</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">Stato Abbonamento</label>
+                <select id="editStatusSelect" name="subscription_status" style="width: 100%; background: #1e293b; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px;">
+                    <option value="ACTIVE">Attivo</option>
+                    <option value="TRIAL">In Prova (Trial)</option>
+                    <option value="EXPIRED">Scaduto</option>
+                    <option value="SUSPENDED">Sospeso / Bloccato</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">Ruolo Piattaforma</label>
+                <select id="editRoleSelect" name="role" style="width: 100%; background: #1e293b; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px;">
+                    <option value="USER">Utente Standard</option>
+                    <option value="SUPER_ADMIN">👑 Super Admin</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">Data Scadenza Abbonamento (Opzionale)</label>
+                <input type="date" id="editExpiryDate" name="subscription_expires_at" style="width: 100%; background: #1e293b; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px;">
+                <span style="font-size: 0.72rem; color: #64748b;">Lascia vuoto per licenze a tempo indeterminato</span>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeEditPlanModal()">Annulla</button>
+                <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; color: #000; font-weight: 800;">Salva Modifiche</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ========================================== -->
+<!-- MODAL: RESET USER PASSWORD                 -->
+<!-- ========================================== -->
+<div id="resetPasswordModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center;">
+    <div style="background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.5); border-radius: 16px; padding: 24px; width: 90%; max-width: 480px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; margin: 0;">🔑 Reimposta Password Utente</h3>
+            <button type="button" onclick="closeResetPasswordModal()" style="background: transparent; border: none; color: #fff; font-size: 1.4rem; cursor: pointer;">&times;</button>
+        </div>
+        
+        <form id="resetPasswordForm" method="POST">
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 16px;">
+                Stai reimpostando la password per: <strong id="resetPasswordUserLabel" style="color: #fff;"></strong>
+            </p>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px;">Nuova Password Provvisoria (min. 6 caratteri)</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="resetPasswordInput" name="new_password" minlength="6" required style="flex: 1; background: #1e293b; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 0.95rem;" placeholder="Es: Fisc2026!Demo">
+                    <button type="button" class="btn btn-secondary" onclick="generateRandomPassword()" style="font-size: 0.75rem; white-space: nowrap; border-color: rgba(56,189,248,0.4); color: #38bdf8;">🎲 Genera</button>
+                </div>
+                <span style="font-size: 0.72rem; color: #64748b; margin-top: 4px; display: block;">L'utente potrà accedere immediatamente con questa password.</span>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" onclick="closeResetPasswordModal()">Annulla</button>
+                <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7, #38bdf8); border: none; color: #fff; font-weight: 800;">Salva Nuova Password</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ========================================== -->
+<!-- MODAL: ADD NEW GLOBAL RULE                 -->
+<!-- ========================================== -->
+<div id="newRuleModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center;">
+    <div style="background: #0f172a; border: 1px solid rgba(236, 72, 153, 0.5); border-radius: 16px; padding: 24px; width: 90%; max-width: 520px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #f472b6; margin: 0;">➕ Nuova Regola Master Globale</h3>
+            <button type="button" onclick="closeNewRuleModal()" style="background: transparent; border: none; color: #fff; font-size: 1.4rem; cursor: pointer;">&times;</button>
+        </div>
+        
+        <form action="/admin/global-rules/add" method="POST">
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">Pattern Testuale (parola chiave)</label>
+                <input type="text" name="pattern" required placeholder="Es. CONAD, ENI, LEROY MERLIN, TELEPASS" style="width: 100%; background: #1e293b; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px; text-transform: uppercase;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">Macro Categoria</label>
+                    <select name="category" required style="width: 100%; background: #1e293b; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px; font-size: 0.85rem;">
+                        <option value="Spesa & Alimentari">🛒 Spesa & Alimentari</option>
+                        <option value="Casa & Immobili">🏠 Casa & Immobili</option>
+                        <option value="Bollette & Utenze">💡 Bollette & Utenze</option>
+                        <option value="Auto & Mobilità">🚗 Auto & Mobilità</option>
+                        <option value="Salute & Benessere">🩺 Salute & Benessere</option>
+                        <option value="Shopping & Abbigliamento">🛍️ Shopping & Abbigliamento</option>
+                        <option value="Ristoranti & Bar">🍽️ Ristoranti & Bar</option>
+                        <option value="Digitale, Tech & Tel">🌐 Digitale, Tech & Tel</option>
+                        <option value="Viaggi & Tempo Libero">✈️ Viaggi & Tempo Libero</option>
+                        <option value="Lavoro & Entrate">💼 Lavoro & Entrate</option>
+                        <option value="Risparmio & Investimenti">📈 Risparmio & Investimenti</option>
+                        <option value="Tasse, Fisco & Banche">🏛️ Tasse, Fisco & Banche</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">Sotto-Categoria</label>
+                    <input type="text" name="sub_category" placeholder="Es. Supermercato, Carburante..." style="width: 100%; background: #1e293b; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">Smart Tags (separati da spazio o virgola)</label>
+                <input type="text" name="tags" placeholder="Es. #supermercato #cibo" style="width: 100%; background: #1e293b; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px;">
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px;">
+                <input type="checkbox" id="isTaxDed" name="is_tax_deductible" value="1" style="width: 18px; height: 18px; accent-color: #10b981; cursor: pointer;">
+                <label for="isTaxDed" style="font-size: 0.85rem; color: #fff; font-weight: 600; cursor: pointer;">🩺 Spesa Detraibile Modello 730 (19%)</label>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeNewRuleModal()">Annulla</button>
+                <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #ec4899, #d946ef); border: none; font-weight: 700;">Salva Regola</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ========================================== -->
+<!-- MODAL: EDIT GLOBAL RULE                    -->
+<!-- ========================================== -->
+<div id="editRuleModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 99999; align-items: center; justify-content: center;">
+    <div style="background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.5); border-radius: 16px; padding: 24px; width: 90%; max-width: 520px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; margin: 0;">✏️ Modifica Regola Master</h3>
+            <button type="button" onclick="closeEditRuleModal()" style="background: transparent; border: none; color: #fff; font-size: 1.4rem; cursor: pointer;">&times;</button>
+        </div>
+        
+        <form id="editRuleForm" method="POST">
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">Pattern Testuale (parola chiave)</label>
+                <input type="text" id="editRulePattern" name="pattern" required style="width: 100%; background: #1e293b; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px; text-transform: uppercase;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div>
+                    <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">Macro Categoria</label>
+                    <select id="editRuleCategory" name="category" required style="width: 100%; background: #1e293b; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px; font-size: 0.85rem;">
+                        <option value="Spesa & Alimentari">🛒 Spesa & Alimentari</option>
+                        <option value="Casa & Immobili">🏠 Casa & Immobili</option>
+                        <option value="Bollette & Utenze">💡 Bollette & Utenze</option>
+                        <option value="Auto & Mobilità">🚗 Auto & Mobilità</option>
+                        <option value="Salute & Benessere">🩺 Salute & Benessere</option>
+                        <option value="Shopping & Abbigliamento">🛍️ Shopping & Abbigliamento</option>
+                        <option value="Ristoranti & Bar">🍽️ Ristoranti & Bar</option>
+                        <option value="Digitale, Tech & Tel">🌐 Digitale, Tech & Tel</option>
+                        <option value="Viaggi & Tempo Libero">✈️ Viaggi & Tempo Libero</option>
+                        <option value="Lavoro & Entrate">💼 Lavoro & Entrate</option>
+                        <option value="Risparmio & Investimenti">📈 Risparmio & Investimenti</option>
+                        <option value="Tasse, Fisco & Banche">🏛️ Tasse, Fisco & Banche</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">Sotto-Categoria</label>
+                    <input type="text" id="editRuleSubcat" name="sub_category" style="width: 100%; background: #1e293b; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px;">
+                </div>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px;">Smart Tags (separati da spazio o virgola)</label>
+                <input type="text" id="editRuleTags" name="tags" style="width: 100%; background: #1e293b; border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px;">
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px;">
+                <input type="checkbox" id="editRuleTaxDed" name="is_tax_deductible" value="1" style="width: 18px; height: 18px; accent-color: #10b981; cursor: pointer;">
+                <label for="editRuleTaxDed" style="font-size: 0.85rem; color: #fff; font-weight: 600; cursor: pointer;">🩺 Spesa Detraibile Modello 730 (19%)</label>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeEditRuleModal()">Annulla</button>
+                <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #0284c7, #38bdf8); border: none; font-weight: 700;">Salva Modifiche</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ========================================== -->
+<!-- MODAL: DELETE USER CONFIRMATION (GDPR)     -->
+<!-- ========================================== -->
+<div id="deleteUserModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(6px); z-index: 99999; align-items: center; justify-content: center;">
+    <div style="background: #0f172a; border: 1px solid rgba(239, 68, 68, 0.6); border-radius: 16px; padding: 24px; width: 90%; max-width: 480px; box-shadow: 0 20px 50px rgba(239, 68, 68, 0.3);">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(239, 68, 68, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                🚨
+            </div>
+            <div>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #ef4444; margin: 0;">Eliminazione Definitiva GDPR</h3>
+                <p style="color: var(--text-muted); font-size: 0.78rem; margin: 0;">Azione irreversibile</p>
+            </div>
+        </div>
+        
+        <p style="color: #cbd5e1; font-size: 0.88rem; line-height: 1.5; margin-bottom: 16px;">
+            Stai per cancellare definitivamente l'utente <strong id="deleteUserLabel" style="color: #fff;"></strong> e tutti i suoi dati (workspace proprietari, transazioni, conti, 730 e cedolini).
+        </p>
+        
+        <form id="deleteUserForm" method="POST">
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteUserModal()">Annulla</button>
+                <button type="submit" class="btn btn-danger" style="background: #ef4444; border: none; font-weight: 800; padding: 10px 18px;">
+                    Conferma Eliminazione
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- Admin Interactive Scripts -->
+<script>
+function switchAdminTab(tabId, btn) {
+    document.querySelectorAll('.admin-tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.admin-tab-btn').forEach(el => {
+        el.style.color = 'var(--text-muted)';
+        el.classList.remove('active');
+    });
+    
+    const target = document.getElementById(tabId);
+    if (target) target.style.display = 'block';
+    
+    btn.style.color = '#fff';
+    btn.classList.add('active');
+}
+
+function filterAdminUsers() {
+    const q = document.getElementById('adminUserSearch').value.toLowerCase().trim();
+    const plan = document.getElementById('adminPlanFilter').value;
+    const rows = document.querySelectorAll('#adminUsersTable .user-row');
+    
+    rows.forEach(row => {
+        const name = row.getAttribute('data-name');
+        const email = row.getAttribute('data-email');
+        const userPlan = row.getAttribute('data-plan');
+        
+        const matchText = !q || name.includes(q) || email.includes(q);
+        const matchPlan = !plan || userPlan === plan;
+        
+        row.style.display = (matchText && matchPlan) ? '' : 'none';
+    });
+}
+
+function filterGlobalRules() {
+    const q = (document.getElementById('adminRuleSearch').value || '').toLowerCase().trim();
+    const rows = document.querySelectorAll('#adminRulesTable .global-rule-row');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const pat = row.getAttribute('data-pattern') || '';
+        const cat = row.getAttribute('data-category') || '';
+        const subcat = row.getAttribute('data-subcat') || '';
+        const tags = row.getAttribute('data-tags') || '';
+
+        const match = !q || pat.includes(q) || cat.includes(q) || subcat.includes(q) || tags.includes(q);
+        row.style.display = match ? '' : 'none';
+        if (match) visibleCount++;
+    });
+
+    const badge = document.getElementById('rulesCountBadge');
+    if (badge) {
+        badge.innerText = `${visibleCount} Regole Visibili`;
+    }
+}
+
+function openEditPlanModalFromBtn(btn) {
+    const userId = btn.getAttribute('data-userid');
+    const userName = btn.getAttribute('data-username');
+    const currentPlan = btn.getAttribute('data-plan');
+    const currentStatus = btn.getAttribute('data-status');
+    const currentRole = btn.getAttribute('data-role');
+    const currentExpiry = btn.getAttribute('data-expiry');
+
+    document.getElementById('editPlanForm').action = `/admin/users/${userId}/update-plan`;
+    document.getElementById('editPlanUserName').innerText = userName;
+    document.getElementById('editPlanSelect').value = currentPlan;
+    document.getElementById('editStatusSelect').value = currentStatus;
+    document.getElementById('editRoleSelect').value = currentRole;
+    document.getElementById('editExpiryDate').value = currentExpiry ? currentExpiry.substring(0, 10) : '';
+    
+    const modal = document.getElementById('editPlanModal');
+    modal.style.display = 'flex';
+}
+
+function closeEditPlanModal() {
+    document.getElementById('editPlanModal').style.display = 'none';
+}
+
+function openNewRuleModal() {
+    document.getElementById('newRuleModal').style.display = 'flex';
+}
+
+function closeNewRuleModal() {
+    document.getElementById('newRuleModal').style.display = 'none';
+}
+
+function openEditRuleModalFromBtn(btn) {
+    const ruleId = btn.getAttribute('data-ruleid');
+    const pattern = btn.getAttribute('data-pattern');
+    const category = btn.getAttribute('data-category');
+    const subcat = btn.getAttribute('data-subcat');
+    const tags = btn.getAttribute('data-tags');
+    const taxded = btn.getAttribute('data-taxded') === '1';
+
+    document.getElementById('editRuleForm').action = `/admin/global-rules/${ruleId}/edit`;
+    document.getElementById('editRulePattern').value = pattern;
+    document.getElementById('editRuleCategory').value = category;
+    document.getElementById('editRuleSubcat').value = subcat;
+    document.getElementById('editRuleTags').value = tags;
+    document.getElementById('editRuleTaxDed').checked = taxded;
+
+    document.getElementById('editRuleModal').style.display = 'flex';
+}
+
+function closeEditRuleModal() {
+    document.getElementById('editRuleModal').style.display = 'none';
+}
+
+function openDeleteUserModalFromBtn(btn) {
+    const userId = btn.getAttribute('data-userid');
+    const userName = btn.getAttribute('data-username');
+    const userEmail = btn.getAttribute('data-email');
+
+    document.getElementById('deleteUserForm').action = `/admin/users/${userId}/delete`;
+    document.getElementById('deleteUserLabel').innerText = `${userName} (${userEmail})`;
+    document.getElementById('deleteUserModal').style.display = 'flex';
+}
+
+function closeDeleteUserModal() {
+    document.getElementById('deleteUserModal').style.display = 'none';
+}
+
+function openResetPasswordModalFromBtn(btn) {
+    const userId = btn.getAttribute('data-userid');
+    const userName = btn.getAttribute('data-username');
+    const userEmail = btn.getAttribute('data-email');
+
+    document.getElementById('resetPasswordForm').action = `/admin/users/${userId}/reset-password`;
+    document.getElementById('resetPasswordUserLabel').innerText = `${userName} (${userEmail})`;
+    document.getElementById('resetPasswordInput').value = '';
+    document.getElementById('resetPasswordModal').style.display = 'flex';
+}
+
+function closeResetPasswordModal() {
+    document.getElementById('resetPasswordModal').style.display = 'none';
+}
+
+function generateRandomPassword() {
+    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz';
+    const numbers = '23456789';
+    const symbols = '!@#$%&*?';
+    let res = 'Fisc';
+    res += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    res += symbols.charAt(Math.floor(Math.random() * symbols.length));
+    const all = letters + numbers + symbols;
+    for (let i = 0; i < 6; i++) {
+        res += all.charAt(Math.floor(Math.random() * all.length));
+    }
+    document.getElementById('resetPasswordInput').value = res;
+}
+
+// Close modals when clicking outside
+window.addEventListener('click', function(e) {
+    ['editPlanModal', 'resetPasswordModal', 'newRuleModal', 'editRuleModal', 'deleteUserModal'].forEach(id => {
+        const modal = document.getElementById(id);
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+});
+</script>
+
+<style>
+.admin-tab-btn.active {
+    background: rgba(245, 158, 11, 0.15) !important;
+    border: 1px solid rgba(245, 158, 11, 0.4) !important;
+    color: #fbbf24 !important;
+}
+</style>
+
+{% endblock %}

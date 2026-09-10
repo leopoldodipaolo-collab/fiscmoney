@@ -1,0 +1,878 @@
+{% extends "base.html" %}
+
+{% block title %}Cedolino & Busta Paga | FiscMoney{% endblock %}
+
+{% block content %}
+
+<!-- Header & Year/Profile Selection -->
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+    <div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <h1 style="font-size: 1.4rem; font-weight: 800; color: #fff; margin: 0;">📄 Cedolino & Busta Paga</h1>
+            <span class="badge-tag" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.4);">
+                CCNL & Retribuzione
+            </span>
+        </div>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">
+            Trasparenza stipendio, scomposizione imposte, TFR, ferie e riconciliazione bancaria
+        </p>
+    </div>
+
+    <!-- Year Selector & Actions -->
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <label style="color: var(--text-muted); font-size: 0.85rem;">Anno:</label>
+        <select onchange="window.location.href='/paystubs?profile_id={{ active_profile.id }}&year=' + this.value" 
+                style="background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 6px 12px; font-weight: 700; cursor: pointer;">
+            {% for y in available_years %}
+            <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+
+        <button onclick="openPdfUploadModal()" class="btn-primary" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; padding: 7px 14px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; border-radius: 8px; cursor: pointer; font-weight: 700;">
+            <span>🤖</span>
+            <span>Importa PDF Cedolino</span>
+        </button>
+
+        <a href="/paystubs/new?profile_id={{ active_profile.id }}" class="btn-secondary" style="padding: 7px 14px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; text-decoration: none; border-radius: 8px;">
+            <span>➕</span>
+            <span>Inserimento Manuale</span>
+        </a>
+    </div>
+</div>
+
+<!-- Modal Upload PDF Cedolino AI -->
+<div id="pdfUploadModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(5px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: #0f172a; border: 1px solid #334155; border-radius: 16px; max-width: 520px; width: 100%; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); position: relative;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.4rem;">🤖</span>
+                <div>
+                    <h3 style="color: #fff; font-size: 1.1rem; font-weight: 800; margin: 0;">Analisi Intelligente PDF Cedolino</h3>
+                    <p style="color: var(--text-muted); font-size: 0.75rem; margin: 0;">Supporta Zucchetti, TeamSystem, ADP, Inaz, CGN e formati standard</p>
+                </div>
+            </div>
+            <button onclick="closePdfUploadModal()" style="background: none; border: none; color: var(--text-muted); font-size: 1.4rem; cursor: pointer; padding: 4px;">&times;</button>
+        </div>
+
+        <form method="POST" action="/paystubs/upload-pdf" enctype="multipart/form-data" id="pdfUploadForm" onsubmit="document.getElementById('loadingIndicator').style.display='block'; document.getElementById('submitPdfBtn').disabled=true;">
+            <input type="hidden" name="profile_id" id="modalProfileId" value="{{ active_profile.id }}">
+            
+            <label for="pdfFileInput" id="dropZone" style="display: block; border: 2px dashed #6366f1; border-radius: 12px; padding: 28px 20px; text-align: center; background: rgba(99, 102, 241, 0.05); cursor: pointer; transition: all 0.2s;">
+                <div style="font-size: 2.5rem; margin-bottom: 8px;">📑</div>
+                <div style="font-weight: 700; color: #fff; font-size: 0.95rem; margin-bottom: 4px;">
+                    Tocca o trascina qui il file PDF del cedolino
+                </div>
+                <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 12px;">
+                    Seleziona da file locali, download, iCloud o Google Drive
+                </div>
+                <span class="badge-tag" style="background: rgba(99, 102, 241, 0.2); color: #a5b4fc; font-size: 0.72rem;">
+                    🔒 Analisi locale e sicura dei dati
+                </span>
+                <input type="file" id="pdfFileInput" name="file" accept="application/pdf,application/x-pdf,.pdf" style="position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none;" onchange="handlePdfSelected(this)">
+            </label>
+
+            <div id="selectedFileName" style="display: none; margin-top: 12px; padding: 10px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; color: #34d399; font-size: 0.85rem; align-items: center; justify-content: space-between;">
+                <span id="fileNameText">📄 file.pdf</span>
+                <span style="font-weight: 700; font-size: 0.75rem;">Pronto all'estrazione</span>
+            </div>
+
+            <div id="loadingIndicator" style="display: none; margin-top: 16px; text-align: center; color: #818cf8; font-size: 0.85rem; font-weight: 600;">
+                <div style="display: inline-block; animation: spin 1s linear infinite; font-size: 1.3rem; margin-bottom: 6px;">⏳</div>
+                <div>Estrazione dati in corso (voci stipendio, ritenute, TFR, ferie)...</div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                <button type="button" onclick="closePdfUploadModal()" class="btn-secondary" style="padding: 8px 16px;">Annulla</button>
+                <button type="submit" id="submitPdfBtn" class="btn-primary" style="padding: 8px 20px; font-weight: 700;" disabled>
+                    ⚡ Estrai & Precompila Form
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<script>
+function openPdfUploadModal() {
+    const m = document.getElementById('pdfUploadModal');
+    if (m) {
+        m.style.display = 'flex';
+        document.getElementById('loadingIndicator').style.display = 'none';
+        document.getElementById('submitPdfBtn').disabled = !document.getElementById('pdfFileInput').files.length;
+    }
+}
+function closePdfUploadModal() {
+    const m = document.getElementById('pdfUploadModal');
+    if (m) {
+        m.style.display = 'none';
+    }
+}
+function handlePdfSelected(input) {
+    if (input.files && input.files[0]) {
+        const f = input.files[0];
+        document.getElementById('fileNameText').innerText = '📄 ' + f.name + ' (' + (f.size / 1024).toFixed(1) + ' KB)';
+        document.getElementById('selectedFileName').style.display = 'flex';
+        document.getElementById('submitPdfBtn').disabled = false;
+    }
+}
+
+// Drag and drop events
+const dz = document.getElementById('dropZone');
+if (dz) {
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dz.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dz.style.background = 'rgba(99, 102, 241, 0.15)';
+            dz.style.borderColor = '#818cf8';
+        }, false);
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+        dz.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dz.style.background = 'rgba(99, 102, 241, 0.05)';
+            dz.style.borderColor = '#6366f1';
+        }, false);
+    });
+    dz.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files && files.length > 0) {
+            document.getElementById('pdfFileInput').files = files;
+            handlePdfSelected(document.getElementById('pdfFileInput'));
+        }
+    }, false);
+}
+</script>
+
+
+<!-- Profile Filter Pills -->
+<div class="profile-bar-container" style="margin-bottom: 18px;">
+    {% for p in profiles %}
+    <a href="/paystubs?profile_id={{ p.id }}&year={{ current_year }}" class="profile-pill {% if active_profile.id == p.id %}active{% endif %}">
+        <span>{% if p.is_primary %}👤{% elif 'Figli' in (p.role_title or '') %}👶{% else %}👩{% endif %}</span>
+        <span>{{ p.name }}</span>
+        <small style="opacity: 0.75; font-size: 0.7rem;">({{ p.role_title or ('Titolare' if p.is_primary else 'Membro') }})</small>
+    </a>
+    {% endfor %}
+</div>
+
+<!-- Aggregated KPI Summary Cards -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px;">
+    
+    <!-- Lordo Anno -->
+    <div class="card" style="margin-bottom: 0; background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9)); border-left: 4px solid #38bdf8;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <span style="color: var(--text-muted); font-size: 0.78rem; font-weight: 600; text-transform: uppercase;">Retribuzione Lorda {{ current_year }}</span>
+            <span style="font-size: 1.1rem;">💼</span>
+        </div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #fff; margin-top: 6px;">
+            {{ summary.total_gross|eur }}
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+            <span style="font-size: 0.75rem; color: #38bdf8;">Media: {{ summary.avg_gross|eur }}/mese</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">{{ summary.count }} cedolini</span>
+        </div>
+    </div>
+
+    <!-- Netto Anno -->
+    <div class="card" style="margin-bottom: 0; background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9)); border-left: 4px solid #10b981;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <span style="color: var(--text-muted); font-size: 0.78rem; font-weight: 600; text-transform: uppercase;">Netto Reale Incassato</span>
+            <span style="font-size: 1.1rem;">💵</span>
+        </div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #10b981; margin-top: 6px;">
+            {{ summary.total_net|eur }}
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+            <span style="font-size: 0.75rem; color: #34d399;">Media: {{ summary.avg_net|eur }}/mese</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">In tasca</span>
+        </div>
+    </div>
+
+    <!-- TFR Totale & Anno -->
+    <div class="card" style="margin-bottom: 0; background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9)); border-left: 4px solid #a855f7;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <span style="color: var(--text-muted); font-size: 0.78rem; font-weight: 600; text-transform: uppercase;">TFR Accumulato</span>
+            <span style="font-size: 1.1rem;">🛡️</span>
+        </div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #c084fc; margin-top: 6px;">
+            {{ summary.latest_tfr_total|eur }}
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+            <span style="font-size: 0.75rem; color: #e9d5ff;">+{{ summary.total_tfr_year|eur }} nel {{ current_year }}</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">TFR Maturato</span>
+        </div>
+    </div>
+
+    <!-- Ferie & ROL Residui -->
+    <div class="card" style="margin-bottom: 0; background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9)); border-left: 4px solid #f59e0b;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <span style="color: var(--text-muted); font-size: 0.78rem; font-weight: 600; text-transform: uppercase;">Banca Ore & Ferie</span>
+            <span style="font-size: 1.1rem;">🏖️</span>
+        </div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #fbbf24; margin-top: 6px;">
+            {{ summary.latest_ferie_ore + summary.latest_rol_ore }} ore
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+            <span style="font-size: 0.75rem; color: #fde68a;">Ferie: {{ summary.latest_ferie_ore }}h | ROL: {{ summary.latest_rol_ore }}h</span>
+            <span style="font-size: 0.72rem; color: #10b981; font-weight: 700;">≈ {{ summary.leave_economic_value|eur }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- 📈 INTERACTIVE SALARY ANALYTICS & DYNAMIC TRENDS DASHBOARD -->
+<!-- ============================================================ -->
+<div class="card" id="analyticsCard" style="margin-bottom: 20px; background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.7)); border: 1px solid #334155; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);">
+    
+    <!-- Top Bar: Title & Toggle Controls -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(51, 65, 85, 0.6); padding-bottom: 14px;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.4rem;">📈</span>
+                <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">Trend & Analisi Dinamica Stipendio {{ current_year }}</h2>
+                <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.72rem; font-weight: 700;">
+                    Live Calculator
+                </span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin: 4px 0 0 0;">
+                Seleziona i mesi da analizzare ed escludi/includi i premi per scoprire la tua vera media ricorrente.
+            </p>
+        </div>
+
+        <!-- Range Presets & Toggle View -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div style="display: inline-flex; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 3px; gap: 2px;">
+                <button type="button" class="trend-filter-btn active" id="btnPresetAll" onclick="setPresetRange('all')">
+                    Tutto l'Anno
+                </button>
+                <button type="button" class="trend-filter-btn" id="btnPresetLast3" onclick="setPresetRange('last3')">
+                    Ultimi 3 Mesi
+                </button>
+                <button type="button" class="trend-filter-btn" id="btnPresetLast6" onclick="setPresetRange('last6')">
+                    Ultimi 6 Mesi
+                </button>
+            </div>
+
+            <!-- View Mode Switcher -->
+            <select id="trendViewMode" onchange="changeViewMode(this.value)" style="background: #1e293b; color: #38bdf8; border: 1px solid #0284c7; border-radius: 8px; padding: 6px 10px; font-size: 0.8rem; font-weight: 700; cursor: pointer;">
+                <option value="net_vs_base">💵 Netto Reale vs Base Ricorrente</option>
+                <option value="stacked_full">📊 Scomposizione (Netto + Premi + Fisco)</option>
+                <option value="net_only">🟢 Solo Netto in Tasca</option>
+            </select>
+        </div>
+    </div>
+
+    {% if summary.paystubs %}
+    <!-- Individual Month Multi-Selector Chips -->
+    <div style="margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">
+                Mesi inclusi nell'analisi (clicca per attivare/disattivare):
+            </span>
+            <button type="button" onclick="selectAllMonths()" style="background: none; border: none; color: #38bdf8; font-size: 0.75rem; cursor: pointer; text-decoration: underline; padding: 0;">
+                Seleziona tutti
+            </button>
+        </div>
+        <div id="monthChipsContainer" style="display: flex; flex-wrap: wrap; gap: 6px;">
+            <!-- Populated via JavaScript -->
+        </div>
+    </div>
+
+    <!-- Live Dynamic KPI Banner (Updated in real-time) -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 18px;">
+        
+        <!-- 1. Netto Medio Periodo -->
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 12px 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.72rem; color: #34d399; text-transform: uppercase; font-weight: 800;">Stipendio Netto Medio</span>
+                <span style="font-size: 1rem;">💵</span>
+            </div>
+            <div id="kpiAvgNet" style="font-size: 1.45rem; font-weight: 900; color: #10b981; margin: 4px 0 2px 0;">
+                {{ summary.avg_net|eur }}
+            </div>
+            <div id="kpiNetSub" style="font-size: 0.72rem; color: var(--text-muted);">
+                Media mensile periodo selezionato
+            </div>
+        </div>
+
+        <!-- 2. Netto Base Ricorrente (Senza Premi) -->
+        <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 12px 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.72rem; color: #38bdf8; text-transform: uppercase; font-weight: 800;">Netto Base Ricorrente</span>
+                <span style="font-size: 1rem;">⭐</span>
+            </div>
+            <div id="kpiAvgBaseNet" style="font-size: 1.45rem; font-weight: 900; color: #38bdf8; margin: 4px 0 2px 0;">
+                0,00 €
+            </div>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">
+                Netto garantito (esclusi premi/variabili)
+            </div>
+        </div>
+
+        <!-- 3. Totale Premi & Variabili -->
+        <div style="background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 12px; padding: 12px 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.72rem; color: #fbbf24; text-transform: uppercase; font-weight: 800;">Premi & Straordinari</span>
+                <span style="font-size: 1rem;">🎁</span>
+            </div>
+            <div id="kpiTotPremi" style="font-size: 1.45rem; font-weight: 900; color: #fbbf24; margin: 4px 0 2px 0;">
+                0,00 €
+            </div>
+            <div id="kpiPremiSub" style="font-size: 0.72rem; color: var(--text-muted);">
+                Incassati nel periodo selezionato
+            </div>
+        </div>
+
+        <!-- 4. Buoni Pasto & Welfare Periodo -->
+        <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 12px; padding: 12px 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.72rem; color: #c084fc; text-transform: uppercase; font-weight: 800;">Buoni Pasto (Welfare)</span>
+                <span style="font-size: 1rem;">🥪</span>
+            </div>
+            <div id="kpiTotTickets" style="font-size: 1.45rem; font-weight: 900; color: #c084fc; margin: 4px 0 2px 0;">
+                0,00 €
+            </div>
+            <div id="kpiTicketSub" style="font-size: 0.72rem; color: var(--text-muted);">
+                0 ticket esentasse
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Chart Canvas Container -->
+    <div style="position: relative; height: 300px; width: 100%; background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(51, 65, 85, 0.6); border-radius: 12px; padding: 12px;">
+        <canvas id="salaryAnalyticsChart"></canvas>
+    </div>
+
+    {% else %}
+    <p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 20px 0;">
+        Nessun cedolino registrato per il {{ current_year }}. Carica una busta paga per visualizzare il trend analitico.
+    </p>
+    {% endif %}
+
+</div>
+
+<!-- Main Content Grid: Breakdown & List -->
+<div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+
+    <!-- Breakdown Imposte vs Netto -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <div>
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0;">📊 Destinazione del Lordo (Pressione e Trattenute)</h3>
+                <p style="color: var(--text-muted); font-size: 0.78rem; margin-top: 2px;">Ripartizione tra Netto, INPS, IRPEF e Addizionali Locali</p>
+            </div>
+            {% if summary.total_gross > 0 %}
+            <span class="badge-tag" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">
+                Cuneo Fiscale Medio: {{ ((summary.total_inps + summary.total_irpef + summary.total_region_com) / summary.total_gross * 100)|round(1) }}%
+            </span>
+            {% endif %}
+        </div>
+
+        {% if summary.total_gross > 0 %}
+        <!-- Progress Stack Bar -->
+        {% set net_pct = (summary.total_net / summary.total_gross * 100)|round(1) %}
+        {% set inps_pct = (summary.total_inps / summary.total_gross * 100)|round(1) %}
+        {% set irpef_pct = (summary.total_irpef / summary.total_gross * 100)|round(1) %}
+        {% set local_pct = (summary.total_region_com / summary.total_gross * 100)|round(1) %}
+        <div style="height: 18px; border-radius: 9px; overflow: hidden; display: flex; background: #1e293b; margin-bottom: 12px;">
+            <div style="width: {{ net_pct }}%; background: #10b981;" title="Netto: {{ net_pct }}%"></div>
+            <div style="width: {{ inps_pct }}%; background: #0ea5e9;" title="INPS: {{ inps_pct }}%"></div>
+            <div style="width: {{ irpef_pct }}%; background: #f59e0b;" title="IRPEF Netta: {{ irpef_pct }}%"></div>
+            <div style="width: {{ local_pct }}%; background: #ef4444;" title="Addizionali: {{ local_pct }}%"></div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; font-size: 0.8rem;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="width: 10px; height: 10px; border-radius: 2px; background: #10b981; display: inline-block;"></span>
+                <span><strong>Netto:</strong> {{ summary.total_net|eur }} ({{ net_pct }}%)</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="width: 10px; height: 10px; border-radius: 2px; background: #0ea5e9; display: inline-block;"></span>
+                <span><strong>INPS:</strong> {{ summary.total_inps|eur }} ({{ inps_pct }}%)</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="width: 10px; height: 10px; border-radius: 2px; background: #f59e0b; display: inline-block;"></span>
+                <span><strong>IRPEF:</strong> {{ summary.total_irpef|eur }} ({{ irpef_pct }}%)</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="width: 10px; height: 10px; border-radius: 2px; background: #ef4444; display: inline-block;"></span>
+                <span><strong>Addizionali:</strong> {{ summary.total_region_com|eur }} ({{ local_pct }}%)</span>
+            </div>
+        </div>
+        {% else %}
+        <p style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 12px 0;">
+            Nessun cedolino registrato per il {{ current_year }}. Clicca su "Nuovo Cedolino" per inserire la tua prima busta paga.
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- Monthly Paystubs List -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0;">📅 Storico Buste Paga {{ current_year }}</h3>
+            <span style="color: var(--text-muted); font-size: 0.8rem;">{{ summary.paystubs|length }} mesi archiviati</span>
+        </div>
+
+        {% if summary.paystubs %}
+            {% set month_names = ["", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre", "13ª Mensilità (Tredicesima)", "14ª Mensilità (Quattordicesima)", "Premio di Risultato / Una Tantum"] %}
+            {% for ps in summary.paystubs %}
+
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(51, 65, 85, 0.7); border-radius: 12px; padding: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; transition: border-color 0.2s;">
+                
+                <!-- Month & Main Info -->
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); color: var(--accent-primary); display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; border: 1px solid rgba(59, 130, 246, 0.3);">
+                        <span style="font-size: 0.65rem; text-transform: uppercase; color: var(--text-muted);">Mese</span>
+                        <span style="font-size: 0.95rem;">{{ "%02d"|format(ps.month) }}</span>
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <h4 style="font-size: 1rem; font-weight: 800; color: #fff; margin: 0;">{{ month_names[ps.month] }} {{ ps.year }}</h4>
+                            {% if ps.matched_tx_id %}
+                            <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-success); font-size: 0.7rem;" title="Bonifico accreditato su {{ ps.account_name }}">
+                                🔗 Bonifico Verificato ({{ ps.matched_tx_amount|eur }})
+                            </span>
+                            {% else %}
+                            <span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; font-size: 0.7rem;">
+                                ⚠️ Da abbinare al conto
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div style="color: var(--text-muted); font-size: 0.78rem; margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap;">
+                            <span>Lordo: <strong>{{ ps.gross_amount|eur }}</strong></span>
+                            <span>•</span>
+                            <span>INPS: {{ ps.inps_tax|eur }}</span>
+                            <span>•</span>
+                            <span>IRPEF: {{ (ps.irpef_net or ps.irpef_tax)|eur }}</span>
+                            {% if ps.overtime_amount > 0 %}
+                            <span>•</span>
+                            <span style="color: #38bdf8;">Straordinari: +{{ ps.overtime_amount|eur }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Net Amount & Actions -->
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div style="text-align: right;">
+                        <span style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Netto Busta</span>
+                        <div style="font-size: 1.25rem; font-weight: 800; color: #10b981;">
+                            {{ ps.net_amount|eur }}
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 6px;">
+                        <a href="/paystubs/{{ ps.id }}" class="btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none; border-radius: 6px;" title="Vedi dettaglio e scomposizione">
+                            🔍 Dettaglio
+                        </a>
+                        <a href="/paystubs/new?profile_id={{ active_profile.id }}&clone_from={{ ps.id }}" class="btn-secondary" style="padding: 6px 10px; font-size: 0.8rem; text-decoration: none; border-radius: 6px;" title="Clona per il mese successivo">
+                            📋 Clona
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 30px 10px; background: rgba(15, 23, 42, 0.4); border-radius: 12px; border: 1px dashed #334155;">
+            <div style="font-size: 2.2rem; margin-bottom: 8px;">📂</div>
+            <h4 style="color: #fff; font-size: 1rem; margin-bottom: 4px;">Nessun cedolino archiviato per {{ active_profile.name }} nel {{ current_year }}</h4>
+            <p style="color: var(--text-muted); font-size: 0.82rem; max-width: 450px; margin: 0 auto 14px auto;">
+                Inserisci il tuo cedolino per calcolare il cuneo fiscale, monitorare il TFR e verificare l'accredito stipendio in banca.
+            </p>
+            <a href="/paystubs/new?profile_id={{ active_profile.id }}" class="btn-primary" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;">
+                <span>➕</span>
+                <span>Inserisci Primo Cedolino</span>
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+.trend-filter-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 5px 10px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.trend-filter-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+.trend-filter-btn.active {
+    background: #0284c7;
+    color: #fff;
+}
+.month-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s;
+    border: 1px solid #334155;
+    background: rgba(15, 23, 42, 0.6);
+    color: var(--text-muted);
+}
+.month-chip:hover {
+    border-color: #64748b;
+    color: #fff;
+}
+.month-chip.active {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: #10b981;
+    color: #34d399;
+}
+</style>
+
+<script>
+const RAW_PAYSTUBS = {{ summary.paystubs|tojson if summary.paystubs else '[]' }};
+const MONTH_NAMES = ["", "Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic", "13ª", "14ª", "Premio"];
+const FULL_MONTH_NAMES = ["", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre", "13ª Mensilità", "14ª Mensilità", "Premio"];
+
+// State
+let selectedMonths = new Set();
+let currentViewMode = 'net_vs_base';
+let salaryChartInstance = null;
+
+// Sort paystubs chronologically ASC for chart visualization
+const chronologicalPaystubs = [...RAW_PAYSTUBS].sort((a, b) => a.month - b.month);
+
+// Helper EUR formatter
+function formatEur(num) {
+    if (num === null || num === undefined || isNaN(num)) return "0,00 €";
+    const abs = Math.abs(num);
+    const formatted = abs.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (num < 0 ? "-" : "") + formatted + " €";
+}
+
+function initAnalytics() {
+    if (!chronologicalPaystubs || chronologicalPaystubs.length === 0) return;
+
+    // Default select all available months
+    selectedMonths = new Set(chronologicalPaystubs.map(p => p.month));
+
+    renderMonthChips();
+    updateAnalytics();
+}
+
+function renderMonthChips() {
+    const container = document.getElementById('monthChipsContainer');
+    if (!container) return;
+    container.innerHTML = '';
+
+    chronologicalPaystubs.forEach(p => {
+        const chip = document.createElement('div');
+        chip.className = 'month-chip' + (selectedMonths.has(p.month) ? ' active' : '');
+        chip.dataset.month = p.month;
+        chip.innerHTML = `
+            <span>${selectedMonths.has(p.month) ? '✓' : '○'}</span>
+            <span>${FULL_MONTH_NAMES[p.month] || 'Mese ' + p.month}</span>
+        `;
+        chip.onclick = () => toggleMonth(p.month);
+        container.appendChild(chip);
+    });
+}
+
+function toggleMonth(month) {
+    if (selectedMonths.has(month)) {
+        if (selectedMonths.size > 1) {
+            selectedMonths.delete(month);
+        }
+    } else {
+        selectedMonths.add(month);
+    }
+    clearPresetButtons();
+    renderMonthChips();
+    updateAnalytics();
+}
+
+function selectAllMonths() {
+    selectedMonths = new Set(chronologicalPaystubs.map(p => p.month));
+    setButtonActive('btnPresetAll');
+    renderMonthChips();
+    updateAnalytics();
+}
+
+function setPresetRange(range) {
+    clearPresetButtons();
+    if (range === 'all') {
+        selectedMonths = new Set(chronologicalPaystubs.map(p => p.month));
+        setButtonActive('btnPresetAll');
+    } else if (range === 'last3') {
+        const last3 = chronologicalPaystubs.slice(-3).map(p => p.month);
+        selectedMonths = new Set(last3);
+        setButtonActive('btnPresetLast3');
+    } else if (range === 'last6') {
+        const last6 = chronologicalPaystubs.slice(-6).map(p => p.month);
+        selectedMonths = new Set(last6);
+        setButtonActive('btnPresetLast6');
+    }
+    renderMonthChips();
+    updateAnalytics();
+}
+
+function clearPresetButtons() {
+    ['btnPresetAll', 'btnPresetLast3', 'btnPresetLast6'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
+    });
+}
+
+function setButtonActive(btnId) {
+    const el = document.getElementById(btnId);
+    if (el) el.classList.add('active');
+}
+
+function changeViewMode(mode) {
+    currentViewMode = mode;
+    updateAnalytics();
+}
+
+function updateAnalytics() {
+    const filtered = chronologicalPaystubs.filter(p => selectedMonths.has(p.month));
+    if (filtered.length === 0) return;
+
+    let totNet = 0;
+    let totBaseNet = 0;
+    let totPremiGross = 0;
+    let totTickets = 0;
+    let totTicketVal = 0;
+    let totGross = 0;
+    let totTaxes = 0;
+
+    const labels = [];
+    const dataNet = [];
+    const dataBaseNet = [];
+    const dataPremiNet = [];
+    const dataTaxes = [];
+    const dataAverageLine = [];
+
+    filtered.forEach(p => {
+        const net = parseFloat(p.net_amount || 0);
+        const gross = parseFloat(p.gross_amount || 0);
+        const bonuses = parseFloat(p.bonuses || 0) + parseFloat(p.overtime_amount || 0);
+        const inps = parseFloat(p.inps_tax || 0);
+        const irpef = parseFloat(p.irpef_net || p.irpef_tax || 0);
+        const localTaxes = parseFloat(p.regional_tax || 0) + parseFloat(p.municipal_tax || 0);
+        const taxes = inps + irpef + localTaxes;
+
+        const taxRate = gross > 0 ? (taxes / gross) : 0.35;
+        const netVariable = Math.round(bonuses * (1 - taxRate) * 100) / 100;
+        const netBase = Math.max(0, Math.round((net - netVariable) * 100) / 100);
+
+        const tCount = parseFloat(p.ticket_count || 0);
+        const tUnit = parseFloat(p.ticket_unit_value || 8.0);
+        const tVal = parseFloat(p.ticket_total_value || (tCount * tUnit));
+
+        totNet += net;
+        totBaseNet += netBase;
+        totPremiGross += bonuses;
+        totTickets += tCount;
+        totTicketVal += tVal;
+        totGross += gross;
+        totTaxes += taxes;
+
+        labels.push(MONTH_NAMES[p.month] || 'M' + p.month);
+        dataNet.push(net);
+        dataBaseNet.push(netBase);
+        dataPremiNet.push(netVariable);
+        dataTaxes.push(taxes);
+    });
+
+    const count = filtered.length;
+    const avgNet = totNet / count;
+    const avgBaseNet = totBaseNet / count;
+
+    for (let i = 0; i < count; i++) {
+        dataAverageLine.push(Math.round(avgNet * 100) / 100);
+    }
+
+    // Update KPI Card UI
+    const kpiNetEl = document.getElementById('kpiAvgNet');
+    if (kpiNetEl) kpiNetEl.innerText = formatEur(avgNet);
+    
+    const kpiNetSubEl = document.getElementById('kpiNetSub');
+    if (kpiNetSubEl) kpiNetSubEl.innerText = `Media su ${count} mes${count === 1 ? 'e' : 'i'} selezionat${count === 1 ? 'o' : 'i'}`;
+    
+    const kpiBaseEl = document.getElementById('kpiAvgBaseNet');
+    if (kpiBaseEl) kpiBaseEl.innerText = formatEur(avgBaseNet);
+
+    const kpiPremiEl = document.getElementById('kpiTotPremi');
+    if (kpiPremiEl) kpiPremiEl.innerText = formatEur(totPremiGross);
+
+    const kpiPremiSubEl = document.getElementById('kpiPremiSub');
+    if (kpiPremiSubEl) kpiPremiSubEl.innerText = totPremiGross > 0 ? `${count} mes${count === 1 ? 'e' : 'i'} (lordi)` : 'Nessun bonus nel periodo';
+
+    const kpiTicketsEl = document.getElementById('kpiTotTickets');
+    if (kpiTicketsEl) kpiTicketsEl.innerText = formatEur(totTicketVal);
+
+    const kpiTicketSubEl = document.getElementById('kpiTicketSub');
+    if (kpiTicketSubEl) kpiTicketSubEl.innerText = `${Math.round(totTickets)} ticket esentasse`;
+
+    renderChart(labels, dataNet, dataBaseNet, dataPremiNet, dataTaxes, dataAverageLine, avgNet);
+}
+
+function renderChart(labels, dataNet, dataBaseNet, dataPremiNet, dataTaxes, dataAverageLine, avgNet) {
+    const ctx = document.getElementById('salaryAnalyticsChart');
+    if (!ctx) return;
+
+    if (salaryChartInstance) {
+        salaryChartInstance.destroy();
+    }
+
+    let datasets = [];
+
+    if (currentViewMode === 'net_vs_base') {
+        datasets = [
+            {
+                label: 'Netto Base Ricorrente',
+                data: dataBaseNet,
+                backgroundColor: 'rgba(56, 189, 248, 0.85)',
+                borderColor: '#38bdf8',
+                borderWidth: 1,
+                borderRadius: 6,
+                stack: 'stack1'
+            },
+            {
+                label: 'Quota Premi & Straordinari (Netta)',
+                data: dataPremiNet,
+                backgroundColor: 'rgba(251, 191, 36, 0.85)',
+                borderColor: '#fbbf24',
+                borderWidth: 1,
+                borderRadius: 6,
+                stack: 'stack1'
+            },
+            {
+                label: 'Media Periodo',
+                data: dataAverageLine,
+                type: 'line',
+                borderColor: '#10b981',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointRadius: 0,
+                fill: false
+            }
+        ];
+    } else if (currentViewMode === 'stacked_full') {
+        datasets = [
+            {
+                label: 'Netto in Tasca',
+                data: dataNet,
+                backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                borderColor: '#10b981',
+                borderWidth: 1,
+                borderRadius: 6,
+                stack: 'stack0'
+            },
+            {
+                label: 'Trattenute Fisco & INPS',
+                data: dataTaxes,
+                backgroundColor: 'rgba(239, 68, 68, 0.75)',
+                borderColor: '#ef4444',
+                borderWidth: 1,
+                borderRadius: 6,
+                stack: 'stack0'
+            }
+        ];
+    } else {
+        // net_only
+        datasets = [
+            {
+                label: 'Netto Busta',
+                data: dataNet,
+                backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                borderColor: '#10b981',
+                borderWidth: 1,
+                borderRadius: 6
+            },
+            {
+                label: 'Media Netto',
+                data: dataAverageLine,
+                type: 'line',
+                borderColor: '#fbbf24',
+                borderWidth: 2,
+                borderDash: [6, 4],
+                pointRadius: 3,
+                fill: false
+            }
+        ];
+    }
+
+    salaryChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: '#94a3b8',
+                        font: { size: 11, weight: '600' },
+                        boxWidth: 12,
+                        padding: 12
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#fff',
+                    bodyColor: '#cbd5e1',
+                    borderColor: '#334155',
+                    borderWidth: 1,
+                    padding: 10,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + formatEur(context.raw);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(51, 65, 85, 0.3)' },
+                    ticks: { color: '#94a3b8', font: { size: 11, weight: '700' } }
+                },
+                y: {
+                    grid: { color: 'rgba(51, 65, 85, 0.3)' },
+                    ticks: {
+                        color: '#94a3b8',
+                        callback: function(val) { return val.toLocaleString('it-IT') + ' €'; }
+                    }
+                }
+            }
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initAnalytics);
+</script>
+
+{% endblock %}

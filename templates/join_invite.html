@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Invito Spazio Famiglia | FiscMoney{% endblock %}
+
+{% block content %}
+<div class="auth-container" style="max-width: 480px; margin: 30px auto; padding: 0 14px;">
+    
+    <!-- Header / Brand -->
+    <div style="text-align: center; margin-bottom: 20px;">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FiscMoney" style="width: 64px; height: 64px; border-radius: 50%; margin-bottom: 10px; box-shadow: 0 0 25px rgba(56, 189, 248, 0.4); border: 2px solid rgba(255,255,255,0.15);">
+        <h1 style="font-size: 1.8rem; font-weight: 900; color: #fff; margin: 0;">Fisc<span style="color: var(--accent-primary);">Money</span></h1>
+        <span class="badge-tag" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 0.75rem; margin-top: 6px;">
+            ✨ Invito Nucleo Familiare
+        </span>
+    </div>
+
+    {% if error %}
+    <!-- Error Card -->
+    <div class="card" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(239, 68, 68, 0.4); text-align: center; padding: 28px 20px;">
+        <span style="font-size: 2.5rem; display: block; margin-bottom: 12px;">⚠️</span>
+        <h3 style="color: #fff; font-size: 1.15rem; font-weight: 800; margin-bottom: 8px;">Invito non valido o scaduto</h3>
+        <p style="color: #94a3b8; font-size: 0.85rem; line-height: 1.5; margin-bottom: 20px;">
+            {{ error }}
+        </p>
+        <a href="/login" class="btn btn-primary" style="display: inline-block; width: auto; padding: 10px 24px;">
+            Vai al Login
+        </a>
+    </div>
+
+    {% elif logged_in_user %}
+    <!-- Already Logged-in User Card (Direct Merge) -->
+    <div class="card" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(56, 189, 248, 0.35); padding: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.5);">
+        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
+            <div style="width: 50px; height: 50px; border-radius: 14px; background: rgba(56, 189, 248, 0.15); border: 1.5px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0;">
+                👨‍👩‍👧
+            </div>
+            <div>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">
+                    Unisciti a "{{ invitation.workspace_name }}"
+                </h3>
+                <p style="color: #94a3b8; font-size: 0.8rem; margin: 2px 0 0 0;">
+                    Invitato da <strong style="color: #fff;">{{ invitation.inviter_name }}</strong>
+                </p>
+            </div>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px; margin-bottom: 20px;">
+            <span style="font-size: 0.72rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 4px;">
+                Profilo Assegnato nel Nucleo:
+            </span>
+            <div style="font-size: 1.1rem; font-weight: 800; color: #38bdf8;">
+                {{ invitation.profile_name }}
+            </div>
+            <span style="font-size: 0.75rem; color: #cbd5e1;">
+                Ruolo: {{ invitation.profile_role or 'Partner / Coniuge' }}
+            </span>
+        </div>
+
+        <p style="color: #cbd5e1; font-size: 0.82rem; line-height: 1.45; margin-bottom: 20px;">
+            Sei attualmente connesso come <strong style="color: #fff;">{{ logged_in_user.full_name }}</strong> ({{ logged_in_user.email }}). Cliccando sul pulsante in basso, il tuo account verrà collegato allo spazio familiare.
+        </p>
+
+        <form method="POST" action="/join/accept">
+            <input type="hidden" name="token" value="{{ token }}">
+            <input type="hidden" name="mode" value="current_user">
+            <button type="submit" class="btn" style="background: linear-gradient(135deg, #0284c7, #2563eb); font-weight: 800; font-size: 0.95rem; padding: 12px; box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);">
+                Accetta Invito & Unisciti 🚀
+            </button>
+        </form>
+    </div>
+
+    {% else %}
+    <!-- Guest / Partner Onboarding Form -->
+    <div class="card" style="background: radial-gradient(circle at top right, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.35); padding: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.5);">
+        
+        <!-- Welcome Hero -->
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div style="width: 56px; height: 56px; border-radius: 16px; background: rgba(56, 189, 248, 0.2); border: 1.5px solid rgba(56, 189, 248, 0.5); display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 10px;">
+                👩‍❤️‍👨
+            </div>
+            <h2 style="font-size: 1.3rem; font-weight: 900; color: #fff; margin: 0;">
+                Benvenuta/o, {{ invitation.profile_name }}!
+            </h2>
+            <p style="color: #cbd5e1; font-size: 0.85rem; margin: 6px auto 0 auto; max-width: 380px; line-height: 1.45;">
+                <strong style="color: #38bdf8;">{{ invitation.inviter_name }}</strong> ti ha invitato a gestire insieme il bilancio familiare su FiscMoney.
+            </p>
+        </div>
+
+        <!-- Mode Tab Switcher (New Account vs Existing Account) -->
+        <div style="display: flex; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 3px; margin-bottom: 20px;">
+            <button type="button" id="tabRegisterBtn" onclick="switchJoinMode('register')" style="flex: 1; padding: 8px; font-size: 0.8rem; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; background: var(--accent-primary); color: #fff;">
+                ✨ Nuovo Account
+            </button>
+            <button type="button" id="tabLoginBtn" onclick="switchJoinMode('login')" style="flex: 1; padding: 8px; font-size: 0.8rem; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; background: transparent; color: #94a3b8;">
+                🔑 Ho già un Account
+            </button>
+        </div>
+
+        <!-- FORM: NUOVO ACCOUNT (REGISTER) -->
+        <div id="joinRegisterBox">
+            <form method="POST" action="/join/accept">
+                <input type="hidden" name="token" value="{{ token }}">
+                <input type="hidden" name="mode" value="register">
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">Nome Completo *</label>
+                    <input type="text" name="full_name" class="form-control" value="{{ invitation.target_name or invitation.profile_name }}" required style="font-size: 1rem; padding: 12px 14px; border-radius: 10px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">La tua Email *</label>
+                    <input type="email" name="email" class="form-control" value="{{ invitation.target_email or '' }}" placeholder="es. anna@email.it" required style="font-size: 1rem; padding: 12px 14px; border-radius: 10px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">Scegli una Password *</label>
+                    <input type="password" name="password" class="form-control" placeholder="••••••••" required style="font-size: 1rem; padding: 12px 14px; border-radius: 10px;">
+                    <small style="font-size: 0.72rem; color: #94a3b8; margin-top: 5px; display: block;">
+                        Questa password ti servirà per accedere a FiscMoney da smartphone o PC.
+                    </small>
+                </div>
+
+                <button type="submit" class="btn" style="width: 100%; min-height: 48px; background: linear-gradient(135deg, #0284c7, #2563eb); font-weight: 800; font-size: 0.98rem; padding: 12px; border-radius: 10px; box-shadow: 0 4px 16px rgba(14, 165, 233, 0.4);">
+                    Attiva Profilo & Entra 🚀
+                </button>
+            </form>
+        </div>
+
+        <!-- FORM: ACCOUNT ESISTENTE (LOGIN) -->
+        <div id="joinLoginBox" style="display: none;">
+            <p style="font-size: 0.82rem; color: #94a3b8; margin-bottom: 14px; line-height: 1.45;">
+                Inserisci le credenziali del tuo account FiscMoney già esistente per unificarti allo spazio familiare di <strong style="color: #fff;">{{ invitation.inviter_name }}</strong>.
+            </p>
+            <form method="POST" action="/join/accept">
+                <input type="hidden" name="token" value="{{ token }}">
+                <input type="hidden" name="mode" value="login">
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">Email Account Esistente *</label>
+                    <input type="email" name="email" class="form-control" value="{{ request.args.get('prefill_email', '') }}" placeholder="tua.email@esempio.it" required style="font-size: 1rem; padding: 12px 14px; border-radius: 10px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="font-size: 0.82rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">Password *</label>
+                    <input type="password" name="password" class="form-control" placeholder="••••••••" required style="font-size: 1rem; padding: 12px 14px; border-radius: 10px;">
+                </div>
+
+                <button type="submit" class="btn" style="width: 100%; min-height: 48px; background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; font-size: 0.98rem; padding: 12px; border-radius: 10px; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);">
+                    Accedi & Collega al Nucleo 🔗
+                </button>
+            </form>
+        </div>
+
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+function switchJoinMode(mode) {
+    const regBox = document.getElementById('joinRegisterBox');
+    const logBox = document.getElementById('joinLoginBox');
+    const regBtn = document.getElementById('tabRegisterBtn');
+    const logBtn = document.getElementById('tabLoginBtn');
+
+    if (!regBox || !logBox) return;
+
+    if (mode === 'login') {
+        regBox.style.display = 'none';
+        logBox.style.display = 'block';
+        logBtn.style.background = 'var(--accent-primary)';
+        logBtn.style.color = '#fff';
+        regBtn.style.background = 'transparent';
+        regBtn.style.color = '#94a3b8';
+    } else {
+        regBox.style.display = 'block';
+        logBox.style.display = 'none';
+        regBtn.style.background = 'var(--accent-primary)';
+        regBtn.style.color = '#fff';
+        logBtn.style.background = 'transparent';
+        logBtn.style.color = '#94a3b8';
+    }
+}
+
+// Check URL param mode
+{% if request.args.get('mode') == 'login' %}
+document.addEventListener('DOMContentLoaded', function() {
+    switchJoinMode('login');
+});
+{% endif %}
+</script>
+{% endblock %}

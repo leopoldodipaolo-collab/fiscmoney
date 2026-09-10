@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+
+{% block title %}Modello 730/{{ decl.declaration_year }} (Redditi {{ decl.tax_year }}) | FiscMoney{% endblock %}
+
+{% block content %}
+<div class="page-container" style="max-width: 1200px; margin: 0 auto; padding-bottom: 90px;">
+
+    <!-- Top Breadcrumb & Actions -->
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 25px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <a href="{{ url_for('tax_730_list', profile_id=decl.profile_id) }}" class="btn" style="background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1); padding: 8px 14px; border-radius: 10px; text-decoration: none; font-size: 0.9rem; font-weight: 600;">
+                &larr; Torna a Fisco & 730
+            </a>
+            <span style="color: var(--text-muted);">&bull;</span>
+            <span style="color: #fff; font-weight: 600; font-size: 1.1rem;">
+                Modello 730/{{ decl.declaration_year }} (Redditi {{ decl.tax_year }})
+            </span>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <form action="{{ url_for('tax_730_delete', decl_id=decl.id) }}" method="POST" onsubmit="return confirm('Sei sicuro di voler eliminare questa dichiarazione 730?');">
+                <button type="submit" class="btn" style="background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.25); padding: 8px 14px; border-radius: 10px; font-weight: 600; font-size: 0.85rem;">
+                    🗑️ Elimina
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI Virtual Assistant Briefing Hero -->
+    <div class="card" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 20px; padding: 24px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative;">
+        
+        <!-- Persona Switcher Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px; margin-bottom: 18px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.8rem;">{{ assistant_briefing.persona_avatar }}</span>
+                <div>
+                    <div style="font-size: 1.1rem; font-weight: 700; color: #fff;">
+                        {{ assistant_briefing.persona_name }} <span style="font-weight: 400; font-size: 0.85rem; color: var(--text-muted);">({{ assistant_briefing.persona_role }})</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: #34d399;">
+                        Analisi Fiscale Personalizzata & Riconciliazione Conguaglio
+                    </div>
+                </div>
+            </div>
+
+            <!-- Switcher Buttons -->
+            <div style="display: flex; gap: 6px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                {% for pkey, pval in personas.items() %}
+                <a href="{{ url_for('tax_730_detail', decl_id=decl.id, persona=pkey) }}"
+                   style="text-decoration: none; padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 4px; transition: all 0.2s; background: {% if current_persona == pkey %}rgba(16, 185, 129, 0.25){% else %}transparent{% endif %}; color: {% if current_persona == pkey %}#34d399{% else %}var(--text-muted){% endif %};">
+                    <span>{{ pval.avatar }}</span> {{ pval.name }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Assistant Headline & Highlights -->
+        <div>
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: #fff; margin: 0 0 10px 0;">
+                {{ assistant_briefing.headline }}
+            </h3>
+            <p style="color: #cbd5e1; font-size: 0.95rem; line-height: 1.5; margin: 0 0 16px 0;">
+                {{ assistant_briefing.overview }}
+            </p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; margin-bottom: 16px;">
+                {% for item in assistant_briefing.highlights %}
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 14px; font-size: 0.88rem; color: #e2e8f0; display: flex; align-items: center; gap: 8px;">
+                    <span>✨</span> <span>{{ item }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Assistant Recommendation Box -->
+            <div style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 12px 16px; border-radius: 0 10px 10px 0; font-size: 0.9rem; color: #a7f3d0;">
+                <strong>💡 Consiglio Strategico:</strong> {{ assistant_briefing.recommendation }}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Settlement Result & Paystub Match Hero -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 30px;">
+        
+        <!-- Liquidation Outcome Card -->
+        <div class="card" style="background: {% if decl.is_refund and decl.final_refund_or_debit > 0 %}rgba(16, 185, 129, 0.08){% elif not decl.is_refund and decl.final_refund_or_debit > 0 %}rgba(239, 68, 68, 0.08){% else %}rgba(148, 163, 184, 0.08){% endif %}; border: 1px solid {% if decl.is_refund and decl.final_refund_or_debit > 0 %}rgba(16, 185, 129, 0.3){% elif not decl.is_refund and decl.final_refund_or_debit > 0 %}rgba(239, 68, 68, 0.3){% else %}rgba(148, 163, 184, 0.3){% endif %}; border-radius: 18px; padding: 24px;">
+            <div style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: {% if decl.is_refund and decl.final_refund_or_debit > 0 %}#34d399{% elif not decl.is_refund and decl.final_refund_or_debit > 0 %}#f87171{% else %}#94a3b8{% endif %}; margin-bottom: 8px;">
+                Risultato Liquidazione 730-3
+            </div>
+            
+            <div style="display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px;">
+                <div style="font-size: 2.2rem; font-weight: 800; color: {% if decl.is_refund and decl.final_refund_or_debit > 0 %}#34d399{% elif not decl.is_refund and decl.final_refund_or_debit > 0 %}#f87171{% else %}#fff{% endif %};">
+                    {% if decl.is_refund and decl.final_refund_or_debit > 0 %}+{% elif not decl.is_refund and decl.final_refund_or_debit > 0 %}-{% endif %}{{ decl.final_refund_or_debit|eur }}
+                </div>
+                <span style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">
+                    {% if decl.is_refund and decl.final_refund_or_debit > 0 %}(A RIMBORSO){% elif not decl.is_refund and decl.final_refund_or_debit > 0 %}(A DEBITO){% else %}(PAREGGIO){% endif %}
+                </span>
+            </div>
+
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0; line-height: 1.4;">
+                {% if decl.is_refund and decl.final_refund_or_debit > 0 %}
+                Importo che il datore di lavoro / ente pensionistico accredita direttamente sulla prima retribuzione utile estiva (Rigo 163).
+                {% elif not decl.is_refund and decl.final_refund_or_debit > 0 %}
+                Importo trattenuto dal sostituto d'imposta o da versare con modello F24 (Rigo 161 / 162).
+                {% else %}
+                Le ritenute operate in busta paga durante l'anno corrispondono esattamente all'imposta netta dovuta.
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Summer Paystub Reconciliation Card -->
+        <div class="card" style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.25); border-radius: 18px; padding: 24px;">
+            <div style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #38bdf8; margin-bottom: 8px; display: flex; justify-content: space-between;">
+                <span>Riconciliazione Cedolino Estivo</span>
+                <span>🔗</span>
+            </div>
+
+            {% if matched_paystub %}
+            <div style="margin-bottom: 12px;">
+                <div style="font-size: 1.2rem; font-weight: 700; color: #fff;">
+                    Cedolino {{ matched_paystub.month_name }} {{ matched_paystub.year }}
+                </div>
+                <div style="font-size: 0.85rem; color: #38bdf8; margin-top: 4px;">
+                    Netto Cedolino: <strong>{{ matched_paystub.net_amount|eur }}</strong>
+                    {% if matched_paystub.matched_tx_amount %}
+                    &bull; Bonifico Bancario Ricevuto: <strong style="color: #34d399;">{{ matched_paystub.matched_tx_amount|eur }}</strong>
+                    {% endif %}
+                </div>
+            </div>
+            <p style="font-size: 0.85rem; color: #cbd5e1; margin: 0 0 12px 0;">
+                {% if matched_paystub.is_exact_match %}
+                ✅ <strong>Match Perfetto:</strong> Il bonifico include esattamente l'accredito del rimborso 730 di {{ decl.final_refund_or_debit|eur }}.
+                {% else %}
+                ℹ️ Cedolino estivo di competenza associato per il conguaglio fiscale del 730/{{ decl.declaration_year }}.
+                {% endif %}
+            </p>
+            <a href="{{ url_for('paystub_detail', paystub_id=matched_paystub.id) }}" class="btn" style="background: rgba(14, 165, 233, 0.2); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); padding: 6px 14px; border-radius: 8px; text-decoration: none; font-size: 0.85rem; font-weight: 600; display: inline-block;">
+                Apri Cedolino di {{ matched_paystub.month_name }} &rarr;
+            </a>
+            {% else %}
+            <div style="color: var(--text-muted); font-size: 0.9rem; padding: 15px 0;">
+                Nessun cedolino estivo caricato per l'anno {{ decl.declaration_year }}. Carica il cedolino di Luglio/Agosto per la riconciliazione automatica del bonifico.
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- NEW SECTION: CHECK-UP FISCALE & AUDIT AI (Cosa Va, Cosa Non Va)  -->
+    <!-- ================================================================= -->
+    <div class="card" style="background: rgba(19, 27, 46, 0.95); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 20px; padding: 26px; margin-bottom: 30px; box-shadow: 0 8px 32px rgba(0,0,0,0.35);">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 16px;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.5rem;">🔍</span>
+                    <h2 style="font-size: 1.3rem; font-weight: 700; color: #fff; margin: 0;">
+                        Check-up Fiscale & Audit AI: Cosa Va e Cosa Non Va
+                    </h2>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 4px 0 0 0;">
+                    Confronto incrociato tra i dati del Modello 730/{{ decl.declaration_year }} e le spese/cedolini reali registrati in FiscMoney.
+                </p>
+            </div>
+
+            <!-- Health Score Pill -->
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="background: {% if audit_report.overall_health == 'ECCELLENTE' %}rgba(16, 185, 129, 0.15){% else %}rgba(245, 158, 11, 0.15){% endif %}; border: 1px solid {% if audit_report.overall_health == 'ECCELLENTE' %}rgba(16, 185, 129, 0.35){% else %}rgba(245, 158, 11, 0.35){% endif %}; padding: 8px 16px; border-radius: 12px; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.2rem;">{% if audit_report.overall_health == 'ECCELLENTE' %}🏆{% else %}⚡{% endif %}</span>
+                    <div>
+                        <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Efficienza Fiscale</div>
+                        <div style="font-size: 1.05rem; font-weight: 800; color: {% if audit_report.overall_health == 'ECCELLENTE' %}#34d399{% else %}#fbbf24{% endif %};">
+                            {{ audit_report.health_score }}/100 &bull; {{ audit_report.overall_health }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Cards Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin-bottom: 25px;">
+            {% for item in audit_report.audit_cards %}
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <!-- Header -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 1.3rem;">{{ item.icon }}</span>
+                            <span style="font-weight: 700; font-size: 0.95rem; color: #fff;">{{ item.title }}</span>
+                        </div>
+                        <span style="background: {{ item.badge_bg }}; color: {{ item.badge_color }}; font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; white-space: nowrap;">
+                            {{ item.badge }}
+                        </span>
+                    </div>
+
+                    <!-- Declared value tag -->
+                    <div style="font-size: 0.8rem; color: #38bdf8; font-weight: 600; margin-bottom: 8px;">
+                        {{ item.declared_text|safe }}
+                    </div>
+
+                    <!-- Diagnosis text -->
+                    <p style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.45; margin: 0 0 12px 0;">
+                        {{ item.diagnosis|safe }}
+                    </p>
+                </div>
+
+                <!-- Footer Impact & Action -->
+                <div style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; margin-top: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; margin-bottom: 6px;">
+                        <span style="color: var(--text-muted);">Impatto Fiscale:</span>
+                        <strong style="color: {% if item.status == 'OPPORTUNITY' %}#fbbf24{% else %}#34d399{% endif %}; font-size: 0.88rem;">
+                            {{ item.financial_impact }}
+                        </strong>
+                    </div>
+                    <div style="font-size: 0.78rem; color: #94a3b8; background: rgba(0,0,0,0.25); padding: 8px 10px; border-radius: 8px; border-left: 3px solid {{ item.badge_color }};">
+                        <strong>Azione:</strong> {{ item.action_tip }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Practical Action Plan (Cosa Possiamo Fare Adesso) -->
+        <div style="background: rgba(14, 165, 233, 0.05); border: 1px solid rgba(14, 165, 233, 0.2); border-radius: 16px; padding: 20px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                <span style="font-size: 1.3rem;">🚀</span>
+                <h3 style="font-size: 1.1rem; font-weight: 700; color: #38bdf8; margin: 0;">
+                    Piano d'Azione Fiscale Strategico: Cosa fare subito e per il futuro
+                </h3>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px;">
+                {% for act in audit_report.action_plan %}
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-weight: 700; font-size: 0.9rem; color: #fff;">
+                            Passo {{ act.step }}: {{ act.title }}
+                        </span>
+                        <span style="font-size: 0.72rem; font-weight: 700; color: {{ act.priority_color }}; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px;">
+                            {{ act.priority }}
+                        </span>
+                    </div>
+                    <p style="font-size: 0.82rem; color: #cbd5e1; line-height: 1.4; margin: 0 0 10px 0;">
+                        {{ act.description|safe }}
+                    </p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
+                        <span style="color: #34d399; font-weight: 600;">Beneficio: {{ act.expected_gain }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 4 Structured Breakdown Sections -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px;">
+        
+        <!-- 1. Quadro C & Sintesi Redditi -->
+        <div class="card" style="background: var(--card-bg, #131b2e); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; padding: 22px;">
+            <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+                <span>💼</span> Quadro C & Redditi Complessivi
+            </h3>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem;">
+                    <span style="color: var(--text-muted);">Rigo 11 - Reddito Complessivo:</span>
+                    <strong style="color: #fff;">{{ decl.total_income|eur }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem;">
+                    <span style="color: var(--text-muted);">Rigo 12 - Deduzione Abitazione Principale:</span>
+                    <span style="color: #38bdf8;">{{ decl.principal_residence_deduction|eur }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem;">
+                    <span style="color: var(--text-muted);">Rigo 14 - Reddito Imponibile Netto:</span>
+                    <strong style="color: #34d399;">{{ decl.taxable_income|eur }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem;">
+                    <span style="color: var(--text-muted);">Rigo 16 - Imposta Lorda Calcolata:</span>
+                    <strong style="color: #fbbf24;">{{ decl.gross_tax|eur }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                    <span style="color: var(--text-muted);">Aliquota Effettiva Reale:</span>
+                    <strong style="color: #c4b5fd;">{{ decl.effective_tax_rate or insights.effective_tax_rate }}%</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Quadro E - Oneri, Spese e Detrazioni -->
+        <div class="card" style="background: var(--card-bg, #131b2e); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; padding: 22px;">
+            <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+                <span>🏷️</span> Quadro E - Oneri e Spese Deducibili / Detraibili
+            </h3>
+
+            {% if decl.expenses_breakdown %}
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                {% for exp in decl.expenses_breakdown %}
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 10px 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="font-weight: 600; font-size: 0.9rem; color: #fff;">
+                            <code>{{ exp.code }}</code> {{ exp.title }}
+                        </span>
+                        <strong style="color: #38bdf8; font-size: 0.95rem;">
+                            {{ exp.amount|eur }}
+                        </strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted);">
+                        <span>{{ exp.rule }}</span>
+                        <span style="color: #34d399; font-weight: 600;">Beneficio: +{{ exp.tax_benefit|eur }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="color: var(--text-muted); font-size: 0.9rem; padding: 20px 0; text-align: center;">
+                Nessun onere Quadro E registrato in questa dichiarazione (o importi a zero).
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 3. Prospetto di Liquidazione 730-3 -->
+        <div class="card" style="background: var(--card-bg, #131b2e); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; padding: 22px;">
+            <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+                <span>⚖️</span> Modello 730-3: Liquidazione Imposte
+            </h3>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem;">
+                    <span style="color: var(--text-muted);">Rigo 48 - Totale Detrazioni e Crediti:</span>
+                    <strong style="color: #38bdf8;">{{ decl.total_deductions|eur }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem;">
+                    <span style="color: var(--text-muted);">Rigo 50 - Imposta Netta Dovuta:</span>
+                    <strong style="color: #fbbf24;">{{ decl.net_tax|eur }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem;">
+                    <span style="color: var(--text-muted);">Rigo 59 - Ritenute Subite (CU):</span>
+                    <span style="color: #fff;">{{ decl.withholdings_paid|eur }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem;">
+                    <span style="color: var(--text-muted);">Rigo 60 - Differenza Fiscale:</span>
+                    <strong style="color: {% if decl.tax_difference < 0 %}#34d399{% else %}#f87171{% endif %};">{{ decl.tax_difference|eur }}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                    <span style="color: var(--text-muted);">Rigo 72 & 75 - Addizionali Reg. e Com.:</span>
+                    <span style="color: #cbd5e1;">Reg: {{ decl.regional_tax_due|eur }} &bull; Com: {{ decl.municipal_tax_due|eur }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Tax Optimization Engine -->
+        <div class="card" style="background: var(--card-bg, #131b2e); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; padding: 22px;">
+            <h3 style="font-size: 1.15rem; font-weight: 700; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;">
+                <span>🚀</span> AI Tax Optimization & Previdenza
+            </h3>
+
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+                <!-- Fondo Pensione Cap saturation bar -->
+                <div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px;">
+                        <span style="color: var(--text-muted);">Saturazione Plafond Fondo Pensione (E27):</span>
+                        <strong style="color: #38bdf8;">{{ decl.pension_fund_deduction|eur }} / 5.164,57 €</strong>
+                    </div>
+                    {% set pct_pension = ((decl.pension_fund_deduction / 5164.57) * 100)|round(1) %}
+                    <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+                        <div style="width: {{ [pct_pension, 100]|min }}%; height: 100%; background: linear-gradient(90deg, #0ea5e9, #10b981); border-radius: 4px;"></div>
+                    </div>
+                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
+                        Capienza residua deducibile: <strong style="color: #34d399;">{{ insights.pension_headroom|eur }}</strong>
+                    </div>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 12px; font-size: 0.85rem;">
+                    <div style="color: var(--text-muted); margin-bottom: 4px;">Scaglione Marginale IRPEF:</div>
+                    <div style="font-weight: 700; color: #fff; font-size: 1.05rem;">
+                        {{ (insights.marginal_tax_rate * 100)|round(0) }}% <span style="font-weight: 400; font-size: 0.8rem; color: var(--text-muted);">(Risparmio per ogni 100€ versati: {{ (insights.marginal_tax_rate * 100)|round(0) }} €)</span>
+                    </div>
+                </div>
+
+                <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 10px; padding: 12px; font-size: 0.85rem; color: #a7f3d0;">
+                    💰 <strong>Opportunità di Risparmio Fiscale Futuro:</strong> Versando la capienza residua di {{ insights.pension_headroom|eur }} nel fondo pensione, avresti ottenuto un ulteriore rimborso IRPEF stimato di <strong style="color: #fff;">{{ insights.potential_pension_tax_savings|eur }}</strong>.
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,622 @@
+{% extends "base.html" %}
+
+{% block title %}{% if edit_mode %}Modifica Cedolino{% else %}Nuovo Cedolino{% endif %} | FiscMoney{% endblock %}
+
+{% block content %}
+
+<!-- Header Breadcrumb & Actions -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <div>
+        <a href="/paystubs?profile_id={{ profile.id }}&year={{ paystub.year or current_year }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+            <span>← Torna all'elenco Cedolini</span>
+        </a>
+        <h1 style="font-size: 1.35rem; font-weight: 800; color: #fff; margin: 0;">
+            {% if edit_mode %}✏️ Modifica Cedolino{% else %}➕ Inserisci Busta Paga{% endif %}
+        </h1>
+    </div>
+    
+    {% if last_paystub and not edit_mode %}
+    <a href="/paystubs/new?profile_id={{ profile.id }}&clone_from={{ last_paystub.id }}" class="btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none; display: flex; align-items: center; gap: 6px; border-radius: 8px;">
+        <span>📋</span>
+        <span>Copia dati da {{ last_paystub.month }}/{{ last_paystub.year }}</span>
+    </a>
+    {% endif %}
+</div>
+
+<!-- Quick AI PDF Dropzone Banner -->
+<div class="card" style="margin-bottom: 16px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05)); border: 1px dashed #6366f1;">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="font-size: 1.8rem;">🤖</div>
+            <div>
+                <h4 style="font-size: 0.95rem; font-weight: 800; color: #fff; margin: 0;">Hai il PDF del cedolino?</h4>
+                <p style="color: var(--text-muted); font-size: 0.78rem; margin: 0;">Carica il PDF per estrarre e compilare automaticamente tutti i campi in 1 secondo.</p>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <label for="instantPdfInput" class="btn-primary" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; padding: 7px 14px; font-size: 0.85rem; font-weight: 700; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                <span>⚡</span>
+                <span>Carica PDF & Auto-Compila</span>
+                <input type="file" id="instantPdfInput" accept="application/pdf,application/x-pdf,.pdf" style="position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none;" onchange="uploadAndFillForm(this)">
+            </label>
+        </div>
+    </div>
+    <div id="instantUploadStatus" style="display: none; margin-top: 10px; font-size: 0.8rem; padding: 8px 12px; border-radius: 6px;"></div>
+</div>
+
+<form method="POST" action="/paystubs/save" id="paystubForm">
+    <input type="hidden" name="paystub_id" value="{{ paystub.id or '' }}">
+    <input type="hidden" name="profile_id" value="{{ profile.id }}">
+
+
+    <!-- Profile & Period Selector Card -->
+    <div class="card" style="margin-bottom: 16px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9));">
+        <h3 style="font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+            <span>👤 Intestazione & Periodo di Competenza</span>
+        </h3>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px;">
+            <div>
+                <label style="color: var(--text-muted); font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 4px;">Dipendente / Profilo</label>
+                <input type="text" value="{{ profile.name }} ({{ profile.role_title or 'Titolare' }})" disabled
+                       style="width: 100%; background: #0f172a; color: #94a3b8; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px; font-size: 0.9rem;">
+            </div>
+
+            <div>
+                <label style="color: var(--text-muted); font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 4px;">Mese di Retribuzione *</label>
+                <select name="month" id="selectMonth" required
+                        style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 8px; padding: 8px 12px; font-size: 0.9rem; font-weight: 700;">
+                    <option value="1" {% if (paystub.month or default_month) == 1 %}selected{% endif %}>01 - Gennaio</option>
+                    <option value="2" {% if (paystub.month or default_month) == 2 %}selected{% endif %}>02 - Febbraio</option>
+                    <option value="3" {% if (paystub.month or default_month) == 3 %}selected{% endif %}>03 - Marzo</option>
+                    <option value="4" {% if (paystub.month or default_month) == 4 %}selected{% endif %}>04 - Aprile</option>
+                    <option value="5" {% if (paystub.month or default_month) == 5 %}selected{% endif %}>05 - Maggio</option>
+                    <option value="6" {% if (paystub.month or default_month) == 6 %}selected{% endif %}>06 - Giugno</option>
+                    <option value="7" {% if (paystub.month or default_month) == 7 %}selected{% endif %}>07 - Luglio</option>
+                    <option value="8" {% if (paystub.month or default_month) == 8 %}selected{% endif %}>08 - Agosto</option>
+                    <option value="9" {% if (paystub.month or default_month) == 9 %}selected{% endif %}>09 - Settembre</option>
+                    <option value="10" {% if (paystub.month or default_month) == 10 %}selected{% endif %}>10 - Ottobre</option>
+                    <option value="11" {% if (paystub.month or default_month) == 11 %}selected{% endif %}>11 - Novembre</option>
+                    <option value="12" {% if (paystub.month or default_month) == 12 %}selected{% endif %}>12 - Dicembre</option>
+                    <option value="13" {% if (paystub.month or default_month) == 13 %}selected{% endif %}>🎁 13ª Mensilità / Tredicesima / Suppl.</option>
+                    <option value="14" {% if (paystub.month or default_month) == 14 %}selected{% endif %}>🏖️ 14ª Mensilità (Quattordicesima)</option>
+                    <option value="15" {% if (paystub.month or default_month) == 15 %}selected{% endif %}>🏆 Premio di Risultato / Una Tantum</option>
+                </select>
+
+            </div>
+
+            <div>
+                <label style="color: var(--text-muted); font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 4px;">Anno di Competenza *</label>
+                <input type="number" name="year" id="selectYear" value="{{ paystub.year or current_year }}" required min="2020" max="2035"
+                       style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #475569; border-radius: 8px; padding: 8px 12px; font-size: 0.9rem; font-weight: 700;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Netto Calculator Floating Banner -->
+    <div class="card" style="margin-bottom: 16px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Stima Netto in Tempo Reale</span>
+                <div style="font-size: 1.6rem; font-weight: 900; color: #10b981;" id="liveNetDisplay">
+                    € 0,00
+                </div>
+            </div>
+            <div style="display: flex; gap: 16px; font-size: 0.82rem; color: var(--text-muted);">
+                <div>Lordo Totale: <strong style="color: #fff;" id="liveGrossDisplay">€ 0,00</strong></div>
+                <div>Totale Trattenute: <strong style="color: #ef4444;" id="liveTaxesDisplay">€ 0,00</strong></div>
+                <div>Cuneo: <strong style="color: #f59e0b;" id="liveWedgeDisplay">0.0%</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 1: Retribuzione Lorda -->
+    <div class="card" style="margin-bottom: 16px;">
+        <h3 style="font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 6px;">
+            <span>💼 1. Retribuzione Lorda (Competenze)</span>
+        </h3>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+            <div>
+                <label style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-bottom: 4px;">Paga Base / Tabellare CCNL</label>
+                <input type="number" step="0.01" name="base_salary" id="in_base_salary" value="{{ paystub.base_salary or '' }}" placeholder="es. 1850.00" class="calc-input"
+                       style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px;">
+            </div>
+
+            <div>
+                <label style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-bottom: 4px;">Contingenza & E.D.R.</label>
+                <input type="number" step="0.01" name="contingenza" id="in_contingenza" value="{{ paystub.contingenza or '' }}" placeholder="es. 520.00" class="calc-input"
+                       style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px;">
+            </div>
+
+            <div>
+                <label style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-bottom: 4px;">Superminimo (Assorb. / Non assorb.)</label>
+                <input type="number" step="0.01" name="superminimo" id="in_superminimo" value="{{ paystub.superminimo or '' }}" placeholder="es. 300.00" class="calc-input"
+                       style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px;">
+            </div>
+
+            <div>
+                <label style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-bottom: 4px;">Scatti di Anzianità</label>
+                <input type="number" step="0.01" name="scatti_anzianita" id="in_scatti" value="{{ paystub.scatti_anzianita or '' }}" placeholder="es. 65.00" class="calc-input"
+                       style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px;">
+            </div>
+
+            <div>
+                <label style="color: #38bdf8; font-size: 0.8rem; font-weight: 700; display: block; margin-bottom: 4px;">Straordinari & Maggiorazioni</label>
+                <input type="number" step="0.01" name="overtime_amount" id="in_overtime" value="{{ paystub.overtime_amount or '' }}" placeholder="es. 120.00" class="calc-input"
+                       style="width: 100%; background: #1e293b; color: #38bdf8; border: 1px solid #0284c7; border-radius: 8px; padding: 8px 12px; font-weight: 700;">
+            </div>
+
+            <div>
+                <label style="color: #38bdf8; font-size: 0.8rem; font-weight: 700; display: block; margin-bottom: 4px;">Premi di Risultato / Bonus</label>
+                <input type="number" step="0.01" name="bonuses" id="in_bonuses" value="{{ paystub.bonuses or '' }}" placeholder="es. 250.00" class="calc-input"
+                       style="width: 100%; background: #1e293b; color: #38bdf8; border: 1px solid #0284c7; border-radius: 8px; padding: 8px 12px;">
+            </div>
+
+            <div>
+                <label style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-bottom: 4px;">Altre Competenze Lorde</label>
+                <input type="number" step="0.01" name="other_additions" id="in_other_additions" value="{{ paystub.other_additions or '' }}" placeholder="0.00" class="calc-input"
+                       style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px;">
+            </div>
+
+            <div>
+                <label style="color: #fff; font-size: 0.8rem; font-weight: 800; display: block; margin-bottom: 4px;">TOTALE LORDO MESE (Imponibile) *</label>
+                <input type="number" step="0.01" name="gross_amount" id="in_gross_amount" value="{{ paystub.gross_amount or '' }}" required placeholder="Calcolato in automatico" class="calc-input"
+                       style="width: 100%; background: #0f172a; color: #fff; border: 2px solid #38bdf8; border-radius: 8px; padding: 8px 12px; font-weight: 800; font-size: 1rem;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Trattenute Fiscali & Previdenziali -->
+    <div class="card" style="margin-bottom: 16px;">
+        <h3 style="font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 6px;">
+            <span>🏛️ 2. Trattenute Previdenziali (INPS) & Fiscali (IRPEF)</span>
+        </h3>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+            
+            <div>
+                <label style="color: #0ea5e9; font-size: 0.8rem; font-weight: 700; display: block; margin-bottom: 4px;">Contributi INPS c/dipendente</label>
+                <input type="number" step="0.01" name="inps_tax" id="in_inps" value="{{ paystub.inps_tax or '' }}" placeholder="es. 250.00" class="calc-input"
+                       style="width: 100%; background: #1e293b; color: #38bdf8; border: 1px solid #0284c7; border-radius: 8px; padding: 8px 12px;">
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Inclusivo di eventuale taglio cuneo</small>
+            </div>
+
+            <div>
+                <label style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-bottom: 4px;">IRPEF Lorda</label>
+                <input type="number" step="0.01" name="irpef_gross" id="in_irpef_gross" value="{{ paystub.irpef_gross or '' }}" placeholder="es. 580.00" class="calc-input"
+                       style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px;">
+            </div>
+
+            <div>
+                <label style="color: #10b981; font-size: 0.8rem; font-weight: 700; display: block; margin-bottom: 4px;">- Detrazioni Lavoro Dipendente</label>
+                <input type="number" step="0.01" name="tax_deductions" id="in_tax_deductions" value="{{ paystub.tax_deductions or '' }}" placeholder="es. 150.00" class="calc-input"
+                       style="width: 100%; background: #1e293b; color: #10b981; border: 1px solid #059669; border-radius: 8px; padding: 8px 12px;">
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Riducono l'IRPEF da pagare</small>
+            </div>
+
+            <div>
+                <label style="color: #f59e0b; font-size: 0.8rem; font-weight: 700; display: block; margin-bottom: 4px;">IRPEF Netta Trattenuta *</label>
+                <input type="number" step="0.01" name="irpef_net" id="in_irpef_net" value="{{ paystub.irpef_net or paystub.irpef_tax or '' }}" placeholder="es. 430.00" class="calc-input"
+                       style="width: 100%; background: #1e293b; color: #fbbf24; border: 1px solid #d97706; border-radius: 8px; padding: 8px 12px; font-weight: 700;">
+            </div>
+
+            <div>
+                <label style="color: #ef4444; font-size: 0.8rem; display: block; margin-bottom: 4px;">Addizionale Regionale IRPEF</label>
+                <input type="number" step="0.01" name="regional_tax" id="in_regional_tax" value="{{ paystub.regional_tax or '' }}" placeholder="es. 38.00" class="calc-input"
+                       style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px;">
+            </div>
+
+            <div>
+                <label style="color: #ef4444; font-size: 0.8rem; display: block; margin-bottom: 4px;">Addizionale Comunale (Acc./Saldo)</label>
+                <input type="number" step="0.01" name="municipal_tax" id="in_municipal_tax" value="{{ paystub.municipal_tax or '' }}" placeholder="es. 18.00" class="calc-input"
+                       style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px;">
+            </div>
+
+            <div>
+                <label style="color: #10b981; font-size: 0.8rem; font-weight: 700; display: block; margin-bottom: 4px;">+ Trattamento Integrativo (100€)</label>
+                <input type="number" step="0.01" name="trattamento_integrativo" id="in_trattamento" value="{{ paystub.trattamento_integrativo or '' }}" placeholder="es. 100.00" class="calc-input"
+                       style="width: 100%; background: #1e293b; color: #10b981; border: 1px solid #059669; border-radius: 8px; padding: 8px 12px;">
+            </div>
+
+            <div>
+                <label style="color: #ef4444; font-size: 0.8rem; display: block; margin-bottom: 4px;">Altre Trattenute (Mensa / Sindacato)</label>
+                <input type="number" step="0.01" name="other_deductions" id="in_other_deductions" value="{{ paystub.other_deductions or '' }}" placeholder="0.00" class="calc-input"
+                       style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px;">
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+                <label style="color: #10b981; font-size: 0.9rem; font-weight: 800; display: block; margin-bottom: 4px;">NETTO IN BUSTA FINALE *</label>
+                <input type="number" step="0.01" name="net_amount" id="in_net_amount" value="{{ paystub.net_amount or '' }}" required placeholder="Calcolato in automatico" class="calc-input"
+                       style="width: 100%; background: #0f172a; color: #10b981; border: 2px solid #10b981; border-radius: 8px; padding: 10px 14px; font-weight: 900; font-size: 1.2rem;">
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Section 3: Fondo Pensione & Previdenza Complementare -->
+    <div class="card" style="margin-bottom: 16px; border-left: 4px solid #38bdf8;">
+        <h3 style="font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 6px;">
+            <span>🚀 3. Previdenza Complementare & Fondo Pensione (es. FONDAPI, COMETA)</span>
+        </h3>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+            <div>
+                <label style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-bottom: 4px;">Nome Fondo Pensione</label>
+                <input type="text" name="pension_fund_name" id="in_pension_fund_name" value="{{ paystub.pension_fund_name or '' }}" placeholder="es. FONDAPI / COMETA"
+                       style="width: 100%; background: #1e293b; color: #38bdf8; border: 1px solid #0284c7; border-radius: 8px; padding: 8px 12px; font-weight: 700;">
+            </div>
+
+            <div>
+                <label style="color: #38bdf8; font-size: 0.8rem; font-weight: 700; display: block; margin-bottom: 4px;">Contributo Dipendente (Trattenuto)</label>
+                <input type="number" step="0.01" name="pension_fund_contrib_employee" id="in_pension_fund_contrib_employee" value="{{ paystub.pension_fund_contrib_employee or '' }}" placeholder="es. 180.84" class="calc-input"
+                       style="width: 100%; background: #1e293b; color: #38bdf8; border: 1px solid #0284c7; border-radius: 8px; padding: 8px 12px;">
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Deducibile nel 730 fino a 5.164 €</small>
+            </div>
+
+            <div>
+                <label style="color: #10b981; font-size: 0.8rem; font-weight: 700; display: block; margin-bottom: 4px;">Contributo Datoriale (Azienda Gratis!)</label>
+                <input type="number" step="0.01" name="pension_fund_contrib_company" id="in_pension_fund_contrib_company" value="{{ paystub.pension_fund_contrib_company or '' }}" placeholder="es. 51.67"
+                       style="width: 100%; background: #1e293b; color: #10b981; border: 1px solid #059669; border-radius: 8px; padding: 8px 12px; font-weight: 700;">
+                <small style="color: #34d399; font-size: 0.7rem;">Versato gratis dall'azienda sul tuo fondo</small>
+            </div>
+
+            <div>
+                <label style="color: #c084fc; font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 4px;">Quota TFR Mese Versata al Fondo</label>
+                <input type="number" step="0.01" name="pension_fund_tfr_month" id="in_pension_fund_tfr_month" value="{{ paystub.pension_fund_tfr_month or '' }}" placeholder="es. 357.12"
+                       style="width: 100%; background: #1e293b; color: #c084fc; border: 1px solid #9333ea; border-radius: 8px; padding: 8px 12px;">
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+                <label style="color: #c084fc; font-size: 0.8rem; font-weight: 700; display: block; margin-bottom: 4px;">Totale Progressivo Posizione nel Fondo Pensione</label>
+                <input type="number" step="0.01" name="pension_fund_total" id="in_pension_fund_total" value="{{ paystub.pension_fund_total or '' }}" placeholder="es. 32590.25"
+                       style="width: 100%; background: #1e293b; color: #c084fc; border: 1px solid #9333ea; border-radius: 8px; padding: 8px 12px; font-weight: 800;">
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Montante totale accumulato a tuo nome nel fondo</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4: TFR Aziendale, Ferie & ROL -->
+    <div class="card" style="margin-bottom: 16px;">
+        <h3 style="font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 6px;">
+            <span>🛡️ 4. TFR Aziendale, Ferie & ROL Residui</span>
+        </h3>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+            <div>
+                <label style="color: #c084fc; font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 4px;">TFR Maturato nel Mese</label>
+                <input type="number" step="0.01" name="tfr_month" id="in_tfr_month" value="{{ paystub.tfr_month or '' }}" placeholder="es. 185.00"
+                       style="width: 100%; background: #1e293b; color: #c084fc; border: 1px solid #9333ea; border-radius: 8px; padding: 8px 12px;">
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Default: ~ Lordo / 13.5</small>
+            </div>
+
+            <div>
+                <label style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-bottom: 4px;">Destinazione TFR</label>
+                <select name="tfr_fund_type" id="in_tfr_fund_type" style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px;">
+                    <option value="Azienda" {% if (paystub.tfr_fund_type or 'Azienda') == 'Azienda' %}selected{% endif %}>In Azienda / INPS</option>
+                    <option value="FONDAPI" {% if paystub.tfr_fund_type == 'FONDAPI' or paystub.pension_fund_name == 'FONDAPI' %}selected{% endif %}>FONDAPI (PMI Metalmeccaniche/Affini)</option>
+                    <option value="Fondo COMETA" {% if paystub.tfr_fund_type == 'Fondo COMETA' or paystub.pension_fund_name == 'COMETA' %}selected{% endif %}>Fondo COMETA (Metalmeccanici)</option>
+                    <option value="Fondo Fonchim" {% if paystub.tfr_fund_type == 'Fondo Fonchim' %}selected{% endif %}>Fondo Fonchim (Chimici)</option>
+                    <option value="Fondo Fonte" {% if paystub.tfr_fund_type == 'Fondo Fonte' %}selected{% endif %}>Fondo Fonte (Commercio)</option>
+                    <option value="Fondo Telemaco" {% if paystub.tfr_fund_type == 'Fondo Telemaco' %}selected{% endif %}>Fondo Telemaco (Telecomunicazioni)</option>
+                    <option value="Fondo Aperto" {% if paystub.tfr_fund_type == 'Fondo Aperto' %}selected{% endif %}>Fondo Pensione Aperto / PIP</option>
+                </select>
+            </div>
+
+            <div>
+                <label style="color: #c084fc; font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 4px;">TFR Totale Progressivo Accantonato</label>
+                <input type="number" step="0.01" name="tfr_accumulated_total" id="in_tfr_accumulated_total" value="{{ paystub.tfr_accumulated_total or '' }}" placeholder="es. 15400.00"
+                       style="width: 100%; background: #1e293b; color: #c084fc; border: 1px solid #9333ea; border-radius: 8px; padding: 8px 12px;">
+            </div>
+
+            <div>
+                <label style="color: #fbbf24; font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 4px;">Ore Ferie Residue</label>
+                <input type="number" step="0.5" name="ferie_residue_ore" value="{{ paystub.ferie_residue_ore or '' }}" placeholder="es. 88.0"
+                       style="width: 100%; background: #1e293b; color: #fbbf24; border: 1px solid #d97706; border-radius: 8px; padding: 8px 12px;">
+            </div>
+
+            <div>
+                <label style="color: #fbbf24; font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 4px;">Ore ROL / Permessi Residui</label>
+                <input type="number" step="0.5" name="rol_residui_ore" value="{{ paystub.rol_residui_ore or '' }}" placeholder="es. 32.0"
+                       style="width: 100%; background: #1e293b; color: #fbbf24; border: 1px solid #d97706; border-radius: 8px; padding: 8px 12px;">
+            </div>
+
+            <div>
+                <label style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-bottom: 4px;">Fringe Benefit Mese</label>
+                <input type="number" step="0.01" name="fringe_benefit" value="{{ paystub.fringe_benefit or '' }}" placeholder="es. 150.00 (Buoni spesa)"
+                       style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 5: Buoni Pasto Elettronici / Welfare Esentasse -->
+    <div class="card" style="margin-bottom: 16px; border-left: 4px solid #10b981;">
+        <h3 style="font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 6px;">
+            <span>🥪 5. Buoni Pasto Elettronici / Welfare Esentasse (Art. 51 TUIR)</span>
+        </h3>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+            <div>
+                <label style="color: #34d399; font-size: 0.8rem; font-weight: 700; display: block; margin-bottom: 4px;">Numero Buoni Pasto (Ticket)</label>
+                <input type="number" step="1" name="ticket_count" id="in_ticket_count" value="{{ paystub.ticket_count or '' }}" placeholder="es. 16"
+                       style="width: 100%; background: #1e293b; color: #34d399; border: 1px solid #059669; border-radius: 8px; padding: 8px 12px; font-weight: 700;">
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Giornate di presenza maturate</small>
+            </div>
+
+            <div>
+                <label style="color: var(--text-muted); font-size: 0.8rem; display: block; margin-bottom: 4px;">Valore Unitario Voucher (€)</label>
+                <input type="number" step="0.50" name="ticket_unit_value" id="in_ticket_unit_value" value="{{ paystub.ticket_unit_value or '8.00' }}" placeholder="8.00"
+                       style="width: 100%; background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 8px 12px;">
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Massimo esentasse: 8,00 €/gg</small>
+            </div>
+
+            <div>
+                <label style="color: #10b981; font-size: 0.8rem; font-weight: 800; display: block; margin-bottom: 4px;">Valore Spesa Esentasse (€)</label>
+                <input type="number" step="0.01" name="ticket_total_value" id="in_ticket_total_value" value="{{ paystub.ticket_total_value or '' }}" placeholder="es. 128.00"
+                       style="width: 100%; background: #0f172a; color: #10b981; border: 1px solid #10b981; border-radius: 8px; padding: 8px 12px; font-weight: 800;">
+                <small style="color: #34d399; font-size: 0.7rem;">Potere d'acquisto netto extra</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 6: Collegamento Bonifico Bancario -->
+    <div class="card" style="margin-bottom: 20px;">
+        <h3 style="font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+            <span>🔗 6. Riconciliazione con Accredito Bancario</span>
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 12px;">
+            Seleziona la transazione del bonifico stipendio per validare che l'importo sia entrato correttamente sul conto corrente.
+        </p>
+
+        {% if candidate_transfers %}
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            {% for ct in candidate_transfers %}
+            <label style="display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.7); border: 1px solid {% if ct.is_exact %}#10b981{% else %}#334155{% endif %}; border-radius: 8px; padding: 10px 14px; cursor: pointer;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="radio" name="matched_tx_id" value="{{ ct.id }}" {% if (paystub.matched_tx_id == ct.id) or (not paystub.matched_tx_id and loop.first) %}checked{% endif %}>
+                    <div>
+                        <div style="font-weight: 700; color: #fff; font-size: 0.85rem;">
+                            {{ ct.description }}
+                        </div>
+                        <div style="color: var(--text-muted); font-size: 0.75rem;">
+                            Data: {{ ct.date }} • Conto: {{ ct.account_name }} ({{ ct.bank_name }})
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 1rem; font-weight: 800; color: #10b981;">
+                        {{ ct.amount|eur }}
+                    </div>
+                    {% if ct.is_exact %}
+                    <span class="badge-tag" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 0.68rem;">Match Esatto</span>
+                    {% endif %}
+                </div>
+            </label>
+            {% endfor %}
+            
+            <label style="display: flex; align-items: center; gap: 10px; background: rgba(15, 23, 42, 0.4); border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; cursor: pointer;">
+                <input type="radio" name="matched_tx_id" value="" {% if not paystub.matched_tx_id and not candidate_transfers %}checked{% endif %}>
+                <span style="color: var(--text-muted); font-size: 0.85rem;">Non abbinare a nessuna transazione adesso (lo farò dopo)</span>
+            </label>
+        </div>
+        {% else %}
+        <p style="color: var(--text-muted); font-size: 0.82rem;">
+            Nessun bonifico in entrata trovato nei conti correnti per il periodo selezionato. Potrai abbinarlo successivamente quando importerai l'estratto conto.
+        </p>
+        <input type="hidden" name="matched_tx_id" value="{{ paystub.matched_tx_id or '' }}">
+        {% endif %}
+    </div>
+
+    <!-- Notes & Submit Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 10px;">
+        <a href="/paystubs?profile_id={{ profile.id }}&year={{ paystub.year or current_year }}" class="btn-secondary" style="text-decoration: none; padding: 10px 20px;">
+            Annulla
+        </a>
+        <button type="submit" class="btn-primary" style="padding: 10px 24px; font-weight: 800; font-size: 0.95rem; border-radius: 8px;">
+            💾 Salva Cedolino
+        </button>
+    </div>
+
+</form>
+
+<script>
+function updateLiveCalculations() {
+    const parse = (id) => {
+        const el = document.getElementById(id);
+        if (!el || !el.value) return 0.0;
+        return parseFloat(el.value) || 0.0;
+    };
+
+    const base = parse('in_base_salary');
+    const cont = parse('in_contingenza');
+    const sup = parse('in_superminimo');
+    const scat = parse('in_scatti');
+    const ot = parse('in_overtime');
+    const bon = parse('in_bonuses');
+    const othAdd = parse('in_other_additions');
+
+    // Auto-update gross if user hasn't explicitly overridden it
+    let calcGross = base + cont + sup + scat + ot + bon + othAdd;
+    const grossEl = document.getElementById('in_gross_amount');
+    
+    if (calcGross > 0) {
+        grossEl.value = calcGross.toFixed(2);
+    }
+    const finalGross = parseFloat(grossEl.value) || calcGross;
+
+    // Taxes
+    const inps = parse('in_inps');
+    const irpGross = parse('in_irpef_gross');
+    const taxDed = parse('in_tax_deductions');
+    
+    let calcIrpNet = parse('in_irpef_net');
+    if (irpGross > 0 && taxDed > 0) {
+        calcIrpNet = Math.max(0, irpGross - taxDed);
+        const irpNetEl = document.getElementById('in_irpef_net');
+        if (irpNetEl && (!irpNetEl.value || irpNetEl.value === '0')) {
+            irpNetEl.value = calcIrpNet.toFixed(2);
+        }
+    }
+
+    const regTax = parse('in_regional_tax');
+    const munTax = parse('in_municipal_tax');
+    const tratt = parse('in_trattamento');
+    const othDed = parse('in_other_deductions');
+    const pensionDip = parse('in_pension_fund_contrib_employee');
+
+    const totalTaxes = inps + calcIrpNet + regTax + munTax + othDed + pensionDip;
+    const calcNet = finalGross - totalTaxes + tratt;
+
+    const netEl = document.getElementById('in_net_amount');
+    if (calcNet > 0) {
+        netEl.value = calcNet.toFixed(2);
+    }
+    const finalNet = parseFloat(netEl.value) || calcNet;
+
+    // Update TFR suggestion
+    const tfrEl = document.getElementById('in_tfr_month');
+    if (tfrEl && (!tfrEl.value || tfrEl.value === '0') && finalGross > 0) {
+        tfrEl.value = (finalGross / 13.5).toFixed(2);
+    }
+
+    // Update Live Banner
+    const fmt = (num) => '€ ' + num.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('liveNetDisplay').innerText = fmt(finalNet);
+    document.getElementById('liveGrossDisplay').innerText = fmt(finalGross);
+    document.getElementById('liveTaxesDisplay').innerText = fmt(totalTaxes);
+    
+    const wedgePct = finalGross > 0 ? ((totalTaxes / finalGross) * 100).toFixed(1) : '0.0';
+    document.getElementById('liveWedgeDisplay').innerText = wedgePct + '%';
+}
+
+function uploadAndFillForm(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    const statusDiv = document.getElementById('instantUploadStatus');
+    
+    statusDiv.style.display = 'block';
+    statusDiv.style.background = 'rgba(99, 102, 241, 0.15)';
+    statusDiv.style.color = '#a5b4fc';
+    statusDiv.style.border = '1px solid rgba(99, 102, 241, 0.3)';
+    statusDiv.innerHTML = `⏳ Analisi di <strong>${file.name}</strong> in corso...`;
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('profile_id', '{{ profile.id }}');
+
+    fetch('/paystubs/upload-pdf', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            statusDiv.style.background = 'rgba(239, 68, 68, 0.15)';
+            statusDiv.style.color = '#f87171';
+            statusDiv.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+            statusDiv.innerHTML = `❌ Errore: ${data.error || 'Impossibile estrarre i dati'}`;
+            return;
+        }
+
+        const d = data.data;
+        statusDiv.style.background = 'rgba(16, 185, 129, 0.15)';
+        statusDiv.style.color = '#34d399';
+        statusDiv.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+        statusDiv.innerHTML = `✅ <strong>Dati estratti con successo!</strong> Voci compilate automaticamente.`;
+
+        // Populate fields
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el && val !== undefined && val !== null && val !== 0 && val !== '') {
+                el.value = val;
+                el.style.borderColor = '#10b981';
+                setTimeout(() => { el.style.borderColor = ''; }, 3000);
+            }
+        };
+
+        if (d.month) document.getElementById('selectMonth').value = d.month;
+        if (d.year) document.getElementById('selectYear').value = d.year;
+
+        setVal('in_base_salary', d.base_salary);
+        setVal('in_contingenza', d.contingenza);
+        setVal('in_superminimo', d.superminimo);
+        setVal('in_scatti', d.scatti_anzianita);
+        setVal('in_overtime', d.overtime_amount);
+        setVal('in_bonuses', d.bonuses);
+        setVal('in_other_additions', d.other_additions);
+        setVal('in_gross_amount', d.gross_amount);
+
+        setVal('in_inps', d.inps_tax);
+        setVal('in_irpef_gross', d.irpef_gross);
+        setVal('in_tax_deductions', d.tax_deductions);
+        setVal('in_irpef_net', d.irpef_net);
+        setVal('in_regional_tax', d.regional_tax);
+        setVal('in_municipal_tax', d.municipal_tax);
+        setVal('in_trattamento', d.trattamento_integrativo);
+        setVal('in_other_deductions', d.other_deductions);
+
+        // Fondo Pensione
+        if (d.pension_fund_name) setVal('in_pension_fund_name', d.pension_fund_name);
+        setVal('in_pension_fund_contrib_employee', d.pension_fund_contrib_employee);
+        setVal('in_pension_fund_contrib_company', d.pension_fund_contrib_company);
+        setVal('in_pension_fund_tfr_month', d.pension_fund_tfr_month);
+        setVal('in_pension_fund_total', d.pension_fund_total);
+
+        // TFR & Ferie
+        setVal('in_tfr_month', d.tfr_month);
+        if (d.tfr_accumulated_total) {
+            setVal('in_tfr_accumulated_total', d.tfr_accumulated_total);
+        }
+        if (d.ferie_residue_ore) {
+            document.querySelector('input[name="ferie_residue_ore"]').value = d.ferie_residue_ore;
+        }
+        if (d.rol_residui_ore) {
+            document.querySelector('input[name="rol_residui_ore"]').value = d.rol_residui_ore;
+        }
+
+        // Buoni Pasto
+        if (d.ticket_count) setVal('in_ticket_count', d.ticket_count);
+        if (d.ticket_unit_value) setVal('in_ticket_unit_value', d.ticket_unit_value);
+        if (d.ticket_total_value) setVal('in_ticket_total_value', d.ticket_total_value);
+
+        // Net Amount
+        setVal('in_net_amount', d.net_amount);
+
+        updateLiveCalculations();
+        updateTicketTotal();
+    })
+    .catch(err => {
+        statusDiv.style.background = 'rgba(239, 68, 68, 0.15)';
+        statusDiv.style.color = '#f87171';
+        statusDiv.innerHTML = `❌ Errore di rete: ${err.message}`;
+    });
+}
+
+function updateTicketTotal() {
+    const count = parseFloat(document.getElementById('in_ticket_count')?.value) || 0;
+    const unit = parseFloat(document.getElementById('in_ticket_unit_value')?.value) || 8.0;
+    const totEl = document.getElementById('in_ticket_total_value');
+    if (totEl && count > 0) {
+        totEl.value = (count * unit).toFixed(2);
+    }
+}
+
+document.getElementById('in_ticket_count')?.addEventListener('input', updateTicketTotal);
+document.getElementById('in_ticket_unit_value')?.addEventListener('input', updateTicketTotal);
+
+document.querySelectorAll('.calc-input').forEach(input => {
+    input.addEventListener('input', updateLiveCalculations);
+});
+
+// Run on page load
+document.addEventListener('DOMContentLoaded', () => {
+    updateLiveCalculations();
+    updateTicketTotal();
+});
+</script>
+
+
+{% endblock %}
+

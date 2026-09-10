@@ -1,0 +1,2111 @@
+{% extends "base.html" %}
+
+{% block title %}Cash Flow & Costi Fissi | FiscMoney{% endblock %}
+
+{% block content %}
+
+<!-- Header & Month Switcher -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+    <div>
+        <h2 style="font-size: 1.3rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+            {% if data.is_current_month %}
+                <span>🎯</span> Cash Flow & Safe-to-Spend ({{ data.month_name_it }})
+            {% else %}
+                <span>📊</span> Analisi & Consuntivo Finanziario ({{ data.month_name_it }})
+            {% endif %}
+        </h2>
+        <p style="color: var(--text-muted); font-size: 0.8rem;">
+            {% if data.is_current_month %}
+                Monitoraggio spese fisse, scadenze del mese e disponibilità spendibile in tempo reale (Safe-to-Spend)
+            {% else %}
+                Analisi retrospettiva delle entrate, spese sostenute, tasso di risparmio e performance del mese
+            {% endif %}
+        </p>
+    </div>
+    
+    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <!-- Dual Tab Switcher: Cash Flow vs Focus & Mutuo -->
+        <div style="display: inline-flex; background: rgba(15, 23, 42, 0.85); border: 1.5px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 4px; gap: 4px; box-shadow: 0 4px 14px rgba(0,0,0,0.35);">
+            <a href="/cashflow" class="btn btn-sm" style="background: linear-gradient(135deg, var(--accent-primary), #2563eb); color: #fff; font-weight: 700; border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);">
+                📊 Cash Flow
+            </a>
+            <a href="/focus" class="btn btn-sm" style="background: transparent; color: #94a3b8; font-weight: 600; border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; transition: all 0.2s ease;">
+                🎯 Focus & Mutuo
+            </a>
+        </div>
+
+        <!-- Ultra-Prominent Month Selector Badge with Quick Navigation -->
+        <div class="month-selector-badge-wrap">
+            <a href="/cashflow?m={{ data.prev_year_month }}" class="month-nav-btn" title="Mese Precedente ({{ data.prev_month_name_it }})">
+                ‹
+            </a>
+            <form method="GET" action="/cashflow" id="monthSelectForm" style="margin: 0; display: inline-flex; align-items: center;">
+                <select name="m" class="month-select-input" onchange="document.getElementById('monthSelectForm').submit()" title="Seleziona Mese da Analizzare">
+                    {% for ym_item in data.available_months_extended %}
+                    <option value="{{ ym_item.value }}" {% if data.year_month == ym_item.value %}selected{% endif %}>
+                        📅 {{ ym_item.label }} {% if ym_item.is_current %}(Mese Corrente){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </form>
+            <a href="/cashflow?m={{ data.next_year_month }}" class="month-nav-btn" title="Mese Successivo ({{ data.next_month_name_it }})">
+                ›
+            </a>
+        </div>
+        
+        {% if data.is_current_month %}
+        <button class="btn btn-sm" onclick="openAddFixedCostModal()" style="background: linear-gradient(135deg, var(--accent-primary), #2563eb); font-size: 0.8rem;">
+            ➕ Nuovo Costo Fisso
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Profile Filter Pills Bar -->
+<div class="profile-bar-container">
+    {% if is_admin or current_mode == 'FULL' %}
+    <a href="/workspace/filter/all" class="profile-pill {% if active_filter == 'all' %}active{% endif %}">
+        <span>👨‍👩‍👧‍👦</span>
+        <span>Tutta la Famiglia</span>
+    </a>
+    {% endif %}
+    {% for p in profiles %}
+    <a href="/workspace/filter/{{ p.id }}" class="profile-pill {% if active_filter == p.id|string %}active{% endif %}">
+        <span>{% if p.is_primary %}👤{% elif 'Figli' in (p.role_title or '') %}👶{% else %}👩{% endif %}</span>
+        <span>{{ p.name }}</span>
+    </a>
+    {% endfor %}
+</div>
+
+<!-- Smart Anomaly & Churn Alerts Banner (Only Current Month) -->
+{% if data.is_current_month and data.smart_alerts and data.smart_alerts|length > 0 %}
+<div style="margin-bottom: 14px;">
+    {% for alert in data.smart_alerts %}
+    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: var(--radius-md); padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.3rem;">🔔</span>
+            <div>
+                <strong style="color: #fff; font-size: 0.85rem;">{{ alert.title }}</strong>
+                <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 2px;">{{ alert.message }}</p>
+            </div>
+        </div>
+        <a href="/transactions" class="btn btn-secondary btn-sm" style="font-size: 0.7rem; padding: 4px 10px; border-color: rgba(245, 158, 11, 0.4); color: #f59e0b; white-space: nowrap;">
+            {{ alert.action_text }} →
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- ======================================================== -->
+<!-- 💡 CONSIDERAZIONI FINANZIARIE & PREVISIONE FINE MESE     -->
+<!-- ======================================================== -->
+{% if monthly_forecast and monthly_forecast.forecast %}
+<div class="card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1.5px solid rgba(59, 130, 246, 0.35); margin-bottom: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);">
+    <!-- Card Header with Title & Settings Badges -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
+                💡
+            </div>
+            <div>
+                <h3 style="font-size: 1.12rem; font-weight: 800; color: #fff; margin: 0;">
+                    Considerazioni Finanziarie & Previsione Fine Mese
+                </h3>
+                <span style="color: var(--text-muted); font-size: 0.76rem; display: block; margin-top: 2px;">
+                    Calcolo del margine di guadagno in base allo stipendio e al trend di spesa
+                </span>
+            </div>
+        </div>
+
+        <!-- Quick Parameter Badges & Edit Button -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 5px 10px; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;">
+                <span>🗂️</span> Saldo: <strong class="privacy-mask" style="color: #38bdf8;" title="Passa sopra per sbirciare">{{ monthly_forecast.forecast.current_balance|eur }}</strong>
+            </div>
+            <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 8px; padding: 5px 10px; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;">
+                <span>💼</span> Stipendio: <strong class="privacy-mask" style="color: #c084fc;" title="Passa sopra per sbirciare">{{ monthly_forecast.forecast.effective_income|eur }}</strong>
+            </div>
+            <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 5px 10px; font-size: 0.78rem; display: flex; align-items: center; gap: 6px;">
+                <span>🎯</span> Target: <strong class="privacy-mask" style="color: #fbbf24;" title="Passa sopra per sbirciare">{{ monthly_forecast.forecast.target_savings|eur }}</strong>
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="openCashflowSettingsModal()" style="font-size: 0.75rem; padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #f8fafc; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                <span>📝</span> Modifica
+            </button>
+        </div>
+    </div>
+
+    <!-- 4 Forecast KPI Boxes Grid -->
+    <div class="forecast-strip">
+        <!-- 1. Giacenza / Margine Mese -->
+        <div class="forecast-box">
+            <span class="forecast-label">Giacenza / Margine Mese</span>
+            <div class="forecast-val" style="color: {% if monthly_forecast.forecast.current_savings_today >= 0 %}#fff{% else %}#f87171{% endif %};">
+                {{ monthly_forecast.forecast.current_savings_today|eur_sign }}
+            </div>
+            <span class="forecast-sub">Stipendio - Uscite ad oggi</span>
+        </div>
+
+        <!-- 2. Stima Risparmio Mese -->
+        <div class="forecast-box highlight-box">
+            <span class="forecast-label">Stima Risparmio Mese</span>
+            <div class="forecast-val" style="color: {% if monthly_forecast.forecast.projected_savings_end >= 0 %}#c084fc{% else %}#f87171{% endif %};">
+                {{ monthly_forecast.forecast.projected_savings_end|eur_sign }}
+            </div>
+            <span class="forecast-sub">
+                {% if monthly_forecast.forecast.is_current_month and monthly_forecast.forecast.days_remaining > 0 %}
+                    Proiezione a fine mese ({{ monthly_forecast.forecast.days_passed }}/{{ monthly_forecast.forecast.days_in_month }} giorni trascorse)
+                {% else %}
+                    Consuntivo chiuso
+                {% endif %}
+            </span>
+        </div>
+
+        <!-- 3. Stima Saldo Conto a Fine Mese -->
+        <div class="forecast-box">
+            <span class="forecast-label">Stima Saldo Conto a Fine Mese</span>
+            <div class="forecast-val" style="color: #38bdf8;">
+                {{ monthly_forecast.forecast.projected_end_balance|eur }}
+            </div>
+            <span class="forecast-sub">
+                {% if monthly_forecast.forecast.is_current_month and monthly_forecast.forecast.days_remaining > 0 %}
+                    Saldo oggi - uscite stimate ({{ monthly_forecast.forecast.days_remaining }} gg restanti)
+                {% else %}
+                    Giacenza effettiva a fine mese
+                {% endif %}
+            </span>
+        </div>
+
+        <!-- 4. Budget Spesa Max Rimanente -->
+        <div class="forecast-box">
+            <span class="forecast-label">Budget Spesa Max Rimanente</span>
+            <div class="forecast-val" style="color: {% if monthly_forecast.forecast.max_daily_budget_remaining > 0 %}#34d399{% else %}#f87171{% endif %};">
+                {{ monthly_forecast.forecast.max_daily_budget_remaining|eur }} / giorno
+            </div>
+            <span class="forecast-sub">
+                {% if monthly_forecast.forecast.is_current_month and monthly_forecast.forecast.days_remaining > 0 %}
+                    Per centrare target {{ monthly_forecast.forecast.target_savings|eur }} ({{ monthly_forecast.forecast.days_remaining }} gg restanti)
+                {% else %}
+                    Mese completato
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <!-- 7 Smart Tactical Considerations List -->
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+        {% for c in monthly_forecast.considerations %}
+        <div class="advisor-insight-item advisor-{{ c.type }}">
+            <div class="advisor-icon">{{ c.icon }}</div>
+            <div class="advisor-content">
+                <div class="advisor-title">{{ c.title }}</div>
+                <div class="advisor-text">{{ c.text|safe }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- ======================================================== -->
+<!-- HERO CARD: MESE CORRENTE (SAFE-TO-SPEND) VS PASSATO (CONSUNTIVO RISPARMIO) -->
+<!-- ======================================================== -->
+{% if data.is_current_month %}
+<!-- 🟢 CURRENT MONTH HERO: SAFE-TO-SPEND COCKPIT -->
+<div class="card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(16, 185, 129, 0.35); margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.2rem;">🎯</span>
+                <span style="color: var(--accent-success); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800;">
+                    Disponibilità Residua del Mese (Safe-to-Spend)
+                </span>
+            </div>
+            
+            <div class="privacy-mask" style="font-size: 2.2rem; font-weight: 800; color: #fff; margin-top: 4px; letter-spacing: -0.5px;" title="Passa sopra per sbirciare">
+                {{ data.monthly_safe_to_spend|eur }}
+            </div>
+            
+            <p style="color: var(--text-main); font-size: 0.85rem; margin-top: 4px; max-width: 580px; line-height: 1.4;">
+                Basato sul tuo <strong>flusso di reddito mensile atteso</strong>: puoi spendere liberamente <strong style="color: var(--accent-success); font-size: 1rem;">{{ data.daily_safe_budget|eur }} / giorno</strong> per i restanti <strong>{{ data.days_remaining }} giorni</strong> del mese (per svago, spesa e shopping) senza sforare il budget delle spese fisse!
+            </p>
+        </div>
+
+        <!-- Monthly Budget Breakdown Box -->
+        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 14px; min-width: 270px; flex: 1; max-width: 420px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Calcolo Budget Mese ({{ data.year_month }})</span>
+                <span class="badge-tag" style="font-size: 0.65rem; background: rgba(59, 130, 246, 0.15); color: var(--accent-primary);">Clicca per dettagli</span>
+            </div>
+            
+            <!-- Inflow Row -->
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px; padding: 4px 6px; border-radius: 4px;">
+                <span style="color: var(--text-muted);">💶 Entrate Attese (Stipendio / Base)</span>
+                <strong style="color: #fff;">{{ data.expected_month_income|eur_sign }}</strong>
+            </div>
+
+            <!-- Fixed Costs Row (Clickable Trigger) -->
+            <div onclick="toggleCascade('cascadeFixedCosts', 'arrowFixed')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 6px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); transition: all 0.2s ease;" title="Clicca per aprire le singole voci di costo fisso">
+                <div style="display: flex; align-items: center; gap: 6px; color: #f59e0b;">
+                    <span id="arrowFixed" style="font-size: 0.7rem; transition: transform 0.2s ease;">▶</span>
+                    <span style="font-weight: 600;">📌 Costi Fissi Questo Mese</span>
+                </div>
+                <strong style="color: #f59e0b;">{{ (-data.total_fixed_expenses_expected)|eur }}</strong>
+            </div>
+
+            <!-- Cascade Drawer: Fixed Costs Breakdown -->
+            <div id="cascadeFixedCosts" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 8px; max-height: 220px; overflow-y: auto;">
+                <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase;">
+                    Dettaglio Costi Fissi ({{ data.fixed_items|length }} voci):
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    {% for it in data.fixed_items %}
+                    {% if not it.is_income %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                            <span>{% if it.is_paid %}🟢{% else %}⏳{% endif %}</span>
+                            <span style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">{{ it.name }}</span>
+                            <span style="color: var(--text-muted); font-size: 0.65rem;">(g.{{ it.due_day }})</span>
+                        </div>
+                        <div style="text-align: right; white-space: nowrap;">
+                            <strong style="color: {% if it.is_paid %}var(--accent-success){% else %}#f59e0b{% endif %};">
+                                {{ (it.actual_amount if it.is_paid else it.expected_amount)|eur }}
+                            </strong>
+                            <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">
+                                {% if it.is_paid %}Pagato{% else %}In attesa{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Planned Deadlines Row (if any) -->
+            {% if data.total_deadlines_expected > 0 %}
+            <div onclick="toggleCascade('cascadeDeadlines', 'arrowDl')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 6px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); transition: all 0.2s ease;" title="Clicca per aprire le scadenze straordinarie del mese">
+                <div style="display: flex; align-items: center; gap: 6px; color: #c084fc;">
+                    <span id="arrowDl" style="font-size: 0.7rem; transition: transform 0.2s ease;">▶</span>
+                    <span style="font-weight: 600;">📅 Scadenze Programmate Mese</span>
+                </div>
+                <strong style="color: #c084fc;">{{ (-data.total_deadlines_pending)|eur }}</strong>
+            </div>
+
+            <!-- Cascade Drawer: Planned Deadlines Breakdown -->
+            <div id="cascadeDeadlines" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 8px; max-height: 180px; overflow-y: auto;">
+                <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase;">
+                    Scadenze del Mese ({{ data.planned_deadlines|length }} voci):
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    {% for dl in data.planned_deadlines %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                            <span>{% if dl.is_paid %}🟢{% else %}⏳{% endif %}</span>
+                            <span style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">{{ dl.name }}</span>
+                            <span style="color: var(--text-muted); font-size: 0.65rem;">(g.{{ dl.due_day }})</span>
+                        </div>
+                        <div style="text-align: right; white-space: nowrap;">
+                            <strong style="color: {% if dl.is_paid %}var(--accent-success){% else %}#c084fc{% endif %};">
+                                {{ (dl.actual_amount if dl.is_paid else dl.expected_amount)|eur }}
+                            </strong>
+                            <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">
+                                {% if dl.is_paid %}Pagata{% else %}In attesa{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Variable Expenses Row (Clickable Trigger) -->
+            <div onclick="toggleCascade('cascadeVariableExpenses', 'arrowVar')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 8px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); transition: all 0.2s ease;" title="Clicca per aprire la lista delle spese variabili del mese">
+                <div style="display: flex; align-items: center; gap: 6px; color: #f87171;">
+                    <span id="arrowVar" style="font-size: 0.7rem; transition: transform 0.2s ease;">▶</span>
+                    <span style="font-weight: 600;">💳 Spese Variabili Già Sostenute</span>
+                </div>
+                <strong style="color: #f87171;">{{ (-data.variable_expenses)|eur }}</strong>
+            </div>
+
+            <!-- Cascade Drawer: Variable Expenses Breakdown -->
+            <div id="cascadeVariableExpenses" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 8px; max-height: 240px; overflow-y: auto;">
+                <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase;">
+                    Transazioni Variabili del Mese ({{ data.variable_transactions|length }} spese):
+                </div>
+                {% if data.variable_transactions|length == 0 %}
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-align: center; padding: 8px;">Nessuna spesa variabile registrata finora in questo mese.</div>
+                {% else %}
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    {% for vt in data.variable_transactions %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="overflow: hidden; padding-right: 8px;">
+                            <div style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;" title="{{ vt.description }}">{{ vt.description }}</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">📅 {{ vt.date }} • {{ vt.category }}</div>
+                        </div>
+                        <div style="text-align: right; white-space: nowrap;">
+                            <strong style="color: #f87171;">{{ (-vt.amount)|eur }}</strong>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Total Safe-to-Spend Row -->
+            <div style="border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 6px; display: flex; justify-content: space-between; font-size: 0.85rem;">
+                <span style="color: var(--accent-success); font-weight: 700;">= Safe-to-Spend Rimasto</span>
+                <strong style="color: var(--accent-success); font-weight: 800;">{{ data.monthly_safe_to_spend|eur }}</strong>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- 📊 PAST MONTH HERO: FINANCIAL RETROSPECTIVE & SAVINGS RESULT -->
+<div class="card" style="background: linear-gradient(135deg, {% if data.net_savings >= 0 %}rgba(16, 185, 129, 0.12){% else %}rgba(239, 68, 68, 0.12){% endif %}, rgba(15, 23, 42, 0.95)); border: 1.5px solid {% if data.net_savings >= 0 %}rgba(16, 185, 129, 0.35){% else %}rgba(239, 68, 68, 0.35){% endif %}; margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.2rem;">{% if data.net_savings >= 0 %}📈{% else %}📉{% endif %}</span>
+                <span style="color: {% if data.net_savings >= 0 %}var(--accent-success){% else %}#f87171{% endif %}; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800;">
+                    {% if data.net_savings >= 0 %}Risparmio Netto & Bilancio Finale ({{ data.month_name_it }}){% else %}Disavanzo Netto Finale ({{ data.month_name_it }}){% endif %}
+                </span>
+            </div>
+            
+            <div class="privacy-mask" style="font-size: 2.2rem; font-weight: 800; color: {% if data.net_savings >= 0 %}#fff{% else %}#f87171{% endif %}; margin-top: 4px; letter-spacing: -0.5px;" title="Passa sopra per sbirciare">
+                {{ data.net_savings|eur_sign }}
+            </div>
+
+            <div style="display: inline-flex; align-items: center; gap: 6px; background: {% if data.net_savings >= 0 %}rgba(16, 185, 129, 0.15){% else %}rgba(239, 68, 68, 0.15){% endif %}; border: 1px solid {% if data.net_savings >= 0 %}rgba(16, 185, 129, 0.3){% else %}rgba(239, 68, 68, 0.3){% endif %}; border-radius: var(--radius-sm); padding: 4px 10px; margin-top: 6px;">
+                <strong style="color: {% if data.net_savings >= 0 %}var(--accent-success){% else %}#f87171{% endif %}; font-size: 0.8rem;">{{ data.verdict_title }}</strong>
+                <span style="color: var(--text-muted); font-size: 0.75rem;">• {{ data.verdict_desc }}</span>
+            </div>
+            
+            <p style="color: var(--text-main); font-size: 0.85rem; margin-top: 8px; max-width: 580px; line-height: 1.4;">
+                Consuntivo chiuso di <strong>{{ data.month_name_it }}</strong>: hai incassato un totale di <strong>{{ data.actual_month_income|eur_sign }}</strong> a fronte di <strong>{{ (-data.actual_month_expenses)|eur }}</strong> di uscite complessive sostenute. Spesa media giornaliera effettiva: <strong style="color: #fff;">{{ data.daily_avg_spend|eur }} / giorno</strong> su {{ data.days_in_month }} giorni.
+            </p>
+        </div>
+
+        <!-- Historical Breakdown Box (Interactive Drill-down) -->
+        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 14px; min-width: 270px; flex: 1; max-width: 420px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Riepilogo Consuntivo ({{ data.month_name_it }})</span>
+                <span class="badge-tag" style="font-size: 0.65rem; background: rgba(59, 130, 246, 0.15); color: var(--accent-primary);">Clicca per dettagli</span>
+            </div>
+            
+            <!-- Inflow Row -->
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px; padding: 4px 6px; border-radius: 4px;">
+                <span style="color: var(--text-muted);">💶 Entrate Incassate nel Mese</span>
+                <strong style="color: var(--accent-success);">{{ data.actual_month_income|eur_sign }}</strong>
+            </div>
+
+            <!-- Fixed Costs Row (Clickable Trigger) -->
+            <div onclick="toggleCascade('cascadeFixedCosts', 'arrowFixed')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 6px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); transition: all 0.2s ease;" title="Clicca per aprire le singole voci di costo fisso pagate">
+                <div style="display: flex; align-items: center; gap: 6px; color: #f59e0b;">
+                    <span id="arrowFixed" style="font-size: 0.7rem; transition: transform 0.2s ease;">▶</span>
+                    <span style="font-weight: 600;">📌 Costi Fissi & Utenze Pagate</span>
+                </div>
+                <strong style="color: #f59e0b;">{{ (-data.total_fixed_expenses_paid)|eur }}</strong>
+            </div>
+
+            <!-- Cascade Drawer: Fixed Costs Breakdown -->
+            <div id="cascadeFixedCosts" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 8px; max-height: 220px; overflow-y: auto;">
+                <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase;">
+                    Costi Fissi Rilevati ({{ data.fixed_items|length }} voci):
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    {% for it in data.fixed_items %}
+                    {% if not it.is_income %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                            <span>{% if it.is_paid %}🟢{% else %}⏳{% endif %}</span>
+                            <span style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">{{ it.name }}</span>
+                            <span style="color: var(--text-muted); font-size: 0.65rem;">(g.{{ it.due_day }})</span>
+                        </div>
+                        <div style="text-align: right; white-space: nowrap;">
+                            <strong style="color: {% if it.is_paid %}var(--accent-success){% else %}#f59e0b{% endif %};">
+                                {{ (-(it.actual_amount if it.is_paid else it.expected_amount))|eur }}
+                            </strong>
+                            <span style="font-size: 0.65rem; color: var(--text-muted); display: block;">
+                                {% if it.is_paid %}Pagato{% else %}Non comparso{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Planned Deadlines Row (if any) -->
+            {% if data.total_deadlines_paid > 0 %}
+            <div onclick="toggleCascade('cascadeDeadlines', 'arrowDl')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 6px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); transition: all 0.2s ease;" title="Clicca per aprire le scadenze saldate nel mese">
+                <div style="display: flex; align-items: center; gap: 6px; color: #c084fc;">
+                    <span id="arrowDl" style="font-size: 0.7rem; transition: transform 0.2s ease;">▶</span>
+                    <span style="font-weight: 600;">📅 Scadenze Straordinarie Saldate</span>
+                </div>
+                <strong style="color: #c084fc;">{{ (-data.total_deadlines_paid)|eur }}</strong>
+            </div>
+
+            <!-- Cascade Drawer: Planned Deadlines Breakdown -->
+            <div id="cascadeDeadlines" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 8px; max-height: 180px; overflow-y: auto;">
+                <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase;">
+                    Scadenze del Mese ({{ data.planned_deadlines|length }} voci):
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    {% for dl in data.planned_deadlines %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                            <span>{% if dl.is_paid %}🟢{% else %}⏳{% endif %}</span>
+                            <span style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">{{ dl.name }}</span>
+                        </div>
+                        <div style="text-align: right; white-space: nowrap;">
+                            <strong style="color: var(--accent-success);">
+                                {{ (-(dl.actual_amount if dl.is_paid else dl.expected_amount))|eur }}
+                            </strong>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Variable Expenses Row (Clickable Trigger) -->
+            <div onclick="toggleCascade('cascadeVariableExpenses', 'arrowVar')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 8px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); transition: all 0.2s ease;" title="Clicca per aprire la lista delle spese variabili del mese">
+                <div style="display: flex; align-items: center; gap: 6px; color: #f87171;">
+                    <span id="arrowVar" style="font-size: 0.7rem; transition: transform 0.2s ease;">▶</span>
+                    <span style="font-weight: 600;">💳 Spese Variabili Sostenute</span>
+                </div>
+                <strong style="color: #f87171;">{{ (-data.variable_expenses)|eur }}</strong>
+            </div>
+
+            <!-- Cascade Drawer: Variable Expenses Breakdown -->
+            <div id="cascadeVariableExpenses" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 8px; max-height: 240px; overflow-y: auto;">
+                <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase;">
+                    Transazioni Variabili di {{ data.month_name_it }} ({{ data.variable_transactions|length }} spese):
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    {% for vt in data.variable_transactions %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="overflow: hidden; padding-right: 8px;">
+                            <div style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;" title="{{ vt.description }}">{{ vt.description }}</div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">📅 {{ vt.date }} • {{ vt.category }}</div>
+                        </div>
+                        <div style="text-align: right; white-space: nowrap;">
+                            <strong style="color: #f87171;">{{ (-vt.amount)|eur }}</strong>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Total Savings Result Row -->
+            <div style="border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 6px; display: flex; justify-content: space-between; font-size: 0.85rem;">
+                <span style="color: {% if data.net_savings >= 0 %}var(--accent-success){% else %}#f87171{% endif %}; font-weight: 700;">
+                    = Risparmio Netto Accantonato
+                </span>
+                <strong style="color: {% if data.net_savings >= 0 %}var(--accent-success){% else %}#f87171{% endif %}; font-weight: 800;">
+                    {{ data.net_savings|eur_sign }}
+                </strong>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ======================================================== -->
+<!-- 4 KEY METRICS OF THE MONTH (CURRENT VS PAST TENSE)       -->
+<!-- ======================================================== -->
+<div class="kpi-grid" style="margin-bottom: 16px;">
+    {% if data.is_current_month %}
+        <!-- 1. Entrate Mese Corrente -->
+        <div class="kpi-card" style="border-left: 3px solid var(--accent-success);">
+            <span class="kpi-label">💶 Entrate Attese Mese</span>
+            <div class="kpi-value amount-income">{{ data.expected_month_income|eur_sign }}</div>
+            <small style="color: var(--text-muted); font-size: 0.7rem;">
+                {% if data.actual_month_income > 0 %}Registrate finora: {{ data.actual_month_income|eur_sign }}{% else %}Stipendio base / media ultimi 3 mesi{% endif %}
+            </small>
+        </div>
+
+        <!-- 2. Spese Sostenute Finora -->
+        <div class="kpi-card" style="border-left: 3px solid #f87171;">
+            <span class="kpi-label">💳 Spese Sostenute Finora</span>
+            <div class="kpi-value amount-expense">{{ (-data.actual_month_expenses)|eur }}</div>
+            <small style="color: var(--text-muted); font-size: 0.7rem;">
+                Fisse: {{ data.total_fixed_expenses_paid|eur }} • Var: {{ data.variable_expenses|eur }}
+            </small>
+        </div>
+
+        <!-- 3. Costi Fissi & Scadenze Previsti -->
+        <div class="kpi-card" style="border-left: 3px solid #f59e0b;">
+            <span class="kpi-label">📌 Fissi & Scadenze Mese</span>
+            <div class="kpi-value" style="color: #f59e0b;">{{ (data.total_fixed_expenses_expected + data.total_deadlines_expected)|eur }}</div>
+            <small style="color: var(--text-muted); font-size: 0.7rem;">
+                🟢 {{ (data.total_fixed_expenses_paid + data.total_deadlines_paid)|eur }} pagati • ⏳ {{ (data.total_fixed_expenses_pending + data.total_deadlines_pending)|eur }} residui
+            </small>
+        </div>
+
+        <!-- 4. Riserva Liquida Totale -->
+        <div class="kpi-card" style="border-left: 3px solid var(--accent-primary);">
+            <span class="kpi-label">🏦 Riserva Liquida Conti</span>
+            <div class="kpi-value" style="color: var(--accent-primary);">{{ data.total_liquid_reserve|eur }}</div>
+            <small style="color: var(--text-muted); font-size: 0.7rem;">
+                Patrimonio liquido accumulato (Totalone)
+            </small>
+        </div>
+    {% else %}
+        <!-- 1. Entrate Effettive del Mese Passato -->
+        <div class="kpi-card" style="border-left: 3px solid var(--accent-success);">
+            <span class="kpi-label">💶 Entrate Incassate</span>
+            <div class="kpi-value amount-income">{{ data.actual_month_income|eur_sign }}</div>
+            <small style="color: var(--text-muted); font-size: 0.7rem;">
+                Totale entrate registrate nel mese
+            </small>
+        </div>
+
+        <!-- 2. Spese Complessive del Mese Passato -->
+        <div class="kpi-card" style="border-left: 3px solid #f87171;">
+            <span class="kpi-label">💳 Spese Complessive</span>
+            <div class="kpi-value amount-expense">{{ (-data.actual_month_expenses)|eur }}</div>
+            <small style="color: var(--text-muted); font-size: 0.7rem;">
+                Fisse: {{ data.total_fixed_expenses_paid|eur }} • Var: {{ data.variable_expenses|eur }}
+            </small>
+        </div>
+
+        <!-- 3. Tasso di Risparmio del Mese Passato -->
+        <div class="kpi-card" style="border-left: 3px solid {% if data.savings_rate >= 0 %}#a855f7{% else %}#ef4444{% endif %};">
+            <span class="kpi-label">📊 Tasso di Risparmio</span>
+            <div class="kpi-value" style="color: {% if data.savings_rate >= 0 %}#c084fc{% else %}#f87171{% endif %};">
+                {{ "%.1f"|format(data.savings_rate) }}%
+            </div>
+            <small style="color: var(--text-muted); font-size: 0.7rem;">
+                {{ data.net_savings|eur_sign }} accantonati su entrate
+            </small>
+        </div>
+
+        <!-- 4. Riserva Liquida a Fine Mese -->
+        <div class="kpi-card" style="border-left: 3px solid var(--accent-primary);">
+            <span class="kpi-label">🏦 Riserva Liquida Conti</span>
+            <div class="kpi-value" style="color: var(--accent-primary);">{{ data.total_liquid_reserve|eur }}</div>
+            <small style="color: var(--text-muted); font-size: 0.7rem;">
+                Patrimonio liquido accumulato
+            </small>
+        </div>
+    {% endif %}
+</div>
+
+<!-- ======================================================== -->
+<!-- INTERACTIVE EXPENSE COMPOSITION & CATEGORY DRILL-DOWN    -->
+<!-- ======================================================== -->
+{% if data.category_breakdown|length > 0 %}
+<div id="category-composition-card" class="card" style="background: rgba(15, 23, 42, 0.7); border: 1.5px solid var(--border-color); margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.3rem;">📊</span>
+            <div>
+                <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">
+                    Composizione & Categorie di Spesa di {{ data.month_name_it }}
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.78rem; margin: 2px 0 0 0;">
+                    Ripartizione analitica per macro-categoria con drill-down spese e confronto mese precedente
+                </p>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <!-- In-Card Month Selector Pill -->
+            <div class="card-month-select-pill" title="Cambia mese per l'analisi categorie">
+                <a href="/cashflow?m={{ data.prev_year_month }}#category-composition-card" class="month-nav-btn" title="Mese Precedente ({{ data.prev_month_name_it }})">
+                    ‹
+                </a>
+                <form method="GET" action="/cashflow#category-composition-card" id="cardMonthSelectForm" style="margin: 0; display: inline-flex; align-items: center;">
+                    <select name="m" class="month-select-input" onchange="document.getElementById('cardMonthSelectForm').submit()" title="Seleziona Mese da Analizzare">
+                        {% for ym_item in data.available_months_extended %}
+                        <option value="{{ ym_item.value }}" {% if data.year_month == ym_item.value %}selected{% endif %}>
+                            📅 {{ ym_item.label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </form>
+                <a href="/cashflow?m={{ data.next_year_month }}#category-composition-card" class="month-nav-btn" title="Mese Successivo ({{ data.next_month_name_it }})">
+                    ›
+                </a>
+            </div>
+
+            {% if data.mom_diff_pct is not none %}
+                <span class="badge-tag" style="background: {% if data.mom_diff_expenses > 0 %}rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);{% elif data.mom_diff_expenses < 0 %}rgba(16, 185, 129, 0.15); color: var(--accent-success); border: 1px solid rgba(16, 185, 129, 0.3);{% else %}rgba(255,255,255,0.08); color: #fff;{% endif %} font-size: 0.72rem; font-weight: 700;">
+                    {% if data.mom_diff_expenses > 0 %}
+                        ▲ +{{ "%.1f"|format(data.mom_diff_pct) }}% (+{{ data.mom_diff_expenses|eur }}) vs {{ data.prev_month_name_it }}
+                    {% elif data.mom_diff_expenses < 0 %}
+                        ▼ {{ "%.1f"|format(data.mom_diff_pct) }}% ({{ data.mom_diff_expenses|eur }}) vs {{ data.prev_month_name_it }}
+                    {% else %}
+                        = In linea con {{ data.prev_month_name_it }}
+                    {% endif %}
+                </span>
+            {% endif %}
+            <span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; font-size: 0.72rem;">
+                📌 Fissi: {{ "%.1f"|format(data.total_fixed_expenses_paid / data.actual_month_expenses * 100) if data.actual_month_expenses > 0 else 0 }}%
+            </span>
+            <span class="badge-tag" style="background: rgba(239, 68, 68, 0.15); color: #f87171; font-size: 0.72rem;">
+                💳 Variabili: {{ "%.1f"|format(data.variable_expenses / data.actual_month_expenses * 100) if data.actual_month_expenses > 0 else 0 }}%
+            </span>
+        </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- DAILY EXPENSES BAR CHART & PEAKS (GIORNO PER GIORNO)    -->
+    <!-- ======================================================== -->
+    <div style="background: rgba(0,0,0,0.35); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; margin-bottom: 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.15rem;">📊</span>
+                    <strong style="color: #fff; font-size: 0.95rem;">Spese Giorno per Giorno (Picchi del Mese)</strong>
+                </div>
+                <!-- Legend -->
+                <div style="display: flex; align-items: center; gap: 12px; font-size: 0.72rem; color: #94a3b8;">
+                    <span style="display: inline-flex; align-items: center; gap: 5px;">
+                        <span style="width: 10px; height: 10px; border-radius: 2px; background: rgba(168, 85, 247, 0.35); border: 1px solid rgba(168, 85, 247, 0.7); display: inline-block;"></span>
+                        Weekend (Sab/Dom)
+                    </span>
+                    <span style="display: inline-flex; align-items: center; gap: 5px;">
+                        <span style="width: 10px; height: 10px; border-radius: 2px; background: rgba(56, 189, 248, 0.35); border: 1px dashed rgba(56, 189, 248, 0.9); display: inline-block;"></span>
+                        Oggi
+                    </span>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <!-- Today Badge -->
+                <span class="badge-tag" style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; font-size: 0.72rem; font-weight: 700;">
+                    📅 Oggi: {{ data.today_formatted_it }}
+                </span>
+
+                <!-- Exclude Mortgage Toggle Checkbox -->
+                {% if data.has_mortgage_in_month or data.total_mortgage_month > 0 %}
+                <label style="display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.14); padding: 4px 10px; border-radius: 8px; cursor: pointer; user-select: none; font-size: 0.75rem; color: #cbd5e1; font-weight: 600;" title="Escludi la rata del mutuo per rendere le proporzioni delle spese quotidiane più gestibili">
+                    <input type="checkbox" id="excludeMortgageCheckbox" onchange="toggleExcludeMortgage(this.checked)" style="accent-color: #38bdf8; cursor: pointer; width: 15px; height: 15px;">
+                    <span>🧹 Escludi Mutuo</span>
+                </label>
+                {% endif %}
+
+                <!-- Peak Expense Badge -->
+                <span id="dailyPeakBadge" class="badge-tag" style="background: rgba(244, 63, 94, 0.18); border: 1px solid rgba(244, 63, 94, 0.4); color: #fb7185; font-size: 0.72rem; font-weight: 800;">
+                    ⏱️ Picco: <span id="dailyPeakText">{{ data.peak_label_full }} (€ {{ "%.2f"|format(data.peak_amount_full)|replace('.', ',') }})</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div style="position: relative; width: 100%; height: 210px;">
+            <canvas id="dailyExpensesBarChart"></canvas>
+        </div>
+        <div style="text-align: center; margin-top: 4px;">
+            <span style="font-size: 0.68rem; color: var(--text-muted);">Data & Giorno della Settimana</span>
+        </div>
+    </div>
+
+    <!-- Main 2-Column Layout: Donut Chart on Left + Interactive Cards on Right -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; align-items: start;">
+        
+        <!-- Left: Donut Chart & Monthly Total Card -->
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div style="position: relative; width: 100%; max-width: 240px; height: 240px; display: flex; align-items: center; justify-content: center;">
+                <canvas id="categoryDonutChart"></canvas>
+            </div>
+            
+            <div style="margin-top: 14px; text-align: center; width: 100%; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Spese Totali del Mese</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #fff; margin-top: 2px;">{{ data.actual_month_expenses|eur }}</div>
+                {% if data.prev_month_expenses > 0 %}
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">
+                    Mese prec. ({{ data.prev_month_name_it }}): <strong style="color: #cbd5e1;">{{ data.prev_month_expenses|eur }}</strong>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right: Interactive Category List with Accordion Drill-down -->
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+            {% for cat in data.category_breakdown %}
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-left: 4px solid {{ cat.color }}; border-radius: var(--radius-md); overflow: hidden; transition: all 0.2s ease;">
+                
+                <!-- Category Summary Header (Clickable) -->
+                <div onclick="toggleCategoryDrawer('catDrawer{{ loop.index }}', 'catArrow{{ loop.index }}')" 
+                     style="padding: 12px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; user-select: none;"
+                     onmouseover="this.style.background='rgba(255,255,255,0.02)';"
+                     onmouseout="this.style.background='transparent';">
+                    
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.3rem;">{{ cat.icon }}</span>
+                        <div>
+                            <strong style="color: #fff; font-size: 0.92rem; display: block;">{{ cat.name }}</strong>
+                            <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                                {% if cat.diff_pct is not none %}
+                                    {% if cat.diff_amount > 0 %}
+                                        <span style="font-size: 0.68rem; color: #f87171; font-weight: 600;">▲ +{{ "%.1f"|format(cat.diff_pct) }}% (+{{ cat.diff_amount|eur }}) vs {{ data.prev_month_name_it }}</span>
+                                    {% elif cat.diff_amount < 0 %}
+                                        <span style="font-size: 0.68rem; color: #34d399; font-weight: 600;">▼ {{ "%.1f"|format(cat.diff_pct) }}% ({{ cat.diff_amount|eur }}) vs {{ data.prev_month_name_it }}</span>
+                                    {% else %}
+                                        <span style="font-size: 0.68rem; color: var(--text-muted);">= Stabile vs {{ data.prev_month_name_it }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span style="font-size: 0.68rem; color: #94a3b8;">✨ Prima registrazione</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="text-align: right;">
+                            <div style="font-weight: 800; font-size: 1.05rem; color: #fff;">{{ cat.amount|eur }}</div>
+                            <span style="color: var(--text-muted); font-size: 0.72rem; font-weight: 600;">{{ cat.percent }}% del totale</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; color: #cbd5e1;">
+                            <span>{{ cat.tx_count }} moviment{{ 'o' if cat.tx_count == 1 else 'i' }}</span>
+                            <span id="catArrow{{ loop.index }}" style="font-size: 0.65rem; transition: transform 0.2s ease;">▶</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress percentage bar -->
+                <div style="background: rgba(255,255,255,0.04); height: 4px; width: 100%;">
+                    <div style="background: {{ cat.color }}; height: 100%; width: {{ cat.percent }}%;"></div>
+                </div>
+
+                <!-- Accordion Drawer: Transaction List for this category -->
+                <div id="catDrawer{{ loop.index }}" style="display: none; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(255,255,255,0.05); padding: 10px 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                        <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">
+                            Dettaglio spese in {{ cat.name }} ({{ cat.transactions|length }}):
+                        </div>
+                        
+                        <!-- Instant Sort Switcher -->
+                        <div style="display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.05); padding: 2px 4px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);">
+                            <span style="font-size: 0.65rem; color: var(--text-muted); padding-left: 2px;">Ordina:</span>
+                            <button type="button" onclick="sortDrawerItems('catList{{ loop.index }}', 'amount', this)" class="btn-sort" style="background: rgba(59, 130, 246, 0.3); border: 1px solid rgba(59, 130, 246, 0.6); color: #fff; font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; cursor: pointer;">
+                                🔢 Importo
+                            </button>
+                            <button type="button" onclick="sortDrawerItems('catList{{ loop.index }}', 'date', this)" class="btn-sort" style="background: transparent; border: 1px solid transparent; color: #94a3b8; font-size: 0.68rem; padding: 2px 6px; border-radius: 4px; cursor: pointer;">
+                                📅 Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="catList{{ loop.index }}" style="display: flex; flex-direction: column; gap: 6px; max-height: 250px; overflow-y: auto;">
+                        {% for tx in cat.transactions %}
+                        <div class="drawer-tx-item" data-amount="{{ tx.amount }}" data-date="{{ tx.date }}"
+                             onclick="openCashflowReclassifyModal({{ tx.id }}, '{{ tx.description|replace('\\', '\\\\')|replace('\'', '\\\'') }}', {{ tx.amount }}, '{{ tx.date }}', '{{ tx.category|replace('\'', '\\\'') }}', '{{ (tx.sub_category or '')|replace('\'', '\\\'') }}', '{{ (tx.tags or '')|replace('\'', '\\\'') }}')"
+                             style="display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; background: rgba(255,255,255,0.02); border-radius: 8px; font-size: 0.78rem; border: 1px solid rgba(255,255,255,0.04); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); margin-bottom: 3px;"
+                             onmouseover="this.style.background='rgba(59, 130, 246, 0.08)'; this.style.borderColor='rgba(59, 130, 246, 0.3)';"
+                             onmouseout="this.style.background='rgba(255,255,255,0.02)'; this.style.borderColor='rgba(255,255,255,0.04)';"
+                             title="Clicca per riclassificare questa spesa">
+                            <div style="overflow: hidden; padding-right: 8px; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 0.85rem; opacity: 0.75;" title="Riclassifica">⚡</span>
+                                <div>
+                                    <div style="color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px;" title="{{ tx.description }}">
+                                        {{ tx.description }}
+                                    </div>
+                                    <div style="color: var(--text-muted); font-size: 0.68rem; margin-top: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                        <span>📅 {{ tx.date }}</span>
+                                        {% if tx.sub_category %}
+                                        <span style="color: #94a3b8; background: rgba(255,255,255,0.06); padding: 0 4px; border-radius: 4px;">{{ tx.sub_category }}</span>
+                                        {% endif %}
+                                        {% if tx.tags %}
+                                        <span style="color: #38bdf8; font-weight: 600;">{{ tx.tags }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                                <strong style="color: #f87171; font-weight: 700; font-size: 0.82rem;">-{{ tx.amount|eur }}</strong>
+                                <span class="badge-tag" style="font-size: 0.65rem; padding: 2px 6px; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.35); color: #818cf8; border-radius: 6px; font-weight: 600;">
+                                    Modifica ✏️
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Placeholder when 0 expenses recorded yet -->
+<div id="category-composition-card" class="card" style="background: rgba(15, 23, 42, 0.7); border: 1.5px dashed var(--border-color); margin-bottom: 16px; text-align: center; padding: 24px;">
+    <span style="font-size: 2rem;">📊</span>
+    <h3 style="font-size: 1rem; font-weight: 700; color: #fff; margin: 8px 0 4px 0;">Nessuna Spesa Registrata per {{ data.month_name_it }}</h3>
+    <p style="color: var(--text-muted); font-size: 0.8rem; max-width: 450px; margin: 0 auto 14px auto;">
+        Appena importerai i movimenti bancari o registrerai uscite per questo mese, vedrai comparire qui il grafico ad anello, la ripartizione per categoria e il confronto con {{ data.prev_month_name_it }}.
+    </p>
+    <div style="display: flex; justify-content: center;">
+        <div class="card-month-select-pill" title="Seleziona un altro mese">
+            <a href="/cashflow?m={{ data.prev_year_month }}#category-composition-card" class="month-nav-btn" title="Mese Precedente ({{ data.prev_month_name_it }})">
+                ‹
+            </a>
+            <form method="GET" action="/cashflow#category-composition-card" id="emptyMonthSelectForm" style="margin: 0; display: inline-flex; align-items: center;">
+                <select name="m" class="month-select-input" onchange="document.getElementById('emptyMonthSelectForm').submit()" title="Seleziona Mese da Analizzare">
+                    {% for ym_item in data.available_months_extended %}
+                    <option value="{{ ym_item.value }}" {% if data.year_month == ym_item.value %}selected{% endif %}>
+                        📅 {{ ym_item.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </form>
+            <a href="/cashflow?m={{ data.next_year_month }}#category-composition-card" class="month-nav-btn" title="Mese Successivo ({{ data.next_month_name_it }})">
+                ›
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ======================================================== -->
+<!-- ======================================================== -->
+<!-- SCADENZE PROGRAMMATE ATTIVE PER QUESTO MESE               -->
+<!-- ======================================================== -->
+{% if data.planned_deadlines|length > 0 %}
+<div class="card" style="margin-bottom: 16px; border: 1.5px solid rgba(168, 85, 247, 0.35);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">📅</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff; margin: 0;">
+                {% if data.is_current_month %}
+                    Scadenze & Tasse Programmate per {{ data.year_month }}
+                {% else %}
+                    Scadenze Straordinarie di {{ data.month_name_it }} (Consuntivo)
+                {% endif %}
+            </h3>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="color: var(--accent-success); font-weight: 600; font-size: 0.75rem;">
+                🟢 Saldate: {{ data.total_deadlines_paid|eur }}
+            </span>
+            {% if data.is_current_month %}
+            <span style="color: #c084fc; font-weight: 600; font-size: 0.75rem;">
+                ⏳ Da Saldare: {{ data.total_deadlines_pending|eur }}
+            </span>
+            <button class="btn btn-secondary btn-sm" onclick="openAddDeadlineModalManual()" style="font-size: 0.75rem; padding: 4px 10px; border-color: rgba(168, 85, 247, 0.4); color: #c084fc;">
+                ➕ Nuova Scadenza
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for dl in data.planned_deadlines %}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: var(--radius-md); background: {% if dl.is_paid %}rgba(16, 185, 129, 0.05){% else %}rgba(168, 85, 247, 0.06){% endif %}; border: 1px solid {% if dl.is_paid %}rgba(16, 185, 129, 0.25){% else %}rgba(168, 85, 247, 0.25){% endif %};">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="font-size: 1.3rem;">
+                    {% if dl.is_paid %}🟢{% else %}⏳{% endif %}
+                </div>
+                <div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                        {{ dl.name }}
+                        {% if dl.recurrence == 'ANNUAL' %}
+                            <span class="badge-tag" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; font-size: 0.65rem;">🔁 Annuale</span>
+                        {% elif dl.recurrence == 'BIENNIAL' %}
+                            <span class="badge-tag" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; font-size: 0.65rem;">🔁 Biennale</span>
+                        {% elif dl.recurrence == 'SEMIANNUAL' %}
+                            <span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; font-size: 0.65rem;">🔁 Semestrale</span>
+                        {% endif %}
+                        {% if dl.auto_matched %}
+                            <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-success); font-size: 0.65rem;">Auto-Riconciliato</span>
+                        {% endif %}
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                        <span>📂 {{ dl.category }}</span>
+                        <span>•</span>
+                        <span>Scadenza stimata: Giorno {{ dl.due_day }}</span>
+                        {% if dl.is_paid and dl.paid_date %}
+                        <span>•</span>
+                        <span style="color: var(--accent-success); font-weight: 600;">Pagato il {{ dl.paid_date }}</span>
+                        {% endif %}
+                        {% if dl.match_pattern %}
+                        <span>•</span>
+                        <span style="color: var(--accent-primary); font-size: 0.7rem;">Filtro causale: "{{ dl.match_pattern }}"</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="text-align: right;">
+                    <div style="font-weight: 800; font-size: 1.05rem; color: {% if dl.is_paid %}var(--accent-success){% else %}#c084fc{% endif %};">
+                        {{ (-(dl.actual_amount if dl.is_paid else dl.expected_amount))|eur }}
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">
+                        {% if dl.is_paid %}
+                            <span style="color: var(--accent-success);">Pagamento Rilevato</span>
+                        {% else %}
+                            <span style="color: #c084fc;">{% if data.is_current_month %}Riservato da Safe-to-Spend{% else %}Non Saldata{% endif %}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <!-- Toggle Paid Button -->
+                    <form action="/deadlines/toggle-paid/{{ dl.id }}" method="POST" style="margin: 0;">
+                        <input type="hidden" name="m" value="{{ data.year_month }}">
+                        <button type="submit" class="btn btn-secondary btn-sm" style="font-size: 0.7rem; padding: 4px 8px;" title="Segna manualmente come Pagato / Non Pagato">
+                            {% if dl.is_paid %}Segna Da Pagare{% else %}Segna Pagato{% endif %}
+                        </button>
+                    </form>
+
+                    <!-- Delete Button -->
+                    <form action="/deadlines/delete/{{ dl.id }}" method="POST" onsubmit="return confirm('Rimuovere questa scadenza dal mese?');" style="margin: 0;">
+                        <input type="hidden" name="m" value="{{ data.year_month }}">
+                        <button type="submit" class="btn-danger-icon" title="Elimina Scadenza" style="background: none; border: none; cursor: pointer; opacity: 0.6;">🗑️</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% elif data.is_current_month %}
+<div class="card" style="margin-bottom: 16px; border: 1px dashed rgba(168, 85, 247, 0.35); background: rgba(168, 85, 247, 0.03); padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.3rem;">📅</span>
+        <div>
+            <strong style="color: #fff; font-size: 0.88rem; display: block;">Scadenze & Tributi del Mese ({{ data.year_month }})</strong>
+            <span style="color: var(--text-muted); font-size: 0.75rem;">Hai bolli, assicurazioni, TARI o spese annuali in arrivo questo mese?</span>
+        </div>
+    </div>
+    <button class="btn btn-sm" onclick="openAddDeadlineModalManual()" style="background: linear-gradient(135deg, #a855f7, #7c3aed); color: #fff; border: none; font-size: 0.78rem; padding: 6px 14px; border-radius: 8px; font-weight: 700;">
+        ➕ Pianifica Scadenza / Tassa
+    </button>
+</div>
+{% endif %}
+
+<!-- ======================================================== -->
+<!-- CHECKLIST COSTI FISSI & SPESE RICORRENTI (PAGATE VS DA PAGARE) -->
+<!-- ======================================================== -->
+<div class="card" style="margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">📋</span>
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff;">
+                {% if data.is_current_month %}
+                    Spese Fisse & Ricorrenti Mensili
+                {% else %}
+                    Costi Fissi & Utenze Regolari di {{ data.month_name_it }}
+                {% endif %}
+            </h3>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 0.75rem;">
+            <span style="color: var(--accent-success); font-weight: 600;">
+                🟢 {% if data.is_current_month %}Pagati{% else %}Addebitati{% endif %}: {{ data.total_fixed_expenses_paid|eur }}
+            </span>
+            {% if data.is_current_month %}
+            <span style="color: #f59e0b; font-weight: 600;">
+                ⏳ Da Pagare: {{ data.total_fixed_expenses_pending|eur }}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for item in data.fixed_items %}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: var(--radius-md); background: {% if item.is_paid %}rgba(16, 185, 129, 0.05){% else %}rgba(245, 158, 11, 0.05){% endif %}; border: 1px solid {% if item.is_paid %}rgba(16, 185, 129, 0.25){% else %}rgba(245, 158, 11, 0.25){% endif %};">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="font-size: 1.3rem;">
+                    {% if item.is_paid %}🟢{% else %}⏳{% endif %}
+                </div>
+                <div>
+                    <div style="font-weight: 700; font-size: 0.95rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                        {{ item.name }}
+                        {% if item.is_income %}
+                            <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-success); font-size: 0.65rem;">Entrata Fissa</span>
+                        {% endif %}
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                        <span>📂 {{ item.category }}</span>
+                        <span>•</span>
+                        <span>Scadenza: Giorno {{ item.due_day }} del mese</span>
+                        {% if item.is_paid and item.paid_date %}
+                        <span>•</span>
+                        <span style="color: var(--accent-success); font-weight: 600;">Addebitato il {{ item.paid_date }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="text-align: right;">
+                    <div style="font-weight: 800; font-size: 1.05rem; color: {% if item.is_income %}var(--accent-success){% elif item.is_paid %}#fff{% else %}#f59e0b{% endif %};">
+                        {% if item.is_paid %}
+                            {{ (item.actual_amount if item.is_income else -item.actual_amount)|eur_sign }}
+                        {% else %}
+                            {{ (item.expected_amount if item.is_income else -item.expected_amount)|eur_sign }}
+                        {% endif %}
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">
+                        {% if item.is_paid %}
+                            <span style="color: var(--accent-success);">Addebito Confermato</span>
+                        {% else %}
+                            <span style="color: #f59e0b;">In attesa di addebito</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <form action="/fixed-costs/delete/{{ item.id }}" method="POST" onsubmit="return confirm('Rimuovere questo costo fisso dalle regole?');" style="margin: 0;">
+                    <button type="submit" class="btn-danger-icon" title="Elimina Regola" style="background: none; border: none; cursor: pointer; opacity: 0.6;">🗑️</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Skipped / Non-Due Items in this specific month (e.g. Enel bimestral) -->
+    {% if data.fixed_items_skipped|length > 0 %}
+    <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border-color);">
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px;">
+            <span>⏭️ Spese Ricorrenti non previste in questo mese (Stagionali / Bimestrali):</span>
+            <span class="badge-tag" style="font-size: 0.65rem;">{{ data.fixed_items_skipped|length }} escluse</span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            {% for sk in data.fixed_items_skipped %}
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+                <span>💤</span>
+                <strong style="color: #cbd5e1;">{{ sk.name }}</strong>
+                <span>(~{{ sk.expected_amount|eur }})</span>
+                <span style="font-size: 0.65rem; color: var(--accent-primary);">
+                    {% if sk.frequency == 'BIMONTHLY_EVEN' %}Bimestrale (Mesi Pari)
+                    {% elif sk.frequency == 'BIMONTHLY_ODD' %}Bimestrale (Mesi Dispari)
+                    {% elif sk.frequency == 'QUARTERLY' %}Trimestrale
+                    {% else %}Mesi: {{ sk.active_months }}{% endif %}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: AGGIUNGI COSTO FISSO / SPESA RICORRENTE           -->
+<!-- ======================================================== -->
+<div id="addFixedCostModal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff;">➕ Aggiungi Spesa Ricorrente / Costo Fisso</h3>
+            <button class="modal-close" onclick="closeAddFixedCostModal()">&times;</button>
+        </div>
+        
+        <form action="/fixed-costs/add" method="POST">
+            <div class="form-group">
+                <label for="fcName">Nome Spesa Ricorrente *</label>
+                <input type="text" id="fcName" name="name" class="form-control" placeholder="es. Affitto, Rata Auto, Netflix, Enel..." required autofocus>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label for="fcAmount">Importo Previsto (€) *</label>
+                    <input type="number" step="0.01" id="fcAmount" name="expected_amount" class="form-control" placeholder="es. 150.00" required>
+                </div>
+                <div class="form-group">
+                    <label for="fcDueDay">Giorno Scadenza (1-31)</label>
+                    <input type="number" min="1" max="31" id="fcDueDay" name="due_day" class="form-control" value="1" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label for="fcCategory">Categoria Macro</label>
+                    <select id="fcCategory" name="category" class="form-control" style="background: #1e293b; color: #fff;">
+                        <option value="Casa & Immobili">🏠 Casa & Immobili</option>
+                        <option value="Bollette & Utenze">💡 Bollette & Utenze</option>
+                        <option value="Spesa & Alimentari">🛒 Spesa & Alimentari</option>
+                        <option value="Auto & Mobilità">🚗 Auto & Mobilità</option>
+                        <option value="Ristoranti & Bar">🍽️ Ristoranti & Bar</option>
+                        <option value="Shopping & Abbigliamento">🛍️ Shopping & Abbigliamento</option>
+                        <option value="Digitale, Tech & Tel">🌐 Digitale, Tech & Tel</option>
+                        <option value="Viaggi & Tempo Libero">✈️ Viaggi & Tempo Libero</option>
+                        <option value="Salute & Benessere">🩺 Salute & Benessere</option>
+                        <option value="Lavoro & Entrate">💼 Lavoro & Entrate</option>
+                        <option value="Risparmio & Investimenti">📈 Risparmio & Investimenti</option>
+                        <option value="Tasse, Fisco & Banche">🏛️ Tasse, Fisco & Banche</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="fcFrequency">Frequenza & Cadenza</label>
+                    <select id="fcFrequency" name="frequency" class="form-control" style="background: #1e293b; color: #fff;">
+                        <option value="MONTHLY">📅 Mensile (Tutti i mesi)</option>
+                        <option value="BIMONTHLY_EVEN">⚡ Bimestrale Mesi Pari (Feb, Apr, Giu, Ago, Ott, Dic)</option>
+                        <option value="BIMONTHLY_ODD">⚡ Bimestrale Mesi Dispari (Gen, Mar, Mag, Lug, Set, Nov)</option>
+                        <option value="QUARTERLY">📊 Trimestrale (Mar, Giu, Set, Dic)</option>
+                        <option value="ANNUAL">📆 Annuale (1 volta l'anno)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="fcPattern">Parola Chiave per Riconoscimento Automatico (Facoltativa)</label>
+                <input type="text" id="fcPattern" name="match_pattern" class="form-control" placeholder="es. telepass, enel, netflix, mutuo">
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Il sistema controllerà le descrizioni bancarie per segnare la spesa come "Pagata" appena compare sull'estratto conto.</small>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.85rem;">
+                    <input type="checkbox" name="is_income" value="1">
+                    <span>Si tratta di un'entrata fissa ricorrente (es. Stipendio, Pensione, Affitto percepito)</span>
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 24px;">
+                <button type="button" class="btn btn-secondary" onclick="closeAddFixedCostModal()" style="width: 40%;">Annulla</button>
+                <button type="submit" class="btn" style="width: 60%;">Salva Costo Fisso</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: AGGIUNGI SCADENZA STRAORDINARIA / TASSA           -->
+<!-- ======================================================== -->
+<div id="addDeadlineModal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3 id="dlModalTitle" style="font-size: 1.15rem; font-weight: 800; color: #fff;">📅 Programma Scadenza / Tassa del Mese</h3>
+            <button class="modal-close" onclick="closeAddDeadlineModal()">&times;</button>
+        </div>
+        
+        <form action="/deadlines/add" method="POST">
+            <!-- 1-Click Quick Template Pills Inside Modal -->
+            <div style="margin-bottom: 14px; background: rgba(168, 85, 247, 0.08); border: 1px dashed rgba(168, 85, 247, 0.3); border-radius: 8px; padding: 10px;">
+                <div style="font-size: 0.72rem; color: #c084fc; font-weight: 700; margin-bottom: 6px; text-transform: uppercase;">
+                    ⚡ Suggerimenti Rapidi 1-Click:
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    {% for cat_item in data.deadlines_catalog %}
+                    <button type="button" class="btn btn-secondary btn-sm" onclick='applyCatalogToModal({{ cat_item|tojson }})' style="font-size: 0.72rem; padding: 3px 8px; border-radius: 12px; background: rgba(255,255,255,0.04); border-color: rgba(168,85,247,0.25); color: #fff;">
+                        {{ cat_item.icon }} {{ cat_item.name }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="dlName">Nome Scadenza / Tassa *</label>
+                <input type="text" id="dlName" name="name" class="form-control" placeholder="es. Bollo Auto, TARI, Revisione, Assicurazione..." required autofocus>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label for="dlAmount">Importo Previsto (€) *</label>
+                    <input type="number" step="0.01" id="dlAmount" name="expected_amount" class="form-control" placeholder="es. 240.00" required>
+                </div>
+                <div class="form-group">
+                    <label for="dlDueDay">Giorno Scadenza Stimato</label>
+                    <input type="number" min="1" max="31" id="dlDueDay" name="due_day" class="form-control" value="15" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label for="dlCategory">Categoria</label>
+                    <select id="dlCategory" name="category" class="form-control" style="background: #1e293b; color: #fff;">
+                        <option value="Casa & Immobili">🏠 Casa & Immobili</option>
+                        <option value="Bollette & Utenze">💡 Bollette & Utenze</option>
+                        <option value="Auto & Mobilità">🚗 Auto & Mobilità</option>
+                        <option value="Ristoranti & Bar">🍽️ Ristoranti & Bar</option>
+                        <option value="Shopping & Abbigliamento">🛍️ Shopping & Abbigliamento</option>
+                        <option value="Digitale, Tech & Tel">🌐 Digitale, Tech & Tel</option>
+                        <option value="Viaggi & Tempo Libero">✈️ Viaggi & Tempo Libero</option>
+                        <option value="Salute & Benessere">🩺 Salute & Benessere</option>
+                        <option value="Risparmio & Investimenti">📈 Risparmio & Investimenti</option>
+                        <option value="Tasse, Fisco & Banche">🏛️ Tasse, Fisco & Banche</option>
+                        <option value="Lavoro & Entrate">💼 Lavoro & Entrate</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="dlRecurrence">Ricorrenza Futura</label>
+                    <select id="dlRecurrence" name="recurrence" class="form-control" style="background: #1e293b; color: #fff;">
+                        <option value="ANNUAL">🔁 Annuale (Ogni anno nello stesso mese)</option>
+                        <option value="BIENNIAL">🔁 Biennale (Ogni 2 anni - es. Revisione)</option>
+                        <option value="SEMIANNUAL">🔁 Semestrale (Ogni 6 mesi)</option>
+                        <option value="ONE_OFF">⛔ Una Tantum (Solo per questo mese)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="dlYearMonth">Mese di Partenza / Riferimento</label>
+                <input type="month" id="dlYearMonth" name="year_month" class="form-control" value="{{ data.year_month }}" required style="background: #1e293b; color: #fff;">
+            </div>
+
+            <div class="form-group">
+                <label for="dlPattern">Parola Chiave per Auto-Riconciliazione da Estratto Conto</label>
+                <input type="text" id="dlPattern" name="match_pattern" class="form-control" placeholder="es. bollo|aci|pagopa oppure tari|rifiuti">
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Quando importerai l'estratto conto bancario con questa causale, FiscMoney segnerà automaticamente la spesa come "Pagata" e utilizzerà l'importo esatto addebitato!</small>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 24px;">
+                <button type="button" class="btn btn-secondary" onclick="closeAddDeadlineModal()" style="width: 40%;">Annulla</button>
+                <button type="submit" class="btn" style="width: 60%; background: linear-gradient(135deg, #a855f7, #7c3aed);">🎯 Salva Scadenza nel Budget</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+function toggleCascade(elementId, arrowId) {
+    const el = document.getElementById(elementId);
+    const arrow = document.getElementById(arrowId);
+    if (!el) return;
+    
+    if (el.style.display === 'none' || el.style.display === '') {
+        el.style.display = 'block';
+        if (arrow) arrow.innerText = '▼';
+    } else {
+        el.style.display = 'none';
+        if (arrow) arrow.innerText = '▶';
+    }
+}
+
+function toggleCategoryDrawer(drawerId, arrowId) {
+    const el = document.getElementById(drawerId);
+    const arrow = document.getElementById(arrowId);
+    if (!el) return;
+    
+    if (el.style.display === 'none' || el.style.display === '') {
+        el.style.display = 'block';
+        if (arrow) arrow.innerText = '▼';
+    } else {
+        el.style.display = 'none';
+        if (arrow) arrow.innerText = '▶';
+    }
+}
+
+function sortDrawerItems(listId, criterion, btn) {
+    const list = document.getElementById(listId);
+    if (!list) return;
+    
+    // Update button active state
+    const parent = btn.parentElement;
+    parent.querySelectorAll('.btn-sort').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.borderColor = 'transparent';
+        b.style.color = '#94a3b8';
+    });
+    btn.style.background = 'rgba(59, 130, 246, 0.3)';
+    btn.style.borderColor = 'rgba(59, 130, 246, 0.6)';
+    btn.style.color = '#fff';
+    
+    const items = Array.from(list.children);
+    items.sort((a, b) => {
+        if (criterion === 'amount') {
+            const amtA = parseFloat(a.getAttribute('data-amount')) || 0;
+            const amtB = parseFloat(b.getAttribute('data-amount')) || 0;
+            return amtB - amtA; // Descending: largest amounts first
+        } else if (criterion === 'date') {
+            const dtA = a.getAttribute('data-date') || '';
+            const dtB = b.getAttribute('data-date') || '';
+            return dtB.localeCompare(dtA); // Descending: most recent first
+        }
+        return 0;
+    });
+    
+    items.forEach(item => list.appendChild(item));
+}
+
+function initCashflowCharts() {
+    if (typeof Chart === 'undefined') {
+        setTimeout(initCashflowCharts, 100);
+        return;
+    }
+
+    // 0. Initialize Daily Expenses Bar Chart (Picchi del Mese & Giorno per Giorno)
+    const dailyCtx = document.getElementById('dailyExpensesBarChart');
+    if (dailyCtx && !dailyCtx.getAttribute('data-chart-rendered')) {
+        dailyCtx.setAttribute('data-chart-rendered', 'true');
+        const dailyLabels = {{ data.daily_labels|tojson if data and data.daily_labels else '[]' }};
+        const dailySeriesFull = {{ data.daily_series_full|tojson if data and data.daily_series_full else '[]' }};
+        const dailySeriesNoMortgage = {{ data.daily_series_no_mortgage|tojson if data and data.daily_series_no_mortgage else '[]' }};
+        const dailyIsWeekend = {{ data.daily_is_weekend|tojson if data and data.daily_is_weekend else '[]' }};
+        const dailyIsToday = {{ data.daily_is_today|tojson if data and data.daily_is_today else '[]' }};
+        const dailyBreakdown = {{ data.daily_breakdown|tojson if data and data.daily_breakdown else '[]' }};
+        
+        const peakAmountFull = {{ data.peak_amount_full|tojson if data and data.peak_amount_full else '0' }};
+        const peakLabelFull = {{ (data.peak_label_full ~ " (€ " ~ "%.2f"|format(data.peak_amount_full)|replace('.', ',') ~ ")")|tojson if data else '""' }};
+        const peakAmountNoMortgage = {{ data.peak_amount_no_mortgage|tojson if data and data.peak_amount_no_mortgage else '0' }};
+        const peakLabelNoMortgage = {{ (data.peak_label_no_mortgage ~ " (€ " ~ "%.2f"|format(data.peak_amount_no_mortgage)|replace('.', ',') ~ ")")|tojson if data else '""' }};
+        
+        const computeBarColors = (series, peakVal) => {
+            return series.map(val => {
+                if (val <= 0) return 'rgba(99, 102, 241, 0.15)';
+                if (peakVal > 0 && Math.abs(val - peakVal) < 0.01) return '#f43f5e'; // Highlight peak in coral/rose
+                return '#6366f1'; // Indigo for regular expenses
+            });
+        };
+
+        const computeHoverColors = (series, peakVal) => {
+            return series.map(val => {
+                if (val <= 0) return 'rgba(99, 102, 241, 0.3)';
+                if (peakVal > 0 && Math.abs(val - peakVal) < 0.01) return '#e11d48';
+                return '#4f46e5';
+            });
+        };
+
+        if (dailyLabels && dailyLabels.length > 0) {
+            window.dailyExpensesChartInst = new Chart(dailyCtx, {
+                type: 'bar',
+                data: {
+                    labels: dailyLabels,
+                    datasets: [{
+                        label: 'Spesa Giornaliera (€)',
+                        data: dailySeriesFull,
+                        backgroundColor: computeBarColors(dailySeriesFull, peakAmountFull),
+                        hoverBackgroundColor: computeHoverColors(dailySeriesFull, peakAmountFull),
+                        borderRadius: 4,
+                        borderSkipped: false,
+                        barPercentage: 0.65,
+                        categoryPercentage: 0.85
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { size: 10, weight: '600' },
+                                maxRotation: 45,
+                                minRotation: 0,
+                                autoSkip: false,
+                                callback: function(val, index) {
+                                    const lbl = dailyLabels[index] || '';
+                                    return lbl.replace(' (Oggi)', ' ★');
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#94a3b8',
+                                font: { size: 10 },
+                                callback: function(value) {
+                                    return '€ ' + value.toLocaleString('it-IT');
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#0f172a',
+                            titleColor: '#fff',
+                            bodyColor: '#cbd5e1',
+                            borderColor: 'rgba(255, 255, 255, 0.15)',
+                            borderWidth: 1,
+                            padding: 12,
+                            boxPadding: 4,
+                            callbacks: {
+                                title: function(context) {
+                                    const idx = context[0].dataIndex;
+                                    const item = dailyBreakdown[idx];
+                                    if (item) {
+                                        return `📅 ${item.day_name} ${item.day} ${item.is_today ? '(Oggi)' : ''}`;
+                                    }
+                                    return context[0].label;
+                                },
+                                label: function(context) {
+                                    const val = context.parsed.y || 0;
+                                    return ` Spesa totale: € ${val.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                                },
+                                afterBody: function(context) {
+                                    const idx = context[0].dataIndex;
+                                    const item = dailyBreakdown[idx];
+                                    if (!item || !item.transactions || item.transactions.length === 0) {
+                                        return [' Nessuna spesa in questo giorno'];
+                                    }
+                                    const lines = [' Movimenti del giorno:'];
+                                    item.transactions.slice(0, 5).forEach(t => {
+                                        let desc = (t.description || 'Spesa').trim();
+                                        if (desc.length > 28) desc = desc.slice(0, 26).trim() + '...';
+                                        const mortBadge = t.is_mortgage ? ' [Mutuo]' : '';
+                                        lines.push(`  • ${t.icon || '🏷️'} ${desc}${mortBadge}: € ${t.amount.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`);
+                                    });
+                                    if (item.transactions.length > 5) {
+                                        lines.push(`  ... e altre ${item.transactions.length - 5} spese`);
+                                    }
+                                    return lines;
+                                }
+                            }
+                        }
+                    }
+                },
+                plugins: [{
+                    id: 'dailyBandsPlugin',
+                    beforeDatasetsDraw: (chart) => {
+                        const xScale = chart.scales.x;
+                        const ctx = chart.ctx;
+                        if (!xScale || !dailyLabels || dailyLabels.length === 0) return;
+
+                        const count = dailyLabels.length;
+                        const bandWidth = xScale.width / count;
+
+                        for (let i = 0; i < count; i++) {
+                            const xCenter = xScale.getPixelForValue(i);
+                            const left = xCenter - (bandWidth / 2);
+
+                            if (dailyIsWeekend[i]) {
+                                ctx.save();
+                                ctx.fillStyle = 'rgba(168, 85, 247, 0.08)';
+                                ctx.fillRect(left, chart.chartArea.top, bandWidth, chart.chartArea.height);
+                                ctx.restore();
+                            }
+
+                            if (dailyIsToday[i]) {
+                                ctx.save();
+                                ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+                                ctx.fillRect(left, chart.chartArea.top, bandWidth, chart.chartArea.height);
+                                ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+                                ctx.lineWidth = 1.2;
+                                ctx.setLineDash([3, 3]);
+                                ctx.strokeRect(left, chart.chartArea.top, bandWidth, chart.chartArea.height);
+                                ctx.restore();
+                            }
+                        }
+                    }
+                }]
+            });
+
+            window.toggleExcludeMortgage = function(isExcluded) {
+                if (!window.dailyExpensesChartInst) return;
+                const chart = window.dailyExpensesChartInst;
+                const activeSeries = isExcluded ? dailySeriesNoMortgage : dailySeriesFull;
+                const activePeak = isExcluded ? peakAmountNoMortgage : peakAmountFull;
+                const activePeakLabel = isExcluded ? peakLabelNoMortgage : peakLabelFull;
+
+                chart.data.datasets[0].data = activeSeries;
+                chart.data.datasets[0].backgroundColor = computeBarColors(activeSeries, activePeak);
+                chart.data.datasets[0].hoverBackgroundColor = computeHoverColors(activeSeries, activePeak);
+                chart.update();
+
+                const peakTextEl = document.getElementById('dailyPeakText');
+                if (peakTextEl) {
+                    peakTextEl.innerText = activePeakLabel;
+                }
+            };
+        }
+    }
+
+    // 1. Initialize Category Donut Chart
+    const ctx = document.getElementById('categoryDonutChart');
+    if (ctx && !ctx.getAttribute('data-chart-rendered')) {
+        ctx.setAttribute('data-chart-rendered', 'true');
+        const labels = {{ data.chart_labels|tojson if data else '[]' }};
+        const values = {{ data.chart_values|tojson if data else '[]' }};
+        const colors = {{ data.chart_colors|tojson if data else '[]' }};
+        
+        if (labels && labels.length > 0 && values && values.length > 0) {
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: '#0f172a',
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '68%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#1e293b',
+                            titleColor: '#fff',
+                            bodyColor: '#cbd5e1',
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                label: function(context) {
+                                    const val = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+                                    return ` € ${val.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})} (${pct}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCashflowCharts);
+} else {
+    initCashflowCharts();
+}
+
+function openAddFixedCostModal() {
+    document.getElementById('addFixedCostModal').classList.add('open');
+    document.getElementById('fcName').focus();
+}
+
+function closeAddFixedCostModal() {
+    document.getElementById('addFixedCostModal').classList.remove('open');
+}
+
+function openAddDeadlineModalManual() {
+    document.getElementById('dlModalTitle').innerText = "📅 Programma Scadenza / Tassa del Mese";
+    document.getElementById('dlName').value = "";
+    document.getElementById('dlAmount').value = "";
+    document.getElementById('dlDueDay').value = "15";
+    document.getElementById('dlPattern').value = "";
+    document.getElementById('dlRecurrence').value = "ANNUAL";
+    document.getElementById('addDeadlineModal').classList.add('open');
+    document.getElementById('dlName').focus();
+}
+
+function openCatalogModal(catalogItem) {
+    applyCatalogToModal(catalogItem);
+    document.getElementById('addDeadlineModal').classList.add('open');
+}
+
+function applyCatalogToModal(catalogItem) {
+    document.getElementById('dlModalTitle').innerText = `${catalogItem.icon} Programma ${catalogItem.name}`;
+    document.getElementById('dlName').value = catalogItem.name;
+    document.getElementById('dlAmount').value = catalogItem.default_amount;
+    document.getElementById('dlDueDay').value = catalogItem.default_day;
+    document.getElementById('dlCategory').value = catalogItem.category;
+    document.getElementById('dlPattern').value = catalogItem.pattern;
+    document.getElementById('dlRecurrence').value = catalogItem.recurrence || "ANNUAL";
+    document.getElementById('dlAmount').focus();
+}
+
+function closeAddDeadlineModal() {
+    document.getElementById('addDeadlineModal').classList.remove('open');
+}
+
+function openCashflowSettingsModal() {
+    const m = document.getElementById('cashflowSettingsModal');
+    if (m) {
+        m.style.display = 'flex';
+    }
+}
+
+function closeCashflowSettingsModal() {
+    const m = document.getElementById('cashflowSettingsModal');
+    if (m) {
+        m.style.display = 'none';
+    }
+}
+
+// --- CASHFLOW RECLASSIFY MODAL LOGIC ---
+const CATEGORY_SMART_TAGS_OBJ = {{ category_smart_tags|tojson if category_smart_tags is defined else '{}' }};
+const MACRO_CATEGORIES_OBJ = {{ macro_categories|tojson if macro_categories is defined else '{}' }};
+
+const CF_SMART_INFERENCE_KNOWLEDGE_BASE = [
+    { pattern: /\b(supermercato|super|iper|coop|conad|esselunga|lidl|eurospin|carrefour|penny|pam|despar|tigre|crai|todis|in's|famila|dipiù|bennet|unes|aldi|md\s*spa|sole365|ekom|sidis|pewex|margherita|tigros|basko|gulliver|panetteria|macelleria|pescheria|ortofrutta)\b/i, category: 'Spesa & Alimentari', subcategory: 'Supermercato', tags: ['#supermercato'] },
+    { pattern: /\b(ristorante|trattoria|osteria|pizzeria|pub|bar|caffe|cafe|bistrot|birreria|gelateria|pasticceria|mcdonald|burger\s*king|kfc|poke|sushi|deliveroo|just\s*eat|glovo|ubereats)\b/i, category: 'Svago & Ristoranti', subcategory: 'Ristoranti', tags: ['#ristorante'] },
+    { pattern: /\b(eni|q8|ip|esso|tamoil|repsol|distributore|carburant|metano|gpl|telepass|autostrade|pedaggio|parcheggio|easy\s*park|mytaxi|freenow|uber|trenitalia|italo|ryanair|easyjet|wizz|vueling|meccanico|autofficina|gommista|autoabruzzo|aci)\b/i, category: 'Auto & Trasporti', subcategory: 'Carburante', tags: ['#carburante'] },
+    { pattern: /\b(prenatal|original\s*marines|chicco|primigi|bimbostore|villa\s*beb[eè]|idexe|okaidi|io\s*bimbo|asilo|nido|scuola|retta\s*scolastica|pediatra|toys\s*center|giocattoli)\b/i, category: 'Spese Famiglia & Figli', subcategory: 'Abbigliamento Figli', tags: ['#figlio', '#bambini'] },
+    { pattern: /\b(acqua\s*(&|\+|e)?\s*sapone|tigot[aà]|caddy|ipersoap|saponi\s*e\s*profumi|sephora|douglas|profumeria|parrucchier|barber|estetic|estetica)\b/i, category: 'Salute & Benessere', subcategory: 'Igiene & Cura Personale', tags: ['#igiene'] },
+    { pattern: /\b(farmacia|parafarmacia|ospedale|asl|policlinico|clinica|ticket\s*sanitario|laboratorio\s*analis|visita\s*medic|dentista|odontoiatr|ottica)\b/i, category: 'Salute & Benessere', subcategory: 'Farmacia & Medicinali', tags: ['#detraibile_730', '#farmacia'] },
+    { pattern: /\b(enel|servizio\s*elettrico|a2a|sorgenia|edison|illumia|e\.on|hera|iren|plenitude|gas|acquedotto|gori|abbanoa|acea|telecom|tim|vodafone|windtre|iliad|fastweb|mutuo|condominio|brico|leroy\s*merlin|ikea|obi)\b/i, category: 'Casa & Utenze', subcategory: 'Luce & Gas', tags: ['#luce_gas'] },
+    { pattern: /\b(pagopa|f24|agenzia\s*delle\s*entrate|inps|tari|imu|tributi|bollo\s*auto|telethon|fondazione)\b/i, category: 'Tasse & Finanza', subcategory: 'PagoPA & Tributi', tags: ['#f24_imposte'] }
+];
+
+function detectCfAiSuggestion(text) {
+    if (!text) return null;
+    const clean = text.trim();
+    for (const rule of CF_SMART_INFERENCE_KNOWLEDGE_BASE) {
+        if (rule.pattern.test(clean)) return rule;
+    }
+    return null;
+}
+
+let activeCfAiSuggestion = null;
+let cfActiveTags = [];
+let cfActiveCustomTags = [];
+
+function openCashflowReclassifyModal(txId, description, amount, date, currentCategory, currentSubCategory, currentTags) {
+    document.getElementById('cfModalHiddenTxId').value = txId;
+    document.getElementById('cfModalHiddenDesc').value = description;
+    
+    document.getElementById('cfModalDesc').innerText = description;
+    document.getElementById('cfModalDesc').title = description;
+    
+    const amtVal = parseFloat(amount || 0);
+    document.getElementById('cfModalBadge').innerText = `-€ ${amtVal.toFixed(2)}`;
+    
+    const catSelect = document.getElementById('cfCategorySelect');
+    document.getElementById('cfSubCategoryInput').value = currentSubCategory || '';
+    document.getElementById('cfLearnRuleCheckbox').checked = true;
+    
+    cfActiveTags = [];
+    cfActiveCustomTags = [];
+    
+    if (currentTags) {
+        const rawTags = currentTags.split(/\s+/).filter(t => t.trim().length > 0);
+        cfActiveTags = [...rawTags];
+        cfActiveCustomTags = [...rawTags];
+    }
+    
+    // Check local pattern inference first
+    activeCfAiSuggestion = detectCfAiSuggestion(description);
+    const box = document.getElementById('cfAiSuggestBox');
+    
+    if (activeCfAiSuggestion) {
+        const sugg = activeCfAiSuggestion;
+        if (box) {
+            box.style.display = 'flex';
+            document.getElementById('cfAiSuggestCatText').innerText = `${sugg.category} • ${sugg.subcategory || ''}`;
+            const tagsStr = sugg.tags && sugg.tags.length ? `Tag: ${sugg.tags.join(', ')}` : '';
+            document.getElementById('cfAiSuggestSubText').innerText = tagsStr ? `Suggerito per "${description}" (${tagsStr})` : `Suggerito per "${description}"`;
+        }
+        
+        if (!currentCategory || currentCategory === 'Altro' || currentCategory === 'Non Categorizzato') {
+            catSelect.value = sugg.category;
+            if (!currentSubCategory) {
+                document.getElementById('cfSubCategoryInput').value = sugg.subcategory || '';
+            }
+            if (cfActiveTags.length === 0 && sugg.tags) {
+                cfActiveTags = [...sugg.tags];
+                cfActiveCustomTags = [...sugg.tags];
+            }
+            onCashflowCategoryChange(sugg.category);
+        } else {
+            catSelect.value = currentCategory;
+            onCashflowCategoryChange(currentCategory);
+        }
+    } else {
+        if (currentCategory && currentCategory !== 'Altro' && currentCategory !== 'Non Categorizzato') {
+            if (box) box.style.display = 'none';
+            catSelect.value = currentCategory;
+            onCashflowCategoryChange(currentCategory);
+        } else {
+            catSelect.value = currentCategory || '';
+            onCashflowCategoryChange(currentCategory || '');
+            // Auto trigger background lookup for unclassified items
+            triggerCashflowOnlineMerchantLookup(description, false);
+        }
+    }
+    
+    document.getElementById('cashflowReclassifyModal').classList.add('open');
+}
+
+function closeCashflowReclassifyModal() {
+    document.getElementById('cashflowReclassifyModal').classList.remove('open');
+}
+
+function onCashflowCategoryChange(catName) {
+    renderCashflowSmartTags(catName);
+}
+
+function renderCashflowSmartTags(catName) {
+    const container = document.getElementById('cfModalSmartTagsContainer');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    if (!catName) {
+        container.innerHTML = '<span style="font-size: 0.72rem; color: var(--text-muted); font-style: italic;">Seleziona prima una macro-categoria</span>';
+        return;
+    }
+    
+    const smartTags = (CATEGORY_SMART_TAGS_OBJ && CATEGORY_SMART_TAGS_OBJ[catName]) ? CATEGORY_SMART_TAGS_OBJ[catName] : [];
+    
+    // 1. Preset Smart Tags
+    smartTags.forEach(st => {
+        const isSelected = cfActiveTags.includes(st.code);
+        const isFiscal = st.is_fiscal;
+        
+        const pill = document.createElement('button');
+        pill.type = 'button';
+        pill.className = `tag-chip ${isFiscal ? 'tag-fiscal' : ''}`;
+        pill.style.cursor = 'pointer';
+        pill.style.padding = '4px 9px';
+        pill.style.fontSize = '0.75rem';
+        pill.style.borderRadius = '16px';
+        pill.style.transition = 'all 0.15s ease';
+        pill.style.border = isSelected ? (isFiscal ? '1.5px solid #ec4899' : '1.5px solid #38bdf8') : '1px solid rgba(255,255,255,0.12)';
+        pill.style.background = isSelected ? (isFiscal ? 'rgba(236, 72, 153, 0.25)' : 'rgba(56, 189, 248, 0.25)') : 'rgba(255,255,255,0.04)';
+        pill.style.color = isSelected ? (isFiscal ? '#f472b6' : '#7dd3fc') : '#cbd5e1';
+        pill.style.fontWeight = isSelected ? '700' : '500';
+        
+        pill.innerHTML = `${isSelected ? '✓ ' : ''}${st.label}`;
+        pill.onclick = () => toggleCashflowModalTag(st.code, st.subcat);
+        container.appendChild(pill);
+    });
+    
+    // 2. Custom Tags
+    cfActiveCustomTags.forEach(tCode => {
+        const inPreset = smartTags.some(st => st.code === tCode);
+        if (!inPreset) {
+            const isSelected = cfActiveTags.includes(tCode);
+            const pill = document.createElement('button');
+            pill.type = 'button';
+            pill.className = 'tag-chip';
+            pill.style.cursor = 'pointer';
+            pill.style.padding = '4px 9px';
+            pill.style.fontSize = '0.75rem';
+            pill.style.borderRadius = '16px';
+            pill.style.border = isSelected ? '1.5px solid #38bdf8' : '1px solid rgba(255,255,255,0.12)';
+            pill.style.background = isSelected ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255,255,255,0.04)';
+            pill.style.color = isSelected ? '#7dd3fc' : '#cbd5e1';
+            pill.style.fontWeight = isSelected ? '700' : '500';
+            
+            const cleanLabel = tCode.replace(/^#/, '').replace(/_/g, ' ');
+            pill.innerHTML = `${isSelected ? '✓ ' : ''}🏷️ ${cleanLabel}`;
+            pill.onclick = () => toggleCashflowModalTag(tCode);
+            container.appendChild(pill);
+        }
+    });
+    
+    if (smartTags.length === 0 && cfActiveCustomTags.length === 0) {
+        container.innerHTML = '<span style="font-size: 0.72rem; color: var(--text-muted); font-style: italic;">Nessun tag predefinito. Clicca su "+ Altro Tag".</span>';
+    }
+}
+
+function toggleCashflowModalTag(tagCode, defaultSubcat) {
+    if (cfActiveTags.includes(tagCode)) {
+        cfActiveTags = cfActiveTags.filter(t => t !== tagCode);
+    } else {
+        cfActiveTags.push(tagCode);
+        if (defaultSubcat && !document.getElementById('cfSubCategoryInput').value) {
+            document.getElementById('cfSubCategoryInput').value = defaultSubcat;
+        }
+    }
+    const cat = document.getElementById('cfCategorySelect').value;
+    renderCashflowSmartTags(cat);
+}
+
+function promptCustomTagForCashflowModal() {
+    const raw = prompt("Inserisci il tag personalizzato (es. #figlio, #luciano, #vacanza):");
+    if (!raw) return;
+    let clean = raw.trim();
+    if (!clean.startsWith('#')) {
+        clean = '#' + clean;
+    }
+    clean = clean.toLowerCase().replace(/\s+/g, '_');
+    if (!cfActiveTags.includes(clean)) {
+        cfActiveTags.push(clean);
+    }
+    if (!cfActiveCustomTags.includes(clean)) {
+        cfActiveCustomTags.push(clean);
+    }
+    const cat = document.getElementById('cfCategorySelect').value;
+    renderCashflowSmartTags(cat);
+}
+
+function applyCashflowAiSuggestion() {
+    if (!activeCfAiSuggestion) return;
+    const sugg = activeCfAiSuggestion;
+    
+    const catSelect = document.getElementById('cfCategorySelect');
+    if (catSelect) {
+        catSelect.value = sugg.category;
+        onCashflowCategoryChange(sugg.category);
+    }
+    
+    const subInput = document.getElementById('cfSubCategoryInput');
+    if (subInput && sugg.subcategory) {
+        subInput.value = sugg.subcategory;
+    }
+    
+    if (sugg.tags && Array.isArray(sugg.tags)) {
+        sugg.tags.forEach(t => {
+            if (!cfActiveTags.includes(t)) cfActiveTags.push(t);
+            if (!cfActiveCustomTags.includes(t)) cfActiveCustomTags.push(t);
+        });
+        renderCashflowSmartTags(sugg.category);
+    }
+}
+
+async function triggerCashflowOnlineMerchantLookup(query, force = false) {
+    if (!query || !query.trim()) return;
+    const cleanQ = query.trim();
+    
+    const box = document.getElementById('cfAiSuggestBox');
+    const catText = document.getElementById('cfAiSuggestCatText');
+    const subText = document.getElementById('cfAiSuggestSubText');
+    
+    if (box) {
+        box.style.display = 'flex';
+        if (catText) catText.innerHTML = '<span style="color: #38bdf8; display: inline-flex; align-items: center; gap: 6px;"><span>🌐</span> <span>Ricerca Online AI in corso...</span></span>';
+        if (subText) subText.innerText = `Interrogazione online sul web per "${cleanQ}"...`;
+    }
+    
+    try {
+        const resp = await fetch('/api/ai/online-merchant-lookup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: cleanQ })
+        });
+        const res = await resp.json();
+        
+        if (res && res.success && res.category && res.category !== 'Altro') {
+            const sugg = {
+                category: res.category,
+                subcategory: res.subcategory || '',
+                tags: res.tags || [],
+                reasoning: res.reasoning || '',
+                source: res.source
+            };
+            activeCfAiSuggestion = sugg;
+            if (box) {
+                box.style.display = 'flex';
+                if (catText) catText.innerText = `${sugg.category} • ${sugg.subcategory || ''}`;
+                if (subText) subText.innerText = sugg.reasoning ? `🌐 ${sugg.reasoning}` : `Trovato online per "${cleanQ}"`;
+            }
+            const catSelect = document.getElementById('cfCategorySelect');
+            if (force || !catSelect.value || catSelect.value === 'Altro' || catSelect.value === 'Non Categorizzato') {
+                applyCashflowAiSuggestion();
+            }
+        } else {
+            if (box && !force && !activeCfAiSuggestion) {
+                box.style.display = 'none';
+            } else if (box && force) {
+                if (catText) catText.innerHTML = '<span style="color: #fca5a5;">Nessuna attività online trovata</span>';
+                if (subText) subText.innerText = `Nessuna corrispondenza chiara per "${cleanQ}". Scegli la categoria manualmente.`;
+            }
+        }
+    } catch(e) {
+        console.error("Online lookup error:", e);
+        if (box && force) {
+            if (catText) catText.innerHTML = '<span style="color: #fca5a5;">Errore di connessione</span>';
+            if (subText) subText.innerText = 'Impossibile completare la ricerca online al momento.';
+        }
+    }
+}
+
+async function submitCashflowReclassify() {
+    const txId = document.getElementById('cfModalHiddenTxId').value;
+    const cat = document.getElementById('cfCategorySelect').value;
+    const subCat = document.getElementById('cfSubCategoryInput').value;
+    const learnRule = document.getElementById('cfLearnRuleCheckbox').checked;
+    
+    if (!cat) {
+        alert('Seleziona una Macro-Categoria Principale');
+        return;
+    }
+    
+    const submitBtn = document.getElementById('cfSubmitBtn');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '⏳ Salvataggio in corso...';
+    }
+    
+    try {
+        const resp = await fetch('/transactions/quick-update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                tx_id: parseInt(txId),
+                category: cat,
+                sub_category: subCat,
+                tags: cfActiveTags.join(' '),
+                learn_rule: learnRule
+            })
+        });
+        const res = await resp.json();
+        if (res.success) {
+            const currentUrl = new URL(window.location.href);
+            currentUrl.hash = 'category-composition-card';
+            window.location.href = currentUrl.toString();
+            window.location.reload();
+        } else {
+            alert('Errore: ' + (res.error || 'Impossibile aggiornare il movimento'));
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '💾 Salva e Applica';
+            }
+        }
+    } catch(e) {
+        console.error("Reclassification error:", e);
+        alert('Errore durante il salvataggio.');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '💾 Salva e Applica';
+        }
+    }
+}
+
+// Close modals when clicking outside card
+window.addEventListener('click', function(e) {
+    const fcModal = document.getElementById('addFixedCostModal');
+    const dlModal = document.getElementById('addDeadlineModal');
+    const setModal = document.getElementById('cashflowSettingsModal');
+    const cfRecModal = document.getElementById('cashflowReclassifyModal');
+    if (e.target === fcModal) {
+        closeAddFixedCostModal();
+    }
+    if (e.target === dlModal) {
+        closeAddDeadlineModal();
+    }
+    if (e.target === setModal) {
+        closeCashflowSettingsModal();
+    }
+    if (e.target === cfRecModal) {
+        closeCashflowReclassifyModal();
+    }
+});
+</script>
+
+<!-- ======================================================== -->
+<!-- MODAL: RICLASSIFICAZIONE SPESA CASHFLOW                   -->
+<!-- ======================================================== -->
+<div id="cashflowReclassifyModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 520px; width: 92%; padding: 22px; background: #0f172a; border: 1.5px solid rgba(99, 102, 241, 0.45); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85); border-radius: var(--radius-lg); position: relative;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(59,130,246,0.25)); border: 1px solid rgba(99, 102, 241, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                    ⚡
+                </div>
+                <div>
+                    <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0;">Riclassifica Movimento</h3>
+                    <div style="display: flex; align-items: center; gap: 6px; margin-top: 3px; flex-wrap: wrap;">
+                        <strong id="cfModalDesc" style="color: #60a5fa; font-size: 0.82rem; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></strong>
+                        <span id="cfModalBadge" style="font-size: 0.68rem; background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 1px 7px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.4); font-weight: 700;"></span>
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="triggerCashflowOnlineMerchantLookup(document.getElementById('cfModalHiddenDesc').value, true)" style="font-size: 0.7rem; padding: 3px 9px; border-radius: 12px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); display: flex; align-items: center; gap: 4px;" title="Cerca informazioni aziendali online">
+                    <span>🌐</span> <span>Cerca Online AI</span>
+                </button>
+                <button type="button" class="modal-close" onclick="closeCashflowReclassifyModal()">&times;</button>
+            </div>
+        </div>
+        
+        <form id="cashflowReclassifyForm" onsubmit="event.preventDefault(); submitCashflowReclassify();">
+            <input type="hidden" id="cfModalHiddenTxId" value="">
+            <input type="hidden" id="cfModalHiddenDesc" value="">
+
+            <!-- AI Smart Auto-Suggestion Box -->
+            <div id="cfAiSuggestBox" style="display: none; background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(56, 189, 248, 0.12)); border: 1.5px solid rgba(99, 102, 241, 0.45); border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; justify-content: space-between; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.15);">
+                <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                    <span style="font-size: 1.35rem;">✨</span>
+                    <div>
+                        <div style="font-size: 0.8rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <span>Suggerimento AI:</span>
+                            <span id="cfAiSuggestCatText" style="color: #38bdf8;"></span>
+                        </div>
+                        <div id="cfAiSuggestSubText" style="color: #cbd5e1; font-size: 0.72rem; margin-top: 2px;"></div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm" onclick="applyCashflowAiSuggestion()" style="background: linear-gradient(135deg, #6366f1, #2563eb); color: #fff; font-weight: 700; font-size: 0.74rem; padding: 5px 12px; border-radius: 8px; border: none; box-shadow: 0 2px 8px rgba(99,102,241,0.4); white-space: nowrap; cursor: pointer;">
+                    ⚡ Auto-Compila
+                </button>
+            </div>
+
+            <!-- 1. Macro-Category Selection -->
+            <div class="form-group" style="margin-bottom: 12px;">
+                <label for="cfCategorySelect" style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700;">Macro-Categoria Principale *</label>
+                <select id="cfCategorySelect" class="form-control" style="background: #1e293b; color: #fff; border-radius: 8px; font-weight: 600;" onchange="onCashflowCategoryChange(this.value)" required>
+                    <option value="">-- Seleziona Macro-Categoria --</option>
+                    {% if macro_categories %}
+                        {% for cat_name, cat_meta in macro_categories.items() %}
+                        <option value="{{ cat_name }}">{{ cat_meta.icon }} {{ cat_name }}</option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+
+            <!-- 2. Smart Contextual Tag Pills -->
+            <div style="margin-bottom: 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin: 0;">
+                        🏷️ Tag Intelligenti della Categoria:
+                    </label>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="promptCustomTagForCashflowModal()" style="font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">
+                        ➕ Altro Tag
+                    </button>
+                </div>
+                <div id="cfModalSmartTagsContainer" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 32px; align-items: center;">
+                    <span style="font-size: 0.72rem; color: var(--text-muted); font-style: italic;">Seleziona prima una macro-categoria</span>
+                </div>
+            </div>
+
+            <!-- 3. Sub-Category Field -->
+            <div class="form-group" style="margin-bottom: 12px;">
+                <label for="cfSubCategoryInput" style="font-size: 0.78rem; color: #cbd5e1;">Sotto-Categoria Specifica (Opzionale)</label>
+                <input type="text" id="cfSubCategoryInput" class="form-control" placeholder="es. Supermercato, Carburante, Ristorante, Bar & Colazioni..." style="background: #1e293b; color: #fff; border-radius: 8px;">
+            </div>
+
+            <!-- 4. Auto-Learning Checkbox -->
+            <div style="margin: 12px 0; padding: 10px 12px; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); display: flex; align-items: flex-start; gap: 10px;">
+                <input type="checkbox" id="cfLearnRuleCheckbox" checked style="width: 18px; height: 18px; margin-top: 2px; accent-color: #6366f1; cursor: pointer;">
+                <div>
+                    <label for="cfLearnRuleCheckbox" style="font-size: 0.82rem; color: #fff; cursor: pointer; font-weight: 700; line-height: 1.3;">
+                        🧠 Auto-Apprendimento Intelligente (Crea Regola)
+                    </label>
+                    <small style="color: #94a3b8; font-size: 0.72rem; display: block; margin-top: 2px;">
+                        Memorizza automaticamente questa regola per applicarla a tutte le spese future di questo esercente.
+                    </small>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; gap: 10px; margin-top: 18px;">
+                <button type="button" class="btn btn-secondary" onclick="closeCashflowReclassifyModal()" style="width: 35%;">Annulla</button>
+                <button type="submit" id="cfSubmitBtn" class="btn btn-primary" style="width: 65%; font-weight: 700; background: linear-gradient(135deg, #6366f1, #3b82f6); border: none;">
+                    💾 Salva e Applica
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Modifica Parametri Previsione (Stipendio Base & Target Risparmio) -->
+<div id="cashflowSettingsModal" style="display: none; position: fixed; inset: 0; z-index: 1050; background: rgba(0,0,0,0.75); backdrop-filter: blur(6px); align-items: center; justify-content: center;">
+    <div class="card" style="max-width: 440px; width: 92%; margin: 20px auto; background: #0f172a; border: 1.5px solid rgba(59, 130, 246, 0.35); box-shadow: 0 20px 40px rgba(0,0,0,0.6);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <span>⚙️</span> Parametri Previsione Mese
+            </h3>
+            <button type="button" onclick="closeCashflowSettingsModal()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer;">✕</button>
+        </div>
+        
+        <form method="POST" action="/cashflow/settings/save">
+            <div class="form-group" style="margin-bottom: 12px;">
+                <label style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 4px;">
+                    💶 Stipendio / Entrate di Riferimento Mensili (€)
+                </label>
+                <input type="number" step="0.01" name="salary" class="form-control" 
+                       value="{{ monthly_forecast.forecast.effective_income if monthly_forecast else 3000.0 }}" 
+                       required style="background: rgba(255,255,255,0.06); color: #fff; border-color: rgba(255,255,255,0.15);">
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Usato come base di reddito per il calcolo delle proiezioni e del margine mensile.</small>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 4px;">
+                    🎯 Target di Risparmio Mensile Desiderato (€)
+                </label>
+                <input type="number" step="0.01" name="target_savings" class="form-control" 
+                       value="{{ monthly_forecast.forecast.target_savings if monthly_forecast else 500.0 }}" 
+                       required style="background: rgba(255,255,255,0.06); color: #fff; border-color: rgba(255,255,255,0.15);">
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Quota di risparmio netto che desideri accantonare ogni mese (es. € 500,00).</small>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeCashflowSettingsModal()">Annulla</button>
+                <button type="submit" class="btn btn-sm" style="background: linear-gradient(135deg, var(--accent-primary), #2563eb);">Salva Parametri</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
