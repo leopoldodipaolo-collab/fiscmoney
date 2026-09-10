@@ -1670,6 +1670,57 @@ def account_wizard_save():
 def add_account():
     return account_wizard_save()
 
+@app.route("/accounts/edit/<int:account_id>", methods=["POST"])
+@login_required
+def edit_account(account_id):
+    ws_id = session.get('workspace_id')
+    if not ws_id:
+        return redirect(url_for('dashboard'))
+        
+    name = request.form.get("name", "").strip()
+    acc_type = request.form.get("type", "CHECKING").strip()
+    bank_name = request.form.get("bank_name", "").strip()
+    iban = request.form.get("iban", "").strip().upper()
+    card_pan = request.form.get("card_pan", "").strip()
+    holder_name = request.form.get("holder_name", "").strip()
+    profile_id = request.form.get("profile_id")
+    is_shared = 1 if request.form.get("is_shared") == "1" else 0
+    update_tx_profiles = (request.form.get("update_tx_profiles") == "1")
+    
+    p_id_val = int(profile_id) if profile_id and profile_id.isdigit() else None
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    acc = cursor.execute("SELECT * FROM accounts WHERE id = ? AND workspace_id = ?", (account_id, ws_id)).fetchone()
+    if not acc:
+        conn.close()
+        flash("Conto non trovato.", "error")
+        return redirect(url_for('transactions'))
+        
+    cursor.execute('''
+        UPDATE accounts
+        SET name = ?, type = ?, bank_name = ?, iban = ?, card_pan = ?,
+            holder_name = ?, profile_id = ?, is_shared = ?
+        WHERE id = ? AND workspace_id = ?
+    ''', (name or acc['name'], acc_type, bank_name, iban, card_pan, holder_name, p_id_val, is_shared, account_id, ws_id))
+    
+    # Retroactively update profile_id on all transactions of this account if requested
+    tx_updated_count = 0
+    if update_tx_profiles and p_id_val:
+        res = cursor.execute('''
+            UPDATE transactions
+            SET profile_id = ?
+            WHERE account_id = ? AND workspace_id = ?
+        ''', (p_id_val, account_id, ws_id))
+        tx_updated_count = res.rowcount
+        
+    conn.commit()
+    conn.close()
+    
+    profile_msg = f" e riassegnati {tx_updated_count} movimenti" if tx_updated_count > 0 else ""
+    flash(f"⚙️ Impostazioni del conto '{name or acc['name']}' aggiornate con successo{profile_msg}!", "success")
+    return redirect(url_for('transactions'))
+
 @app.route("/accounts/delete/<int:account_id>", methods=["POST"])
 @login_required
 def delete_account(account_id):
