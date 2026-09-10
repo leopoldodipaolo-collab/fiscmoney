@@ -40,32 +40,32 @@
 
 <!-- Header & Action Buttons -->
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
-    <div>
+    <div style="min-width: 0; flex: 1;">
         <h2 style="font-size: 1.3rem; font-weight: 800; color: #fff;">💳 Conti & Movimenti</h2>
-        <p style="color: var(--text-muted); font-size: 0.8rem;">Registro transazioni, auto-apprendimento categorie ed importazione estratti conto</p>
+        <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0;">Registro transazioni, auto-apprendimento categorie ed importazione estratti conto</p>
     </div>
-    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0;">
         <a href="/accounts/wizard" class="btn btn-secondary btn-sm" style="display: flex; align-items: center; gap: 6px;">
             <span>🧭</span>
-            <span>Nuovo Conto / Carta</span>
+            <span class="btn-label-hide-xs">Nuovo Conto / Carta</span>
         </a>
         <button class="btn btn-sm" onclick="toggleDropzone()" style="background: linear-gradient(135deg, var(--accent-primary), #2563eb); display: flex; align-items: center; gap: 6px;">
             <span>📥</span>
-            <span>Importa CSV / Excel</span>
+            <span class="btn-label-hide-xs">Importa CSV / Excel</span>
         </button>
     </div>
 </div>
 
 <!-- Profile Filter Pills Bar -->
-<div class="profile-bar-container">
+<div class="profile-bar-container" style="overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 4px;">
     {% if is_admin or current_mode == 'FULL' %}
-    <a href="/workspace/filter/all" class="profile-pill {% if active_filter == 'all' %}active{% endif %}">
+    <a href="/workspace/filter/all" class="profile-pill {% if active_filter == 'all' %}active{% endif %}" style="flex-shrink: 0;">
         <span>👨‍👩‍👧‍👦</span>
         <span>Tutta la Famiglia</span>
     </a>
     {% endif %}
     {% for p in profiles %}
-    <a href="/workspace/filter/{{ p.id }}" class="profile-pill {% if active_filter == p.id|string %}active{% endif %}">
+    <a href="/workspace/filter/{{ p.id }}" class="profile-pill {% if active_filter == p.id|string %}active{% endif %}" style="flex-shrink: 0;">
         <span>{% if p.is_primary %}👤{% elif 'Figli' in (p.role_title or '') %}👶{% else %}👩{% endif %}</span>
         <span>{{ p.name }}</span>
     </a>
@@ -76,15 +76,15 @@
 <!-- HERO CARD: TOTALONE PATRIMONIO & SCHEDE CONTO INTERATTIVE -->
 <!-- ======================================================== -->
 {% if accounts|length > 0 %}
-<div class="card" style="margin-bottom: 16px; background: linear-gradient(135deg, rgba(30, 41, 67, 0.9), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(59, 130, 246, 0.25);">
+<div class="card accounts-hero-card" style="margin-bottom: 16px; background: linear-gradient(135deg, rgba(30, 41, 67, 0.9), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(59, 130, 246, 0.25);">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
-        <div>
-            <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                 <span style="font-size: 1.2rem;">💰</span>
-                <span style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">
-                    Patrimonio Totale Liquido (Totalone)
+                <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">
+                    Patrimonio Totale Liquido
                 </span>
-                <button type="button" onclick="togglePrivacyMode()" class="privacy-toggle-btn" style="font-size: 0.7rem; padding: 2px 8px; margin-left: 6px;" title="Modalità Privacy: Nascondi/Mostra Saldi (Shift+P)">
+                <button type="button" onclick="togglePrivacyMode()" class="privacy-toggle-btn" style="font-size: 0.7rem; padding: 2px 8px;" title="Modalità Privacy: Nascondi/Mostra Saldi (Shift+P)">
                     <span class="privacy-icon-unmasked">👁️ Nascondi</span>
                     <span class="privacy-icon-masked" style="display: none;">🙈 Mostra</span>
                 </button>
@@ -92,18 +92,18 @@
             <div class="privacy-mask" style="font-size: 1.8rem; font-weight: 800; color: #fff; margin-top: 4px; letter-spacing: -0.5px;" title="Passa sopra per sbirciare">
                 {{ total_account_balance|eur }}
             </div>
-            <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 2px;">
+            <div style="color: var(--text-muted); font-size: 0.72rem; margin-top: 2px;">
                 {% if active_filter == 'all' %}
-                Vista Famiglia: {{ accounts|length }} conti/carte attive • {{ accounts|sum(attribute='tx_count') }} movimenti registrati
+                Famiglia: {{ accounts|length }} conti/carte • {{ accounts|sum(attribute='tx_count') }} movimenti
                 {% else %}
-                Profilo {{ profiles|selectattr('id', 'equalto', active_filter|int)|map(attribute='name')|first or 'Admin' }}: {{ accounts|length }} conti/carte • {{ accounts|sum(attribute='tx_count') }} movimenti
+                {{ profiles|selectattr('id', 'equalto', active_filter|int)|map(attribute='name')|first or 'Admin' }}: {{ accounts|length }} conti • {{ accounts|sum(attribute='tx_count') }} movimenti
                 {% endif %}
             </div>
         </div>
 
         {% if bank_groups|length > 1 %}
         <!-- Asset Allocation Mini-Bar -->
-        <div style="min-width: 220px; flex: 1; max-width: 380px; background: rgba(0,0,0,0.25); padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+        <div class="asset-bar-widget" style="flex: 1; min-width: 0; max-width: 380px; background: rgba(0,0,0,0.25); padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
             <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 6px;">
                 <span>Ripartizione Banche</span>
                 <span style="color: #fff; font-weight: 600;">{{ bank_groups|length }} Istituti</span>
@@ -113,9 +113,9 @@
                 <div style="width: {{ bg.percent }}%; background: {{ bg.color }};" title="{{ bg.name }}: {{ bg.percent }}% ({{ bg.total_balance|eur }})"></div>
                 {% endfor %}
             </div>
-            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;">
                 {% for bg in bank_groups %}
-                <span style="font-size: 0.7rem; color: {{ bg.color }}; font-weight: 600;">
+                <span style="font-size: 0.68rem; color: {{ bg.color }}; font-weight: 600;">
                     {{ bg.name }}: {{ bg.percent }}%
                 </span>
                 {% endfor %}
@@ -125,7 +125,7 @@
     </div>
 
     <!-- Interactive Bank Account Cards Grid -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
+    <div class="accounts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
         <!-- Global View Card (Tutti i Conti) -->
         <a href="/transactions?{% if selected_category %}category={{ selected_category|urlencode }}&{% endif %}{% if search_query %}q={{ search_query }}&{% endif %}" 
            style="text-decoration: none; color: inherit; background: {% if not selected_account_id %}rgba(59, 130, 246, 0.15){% else %}rgba(255,255,255,0.03){% endif %}; border: 1.5px solid {% if not selected_account_id %}var(--accent-primary){% else %}var(--border-color){% endif %}; border-radius: var(--radius-md); padding: 12px; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;">
@@ -351,8 +351,8 @@
     
     <!-- Tab: Tutti i Mesi (Storico Completo) in Prima Posizione -->
     <a href="/transactions?month=all" 
-       class="month-tab-btn {% if selected_month == 'all' %}active{% endif %}"
-       style="min-width: 175px;">
+       class="month-tab-btn {% if selected_month == 'all' %}active{% endif %}">
+
         <div style="display: flex; align-items: center; gap: 6px;">
             <span style="font-size: 1rem;">🌐</span>
             <strong style="font-size: 0.85rem; color: #fff;">Tutti i Mesi</strong>
@@ -413,39 +413,39 @@
 <div id="workbenchSection" class="card" style="margin-bottom: 18px; background: linear-gradient(135deg, rgba(26, 36, 60, 0.85), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(59, 130, 246, 0.3); border-radius: var(--radius-lg); padding: 16px 20px;">
     
     <!-- 1. Month Header & Unified Financial Pill -->
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+    <div class="workbench-top-row">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; flex: 1;">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 1.25rem;">{% if selected_month_info.is_current_month %}📍{% else %}🗓️{% endif %}</span>
-                <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; white-space: nowrap;">
                     {{ selected_month_info.name_full if selected_month_info else 'Movimenti Selezionati' }}
                 </h3>
             </div>
             {% if selected_month_info and selected_month_info.is_current_month %}
-            <span style="font-size: 0.68rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 7px; border-radius: 6px; font-weight: 800; text-transform: uppercase;">
+            <span style="font-size: 0.68rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 7px; border-radius: 6px; font-weight: 800; text-transform: uppercase; white-space: nowrap;">
                 Mese in Corso
             </span>
             {% endif %}
-            <span style="color: var(--text-muted); font-size: 0.74rem;">
-                • {{ selected_month_info.tx_count if selected_month_info else transactions|length }} movimenti
+            <span style="color: var(--text-muted); font-size: 0.72rem; white-space: nowrap;">
+                • {{ selected_month_info.tx_count if selected_month_info else transactions|length }} mov.
             </span>
         </div>
 
         <!-- Sleek Unified Financial Glass Capsule -->
-        <div style="display: inline-flex; align-items: center; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 5px 14px; gap: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
-            <div style="display: flex; align-items: baseline; gap: 5px;">
-                <span style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Entrate</span>
-                <strong style="color: #10b981; font-size: 0.88rem; font-weight: 800;">{{ total_income|eur_sign }}</strong>
+        <div class="financial-capsule">
+            <div style="display: flex; align-items: baseline; gap: 4px;">
+                <span style="font-size: 0.6rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Entr.</span>
+                <strong style="color: #10b981; font-size: 0.85rem; font-weight: 800;">{{ total_income|eur_sign }}</strong>
             </div>
-            <div style="width: 1px; height: 16px; background: rgba(255,255,255,0.12);"></div>
-            <div style="display: flex; align-items: baseline; gap: 5px;">
-                <span style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Uscite</span>
-                <strong style="color: #f87171; font-size: 0.88rem; font-weight: 800;">{{ (-total_expenses)|eur }}</strong>
+            <div style="width: 1px; height: 14px; background: rgba(255,255,255,0.12); flex-shrink: 0;"></div>
+            <div style="display: flex; align-items: baseline; gap: 4px;">
+                <span style="font-size: 0.6rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Usc.</span>
+                <strong style="color: #f87171; font-size: 0.85rem; font-weight: 800;">{{ (-total_expenses)|eur }}</strong>
             </div>
-            <div style="width: 1px; height: 16px; background: rgba(255,255,255,0.12);"></div>
-            <div style="display: flex; align-items: baseline; gap: 5px;">
-                <span style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Netto</span>
-                <strong style="color: {% if net_period >= 0 %}#60a5fa{% else %}#f87171{% endif %}; font-size: 0.88rem; font-weight: 800;">{{ net_period|eur_sign }}</strong>
+            <div style="width: 1px; height: 14px; background: rgba(255,255,255,0.12); flex-shrink: 0;"></div>
+            <div style="display: flex; align-items: baseline; gap: 4px;">
+                <span style="font-size: 0.6rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Netto</span>
+                <strong style="color: {% if net_period >= 0 %}#60a5fa{% else %}#f87171{% endif %}; font-size: 0.85rem; font-weight: 800;">{{ net_period|eur_sign }}</strong>
             </div>
         </div>
     </div>
@@ -531,36 +531,49 @@
     {% endif %}
 
     <!-- 3. Work Modes / Filter Tabs & Clean Action Toolbar -->
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
+    <div class="workbench-toolbar-row">
         
-        <!-- Left: Segmented Filter Tabs (Tutti, Da Revisionare, 730) -->
-        <div style="display: flex; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); gap: 4px;">
-            <a href="/transactions?{% if selected_month %}month={{ selected_month }}&{% endif %}{% if selected_category %}category={{ selected_category|urlencode }}&{% endif %}" 
-               class="workbench-subtab {% if not status_filter %}active{% endif %}" style="padding: 4px 10px; font-size: 0.74rem;">
-                <span>📋 Tutti</span>
-                <span class="subtab-badge" style="font-size: 0.68rem;">{{ selected_month_info.tx_count if selected_month_info else transactions|length }}</span>
-            </a>
+        <!-- Left: Segmented Filter Tabs (Tutti, Da Revisionare, 730) - scrollabile su mobile -->
+        <div class="workbench-tabs-scroll">
+            <div style="display: flex; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); gap: 4px; width: fit-content;">
+                <a href="/transactions?{% if selected_month %}month={{ selected_month }}&{% endif %}{% if selected_category %}category={{ selected_category|urlencode }}&{% endif %}" 
+                   class="workbench-subtab {% if not status_filter %}active{% endif %}" style="padding: 4px 10px; font-size: 0.74rem; white-space: nowrap;">
+                    <span>📋 Tutti</span>
+                    <span class="subtab-badge" style="font-size: 0.68rem;">{{ selected_month_info.tx_count if selected_month_info else transactions|length }}</span>
+                </a>
 
-            <a href="/transactions?{% if selected_month %}month={{ selected_month }}&{% endif %}status=review{% if selected_category %}&category={{ selected_category|urlencode }}{% endif %}" 
-               class="workbench-subtab {% if status_filter == 'review' %}active-warning{% endif %}" style="padding: 4px 10px; font-size: 0.74rem;">
-                <span>⚡ Da Revisionare</span>
-                {% set pending_count = (selected_month_info.uncat_count if selected_month_info else uncategorized_count) %}
-                <span class="subtab-badge" style="background: {% if pending_count > 0 %}#ef4444{% else %}rgba(255,255,255,0.1){% endif %}; color: #fff; font-size: 0.68rem;">
-                    {{ pending_count }}
-                </span>
-            </a>
+                <a href="/transactions?{% if selected_month %}month={{ selected_month }}&{% endif %}status=review{% if selected_category %}&category={{ selected_category|urlencode }}{% endif %}" 
+                   class="workbench-subtab {% if status_filter == 'review' %}active-warning{% endif %}" style="padding: 4px 10px; font-size: 0.74rem; white-space: nowrap;">
+                    <span>⚡ Da Revisionare</span>
+                    {% set pending_count = (selected_month_info.uncat_count if selected_month_info else uncategorized_count) %}
+                    <span class="subtab-badge" style="background: {% if pending_count > 0 %}#ef4444{% else %}rgba(255,255,255,0.1){% endif %}; color: #fff; font-size: 0.68rem;">
+                        {{ pending_count }}
+                    </span>
+                </a>
 
-            <a href="/transactions?{% if selected_month %}month={{ selected_month }}&{% endif %}status=tax_730{% if selected_category %}&category={{ selected_category|urlencode }}{% endif %}" 
-               class="workbench-subtab {% if status_filter == 'tax_730' %}active-success{% endif %}" style="padding: 4px 10px; font-size: 0.74rem;">
-                <span>🩺 Detraibili 730</span>
-                <span class="subtab-badge" style="background: rgba(16, 185, 129, 0.25); color: #86efac; font-size: 0.68rem;">
-                    {{ tax_730_count }}
-                </span>
-            </a>
-        </div>
+                {% if merchant_groups and merchant_groups|length > 0 %}
+                <button type="button" onclick="scrollToTriageAndHighlight()" 
+                        title="Vai al pannello Raggruppamento Esercenti"
+                        style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 18px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.15)); border: 1.5px solid rgba(245, 158, 11, 0.5); color: #fbbf24; font-size: 0.72rem; font-weight: 700; cursor: pointer; white-space: nowrap;">
+                    <span>✨</span><span>Categorizza</span>
+                    {% if triage_stats and triage_stats.pending_count > 0 %}
+                    <span style="background: rgba(239, 68, 68, 0.35); color: #fca5a5; border-radius: 10px; padding: 0px 5px; font-size: 0.65rem; font-weight: 800;">{{ triage_stats.pending_count }}</span>
+                    {% endif %}
+                </button>
+                {% endif %}
+
+                <a href="/transactions?{% if selected_month %}month={{ selected_month }}&{% endif %}status=tax_730{% if selected_category %}&category={{ selected_category|urlencode }}{% endif %}" 
+                   class="workbench-subtab {% if status_filter == 'tax_730' %}active-success{% endif %}" style="padding: 4px 10px; font-size: 0.74rem; white-space: nowrap;">
+                    <span>🩺 Detraibili 730</span>
+                    <span class="subtab-badge" style="background: rgba(16, 185, 129, 0.25); color: #86efac; font-size: 0.68rem;">
+                        {{ tax_730_count }}
+                    </span>
+                </a>
+            </div>
 
         <!-- Right: Actions & Live Search -->
         <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+
             
             <!-- High-Prominence Live Instant Search Form -->
             <form id="workbenchSearchForm" onsubmit="handleLiveSearchSubmit(event)" style="margin: 0; display: inline-flex;">
@@ -4776,6 +4789,35 @@ function confirmDeleteAccount() {
         delForm.action = `/accounts/delete/${id}`;
         delForm.submit();
     }
+}
+
+// --- SCROLL & GOLDEN HIGHLIGHT: Triage Section ---
+function scrollToTriageAndHighlight() {
+    const section = document.getElementById('merchantTriageSection');
+    if (!section) return;
+
+    // Assicura che il corpo sia espanso
+    const body = document.getElementById('merchantTriageBody');
+    const icon = document.getElementById('triageCollapseIcon');
+    const text = document.getElementById('triageCollapseText');
+    if (body && body.style.display === 'none') {
+        body.style.display = 'block';
+        if (icon) icon.innerText = '🔼';
+        if (text) text.innerText = 'Comprimi';
+    }
+
+    // Scroll smooth verso la sezione
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Applica il glow dorato
+    section.classList.remove('golden-triage-highlight');
+    void section.offsetWidth; // force reflow
+    section.classList.add('golden-triage-highlight');
+
+    // Rimuovi il glow dopo 4 secondi
+    setTimeout(() => {
+        section.classList.remove('golden-triage-highlight');
+    }, 4000);
 }
 </script>
 
