@@ -4535,6 +4535,29 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 3. Apply initial triage state filter (default to 'pending' if pending items exist, else 'completed')
     filterTriageByState(currentTriageState);
+
+    // 4. If triage=1 or hash #merchantTriageSection, expand triage, filter to pending, illuminate golden & scroll
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('triage') === '1' || window.location.hash === '#merchantTriageSection') {
+        const triageSection = document.getElementById('merchantTriageSection');
+        if (triageSection) {
+            // Expand card if collapsed
+            const triageBody = document.getElementById('merchantTriageBody');
+            if (triageBody && triageBody.style.display === 'none') {
+                toggleTriageCollapse();
+            }
+            // Switch filter to 'pending' (Da Fare)
+            filterTriageByState('pending');
+
+            // Apply glowing golden border & shadow
+            triageSection.classList.add('golden-triage-highlight');
+
+            // Scroll smoothly to center of screen
+            setTimeout(() => {
+                triageSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 120);
+        }
+    }
 });
 </script>
 

@@ -282,7 +282,7 @@
             </div>
             <div>
                 {% if uncategorized_tx_count > 0 %}
-                <a href="/transactions" class="btn btn-sm" style="font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 8px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border: none; box-shadow: 0 4px 12px rgba(245,158,11,0.35); display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
+                <a href="/transactions?triage=1#merchantTriageSection" class="btn btn-sm" style="font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 8px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; border: none; box-shadow: 0 4px 12px rgba(245,158,11,0.35); display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
                     <span>🏷️ Categorizza Voci ({{ uncategorized_tx_count }})</span>
                 </a>
                 {% elif step3_done %}
