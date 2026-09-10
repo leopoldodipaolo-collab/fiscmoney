@@ -4,6 +4,40 @@
 
 {% block content %}
 
+<style>
+.merchant-triage-card {
+    margin-bottom: 18px;
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.95)) !important;
+    border: 1.5px solid rgba(99, 102, 241, 0.35);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    transition: all 0.3s ease;
+    scroll-margin-top: 90px;
+}
+
+@keyframes goldenGlowPulse {
+  0% {
+    border-color: #f59e0b;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.5), 0 0 45px rgba(217, 119, 6, 0.3), inset 0 0 15px rgba(245, 158, 11, 0.1);
+  }
+  50% {
+    border-color: #fbbf24;
+    box-shadow: 0 0 35px rgba(245, 158, 11, 0.9), 0 0 75px rgba(217, 119, 6, 0.55), inset 0 0 30px rgba(245, 158, 11, 0.2);
+  }
+  100% {
+    border-color: #f59e0b;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.5), 0 0 45px rgba(217, 119, 6, 0.3), inset 0 0 15px rgba(245, 158, 11, 0.1);
+  }
+}
+
+.golden-triage-highlight {
+  border: 2.5px solid #f59e0b !important;
+  animation: goldenGlowPulse 2s infinite ease-in-out !important;
+}
+</style>
+
 <!-- Header & Action Buttons -->
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
     <div>
@@ -454,7 +488,7 @@
 <!-- PANNELLO TRIAGE & RAGGRUPPAMENTO PER ESERCENTE / FREQUENZA -->
 <!-- ======================================================== -->
 {% if merchant_groups and merchant_groups|length > 0 %}
-<div id="merchantTriageSection" class="card merchant-triage-card" style="margin-bottom: 18px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.75), rgba(15, 23, 42, 0.9)); border: 1.5px solid rgba(99, 102, 241, 0.35); border-radius: var(--radius-lg); padding: 16px 20px; backdrop-filter: blur(12px); box-shadow: 0 8px 24px rgba(0,0,0,0.35);">
+<div id="merchantTriageSection" class="card merchant-triage-card">
     
     <!-- Triage Header with Counter, Progress Bar & Collapse Toggle -->
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 10px;">
@@ -4536,7 +4570,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Apply initial triage state filter (default to 'pending' if pending items exist, else 'completed')
     filterTriageByState(currentTriageState);
 
-    // 4. If triage=1 or hash #merchantTriageSection, expand triage, filter to pending, illuminate golden & scroll
+    // 4. Focus on Triage Section if requested (?triage=1 or #merchantTriageSection)
+    applyTriageFocusIfRequested();
+});
+
+function applyTriageFocusIfRequested() {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('triage') === '1' || window.location.hash === '#merchantTriageSection') {
         const triageSection = document.getElementById('merchantTriageSection');
@@ -4549,16 +4587,26 @@ document.addEventListener('DOMContentLoaded', () => {
             // Switch filter to 'pending' (Da Fare)
             filterTriageByState('pending');
 
-            // Apply glowing golden border & shadow
+            // Apply glowing golden class and direct style fallback
             triageSection.classList.add('golden-triage-highlight');
+            triageSection.style.border = '2.5px solid #f59e0b';
+            triageSection.style.boxShadow = '0 0 35px rgba(245, 158, 11, 0.85), 0 0 70px rgba(217, 119, 6, 0.5)';
 
-            // Scroll smoothly to center of screen
-            setTimeout(() => {
-                triageSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 120);
+            // Multi-stage smooth scroll to account for layout shifts
+            const doScroll = () => {
+                const yOffset = -90;
+                const y = triageSection.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                window.scrollTo({ top: y, behavior: 'smooth' });
+            };
+            setTimeout(doScroll, 100);
+            setTimeout(doScroll, 350);
+            setTimeout(doScroll, 700);
         }
     }
-});
+}
+
+// Also trigger on window load just in case
+window.addEventListener('load', applyTriageFocusIfRequested);
 </script>
 
 {% endblock %}
