@@ -2653,6 +2653,17 @@ function toggleDropzone() {
     }
 }
 
+// Auto-open dropzone if URL contains ?import=1
+window.addEventListener('DOMContentLoaded', function() {
+    if (new URLSearchParams(window.location.search).get('import') === '1') {
+        const el = document.getElementById('importerDropzoneContainer');
+        if (el) {
+            el.style.display = 'block';
+            setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 150);
+        }
+    }
+});
+
 // 2-Step Import Workflow: Upload & Preview
 async function handleFileSelected(input) {
     if (!input.files || !input.files[0]) return;

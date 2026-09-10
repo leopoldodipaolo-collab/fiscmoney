@@ -252,9 +252,9 @@
                 </div>
             </div>
             <div>
-                <button type="button" onclick="openUploadModal()" class="btn btn-sm" style="font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 8px; background: {% if step2_done %}rgba(16, 185, 129, 0.15){% else %}linear-gradient(135deg, #0ea5e9, #2563eb){% endif %}; color: {% if step2_done %}#34d399{% else %}#fff{% endif %}; border: {% if step2_done %}1px solid rgba(16, 185, 129, 0.3){% else %}none{% endif %}; box-shadow: {% if not step2_done %}0 4px 12px rgba(14,165,233,0.35){% else %}none{% endif %}; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                <a href="/transactions?import=1" class="btn btn-sm" style="font-size: 0.78rem; font-weight: 700; padding: 6px 14px; border-radius: 8px; background: {% if step2_done %}rgba(16, 185, 129, 0.15){% else %}linear-gradient(135deg, #0ea5e9, #2563eb){% endif %}; color: {% if step2_done %}#34d399{% else %}#fff{% endif %}; border: {% if step2_done %}1px solid rgba(16, 185, 129, 0.3){% else %}none{% endif %}; box-shadow: {% if not step2_done %}0 4px 12px rgba(14,165,233,0.35){% else %}none{% endif %}; display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
                     <span>{% if step2_done %}📥 Carica Altro File{% else %}📥 Carica Estratto Conto{% endif %}</span>
-                </button>
+                </a>
             </div>
         </div>
 
