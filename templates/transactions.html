@@ -855,32 +855,40 @@
             </div>
         </div>
 
-        <!-- VISTA B: PILLOLE / CHIPS RAPIDE -->
+        <!-- VISTA B: PILLOLE / CHIPS RAPIDE (OTTIMIZZATA SMARTPHONE & DESKTOP) -->
         <div id="merchantChipsView" class="triage-view-content" style="display: none;">
-            <div id="merchantChipsContainer" style="display: flex; flex-wrap: wrap; gap: 8px; max-height: 280px; overflow-y: auto; padding: 6px 2px;">
+            <div id="merchantChipsContainer" class="merchant-chips-flex-wrap">
                 {% for g in merchant_groups %}
                 {% set is_pending = (g.is_unassigned or not g.is_homogeneous) %}
-                <div class="merchant-chip-container" 
+                <div class="merchant-chip-container {% if is_pending %}chip-pending{% else %}chip-completed{% endif %}" 
                      data-triage-state="{{ 'pending' if is_pending else 'completed' }}"
-                     style="background: {% if is_pending %}rgba(245, 158, 11, 0.06){% else %}rgba(255,255,255,0.04){% endif %}; border: 1px solid {% if is_pending %}rgba(245, 158, 11, 0.4){% else %}rgba(255,255,255,0.12){% endif %}; border-radius: 20px; padding: 4px 6px 4px 12px; display: inline-flex; align-items: center; gap: 8px; transition: all 0.15s ease;">
-                    <span style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" onclick="onMerchantClickFilter('{{ g.pattern|replace("'", "\\'") }}')" title="Clicca per isolare i movimenti">
-                        <span>{{ g.icon }}</span>
-                        <strong style="font-size: 0.78rem; color: #fff;">{{ g.pattern }}</strong>
+                     data-pattern="{{ g.pattern|replace("'", "\\'") }}">
+                    
+                    <!-- Frequency Badge -->
+                    <span class="chip-freq-badge {% if is_pending %}freq-pending{% endif %}">
+                        x{{ g.count }}
                     </span>
-                    <span style="background: {% if is_pending %}rgba(239, 68, 68, 0.25){% elif g.count >= 5 %}rgba(99, 102, 241, 0.35){% elif g.count >= 2 %}rgba(56, 189, 248, 0.3){% else %}rgba(255,255,255,0.15){% endif %}; color: {% if is_pending %}#fca5a5{% elif g.count >= 5 %}#c7d2fe{% elif g.count >= 2 %}#bae6fd{% else %}#e2e8f0{% endif %}; padding: 1px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: 800;">
-                        {{ g.count }}
-                    </span>
-                    <span style="color: #38bdf8; font-size: 0.74rem; font-weight: 700;" title="Media per spesa: ~{{ g.avg_amount|eur }}">
-                        ~{{ g.avg_amount|eur }}/mov
-                    </span>
-                    <span style="color: var(--text-muted); font-size: 0.68rem; font-weight: 600;">
-                        ({{ g.total_amount|eur }})
-                    </span>
+
+                    <!-- Main Merchant Pill Click (isola i movimenti) -->
+                    <div class="chip-content-wrap" onclick="onMerchantClickFilter('{{ g.pattern|replace("'", "\\'") }}')" title="Tocca per isolare i movimenti nella lista">
+                        <span class="chip-icon">{{ g.icon }}</span>
+                        <div class="chip-info">
+                            <strong class="chip-name">{{ g.pattern }}</strong>
+                            <div class="chip-stats">
+                                <span class="chip-avg">~{{ g.avg_amount|eur }}</span>
+                                <span class="chip-tot {% if g.is_income %}income{% else %}expense{% endif %}">
+                                    ({{ g.total_amount|eur_sign if g.is_income else g.total_amount|eur }})
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Direct Quick Classify Button -->
                     <button type="button" 
-                            onclick="openGroupClassifyModal('{{ g.pattern|replace("'", "\\'") }}', {{ g.tx_ids|tojson }}, '{{ g.primary_category if not g.is_unassigned else '' }}', {{ g.count }}, {{ g.total_amount }})" 
-                            style="background: {% if is_pending %}linear-gradient(135deg, #6366f1, #3b82f6){% else %}rgba(255,255,255,0.08){% endif %}; border: 1px solid {% if is_pending %}rgba(99, 102, 241, 0.5){% else %}rgba(255,255,255,0.15){% endif %}; color: #fff; border-radius: 12px; padding: 2px 8px; font-size: 0.68rem; font-weight: 700; cursor: pointer; transition: all 0.15s ease;"
-                            title="Apri modale completa">
-                        {% if is_pending %}⚡ Riclassifica{% else %}✏️ Modifica{% endif %}
+                            class="chip-action-btn {% if is_pending %}btn-quick-pending{% else %}btn-quick-completed{% endif %}"
+                            onclick="openGroupClassifyModal('{{ g.pattern|replace("'", "\\'") }}', {{ g.tx_ids|tojson }}, '{{ g.primary_category if not g.is_unassigned else '' }}', {{ g.count }}, {{ g.total_amount }})"
+                            title="{% if is_pending %}Assegna categoria e crea regola{% else %}Modifica categoria assegnata{% endif %}">
+                        {% if is_pending %}⚡{% else %}✏️{% endif %}
                     </button>
                 </div>
                 {% endfor %}
@@ -3959,7 +3967,7 @@ function clearLiveSearch() {
 }
 
 // --- MERCHANT TRIAGE PANEL CONTROLS ---
-function switchTriageView(mode) {
+function switchTriageView(mode, savePref = true) {
     const tableView = document.getElementById('merchantTableView');
     const chipsView = document.getElementById('merchantChipsView');
     const btnTable = document.getElementById('btnViewTable');
@@ -3970,11 +3978,13 @@ function switchTriageView(mode) {
         if (chipsView) chipsView.style.display = 'block';
         if (btnTable) btnTable.classList.remove('active');
         if (btnChips) btnChips.classList.add('active');
+        if (savePref) localStorage.setItem('fisc_triage_view', 'chips');
     } else {
         if (tableView) tableView.style.display = 'block';
         if (chipsView) chipsView.style.display = 'none';
         if (btnTable) btnTable.classList.add('active');
         if (btnChips) btnChips.classList.remove('active');
+        if (savePref) localStorage.setItem('fisc_triage_view', 'table');
     }
 }
 
@@ -4849,10 +4859,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Apply initial triage state filter (default to 'pending' if pending items exist, else 'completed')
     filterTriageByState(currentTriageState);
 
-    // 4. Populate mobile 1-tap categorization suggestions
+    // 4. Default Triage View: 'chips' (Pillole) per mobile, altrimenti ripristina o usa 'table'
+    const isMobileDevice = window.innerWidth <= 768;
+    const savedTriageView = localStorage.getItem('fisc_triage_view');
+    if (savedTriageView) {
+        switchTriageView(savedTriageView, false);
+    } else if (isMobileDevice) {
+        switchTriageView('chips', false);
+    }
+
+    // 5. Populate mobile 1-tap categorization suggestions
     populateMobileQuickSuggestions();
 
-    // 5. Focus on Triage Section if requested (?triage=1 or #merchantTriageSection)
+    // 6. Focus on Triage Section if requested (?triage=1 or #merchantTriageSection)
     applyTriageFocusIfRequested();
 });
 
