@@ -4270,8 +4270,137 @@ tr.merchant-row.is-hidden,
   box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.55);
 }
 
+.advisor-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+}
+
 .advisor-card-header:hover {
-  background: rgba(255, 255, 255, 0.04) !important;
+  background: rgba(255, 255, 255, 0.045) !important;
+}
+
+.advisor-header-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.advisor-avatar-box {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.advisor-avatar-frame {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid #38bdf8;
+  background: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.advisor-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.advisor-title-box {
+  min-width: 0;
+  flex: 1;
+}
+
+.advisor-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.advisor-name-title {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.advisor-role-pill {
+  font-size: 0.65rem;
+  padding: 1px 7px;
+  border-radius: 6px;
+  font-weight: 700;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  white-space: nowrap;
+}
+
+.advisor-desc-subtitle {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  display: block;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.advisor-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.advisor-quick-pill {
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 0.74rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.advisor-edit-btn {
+  font-size: 0.72rem;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f8fafc;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.advisor-toggle-btn {
+  font-size: 0.75rem;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .daily-speedometer-box {
@@ -4285,17 +4414,55 @@ tr.merchant-row.is-hidden,
 
 @media (max-width: 640px) {
   .advisor-card-header {
-    padding: 12px !important;
+    padding: 10px 12px !important;
+    gap: 8px !important;
+  }
+
+  .advisor-avatar-frame {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+  }
+
+  .advisor-name-title {
+    font-size: 0.88rem !important;
+  }
+
+  .advisor-role-pill {
+    font-size: 0.6rem !important;
+    padding: 1px 5px !important;
+  }
+
+  .advisor-desc-subtitle {
+    font-size: 0.68rem !important;
+  }
+
+  .advisor-header-actions {
+    width: 100% !important;
+    justify-content: space-between !important;
+    margin-top: 4px !important;
+    gap: 6px !important;
   }
 
   .advisor-quick-pill {
-    display: none !important; /* Nascondi pillole saldo/entrate duplicate dall'header su mobile */
+    display: none !important; /* Nascondi pillole saldo/entrate duplicate su mobile */
   }
 
-  #advisorForecastCollapseBtn {
-    width: 100% !important;
+  .advisor-edit-btn {
+    flex: 1 !important;
     justify-content: center !important;
-    margin-top: 6px !important;
+    padding: 6px 10px !important;
+  }
+
+  .advisor-toggle-btn {
+    flex: 2 !important;
+    justify-content: center !important;
+    padding: 6px 12px !important;
+    font-size: 0.78rem !important;
+  }
+
+  #advisorForecastBody {
+    padding: 12px 10px !important;
   }
 
   .daily-speedometer-box {

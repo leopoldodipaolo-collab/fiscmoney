@@ -229,7 +229,8 @@ def get_vertical_category_data(workspace_id, category_name, preset='6M', from_ym
         
         # Primary tag or subcategory extraction
         raw_tags = r['tags'] or ''
-        tag_list = [t.strip() for t in raw_tags.split(',') if t.strip()]
+        # Support both comma-separated and space-separated tags (e.g. '#meccanico #tagliando' or '#telepass, #pedaggi')
+        tag_list = [t.strip() for t in raw_tags.replace(',', ' ').split() if t.strip()]
         subcat = r['sub_category'] or (tag_list[0].replace('#', '').replace('_', ' ').title() if tag_list else 'Altre Spese')
         
         # Aggregate Subcategories
@@ -295,10 +296,21 @@ def get_vertical_category_data(workspace_id, category_name, preset='6M', from_ym
                 "has_activity": False
             }
 
-    # Populate amounts and percentages
+    # Populate amounts and percentages (checking direct tag, stripped tag, and subcat mapping fallback)
     for code, info in all_tags_dict.items():
-        tot = tag_totals.get(code, 0.0)
-        cnt = tag_counts.get(code, 0)
+        clean_code = code if code.startswith('#') else f"#{code}"
+        stripped_code = code.lstrip('#')
+        subcat_name = info.get("subcat", "")
+        
+        # 1. First priority: direct tag match
+        tot = tag_totals.get(clean_code, 0.0) or tag_totals.get(code, 0.0) or tag_totals.get(stripped_code, 0.0)
+        cnt = tag_counts.get(clean_code, 0) or tag_counts.get(code, 0) or tag_counts.get(stripped_code, 0)
+
+        # 2. Fallback: if tag is not directly set but subcat has transactions, link subcat activity
+        if cnt == 0 and subcat_name and subcat_name in subcat_totals:
+            tot = subcat_totals[subcat_name]
+            cnt = len([tx for tx in parsed_txs if tx['subcategory'] == subcat_name])
+
         info["total_amount"] = round(tot, 2)
         info["tx_count"] = cnt
         info["monthly_avg"] = round(tot / num_months, 2)

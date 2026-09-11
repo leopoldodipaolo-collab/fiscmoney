@@ -1124,7 +1124,7 @@
                     <div id="drawer_{{ card_idx }}" style="display: none; margin-top: 8px; background: rgba(0,0,0,0.35); border-radius: 8px; padding: 8px 12px;">
                         <div id="txsList_{{ card_idx }}" style="display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto;">
                             {% for tx in cat.transactions %}
-                            <div class="tx-row-item" data-tags="{{ tx.tags }}" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.76rem;">
+                            <div class="tx-row-item" data-tags="{{ tx.tags }}" data-subcat="{{ tx.subcategory }}" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.76rem;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     <span style="color: #94a3b8; font-size: 0.7rem;">{{ tx.date }}</span>
                                     <strong style="color: #fff;">{{ tx.description }}</strong>
@@ -1609,17 +1609,25 @@ function filterDrawerByTag(drawerId, tagCode, pillElem) {
     const drawer = document.getElementById(drawerId);
     if (drawer) {
         drawer.style.display = 'block';
+        const cleanTag = (tagCode || '').toLowerCase().replace('#', '');
         const rows = drawer.querySelectorAll('.tx-row-item');
+        let matched = 0;
         rows.forEach(r => {
-            const rawTags = r.getAttribute('data-tags') || '';
-            if (rawTags.includes(tagCode)) {
+            const rawTags = (r.getAttribute('data-tags') || '').toLowerCase();
+            const subcat = (r.getAttribute('data-subcat') || '').toLowerCase();
+            if (rawTags.includes(tagCode.toLowerCase()) || rawTags.includes(cleanTag) || subcat.includes(cleanTag)) {
                 r.style.display = 'flex';
                 r.style.background = 'rgba(59, 130, 246, 0.15)';
+                matched++;
             } else {
                 r.style.display = 'none';
                 r.style.background = 'transparent';
             }
         });
+        // Se nessun match esatto, mostra tutti per trasparenza
+        if (matched === 0) {
+            rows.forEach(r => { r.style.display = 'flex'; r.style.background = 'transparent'; });
+        }
     }
 }
 
