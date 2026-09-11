@@ -660,6 +660,10 @@ def dashboard():
             tags_set.add(std_t)
         all_tags_list = sorted(list(tags_set))
 
+    # Total and uncategorized transactions in workspace for onboarding checklist
+    tx_count = conn.execute("SELECT COUNT(*) FROM transactions WHERE workspace_id = ?", (ws_id,)).fetchone()[0] if ws_id else 0
+    uncat_count = conn.execute("SELECT COUNT(*) FROM transactions WHERE workspace_id = ? AND (category IS NULL OR category = '' OR category = 'Da Categorizzare' OR category = 'Altro')", (ws_id,)).fetchone()[0] if ws_id else 0
+
     conn.close()
     
     return render_template(
