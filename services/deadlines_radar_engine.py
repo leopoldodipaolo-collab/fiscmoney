@@ -333,13 +333,33 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
             due_month_int = int(due_ym.split('-')[1]) if '-' in due_ym else reference_date.month
             for ym_k, m_obj in month_map.items():
                 if m_obj['month_num'] == due_month_int:
-                    m_obj["deadlines"].append(formatted_item)
-                    m_obj["total_expected"] += expected
                     if ym_k == due_ym:
+                        # Anno di riferimento: usa l'item già calcolato (con lo stato reale)
+                        m_obj["deadlines"].append(formatted_item)
                         m_obj["total_paid"] += final_total_paid
                         m_obj["total_remaining"] += remaining_to_pay
                     else:
+                        # Anno futuro (o passato diverso): crea copia con status PENDING
+                        future_item = dict(formatted_item)
+                        future_item["year_month"] = ym_k
+                        future_year = ym_k.split('-')[0]
+                        future_item["due_date_str"] = f"{due_day} {MESI_BREVI_IT[due_month_int-1]} {future_year}"
+                        future_item["is_paid"] = False
+                        future_item["is_partial"] = False
+                        future_item["total_paid"] = 0.0
+                        future_item["remaining_to_pay"] = expected
+                        future_item["progress_pct"] = 0.0
+                        future_item["p1_paid"] = 0.0
+                        future_item["p2_paid"] = 0.0
+                        future_item["p1_missing"] = future_item.get("p1_target", 0.0)
+                        future_item["p2_missing"] = future_item.get("p2_target", 0.0)
+                        future_item["matched_txs_count"] = 0
+                        future_item["status_code"] = "PENDING"
+                        future_item["status_label"] = "Da Saldare 🚨"
+                        future_item["status_color"] = "#f87171"
+                        m_obj["deadlines"].append(future_item)
                         m_obj["total_remaining"] += expected
+                    m_obj["total_expected"] += expected
                     m_obj["items_count"] += 1
         elif rec_type == 'BIENNIAL':
             # Una scadenza biennale si ripete ogni 2 anni (es. Revisione auto):
@@ -353,12 +373,31 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
 
             for ym_k, m_obj in month_map.items():
                 if m_obj['month_num'] == due_month_int and ((m_obj['year'] - base_year) % 2 == 0):
-                    m_obj["deadlines"].append(formatted_item)
                     m_obj["total_expected"] += expected
                     if ym_k == due_ym:
+                        m_obj["deadlines"].append(formatted_item)
                         m_obj["total_paid"] += final_total_paid
                         m_obj["total_remaining"] += remaining_to_pay
                     else:
+                        # Anno futuro biennale: crea copia PENDING
+                        future_item = dict(formatted_item)
+                        future_item["year_month"] = ym_k
+                        future_year = ym_k.split('-')[0]
+                        future_item["due_date_str"] = f"{due_day} {MESI_BREVI_IT[due_month_int-1]} {future_year}"
+                        future_item["is_paid"] = False
+                        future_item["is_partial"] = False
+                        future_item["total_paid"] = 0.0
+                        future_item["remaining_to_pay"] = expected
+                        future_item["progress_pct"] = 0.0
+                        future_item["p1_paid"] = 0.0
+                        future_item["p2_paid"] = 0.0
+                        future_item["p1_missing"] = future_item.get("p1_target", 0.0)
+                        future_item["p2_missing"] = future_item.get("p2_target", 0.0)
+                        future_item["matched_txs_count"] = 0
+                        future_item["status_code"] = "PENDING"
+                        future_item["status_label"] = "Da Saldare 🚨"
+                        future_item["status_color"] = "#f87171"
+                        m_obj["deadlines"].append(future_item)
                         m_obj["total_remaining"] += expected
                     m_obj["items_count"] += 1
         elif due_ym in month_map:
