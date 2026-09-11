@@ -3096,6 +3096,123 @@ body {
   background: rgba(255, 255, 255, 0.05);
 }
 
+.cat-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cat-folder-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.cat-folder-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cat-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cat-title-name {
+  color: #fff;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.cat-mov-badge {
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.65rem;
+  padding: 1px 5px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.cat-todo-badge {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  font-size: 0.62rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.cat-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+
+.cat-progress-track {
+  width: 70px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.cat-progress-fill {
+  height: 100%;
+}
+
+.cat-pct-label {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  white-space: nowrap;
+}
+
+.cat-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.cat-total-box {
+  text-align: right;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.cat-amount {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.cat-amount.expense {
+  color: #f87171;
+}
+
+.cat-amount.income {
+  color: #10b981;
+}
+
+.cat-voices-count {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  display: block;
+}
+
 .category-folder-chevron {
   font-size: 0.82rem;
   color: var(--text-muted);
@@ -3729,6 +3846,43 @@ body.privacy-mode-active .privacy-switch-dot {
 
   .category-folder-header {
     padding: 10px 12px !important;
+    gap: 8px !important;
+  }
+
+  .cat-header-left {
+    gap: 8px !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+
+  .cat-folder-icon {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 1.05rem !important;
+  }
+
+  .cat-title-name {
+    font-size: 0.82rem !important;
+    max-width: 125px !important;
+  }
+
+  .cat-header-right {
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+  }
+
+  .cat-total-box {
+    text-align: right !important;
+  }
+
+  .cat-amount {
+    font-size: 0.88rem !important;
+    letter-spacing: -0.2px !important;
+  }
+
+  .cat-voices-count {
+    font-size: 0.62rem !important;
   }
 
   .category-folder-card.is-open {
