@@ -129,6 +129,7 @@ def _compute_match(pat, target_ym, due_day, target_type, p1_id, p2_id, all_txs, 
     return total, final_p1, final_p2, matched_count
 
 
+def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=None, user_profile_name=None):
     """
     Computes upcoming annual and multi-month financial deadlines:
     1. Monthly timeline distribution (next 12 calendar months).
