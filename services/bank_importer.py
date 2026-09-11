@@ -90,6 +90,7 @@ CATEGORY_SMART_TAGS = {
         {"code": "#condominio", "label": "Condominio", "icon": "🏘️", "subcat": "Condominio"},
         {"code": "#manutenzione_casa", "label": "Manutenzione Casa", "icon": "🔧", "subcat": "Manutenzione Casa"},
         {"code": "#brico_arredo", "label": "Brico & Arredo", "icon": "🛠️", "subcat": "Arredo & Brico"},
+        {"code": "#cura_casa", "label": "Cura Casa & Igiene", "icon": "🧹", "subcat": "Cura Casa & Igiene"},
         {"code": "#ristrutturazione", "label": "Ristrutturazione", "icon": "🏗️", "subcat": "Ristrutturazioni"}
     ],
     "Bollette & Utenze": [

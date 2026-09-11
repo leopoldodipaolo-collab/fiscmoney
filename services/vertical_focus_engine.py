@@ -281,35 +281,95 @@ def get_vertical_category_data(workspace_id, category_name, preset='6M', from_ym
             "has_activity": False
         }
 
-    # Add any extra tags found in transactions
-    for tg, t_amt in tag_totals.items():
-        if tg not in all_tags_dict:
-            all_tags_dict[tg] = {
-                "code": tg,
-                "label": tg.replace('#', '').replace('_', ' ').title(),
-                "icon": "🏷️",
-                "subcat": "",
-                "total_amount": 0.0,
-                "tx_count": 0,
-                "monthly_avg": 0.0,
-                "percent": 0.0,
-                "has_activity": False
-            }
+    # Helper: tag alias / synonym mappings to prevent duplicate cloned cards
+    # E.g. in 'Casa & Immobili', '#brico' and '#faidate' roll up to '#brico_arredo'.
+    TAG_ALIASES = {
+        # Casa & Immobili
+        "#brico": "#brico_arredo",
+        "#faidate": "#brico_arredo",
+        "#arredo": "#brico_arredo",
+        "#curacasa": "#cura_casa",
+        "#detersivi": "#cura_casa",
+        "#igiene": "#cura_casa",
+        "#igiene_casa": "#cura_casa",
+        # Auto & Mobilità
+        "#pedaggi": "#telepass",
+        "#meccanico": "#tagliando_meccanico",
+        "#tagliando": "#tagliando_meccanico",
+        "#gomme": "#cambio_gomme",
+        "#gommista": "#cambio_gomme",
+        "#parcheggi": "#parcheggio",
+        # Salute
+        "#farmacie": "#farmacia",
+        "#medicinali": "#farmacia",
+        "#medico": "#visite_esami",
+        "#visite": "#visite_esami",
+        "#visita": "#visite_esami",
+    }
 
-    # Populate amounts and percentages (checking direct tag, stripped tag, and subcat mapping fallback)
+    # Ignored / Redundant tags that replicate the macro category name or add no semantic distinction
+    IGNORED_TAGS = {
+        "#casa", "#auto", "#spesa", "#lavoro", "#viaggi", "#salute", "#tasse", "#generico", "#varie"
+    }
+
+    # Add any extra genuine custom tags found in transactions (skipping aliases, ignored, and officially covered)
+    for tg, t_amt in tag_totals.items():
+        clean_tg = tg if tg.startswith('#') else f"#{tg}"
+        if clean_tg in IGNORED_TAGS:
+            continue
+        # If it's a known synonym, it maps to an official tag, don't create a new card
+        if clean_tg in TAG_ALIASES and TAG_ALIASES[clean_tg] in all_tags_dict:
+            continue
+        # If already in official tags dict, skip
+        if clean_tg in all_tags_dict or tg in all_tags_dict:
+            continue
+
+        all_tags_dict[clean_tg] = {
+            "code": clean_tg,
+            "label": clean_tg.replace('#', '').replace('_', ' ').title(),
+            "icon": "🏷️",
+            "subcat": "",
+            "total_amount": 0.0,
+            "tx_count": 0,
+            "monthly_avg": 0.0,
+            "percent": 0.0,
+            "has_activity": False
+        }
+
+    # Populate amounts and percentages
     for code, info in all_tags_dict.items():
         clean_code = code if code.startswith('#') else f"#{code}"
-        stripped_code = code.lstrip('#')
         subcat_name = info.get("subcat", "")
         
-        # 1. First priority: direct tag match
-        tot = tag_totals.get(clean_code, 0.0) or tag_totals.get(code, 0.0) or tag_totals.get(stripped_code, 0.0)
-        cnt = tag_counts.get(clean_code, 0) or tag_counts.get(code, 0) or tag_counts.get(stripped_code, 0)
+        # 1. Gather amount & count from direct tag + any alias tags that map to this code
+        matched_tx_ids = set()
+        tot = 0.0
 
-        # 2. Fallback: if tag is not directly set but subcat has transactions, link subcat activity
-        if cnt == 0 and subcat_name and subcat_name in subcat_totals:
-            tot = subcat_totals[subcat_name]
-            cnt = len([tx for tx in parsed_txs if tx['subcategory'] == subcat_name])
+        for tg, t_amt in tag_totals.items():
+            tg_clean = tg if tg.startswith('#') else f"#{tg}"
+            # Direct match
+            if tg_clean == clean_code or tg == code:
+                for tx_id in tag_tx_map.get(tg, []):
+                    matched_tx_ids.add(tx_id)
+            # Alias match
+            elif TAG_ALIASES.get(tg_clean) == clean_code:
+                for tx_id in tag_tx_map.get(tg, []):
+                    matched_tx_ids.add(tx_id)
+
+        # 2. Subcategory matching: if subcat matches and transactions exist
+        if subcat_name:
+            for tx in parsed_txs:
+                if tx['subcategory'] == subcat_name:
+                    matched_tx_ids.add(tx['id'])
+
+        # Calculate exact non-duplicated sum for matched transactions
+        if matched_tx_ids:
+            tx_lookup = {tx['id']: tx['amount'] for tx in parsed_txs}
+            tot = sum(tx_lookup[tid] for tid in matched_tx_ids if tid in tx_lookup)
+            cnt = len(matched_tx_ids)
+        else:
+            tot = 0.0
+            cnt = 0
 
         info["total_amount"] = round(tot, 2)
         info["tx_count"] = cnt
