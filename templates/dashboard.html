@@ -1159,89 +1159,93 @@
         <form method="POST" action="/deadlines/add">
             <input type="hidden" name="redirect_to" value="dashboard">
             
-            <div class="form-group" style="margin-bottom: 12px;">
-                <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Nome Spesa / Scadenza *</label>
-                <input type="text" name="name" class="form-control" required placeholder="Es. Condominio Annuale, Bollo Auto, TARI" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: #fff;">
+            <!-- 1. KEY: Casella Combinata dai Tag del DB / Inserimento Libero -->
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label style="font-size: 0.8rem; color: #facc15; font-weight: 800; display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                    <span>🏷️ Parola Chiave / Tag Spesa (KEY) *</span>
+                    <span style="font-size: 0.68rem; color: #94a3b8; font-weight: normal;">Scegli dai tag o scrivi</span>
+                </label>
+                <div style="display: flex; gap: 8px;">
+                    <input list="workspaceTagsList" id="deadlineKeyInput" name="match_pattern" class="form-control" required 
+                           placeholder="Seleziona o digita: Mutuo, Tari, Bollo, Revisione, Assicurazione..." 
+                           oninput="syncDeadlineToCategory(this.value)"
+                           style="flex: 1; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1.5px solid rgba(234, 179, 8, 0.4); border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 0.95rem; font-weight: 700;">
+                    <datalist id="workspaceTagsList">
+                        {% if all_tags %}
+                            {% for tg in all_tags %}
+                            <option value="{{ tg|capitalize }}"></option>
+                            {% endfor %}
+                        {% else %}
+                            <option value="Mutuo"></option>
+                            <option value="Tari"></option>
+                            <option value="Bollo"></option>
+                            <option value="Revisione"></option>
+                            <option value="Assicurazione"></option>
+                            <option value="Condominio"></option>
+                            <option value="Luce"></option>
+                            <option value="Gas"></option>
+                        {% endif %}
+                    </datalist>
+                </div>
+                <!-- Nome effettivo salvato sincronizzato -->
+                <input type="hidden" name="name" id="deadlineNameHidden" value="">
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+            <!-- 2. FREQUENZA / RICORRENZA -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
                 <div class="form-group">
-                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Importo Totale Previsto (€) *</label>
-                    <input type="number" step="0.01" name="expected_amount" class="form-control" required placeholder="Es. 4000.00" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: #fff;">
+                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">🔄 Frequenza / Ricorrenza *</label>
+                    <select name="recurrence" id="dashRecurrenceSelect" onchange="toggleDashCustomMonths(this.value)" class="form-control" style="width: 100%; box-sizing: border-box; background: #1e293b; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 9px 12px; color: #fff; font-weight: 600;">
+                        <option value="ANNUAL" selected>📆 Annuale (Ogni anno)</option>
+                        <option value="BIENNIAL">🔄 Biennale (Ogni 2 anni - es. Revisione)</option>
+                        <option value="SEMIANNUAL">⚡ Semestrale (Ogni 6 mesi)</option>
+                        <option value="CUSTOM_MONTHS">🎯 Mesi a Scelta</option>
+                        <option value="ONE_OFF">📌 Una Tantum (Solo per questo mese)</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
-                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Categoria</label>
-                    <select name="category" class="form-control" style="width: 100%; box-sizing: border-box; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: #fff;">
-                        <option value="Casa & Immobili">Casa & Immobili</option>
+                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">💶 Importo Previsto (€) *</label>
+                    <input type="number" step="0.01" name="expected_amount" class="form-control" required placeholder="Es. 265.00" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 9px 12px; color: #fff; font-weight: 700; font-size: 0.95rem;">
+                </div>
+            </div>
+
+            <!-- 3. MESE PREVISTO E CATEGORIA -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                <div class="form-group">
+                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">📅 Primo Mese di Riferimento *</label>
+                    <input type="month" name="year_month" class="form-control" value="{{ datetime.now().strftime('%Y-%m') if datetime else '2026-09' }}" required style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 8px 12px; color: #fff;">
+                </div>
+
+                <div class="form-group">
+                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">📁 Categoria</label>
+                    <select name="category" id="deadlineCategorySelect" class="form-control" style="width: 100%; box-sizing: border-box; background: #1e293b; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 8px 12px; color: #fff;">
                         <option value="Auto & Mobilità">Auto & Mobilità</option>
+                        <option value="Casa & Immobili">Casa & Immobili</option>
                         <option value="Bollette & Utenze">Bollette & Utenze</option>
                         <option value="Tasse, Fisco & Banche">Tasse, Fisco & Banche</option>
                         <option value="Salute & Benessere">Salute & Benessere</option>
+                        <option value="Spese Personali">Spese Personali</option>
                         <option value="Altro">Altro</option>
                     </select>
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-                <div class="form-group">
-                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Mese Previsto (AAAA-MM) *</label>
-                    <input type="month" name="year_month" class="form-control" value="{{ datetime.now().strftime('%Y-%m') if datetime else '2026-09' }}" required style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: #fff;">
-                </div>
+            <!-- Giorno scadenza opzionale compresso -->
+            <input type="hidden" name="due_day" value="30">
 
-                <div class="form-group">
-                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Giorno Scadenza (1-31)</label>
-                    <input type="number" min="1" max="31" name="due_day" value="30" class="form-control" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: #fff;">
-                </div>
-            </div>
-
-            <!-- Pertinenza Spesa (Condivisa vs Personale) -->
-            <div class="form-group" style="margin-bottom: 12px;">
-                <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Pertinenza Spesa *</label>
-                <select name="target_type" class="form-control" style="width: 100%; box-sizing: border-box; background: #1e293b; border: 1.5px solid rgba(234, 179, 8, 0.4); border-radius: 8px; padding: 8px 12px; color: #fff; font-weight: 700;">
+            <!-- 4. PERTINENZA SPESA -->
+            <div class="form-group" style="margin-bottom: 14px;">
+                <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">👥 A Chi Fa Capo la Spesa? *</label>
+                <select name="target_type" class="form-control" style="width: 100%; box-sizing: border-box; background: #1e293b; border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 8px 12px; color: #fff; font-weight: 700;">
                     <option value="SHARED_50_50" selected>👥 Spesa Condivisa Famiglia (Divisione Quote 50/50)</option>
                     <option value="LEOPOLDO_ONLY">👤 Spesa Personale di Leopoldo (100% Leopoldo)</option>
                     <option value="NUNZIA_ONLY">👩 Spesa Personale di Nunzia (100% Nunzia)</option>
                 </select>
             </div>
 
-            <!-- Advance Quotas (e.g. Nunzia ha già messo 2.000 €) -->
-            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;">
-                <span style="font-size: 0.72rem; color: #fde047; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 6px;">
-                    👥 Quote Coppia Già Anticipate (Per Spese Condivise)
-                </span>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div>
-                        <label style="font-size: 0.7rem; color: #38bdf8; font-weight: 700; display: block; margin-bottom: 2px;">{{ deadlines_radar.p1_first if deadlines_radar else 'Leopoldo' }} (€)</label>
-                        <input type="number" step="0.01" name="p1_paid_amount" value="0.00" class="form-control" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; padding: 6px 10px; color: #fff;">
-                    </div>
-                    <div>
-                        <label style="font-size: 0.7rem; color: #ec4899; font-weight: 700; display: block; margin-bottom: 2px;">{{ deadlines_radar.p2_first if deadlines_radar else 'Nunzia' }} (€)</label>
-                        <input type="number" step="0.01" name="p2_paid_amount" value="0.00" class="form-control" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid rgba(236, 72, 153, 0.3); border-radius: 6px; padding: 6px 10px; color: #fff;">
-                    </div>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-                <div class="form-group">
-                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Ricorrenza</label>
-                    <select name="recurrence" id="dashRecurrenceSelect" onchange="toggleDashCustomMonths(this.value)" class="form-control" style="width: 100%; box-sizing: border-box; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: #fff;">
-                        <option value="ANNUAL">Annuale (Stesso mese ogni anno)</option>
-                        <option value="SEMIANNUAL">Semestrale (Ogni 6 mesi)</option>
-                        <option value="CUSTOM_MONTHS">🎯 Mesi Personalizzati a Scelta</option>
-                        <option value="BIENNIAL">Biennale (Ogni 2 anni)</option>
-                        <option value="ONE_OFF">Una Tantum (Solo per questo mese)</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Parola Chiave per Auto-Match</label>
-                    <input type="text" name="match_pattern" class="form-control" placeholder="Es. aci, automobile club, tari" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: #fff;">
-                </div>
-            </div>
-
             <!-- Selettore Mesi Personalizzati nel modale Dashboard -->
-            <div id="dashCustomMonthsBox" style="display: none; background: rgba(0,0,0,0.3); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 12px;">
+            <div id="dashCustomMonthsBox" style="display: none; background: rgba(0,0,0,0.3); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 14px;">
                 <span style="font-size: 0.72rem; color: #38bdf8; font-weight: 700; display: block; margin-bottom: 6px;">
                     🎯 Seleziona i mesi in cui si ripete questa spesa:
                 </span>
@@ -1256,8 +1260,8 @@
             </div>
 
             <div class="form-group" style="margin-bottom: 16px;">
-                <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Note / Dettagli Aggiuntivi</label>
-                <input type="text" name="notes" class="form-control" placeholder="Es. Bonifico da dividere, pagamento con CBILL" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: #fff;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 4px;">Note opzionali</label>
+                <input type="text" name="notes" class="form-control" placeholder="Es. Targa auto, rata semestrale, codice CBILL" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 7px 12px; color: #cbd5e1; font-size: 0.8rem;">
             </div>
 
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
@@ -2573,6 +2577,30 @@ function toggleDashCustomMonths(val) {
     const box = document.getElementById('dashCustomMonthsBox');
     if (box) {
         box.style.display = (val === 'CUSTOM_MONTHS') ? 'block' : 'none';
+    }
+}
+
+function syncDeadlineToCategory(val) {
+    const clean = (val || '').trim();
+    const hiddenName = document.getElementById('deadlineNameHidden');
+    if (hiddenName) hiddenName.value = clean;
+    
+    const catSelect = document.getElementById('deadlineCategorySelect');
+    if (!catSelect || !clean) return;
+    
+    const lower = clean.toLowerCase();
+    if (lower.includes('bollo') || lower.includes('revisione') || lower.includes('tagliando') || lower.includes('auto') || lower.includes('assicurazione') || lower.includes('meccanico') || lower.includes('carburante') || lower.includes('telepass')) {
+        catSelect.value = 'Auto & Mobilità';
+    } else if (lower.includes('mutuo') || lower.includes('condominio') || lower.includes('affitto') || lower.includes('casa') || lower.includes('brico') || lower.includes('curacasa')) {
+        catSelect.value = 'Casa & Immobili';
+    } else if (lower.includes('tari') || lower.includes('f24') || lower.includes('imu') || lower.includes('tasse') || lower.includes('fisco') || lower.includes('bollo') || lower.includes('canoni')) {
+        catSelect.value = lower.includes('tari') ? 'Bollette & Utenze' : 'Tasse, Fisco & Banche';
+    } else if (lower.includes('luce') || lower.includes('gas') || lower.includes('acqua') || lower.includes('bollette') || lower.includes('telefonia') || lower.includes('internet')) {
+        catSelect.value = 'Bollette & Utenze';
+    } else if (lower.includes('farmacia') || lower.includes('visita') || lower.includes('medico') || lower.includes('salute') || lower.includes('dentista')) {
+        catSelect.value = 'Salute & Benessere';
+    } else if (lower.includes('asilo') || lower.includes('scuola') || lower.includes('bambini')) {
+        catSelect.value = 'Spese Personali';
     }
 }
 

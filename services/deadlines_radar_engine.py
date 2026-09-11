@@ -49,12 +49,13 @@ def init_deadlines_radar_schema():
         if col_name not in cols:
             cursor.execute(f"ALTER TABLE planned_deadlines ADD COLUMN {col_name} {col_type}")
             
-    # Fix retroattivo: Assicurarsi che le scadenze ACI / Bollo Auto / Assicurazione veicolo siano LEOPOLDO_ONLY
+    # Svuota una tantum i vecchi dati demo se presenti
     cursor.execute("""
-        UPDATE planned_deadlines 
-        SET target_type = 'LEOPOLDO_ONLY'
-        WHERE (LOWER(name) LIKE '%bollo%' OR LOWER(name) LIKE '%aci%' OR LOWER(name) LIKE '%assicurazione%')
-          AND (target_type IS NULL OR target_type = 'SHARED_50_50')
+        DELETE FROM planned_deadlines 
+        WHERE notes LIKE '%Spesa condivisa 50/50. Nunzia ha già anticipato%'
+           OR notes LIKE '%Pagato con CBILL da internet banking%'
+           OR notes LIKE '%Avviso pagamento TARI rata annuale%'
+           OR notes LIKE '%Rinnovo polizza veicolo%'
     """)
 
     conn.commit()
@@ -171,10 +172,12 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
         auto_p2_paid = 0.0
         
         if pat:
+            # Pulisci o prepara pattern di ricerca per tag o testo
+            clean_pat = pat.strip().lstrip('#')
             for tx in all_recent_txs:
-                desc = f"{tx['description'] or ''} {tx['raw_description'] or ''}"
+                desc = f"{tx['description'] or ''} {tx['raw_description'] or ''} {tx['tags'] or ''} {tx['category'] or ''}"
                 tx_date_ym = tx['date'][:7]
-                if re.search(pat, desc, re.IGNORECASE):
+                if re.search(r'\b' + re.escape(clean_pat) + r'\b', desc, re.IGNORECASE) or re.search(re.escape(clean_pat), desc, re.IGNORECASE):
                     try:
                         due_d = datetime.strptime(f"{due_ym}-{due_day:02d}", "%Y-%m-%d").date()
                         tx_d = datetime.strptime(tx['date'], "%Y-%m-%d").date()
@@ -401,84 +404,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
 
 def auto_seed_typical_family_deadlines(workspace_id, current_year=2026):
     """
-    Pre-populates typical deadlines distinguishing between SHARED (Condominio, TARI)
-    and PERSONAL (Bollo Auto di Leopoldo, Assicurazione RC Auto).
+    Funzione disattivata: le scadenze vengono aggiunte esclusivamente dall'utente
+    tramite la modale o le transazioni.
     """
-    init_deadlines_radar_schema()
-    conn = get_db_connection()
-    count = conn.execute("SELECT COUNT(*) FROM planned_deadlines WHERE workspace_id = ?", (workspace_id,)).fetchone()[0]
-    
-    if count == 0:
-        typical_items = [
-            {
-                "name": "Condominio Annuale Famiglia",
-                "category": "Casa & Immobili",
-                "expected_amount": 4000.00,
-                "year_month": f"{current_year}-09",
-                "due_day": 30,
-                "match_pattern": "condomin|amministrat",
-                "recurrence": "ANNUAL",
-                "target_type": "SHARED_50_50",
-                "p1_paid_amount": 0.0,
-                "p2_paid_amount": 2000.0, # Quota Nunzia anticipata (€2.000)
-                "is_paid": 0,
-                "notes": "Spesa condivisa 50/50. Nunzia ha già anticipato 2.000 €, quota Leopoldo da saldare."
-            },
-            {
-                "name": "Bollo Auto ACI (Regionale)",
-                "category": "Auto & Mobilità",
-                "expected_amount": 265.20,
-                "year_month": f"{current_year}-09",
-                "due_day": 30,
-                "match_pattern": "aci|bollo|automobile club",
-                "recurrence": "ANNUAL",
-                "target_type": "LEOPOLDO_ONLY", # Riguarda solo Leopoldo!
-                "p1_paid_amount": 265.20,
-                "p2_paid_amount": 0.0,
-                "is_paid": 1,
-                "notes": "Spesa personale di Leopoldo. Pagato con CBILL da internet banking."
-            },
-            {
-                "name": "TARI (Tassa Rifiuti Comune)",
-                "category": "Bollette & Utenze",
-                "expected_amount": 240.00,
-                "year_month": f"{current_year}-10",
-                "due_day": 31,
-                "match_pattern": "tari|rifiuti|tributi comunali",
-                "recurrence": "ANNUAL",
-                "target_type": "SHARED_50_50",
-                "p1_paid_amount": 0.0,
-                "p2_paid_amount": 0.0,
-                "is_paid": 0,
-                "notes": "Spesa casa condivisa al 50%. Avviso pagamento TARI rata annuale."
-            },
-            {
-                "name": "Assicurazione RC Auto Semestrale",
-                "category": "Auto & Mobilità",
-                "expected_amount": 380.00,
-                "year_month": f"{current_year}-11",
-                "due_day": 15,
-                "match_pattern": "assicuraz|allianz|unipol|genial",
-                "recurrence": "SEMIANNUAL",
-                "target_type": "LEOPOLDO_ONLY", # Spesa personale auto Leopoldo
-                "p1_paid_amount": 0.0,
-                "p2_paid_amount": 0.0,
-                "is_paid": 0,
-                "notes": "Spesa personale di Leopoldo. Rinnovo polizza veicolo."
-            }
-        ]
-        
-        for it in typical_items:
-            conn.execute("""
-                INSERT INTO planned_deadlines (
-                    workspace_id, name, category, expected_amount, year_month, due_day, 
-                    match_pattern, recurrence, target_type, p1_paid_amount, p2_paid_amount, is_paid, notes
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                workspace_id, it['name'], it['category'], it['expected_amount'], it['year_month'],
-                it['due_day'], it['match_pattern'], it['recurrence'], it['target_type'],
-                it['p1_paid_amount'], it['p2_paid_amount'], it['is_paid'], it['notes']
-            ))
-            
-        conn.commit()
-    conn.close()
+    pass

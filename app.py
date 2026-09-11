@@ -644,9 +644,21 @@ def dashboard():
     else:
         deadlines_radar = None
 
-    # Total and uncategorized transactions in workspace for onboarding checklist
-    tx_count = conn.execute("SELECT COUNT(*) FROM transactions WHERE workspace_id = ?", (ws_id,)).fetchone()[0] if ws_id else 0
-    uncat_count = conn.execute("SELECT COUNT(*) FROM transactions WHERE workspace_id = ? AND (category IS NULL OR category = '' OR category = 'Da Categorizzare' OR category = 'Altro')", (ws_id,)).fetchone()[0] if ws_id else 0
+    # Estrai tag distinti presenti nelle transazioni del workspace per la selezione rapida delle scadenze
+    all_tags_list = []
+    if ws_id:
+        tag_rows = conn.execute("SELECT DISTINCT tags FROM transactions WHERE workspace_id = ? AND tags IS NOT NULL AND tags != ''", (ws_id,)).fetchall()
+        tags_set = set()
+        for r in tag_rows:
+            raw_t = r[0] or ''
+            for single_tag in raw_t.split():
+                clean_t = single_tag.strip().lstrip('#').lower()
+                if clean_t and len(clean_t) >= 2:
+                    tags_set.add(clean_t)
+        # Aggiungi anche i principali tag standard se non ancora presenti
+        for std_t in ['mutuo', 'tari', 'bollo', 'revisione', 'assicurazione', 'condominio', 'luce', 'gas', 'internet', 'asilo']:
+            tags_set.add(std_t)
+        all_tags_list = sorted(list(tags_set))
 
     conn.close()
     
@@ -675,7 +687,8 @@ def dashboard():
         is_admin=is_admin,
         my_profile=my_profile,
         total_transactions=tx_count,
-        uncategorized_tx_count=uncat_count
+        uncategorized_tx_count=uncat_count,
+        all_tags=all_tags_list
     )
 
 
@@ -1179,12 +1192,16 @@ def add_planned_deadline():
     if not ws_id:
         return redirect(url_for('dashboard'))
         
+    pattern = request.form.get("match_pattern", "").strip()
     name = request.form.get("name", "").strip()
+    if not name and pattern:
+        name = pattern.capitalize()
+    elif not name:
+        name = "Scadenza Programmata"
     category = request.form.get("category", "Tasse & Finanza").strip()
     amount_str = request.form.get("expected_amount", "0").replace(",", ".").strip()
     year_month = request.form.get("year_month", "").strip()
-    due_day_str = request.form.get("due_day", "15").strip()
-    pattern = request.form.get("match_pattern", "").strip()
+    due_day_str = request.form.get("due_day", "30").strip()
     recurrence = request.form.get("recurrence", "ANNUAL").strip()
     target_type = request.form.get("target_type", "SHARED_50_50").strip()
     p1_paid_str = request.form.get("p1_paid_amount", "0").replace(",", ".").strip()
