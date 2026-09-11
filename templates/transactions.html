@@ -349,28 +349,7 @@
 {% if available_months|length > 0 %}
 <div id="monthTabsSection" class="month-workbench-tabs" style="display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 14px 2px; margin-bottom: 16px; scrollbar-width: thin;">
     
-    <!-- Tab: Tutti i Mesi (Storico Completo) in Prima Posizione -->
-    <a href="/transactions?month=all" 
-       class="month-tab-btn {% if selected_month == 'all' %}active{% endif %}">
 
-        <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 1rem;">🌐</span>
-            <strong style="font-size: 0.85rem; color: #fff;">Tutti i Mesi</strong>
-            <span style="font-size: 0.65rem; background: rgba(255,255,255,0.12); color: #cbd5e1; padding: 1px 5px; border-radius: 4px; font-weight: 700;">STORICO</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 0.72rem;">
-            {% if uncategorized_count > 0 %}
-            <span style="color: #f87171; font-weight: 700; background: rgba(239, 68, 68, 0.2); padding: 1px 6px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.4);">
-                ⚡ {{ uncategorized_count }} da fare
-            </span>
-            {% else %}
-            <span style="color: #86efac; font-weight: 700; background: rgba(16, 185, 129, 0.15); padding: 1px 6px; border-radius: 10px; border: 1px solid rgba(16, 185, 129, 0.3);">
-                ✓ 100% Classificato
-            </span>
-            {% endif %}
-            <span style="color: var(--text-muted);">{{ total_tx_count }} mov.</span>
-        </div>
-    </a>
 
     <!-- Mesi Singoli in Ordine Cronologico -->
     {% for m in available_months %}
@@ -412,44 +391,6 @@
 <!-- ======================================================== -->
 <div id="workbenchSection" class="card" style="margin-bottom: 18px; background: linear-gradient(135deg, rgba(26, 36, 60, 0.85), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(59, 130, 246, 0.3); border-radius: var(--radius-lg); padding: 16px 20px;">
     
-    <!-- 1. Month Header & Unified Financial Pill -->
-    <div class="workbench-top-row">
-        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; flex: 1;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.25rem;">{% if selected_month_info.is_current_month %}📍{% else %}🗓️{% endif %}</span>
-                <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; white-space: nowrap;">
-                    {{ selected_month_info.name_full if selected_month_info else 'Movimenti Selezionati' }}
-                </h3>
-            </div>
-            {% if selected_month_info and selected_month_info.is_current_month %}
-            <span style="font-size: 0.68rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); padding: 2px 7px; border-radius: 6px; font-weight: 800; text-transform: uppercase; white-space: nowrap;">
-                Mese in Corso
-            </span>
-            {% endif %}
-            <span style="color: var(--text-muted); font-size: 0.72rem; white-space: nowrap;">
-                • {{ selected_month_info.tx_count if selected_month_info else transactions|length }} mov.
-            </span>
-        </div>
-
-        <!-- Sleek Unified Financial Glass Capsule -->
-        <div class="financial-capsule">
-            <div style="display: flex; align-items: baseline; gap: 4px;">
-                <span style="font-size: 0.6rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Entr.</span>
-                <strong style="color: #10b981; font-size: 0.85rem; font-weight: 800;">{{ total_income|eur_sign }}</strong>
-            </div>
-            <div style="width: 1px; height: 14px; background: rgba(255,255,255,0.12); flex-shrink: 0;"></div>
-            <div style="display: flex; align-items: baseline; gap: 4px;">
-                <span style="font-size: 0.6rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Usc.</span>
-                <strong style="color: #f87171; font-size: 0.85rem; font-weight: 800;">{{ (-total_expenses)|eur }}</strong>
-            </div>
-            <div style="width: 1px; height: 14px; background: rgba(255,255,255,0.12); flex-shrink: 0;"></div>
-            <div style="display: flex; align-items: baseline; gap: 4px;">
-                <span style="font-size: 0.6rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Netto</span>
-                <strong style="color: {% if net_period >= 0 %}#60a5fa{% else %}#f87171{% endif %}; font-size: 0.85rem; font-weight: 800;">{{ net_period|eur_sign }}</strong>
-            </div>
-        </div>
-    </div>
-
     <!-- 2. Streamlined Category Ribbon (Multi-color bar + Top 4 Categories + Expand Toggle) -->
     {% if total_expenses > 0 and category_breakdown|length > 0 %}
     <div style="margin-bottom: 14px;">
@@ -530,11 +471,10 @@
     </div>
     {% endif %}
 
-    <!-- 3. Work Modes / Filter Tabs & Clean Action Toolbar -->
+    <!-- 3. Work Modes / Filter Tabs (Segmented Filter Tabs) -->
     <div class="workbench-toolbar-row">
-        
-        <!-- Left: Segmented Filter Tabs (Tutti, Da Revisionare, 730) - scrollabile su mobile -->
-        <div class="workbench-tabs-scroll">
+        <!-- Segmented Filter Tabs (Tutti, Da Revisionare, 730) - scrollabile su mobile -->
+        <div class="workbench-tabs-scroll" style="width: 100%;">
             <div style="display: flex; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); gap: 4px; width: fit-content;">
                 <a href="/transactions?{% if selected_month %}month={{ selected_month }}&{% endif %}{% if selected_category %}category={{ selected_category|urlencode }}&{% endif %}" 
                    class="workbench-subtab {% if not status_filter %}active{% endif %}" style="padding: 4px 10px; font-size: 0.74rem; white-space: nowrap;">
@@ -571,59 +511,6 @@
                 </a>
             </div>
         </div>
-        <!-- /workbench-tabs-scroll -->
-
-        <!-- Right: Actions & Live Search -->
-        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-
-            
-            <!-- High-Prominence Live Instant Search Form -->
-            <form id="workbenchSearchForm" onsubmit="handleLiveSearchSubmit(event)" style="margin: 0; display: inline-flex;">
-                <div class="workbench-search-box" style="height: 32px; padding: 0 10px;">
-                    <span class="search-icon" style="font-size: 0.8rem;">🔍</span>
-                    <input type="text" 
-                           id="liveTxSearchInput" 
-                           value="{{ search_query }}" 
-                           oninput="onLiveSearchInput(this.value)" 
-                           onkeydown="if(event.key==='Escape'){ clearLiveSearch(); }"
-                           placeholder="Cerca esercente o causale..." 
-                           autocomplete="off"
-                           style="font-size: 0.75rem; width: 170px;"
-                           title="Cerca in tempo reale o premi Invio per filtrare">
-                    <button type="button" 
-                           id="clearLiveSearchBtn" 
-                           onclick="clearLiveSearch()" 
-                           style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; padding: 0 4px; display: {% if search_query %}block{% else %}none{% endif %}; line-height: 1;"
-                           title="Cancella ricerca (Esc)">
-                        ✕
-                    </button>
-                    <button type="submit" 
-                           class="search-submit-badge" 
-                           style="font-size: 0.65rem; padding: 2px 6px;"
-                           title="Premi Invio per confermare la ricerca">
-                        ↵ Invio
-                    </button>
-                </div>
-            </form>
-
-            <!-- Speed Triage Action Button (Prominent when pending > 0) -->
-            {% if uncategorized_txs and uncategorized_txs|length > 0 %}
-            <button type="button" class="workbench-action-btn game-mode" onclick="openSpeedTriageGameModal()" title="Avvia lo smistamento rapido interattivo" style="height: 32px; padding: 0 10px; font-size: 0.74rem;">
-                <span>🎮 Smista al Volo</span>
-                <span style="background: rgba(0,0,0,0.3); padding: 1px 6px; border-radius: 10px; font-size: 0.68rem; font-weight: 800;">{{ uncategorized_txs|length }}</span>
-            </button>
-            {% endif %}
-
-            <!-- Regole Auto-apprendimento Mini Pill -->
-            <a href="/settings/rules" class="workbench-action-btn rules-btn" title="Visualizza e gestisci le regole di auto-apprendimento" style="height: 32px; padding: 0 9px; font-size: 0.74rem;">
-                <span>🧠 Regole</span>
-            </a>
-
-            <!-- Guida Categorie Mini Pill -->
-            <button type="button" class="workbench-action-btn" onclick="openCategoryGuideModal()" title="Consulta la guida rapida alle categorie" style="height: 32px; padding: 0 9px; font-size: 0.74rem; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); color: #c7d2fe;">
-                <span>💡 Guida</span>
-            </button>
-        </div>
     </div>
 </div>
 
@@ -633,8 +520,8 @@
 {% if merchant_groups and merchant_groups|length > 0 %}
 <div id="merchantTriageSection" class="card merchant-triage-card">
     
-    <!-- Triage Header with Counter, Progress Bar & Collapse Toggle -->
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 10px;">
+    <!-- Triage Header with Counter & Collapse Toggle -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
         <div style="display: flex; align-items: center; gap: 10px;">
             <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #3b82f6); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);">
                 ⚡
@@ -656,6 +543,59 @@
         <button type="button" id="toggleTriageCollapseBtn" onclick="toggleTriageCollapse()" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; gap: 4px;" title="Comprimi o Espandi il pannello">
             <span id="triageCollapseIcon">🔼</span> <span id="triageCollapseText">Comprimi</span>
         </button>
+    </div>
+
+    <!-- Action Bar: Live Search + Quick Actions (🎮 Smista, 🧠 Regole, 💡 Guida) -->
+    <div class="triage-action-bar">
+        <!-- Live Search Box Form -->
+        <form id="workbenchSearchForm" onsubmit="handleLiveSearchSubmit(event)" class="triage-search-form">
+            <div class="workbench-search-box triage-search-box">
+                <span class="search-icon" style="font-size: 0.82rem;">🔍</span>
+                <input type="text" 
+                       id="liveTxSearchInput" 
+                       value="{{ search_query }}" 
+                       oninput="onLiveSearchInput(this.value)" 
+                       onkeydown="if(event.key==='Escape'){ clearLiveSearch(); }"
+                       placeholder="Cerca esercente o causale..." 
+                       autocomplete="off"
+                       style="font-size: 0.78rem; flex: 1; min-width: 120px;"
+                       title="Cerca in tempo reale o premi Invio per filtrare">
+                <button type="button" 
+                       id="clearLiveSearchBtn" 
+                       onclick="clearLiveSearch()" 
+                       style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; padding: 0 4px; display: {% if search_query %}block{% else %}none{% endif %}; line-height: 1;"
+                       title="Cancella ricerca (Esc)">
+                    ✕
+                </button>
+                <button type="submit" 
+                       class="search-submit-badge" 
+                       style="font-size: 0.65rem; padding: 2px 6px;"
+                       title="Premi Invio per confermare la ricerca">
+                    ↵ Invio
+                </button>
+            </div>
+        </form>
+
+        <!-- Quick Action Buttons -->
+        <div class="triage-action-buttons">
+            <!-- Speed Triage Action Button (Prominent when pending > 0) -->
+            {% if uncategorized_txs and uncategorized_txs|length > 0 %}
+            <button type="button" class="workbench-action-btn game-mode" onclick="openSpeedTriageGameModal()" title="Avvia lo smistamento rapido interattivo">
+                <span>🎮 Smista al Volo</span>
+                <span class="action-badge-count">{{ uncategorized_txs|length }}</span>
+            </button>
+            {% endif %}
+
+            <!-- Regole Auto-apprendimento Mini Pill -->
+            <a href="/settings/rules" class="workbench-action-btn rules-btn" title="Visualizza e gestisci le regole di auto-apprendimento">
+                <span>🧠 Regole</span>
+            </a>
+
+            <!-- Guida Categorie Mini Pill -->
+            <button type="button" class="workbench-action-btn guide-btn" onclick="openCategoryGuideModal()" title="Consulta la guida rapida alle categorie">
+                <span>💡 Guida</span>
+            </button>
+        </div>
     </div>
 
     <!-- Triage Progress Bar -->
