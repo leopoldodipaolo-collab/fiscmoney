@@ -831,6 +831,355 @@
 </div>
 {% endif %}
 
+<!-- ======================================================== -->
+<!-- 🗓️ SCADENZARIO & RADAR USCITE FUTURE (FAMILY BUDGET)    -->
+<!-- ======================================================== -->
+{% if deadlines_radar and deadlines_radar.deadlines|length > 0 %}
+<div class="card deadlines-radar-card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.88)); border: 1.5px solid rgba(234, 179, 8, 0.35); margin-bottom: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.45); overflow: hidden;">
+    
+    <!-- Top Header & Summary Action Bar -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.35); display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                🗓️
+            </div>
+            <div>
+                <h3 style="font-size: 1.08rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    Radar Scadenze Future & Spese Famiglia
+                    <span class="badge-tag" style="background: rgba(234, 179, 8, 0.18); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.4); font-size: 0.68rem; font-weight: 800;">
+                        12 MESI
+                    </span>
+                    <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.68rem; font-weight: 800;">
+                        {{ deadlines_radar.active_deadlines_count }} DA SALDARE
+                    </span>
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.76rem; margin: 2px 0 0 0;">
+                    Monitoraggio uscite importanti previste (Condominio, Bollo, TARI, Assicurazioni) con ripartizione quote coppia
+                </p>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <button type="button" onclick="openAddDeadlineModal()" class="btn btn-primary btn-sm" style="font-size: 0.74rem; font-weight: 800; padding: 5px 12px; background: linear-gradient(135deg, #eab308, #ca8a04); border: none; color: #000;">
+                ➕ Nuova Scadenza
+            </button>
+            <a href="/cashflow" class="btn btn-secondary btn-sm" style="font-size: 0.74rem; padding: 5px 10px; border-color: rgba(234, 179, 8, 0.35); color: #fde047;">
+                Vedi nel Cash Flow →
+            </a>
+        </div>
+    </div>
+
+    <!-- KPI Strip: Totale Atteso vs Già Coperto vs Rimanente -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 16px;">
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 12px;">
+            <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">🎯 Totale Scadenze Previste</span>
+            <div class="privacy-mask" style="font-size: 1.15rem; font-weight: 900; color: #fff; margin-top: 2px;">
+                {{ deadlines_radar.total_expected|eur }}
+            </div>
+        </div>
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1.5px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 10px 12px;">
+            <span style="font-size: 0.68rem; color: #34d399; font-weight: 700; text-transform: uppercase;">✓ Già Coperte / Anticipate</span>
+            <div class="privacy-mask" style="font-size: 1.15rem; font-weight: 900; color: #34d399; margin-top: 2px;">
+                {{ deadlines_radar.total_paid|eur }}
+                <small style="font-size: 0.72rem; color: #a7f3d0; font-weight: 700;">({{ deadlines_radar.overall_progress }}%)</small>
+            </div>
+        </div>
+        <div style="background: rgba(239, 68, 68, 0.08); border: 1.5px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 10px 12px;">
+            <span style="font-size: 0.68rem; color: #f87171; font-weight: 700; text-transform: uppercase;">🚨 Da Completare / Mancanti</span>
+            <div class="privacy-mask" style="font-size: 1.15rem; font-weight: 900; color: #f87171; margin-top: 2px;">
+                {{ deadlines_radar.total_remaining|eur }}
+            </div>
+        </div>
+    </div>
+
+    <!-- 12-Month Horizontal Timeline Ribbon (Mini-Calendario 12 Mesi) -->
+    <div style="margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 0.76rem; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">
+                📅 Calendario Prossime Uscite (12 Mesi)
+            </span>
+            <small style="font-size: 0.7rem; color: var(--text-muted);">Tocca un mese per filtrare</small>
+        </div>
+        
+        <div class="deadlines-timeline-scroll" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; -webkit-overflow-scrolling: touch;">
+            {% for tm in deadlines_radar.timeline_months %}
+            <div class="timeline-month-box {% if tm.is_current %}current-month-box{% endif %} {% if tm.items_count > 0 %}has-deadlines{% endif %}" 
+                 style="flex: 0 0 78px; background: {% if tm.is_current %}rgba(234, 179, 8, 0.15){% elif tm.items_count > 0 %}rgba(255,255,255,0.04){% else %}rgba(255,255,255,0.015){% endif %}; border: 1px solid {% if tm.is_current %}rgba(234, 179, 8, 0.45){% elif tm.items_count > 0 %}rgba(59, 130, 246, 0.3){% else %}rgba(255,255,255,0.06){% endif %}; border-radius: 8px; padding: 6px 4px; text-align: center; cursor: pointer; transition: all 0.2s;"
+                 title="{{ tm.full_name }}: {{ tm.items_count }} scadenze ({% if tm.total_expected > 0 %}{{ tm.total_expected|eur }}{% else %}Nessuna{% endif %})">
+                <div style="font-size: 0.72rem; font-weight: 800; color: {% if tm.is_current %}#facc15{% else %}#fff{% endif %};">
+                    {{ tm.short_name }}
+                    <span style="font-size: 0.6rem; color: var(--text-muted);">{{ tm.year|string|slice(-2) }}</span>
+                </div>
+                
+                <div style="font-size: 0.68rem; font-weight: 800; margin-top: 3px; color: {% if tm.total_remaining > 0 %}#f87171{% elif tm.total_expected > 0 %}#34d399{% else %}#64748b{% endif %};">
+                    {% if tm.total_expected > 0 %}
+                        € {{ "%.0f"|format(tm.total_expected) }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </div>
+                
+                {% if tm.items_count > 0 %}
+                <div style="display: flex; justify-content: center; gap: 2px; margin-top: 3px;">
+                    {% for d in tm.deadlines %}
+                        <span style="width: 5px; height: 5px; border-radius: 50%; background: {{ d.status_color }}; display: inline-block;"></span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Deadlines List with Progress Bars & Partner Quotas -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for dl in deadlines_radar.deadlines %}
+        <div class="deadline-item-card" style="background: rgba(255,255,255,0.02); border: 1.5px solid {% if dl.is_paid %}rgba(16, 185, 129, 0.3){% elif dl.is_partial %}rgba(234, 179, 8, 0.35){% else %}rgba(239, 68, 68, 0.35){% endif %}; border-radius: 12px; padding: 12px 16px; transition: all 0.2s;">
+            
+            <!-- Main Info Row -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="font-weight: 800; font-size: 0.95rem; color: #fff;">{{ dl.name }}</span>
+                        <span class="badge-tag" style="background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1); font-size: 0.65rem; padding: 1px 6px;">
+                            {{ dl.category }}
+                        </span>
+                        <span class="badge-tag" style="background: {{ dl.status_color }}22; color: {{ dl.status_color }}; border: 1px solid {{ dl.status_color }}55; font-size: 0.68rem; font-weight: 800; padding: 1px 6px;">
+                            {{ dl.status_label }}
+                        </span>
+                    </div>
+                    <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <span>📅 Scadenza: <strong style="color: #fff;">{{ dl.due_date_str }}</strong></span>
+                        <span>🔄 Frequenza: <strong style="color: #fff;">{{ dl.recurrence }}</strong></span>
+                        {% if dl.notes %}
+                        <span style="color: #93c5fd;">💬 {{ dl.notes }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div style="text-align: right;">
+                    <div class="privacy-mask" style="font-size: 1.15rem; font-weight: 900; color: #fff;">
+                        {{ dl.expected_amount|eur }}
+                    </div>
+                    <div style="font-size: 0.7rem; color: {% if dl.remaining_to_pay > 0 %}#f87171{% else %}#34d399{% endif %}; font-weight: 700;">
+                        {% if dl.remaining_to_pay > 0 %}
+                            Mancano {{ dl.remaining_to_pay|eur }}
+                        {% else %}
+                            Saldato al 100%
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Progress Bar (Partner 1 vs Partner 2 vs Missing) -->
+            <div style="margin-bottom: 8px;">
+                <div style="width: 100%; height: 9px; background: rgba(255,255,255,0.06); border-radius: 6px; overflow: hidden; display: flex;">
+                    <!-- Partner 1 Quota bar (Blue) -->
+                    {% if dl.expected_amount > 0 %}
+                    <div style="width: {{ (dl.p1_paid / dl.expected_amount * 100)|round(1) }}%; background: #38bdf8;" title="{{ dl.p1_name }}: {{ dl.p1_paid|eur }}"></div>
+                    <!-- Partner 2 Quota bar (Pink) -->
+                    <div style="width: {{ (dl.p2_paid / dl.expected_amount * 100)|round(1) }}%; background: #ec4899;" title="{{ dl.p2_name }}: {{ dl.p2_paid|eur }}"></div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Bottom Partner Details & Action Buttons -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.72rem;">
+                <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                    <!-- Partner 1 Status -->
+                    <span style="color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
+                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
+                        <strong style="color: #38bdf8;">{{ dl.p1_name }}:</strong> 
+                        <span class="privacy-mask">{{ dl.p1_paid|eur }}</span>
+                        {% if dl.p1_missing > 0 %}
+                            <span style="color: #f87171; font-weight: 700;">(Mancano {{ dl.p1_missing|eur }})</span>
+                        {% else %}
+                            <span style="color: #34d399; font-weight: 700;">✓ Quota OK</span>
+                        {% endif %}
+                    </span>
+
+                    <!-- Partner 2 Status -->
+                    <span style="color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
+                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #ec4899; display: inline-block;"></span>
+                        <strong style="color: #ec4899;">{{ dl.p2_name }}:</strong> 
+                        <span class="privacy-mask">{{ dl.p2_paid|eur }}</span>
+                        {% if dl.p2_missing > 0 %}
+                            <span style="color: #f87171; font-weight: 700;">(Mancano {{ dl.p2_missing|eur }})</span>
+                        {% else %}
+                            <span style="color: #34d399; font-weight: 700;">✓ Quota OK</span>
+                        {% endif %}
+                    </span>
+                </div>
+
+                <!-- Quick Action Buttons: Update Quotas / Mark Paid / Delete -->
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <button type="button" onclick="openEditQuotaModal({{ dl.id }}, '{{ dl.name.replace('\'', '\\\'') }}', {{ dl.expected_amount }}, {{ dl.p1_paid }}, {{ dl.p2_paid }}, '{{ dl.p1_name }}', '{{ dl.p2_name }}')" 
+                            class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 3px 8px; border-color: rgba(255,255,255,0.15);">
+                        ✏️ Modifica Quote
+                    </button>
+
+                    <form method="POST" action="/deadlines/toggle-paid/{{ dl.id }}" style="margin: 0;">
+                        <input type="hidden" name="redirect_to" value="dashboard">
+                        <button type="submit" class="btn btn-sm" style="font-size: 0.68rem; padding: 3px 8px; background: {% if dl.is_paid %}rgba(255,255,255,0.06){% else %}rgba(16, 185, 129, 0.2){% endif %}; color: {% if dl.is_paid %}#94a3b8{% else %}#34d399{% endif %}; border: 1px solid {% if dl.is_paid %}rgba(255,255,255,0.1){% else %}rgba(16, 185, 129, 0.4){% endif %};">
+                            {% if dl.is_paid %}Segna come Da Saldare{% else %}✓ Salda Tutto{% endif %}
+                        </button>
+                    </form>
+
+                    <form method="POST" action="/deadlines/delete/{{ dl.id }}" onsubmit="return confirm('Vuoi davvero rimuovere questa scadenza?');" style="margin: 0;">
+                        <input type="hidden" name="redirect_to" value="dashboard">
+                        <button type="submit" class="btn btn-sm" style="background: transparent; border: none; color: #94a3b8; font-size: 0.8rem; cursor: pointer; padding: 2px 4px;" title="Elimina Scadenza">
+                            🗑️
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endif %}
+
+<!-- ======================================================== -->
+<!-- MODAL: AGGIUNGI NUOVA SCADENZA FUTURA                     -->
+<!-- ======================================================== -->
+<div id="addDeadlineModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="modal-card" style="max-width: 520px; width: 95%; max-height: 90vh; overflow-y: auto; background: #0f172a; border: 1.5px solid rgba(234, 179, 8, 0.4); border-radius: 16px; padding: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
+                <span>🗓️</span> Aggiungi Scadenza Programmata
+            </h3>
+            <button class="modal-close" onclick="closeAddDeadlineModal()" style="font-size: 1.5rem; color: #94a3b8; background: none; border: none; cursor: pointer;">&times;</button>
+        </div>
+
+        <form method="POST" action="/deadlines/add">
+            <input type="hidden" name="redirect_to" value="dashboard">
+            
+            <div class="form-group" style="margin-bottom: 12px;">
+                <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Nome Spesa / Scadenza *</label>
+                <input type="text" name="name" class="form-control" required placeholder="Es. Condominio Annuale, Bollo Auto, TARI" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: #fff;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div class="form-group">
+                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Importo Totale Previsto (€) *</label>
+                    <input type="number" step="0.01" name="expected_amount" class="form-control" required placeholder="Es. 4000.00" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: #fff;">
+                </div>
+
+                <div class="form-group">
+                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Categoria</label>
+                    <select name="category" class="form-control" style="width: 100%; box-sizing: border-box; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: #fff;">
+                        <option value="Casa & Immobili">Casa & Immobili</option>
+                        <option value="Auto & Mobilità">Auto & Mobilità</option>
+                        <option value="Bollette & Utenze">Bollette & Utenze</option>
+                        <option value="Tasse, Fisco & Banche">Tasse, Fisco & Banche</option>
+                        <option value="Salute & Benessere">Salute & Benessere</option>
+                        <option value="Altro">Altro</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div class="form-group">
+                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Mese Previsto (AAAA-MM) *</label>
+                    <input type="month" name="year_month" class="form-control" value="{{ datetime.now().strftime('%Y-%m') if datetime else '2026-09' }}" required style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: #fff;">
+                </div>
+
+                <div class="form-group">
+                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Giorno Scadenza (1-31)</label>
+                    <input type="number" min="1" max="31" name="due_day" value="30" class="form-control" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: #fff;">
+                </div>
+            </div>
+
+            <!-- Advance Quotas (e.g. Nunzia ha già messo 2.000 €) -->
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;">
+                <span style="font-size: 0.72rem; color: #fde047; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 6px;">
+                    👥 Quote Coppia Già Anticipate (Opzionale)
+                </span>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label style="font-size: 0.7rem; color: #38bdf8; font-weight: 700; display: block; margin-bottom: 2px;">{{ deadlines_radar.p1.name.split()[0] if deadlines_radar else 'Partner 1' }} (€)</label>
+                        <input type="number" step="0.01" name="p1_paid_amount" value="0.00" class="form-control" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; padding: 6px 10px; color: #fff;">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.7rem; color: #ec4899; font-weight: 700; display: block; margin-bottom: 2px;">{{ deadlines_radar.p2.name.split()[0] if deadlines_radar else 'Partner 2' }} (€)</label>
+                        <input type="number" step="0.01" name="p2_paid_amount" value="0.00" class="form-control" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid rgba(236, 72, 153, 0.3); border-radius: 6px; padding: 6px 10px; color: #fff;">
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                <div class="form-group">
+                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Ricorrenza</label>
+                    <select name="recurrence" class="form-control" style="width: 100%; box-sizing: border-box; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: #fff;">
+                        <option value="ANNUAL">Annuale (Stesso mese ogni anno)</option>
+                        <option value="SEMIANNUAL">Semestrale (Ogni 6 mesi)</option>
+                        <option value="BIENNIAL">Biennale (Ogni 2 anni)</option>
+                        <option value="ONE_OFF">Una Tantum (Solo per questo mese)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Parola Chiave per Auto-Match</label>
+                    <input type="text" name="match_pattern" class="form-control" placeholder="Es. condominio, aci, tari" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: #fff;">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 4px;">Note / Dettagli Aggiuntivi</label>
+                <input type="text" name="notes" class="form-control" placeholder="Es. Bonifico da dividere, pagamento con CBILL" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; color: #fff;">
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeAddDeadlineModal()" style="font-size: 0.8rem; padding: 8px 16px;">Annulla</button>
+                <button type="submit" class="btn btn-primary" style="font-size: 0.8rem; font-weight: 800; padding: 8px 20px; background: linear-gradient(135deg, #eab308, #ca8a04); border: none; color: #000;">Salva Scadenza</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- MODAL: MODIFICA QUOTE PARTNER SCADENZA                    -->
+<!-- ======================================================== -->
+<div id="editQuotaModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="modal-card" style="max-width: 440px; width: 95%; background: #0f172a; border: 1.5px solid rgba(234, 179, 8, 0.4); border-radius: 16px; padding: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
+            <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0;">
+                ✏️ Aggiorna Quote: <span id="eqTitle" style="color: #facc15;"></span>
+            </h3>
+            <button class="modal-close" onclick="closeEditQuotaModal()" style="font-size: 1.5rem; color: #94a3b8; background: none; border: none; cursor: pointer;">&times;</button>
+        </div>
+
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin: 0 0 14px 0;">
+            Importo totale della spesa: <strong id="eqTotalAmt" style="color: #fff;"></strong> (Quota 50% = <strong id="eqHalfAmt" style="color: #eab308;"></strong>).
+        </p>
+
+        <form id="editQuotaForm" method="POST" action="">
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+                <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 10px 12px;">
+                    <label id="eqP1Label" style="font-size: 0.75rem; color: #38bdf8; font-weight: 800; display: block; margin-bottom: 4px;">Quota Pagata da Leopoldo (€)</label>
+                    <input type="number" step="0.01" id="eqP1Input" name="p1_paid" class="form-control" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; padding: 8px 12px; color: #fff; font-weight: 700;">
+                </div>
+
+                <div style="background: rgba(236, 72, 153, 0.08); border: 1px solid rgba(236, 72, 153, 0.25); border-radius: 8px; padding: 10px 12px;">
+                    <label id="eqP2Label" style="font-size: 0.75rem; color: #ec4899; font-weight: 800; display: block; margin-bottom: 4px;">Quota Pagata da Nunzia (€)</label>
+                    <input type="number" step="0.01" id="eqP2Input" name="p2_paid" class="form-control" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid rgba(236, 72, 153, 0.4); border-radius: 6px; padding: 8px 12px; color: #fff; font-weight: 700;">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeEditQuotaModal()" style="font-size: 0.8rem; padding: 8px 14px;">Annulla</button>
+                <button type="submit" class="btn btn-primary" style="font-size: 0.8rem; font-weight: 800; padding: 8px 18px; background: linear-gradient(135deg, #eab308, #ca8a04); border: none; color: #000;">Salva Quote</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
 
 
 <!-- Bank Institutions & Multi-Account Breakdown Card -->
@@ -1912,6 +2261,53 @@ function initAssistantMacroAdvisorState() {
             body.style.display = 'none';
             if (arrow) arrow.innerHTML = '▾ Espandi Analisi';
         }
+    }
+}
+
+// ---------------------------------------------------------
+// 🗓️ MODALS & INTERACTION PER SCADENZE RADAR
+// ---------------------------------------------------------
+function openAddDeadlineModal() {
+    const modal = document.getElementById('addDeadlineModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeAddDeadlineModal() {
+    const modal = document.getElementById('addDeadlineModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+function openEditQuotaModal(dlId, name, expected, p1Paid, p2Paid, p1Name, p2Name) {
+    const modal = document.getElementById('editQuotaModal');
+    if (!modal) return;
+    
+    document.getElementById('eqTitle').innerText = name;
+    document.getElementById('eqTotalAmt').innerText = '€ ' + Number(expected).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('eqHalfAmt').innerText = '€ ' + Number(expected / 2).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    
+    document.getElementById('eqP1Label').innerText = `Quota Pagata da ${p1Name} (€)`;
+    document.getElementById('eqP2Label').innerText = `Quota Pagata da ${p2Name} (€)`;
+    
+    document.getElementById('eqP1Input').value = p1Paid.toFixed(2);
+    document.getElementById('eqP2Input').value = p2Paid.toFixed(2);
+    
+    document.getElementById('editQuotaForm').action = `/deadlines/update-quotas/${dlId}`;
+    
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeEditQuotaModal() {
+    const modal = document.getElementById('editQuotaModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
     }
 }
 

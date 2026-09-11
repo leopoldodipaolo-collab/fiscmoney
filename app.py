@@ -48,6 +48,10 @@ from services.couple_split_engine import (
     get_couple_category_transactions,
     bulk_set_category_shared
 )
+from services.deadlines_radar_engine import (
+    get_annual_deadlines_radar,
+    auto_seed_typical_family_deadlines
+)
 from services.paystub_engine import (
     calculate_paystub_metrics,
     find_candidate_bank_transfers,
@@ -633,6 +637,13 @@ def dashboard():
     mortgage_data = get_mortgage_deep_dive(ws_id, p_id_filter) if ws_id else None
     active_focus_categories = get_active_focus_categories(ws_id) if ws_id else []
 
+    # Fetch Annual Deadlines Radar (Scadenzario Annuale Famiglia & Avanzamento Quote)
+    if ws_id:
+        auto_seed_typical_family_deadlines(ws_id)
+        deadlines_radar = get_annual_deadlines_radar(ws_id, p_id_filter)
+    else:
+        deadlines_radar = None
+
     # Total and uncategorized transactions in workspace for onboarding checklist
     tx_count = conn.execute("SELECT COUNT(*) FROM transactions WHERE workspace_id = ?", (ws_id,)).fetchone()[0] if ws_id else 0
     uncat_count = conn.execute("SELECT COUNT(*) FROM transactions WHERE workspace_id = ? AND (category IS NULL OR category = '' OR category = 'Da Categorizzare' OR category = 'Altro')", (ws_id,)).fetchone()[0] if ws_id else 0
@@ -658,6 +669,7 @@ def dashboard():
         latest_paystub=latest_paystub,
         mortgage_data=mortgage_data,
         active_focus_categories=active_focus_categories,
+        deadlines_radar=deadlines_radar,
         assistant_briefing=dashboard_briefing,
         dashboard_briefing=dashboard_briefing,
         is_admin=is_admin,
@@ -1165,7 +1177,7 @@ def delete_fixed_cost(item_id):
 def add_planned_deadline():
     ws_id = session.get('workspace_id')
     if not ws_id:
-        return redirect(url_for('cashflow'))
+        return redirect(url_for('dashboard'))
         
     name = request.form.get("name", "").strip()
     category = request.form.get("category", "Tasse & Finanza").strip()
@@ -1174,6 +1186,10 @@ def add_planned_deadline():
     due_day_str = request.form.get("due_day", "15").strip()
     pattern = request.form.get("match_pattern", "").strip()
     recurrence = request.form.get("recurrence", "ANNUAL").strip()
+    p1_paid_str = request.form.get("p1_paid_amount", "0").replace(",", ".").strip()
+    p2_paid_str = request.form.get("p2_paid_amount", "0").replace(",", ".").strip()
+    notes = request.form.get("notes", "").strip()
+    redirect_to = request.form.get("redirect_to", "dashboard").strip()
     
     if not year_month:
         year_month = datetime.now().strftime("%Y-%m")
@@ -1181,36 +1197,45 @@ def add_planned_deadline():
     try:
         expected_amount = float(amount_str)
         due_day = int(due_day_str)
+        p1_paid = float(p1_paid_str) if p1_paid_str else 0.0
+        p2_paid = float(p2_paid_str) if p2_paid_str else 0.0
     except ValueError:
         flash("Importo o giorno di scadenza non valido.", "error")
-        return redirect(url_for('cashflow', m=year_month))
+        return redirect(url_for('dashboard') if redirect_to == 'dashboard' else url_for('cashflow', m=year_month))
         
+    is_paid = 1 if (p1_paid + p2_paid) >= (expected_amount - 0.05) else 0
+
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO planned_deadlines (workspace_id, name, category, expected_amount, year_month, due_day, match_pattern, recurrence, is_paid)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-    ''', (ws_id, name, category, expected_amount, year_month, due_day, pattern, recurrence))
+        INSERT INTO planned_deadlines (
+            workspace_id, name, category, expected_amount, year_month, due_day, 
+            match_pattern, recurrence, p1_paid_amount, p2_paid_amount, is_paid, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (ws_id, name, category, expected_amount, year_month, due_day, pattern, recurrence, p1_paid, p2_paid, is_paid, notes))
     conn.commit()
     conn.close()
     
     flash(f"🎯 Scadenza '{name}' ({expected_amount:.2f} €) programmata per {year_month}!", "success")
-    return redirect(url_for('cashflow', m=year_month))
+    return redirect(url_for('dashboard') if redirect_to == 'dashboard' else url_for('cashflow', m=year_month))
 
 @app.route("/deadlines/delete/<int:dl_id>", methods=["POST"])
 @login_required
 def delete_planned_deadline(dl_id):
     ws_id = session.get('workspace_id')
     if not ws_id:
-        return redirect(url_for('cashflow'))
+        return redirect(url_for('dashboard'))
         
     m = request.form.get("m", "")
+    redirect_to = request.form.get("redirect_to", "cashflow").strip()
     conn = get_db_connection()
     conn.execute("DELETE FROM planned_deadlines WHERE id = ? AND workspace_id = ?", (dl_id, ws_id))
     conn.commit()
     conn.close()
     
-    flash("Scadenza rimossa.", "success")
+    flash("Scadenza rimossa con successo.", "success")
+    if redirect_to == 'dashboard':
+        return redirect(url_for('dashboard'))
     return redirect(url_for('cashflow', m=m) if m else url_for('cashflow'))
 
 @app.route("/deadlines/toggle-paid/<int:dl_id>", methods=["POST"])
@@ -1218,19 +1243,49 @@ def delete_planned_deadline(dl_id):
 def toggle_paid_deadline(dl_id):
     ws_id = session.get('workspace_id')
     if not ws_id:
-        return redirect(url_for('cashflow'))
+        return redirect(url_for('dashboard'))
         
     m = request.form.get("m", "")
+    redirect_to = request.form.get("redirect_to", "cashflow").strip()
     conn = get_db_connection()
-    row = conn.execute("SELECT is_paid FROM planned_deadlines WHERE id = ? AND workspace_id = ?", (dl_id, ws_id)).fetchone()
+    row = conn.execute("SELECT expected_amount, is_paid FROM planned_deadlines WHERE id = ? AND workspace_id = ?", (dl_id, ws_id)).fetchone()
     if row:
         new_status = 0 if row['is_paid'] else 1
-        conn.execute("UPDATE planned_deadlines SET is_paid = ? WHERE id = ?", (new_status, dl_id))
+        exp_amt = float(row['expected_amount'] or 0.0)
+        # If marking as paid, split quota equally between partners if not already set
+        if new_status == 1:
+            conn.execute("UPDATE planned_deadlines SET is_paid = 1, p1_paid_amount = ?, p2_paid_amount = ? WHERE id = ?", (exp_amt / 2, exp_amt / 2, dl_id))
+        else:
+            conn.execute("UPDATE planned_deadlines SET is_paid = 0, p1_paid_amount = 0, p2_paid_amount = 0 WHERE id = ?", (dl_id,))
         conn.commit()
     conn.close()
     
     flash("Stato pagamento scadenza aggiornato.", "success")
+    if redirect_to == 'dashboard':
+        return redirect(url_for('dashboard'))
     return redirect(url_for('cashflow', m=m) if m else url_for('cashflow'))
+
+@app.route("/deadlines/update-quotas/<int:dl_id>", methods=["POST"])
+@login_required
+def update_deadline_quotas(dl_id):
+    ws_id = session.get('workspace_id')
+    if not ws_id:
+        return jsonify({"success": False, "error": "No workspace"}), 400
+        
+    p1_paid = float(request.form.get("p1_paid", 0.0))
+    p2_paid = float(request.form.get("p2_paid", 0.0))
+    
+    conn = get_db_connection()
+    row = conn.execute("SELECT expected_amount FROM planned_deadlines WHERE id = ? AND workspace_id = ?", (dl_id, ws_id)).fetchone()
+    if row:
+        exp = float(row['expected_amount'] or 0.0)
+        is_paid = 1 if (p1_paid + p2_paid) >= (exp - 0.05) else 0
+        conn.execute("UPDATE planned_deadlines SET p1_paid_amount = ?, p2_paid_amount = ?, is_paid = ? WHERE id = ?", (p1_paid, p2_paid, is_paid, dl_id))
+        conn.commit()
+    conn.close()
+    
+    flash("Quote della scadenza aggiornate.", "success")
+    return redirect(request.referrer or url_for('dashboard'))
 
 # ---------------------------------------------------------
 # VERTICAL FOCUS & SPECIAL MORTGAGE HUB
