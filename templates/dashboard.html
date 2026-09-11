@@ -404,9 +404,58 @@
 
     <!-- Smart Recommendation Callout -->
     {% if assistant_briefing.recommendation %}
-    <div style="display: flex; align-items: center; gap: 8px; background: rgba(99, 102, 241, 0.12); border: 1px dashed rgba(99, 102, 241, 0.35); border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; color: #e0e7ff;">
+    <div style="display: flex; align-items: center; gap: 8px; background: rgba(99, 102, 241, 0.12); border: 1px dashed rgba(99, 102, 241, 0.35); border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; color: #e0e7ff; margin-bottom: 12px;">
         <span>💡</span>
         <span>{{ assistant_briefing.recommendation|safe }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Integrated Collapsible: 🧠 Macro Advisor - Analisi Globale & Strategie -->
+    {% if advisor_insights and advisor_insights|length > 0 %}
+    <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 12px; margin-top: 4px;">
+        <!-- Toggle Header Button -->
+        <div onclick="toggleAssistantMacroAdvisor()" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 8px 12px; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 10px; transition: all 0.2s ease;" id="macroAdvisorToggleHeader">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <span style="font-size: 1.25rem;">🧠</span>
+                <div>
+                    <div style="font-size: 0.88rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span>Analisi Finanziaria Globale & Strategie</span>
+                        <span class="badge-tag" style="background: rgba(59, 130, 246, 0.18); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.35); font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">
+                            {{ advisor_insights|length }} Insight Strategici
+                        </span>
+                    </div>
+                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 1px;">
+                        Autonomia patrimoniale, tasso di risparmio, entrate medie e margini di ottimizzazione
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                <button type="button" class="btn btn-sm" id="btnToggleMacroAdvisor" style="background: rgba(59, 130, 246, 0.18); border: 1px solid rgba(59, 130, 246, 0.4); color: #93c5fd; font-weight: 800; font-size: 0.74rem; padding: 5px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;">
+                    <span id="macroAdvisorArrow">▾ Espandi Analisi</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Collapsible Body with Insights -->
+        <div id="macroAdvisorBody" style="display: none; margin-top: 12px; padding: 4px 0;">
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
+                <a href="/cashflow" class="btn btn-secondary btn-sm" style="font-size: 0.7rem; padding: 3px 8px; border-color: rgba(59, 130, 246, 0.35); color: #93c5fd;">
+                    Apri Cash Flow Completo →
+                </a>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                {% for ins in advisor_insights %}
+                <div class="advisor-insight-item advisor-{{ ins.type }}" style="padding: 10px 14px; border-radius: 10px;">
+                    <div class="advisor-icon" style="font-size: 1.15rem;">{{ ins.icon }}</div>
+                    <div class="advisor-content">
+                        <div class="advisor-title" style="font-size: 0.85rem; font-weight: 800;">{{ ins.title }}</div>
+                        <div class="advisor-text" style="font-size: 0.78rem; line-height: 1.45;">{{ ins.text|safe }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
     {% endif %}
 </div>
@@ -782,44 +831,7 @@
 </div>
 {% endif %}
 
-<!-- Macro Advisor: Analisi Finanziaria Globale Card -->
-{% if advisor_insights and advisor_insights|length > 0 %}
-<div class="card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1.5px solid rgba(59, 130, 246, 0.35); margin-bottom: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
-                🧠
-            </div>
-            <div>
-                <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
-                    Macro Advisor: Analisi Finanziaria Globale
-                    <span class="badge-tag" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">
-                        Executive Summary
-                    </span>
-                </h3>
-                <p style="color: var(--text-muted); font-size: 0.76rem; margin: 2px 0 0 0;">
-                    Considerazioni strategiche, autonomia patrimoniale, tasso di risparmio ed aree di ottimizzazione della spesa
-                </p>
-            </div>
-        </div>
-        <a href="/cashflow" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 4px 10px; border-color: rgba(59, 130, 246, 0.4); color: var(--accent-primary);">
-            Vedi Cash Flow Completo →
-        </a>
-    </div>
 
-    <div style="display: flex; flex-direction: column; gap: 10px;">
-        {% for ins in advisor_insights %}
-        <div class="advisor-insight-item advisor-{{ ins.type }}">
-            <div class="advisor-icon">{{ ins.icon }}</div>
-            <div class="advisor-content">
-                <div class="advisor-title">{{ ins.title }}</div>
-                <div class="advisor-text">{{ ins.text|safe }}</div>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-</div>
-{% endif %}
 
 <!-- Bank Institutions & Multi-Account Breakdown Card -->
 {% if bank_groups|length > 0 %}
@@ -1868,14 +1880,51 @@ function initHeroGreeting() {
     }
 }
 
+// ---------------------------------------------------------
+// 🧠 TOGGLE COLLAPSE / EXPAND MACRO ADVISOR IN ASSISTANT CARD
+// ---------------------------------------------------------
+function toggleAssistantMacroAdvisor() {
+    const body = document.getElementById('macroAdvisorBody');
+    const arrow = document.getElementById('macroAdvisorArrow');
+    if (!body) return;
+    
+    const isClosed = (body.style.display === 'none' || body.style.display === '');
+    if (isClosed) {
+        body.style.display = 'block';
+        if (arrow) arrow.innerHTML = '▴ Comprimi Analisi';
+        localStorage.setItem('fisc_assistant_macroadvisor_collapsed', 'false');
+    } else {
+        body.style.display = 'none';
+        if (arrow) arrow.innerHTML = '▾ Espandi Analisi';
+        localStorage.setItem('fisc_assistant_macroadvisor_collapsed', 'true');
+    }
+}
+
+function initAssistantMacroAdvisorState() {
+    const saved = localStorage.getItem('fisc_assistant_macroadvisor_collapsed');
+    const body = document.getElementById('macroAdvisorBody');
+    const arrow = document.getElementById('macroAdvisorArrow');
+    if (body) {
+        if (saved === 'false') {
+            body.style.display = 'block';
+            if (arrow) arrow.innerHTML = '▴ Comprimi Analisi';
+        } else {
+            body.style.display = 'none';
+            if (arrow) arrow.innerHTML = '▾ Espandi Analisi';
+        }
+    }
+}
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
         initDashboardTrendChart();
         initHeroGreeting();
+        initAssistantMacroAdvisorState();
     });
 } else {
     initDashboardTrendChart();
     initHeroGreeting();
+    initAssistantMacroAdvisorState();
 }
 </script>
 
