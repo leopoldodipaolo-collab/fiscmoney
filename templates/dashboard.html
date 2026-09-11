@@ -898,46 +898,69 @@
     <!-- ======================================================== -->
     <div class="radar-split-container" style="display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: start;">
         
-        <!-- LEFT COLUMN: CALENDARIO DEI MESI & TIMELINE -->
-        <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
-                <span style="font-size: 0.76rem; font-weight: 800; color: #facc15; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                    📅 Calendario Mesi
+        <!-- LEFT COLUMN: MATRICE CALENDARIO ANNO IN CORSO E PROSSIMO -->
+        <div style="background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+                <span style="font-size: 0.78rem; font-weight: 800; color: #facc15; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                    📅 Matrice Scadenze & Impegni
                 </span>
-                <button type="button" onclick="filterDeadlinesByMonth('ALL', this)" class="btn-radar-month-filter active" id="filterBtnAll" style="font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; cursor: pointer;">
+                <button type="button" onclick="filterDeadlinesByMonth('ALL', this)" class="btn-radar-month-filter active" id="filterBtnAll" style="font-size: 0.68rem; padding: 2px 10px; border-radius: 6px; cursor: pointer;">
                     Tutti ({{ deadlines_radar.deadlines|length }})
                 </button>
             </div>
 
-            <!-- Month by Month Mini Cards List -->
-            <div style="display: flex; flex-direction: column; gap: 6px; max-height: 480px; overflow-y: auto; padding-right: 2px;" class="custom-scroll">
-                {% for tm in deadlines_radar.timeline_months %}
-                <div onclick="filterDeadlinesByMonth('{{ tm.year_month }}', this)" 
-                     class="radar-month-row {% if tm.is_current %}is-current{% endif %} {% if tm.items_count > 0 %}has-items{% endif %}"
-                     id="monthRow_{{ tm.year_month }}"
-                     data-ym="{{ tm.year_month }}"
-                     style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 8px; border: 1px solid {% if tm.is_current %}rgba(234, 179, 8, 0.45){% elif tm.items_count > 0 %}rgba(59, 130, 246, 0.25){% else %}rgba(255,255,255,0.04){% endif %}; background: {% if tm.is_current %}rgba(234, 179, 8, 0.12){% elif tm.items_count > 0 %}rgba(255,255,255,0.03){% else %}transparent{% endif %}; cursor: pointer; transition: all 0.2s;">
-                    
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 0.78rem; font-weight: 800; color: {% if tm.is_current %}#facc15{% else %}#fff{% endif %};">
-                            {{ tm.short_name }} '{{ tm.year_short }}
+            <!-- MATRICI ANNI: ANNO IN CORSO E ANNO PROSSIMO -->
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                {% for cy in deadlines_radar.calendar_years %}
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid {% if cy.is_current_year %}rgba(234, 179, 8, 0.3){% else %}rgba(255,255,255,0.06){% endif %}; border-radius: 10px; padding: 10px;">
+                    <!-- Year Header & Mini Total -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 0.82rem; font-weight: 900; color: {% if cy.is_current_year %}#facc15{% else %}#38bdf8{% endif %}; display: flex; align-items: center; gap: 6px;">
+                            🗓️ Anno {{ cy.year }}
+                            {% if cy.is_current_year %}
+                            <span style="font-size: 0.6rem; background: rgba(234, 179, 8, 0.2); color: #fde047; padding: 1px 5px; border-radius: 4px; font-weight: 700;">In Corso</span>
+                            {% else %}
+                            <span style="font-size: 0.6rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 1px 5px; border-radius: 4px; font-weight: 700;">Prossimo Anno</span>
+                            {% endif %}
                         </span>
-                        {% if tm.is_current %}
-                        <span style="font-size: 0.62rem; background: rgba(234, 179, 8, 0.2); color: #fde047; padding: 1px 5px; border-radius: 4px; font-weight: 700;">In Corso</span>
-                        {% endif %}
+                        <div style="text-align: right; font-size: 0.72rem;">
+                            <span style="color: var(--text-muted);">Previsto:</span>
+                            <strong class="privacy-mask" style="color: #fff; margin-left: 2px;">{{ cy.total_expected|eur }}</strong>
+                        </div>
                     </div>
 
-                    <div style="text-align: right; display: flex; align-items: center; gap: 6px;">
-                        {% if tm.items_count > 0 %}
-                        <span style="font-size: 0.75rem; font-weight: 900; color: {% if tm.total_remaining > 0 %}#f87171{% else %}#34d399{% endif %};">
-                            € {{ "%.0f"|format(tm.total_expected) }}
-                        </span>
-                        <span style="font-size: 0.65rem; background: rgba(255,255,255,0.08); color: #cbd5e1; padding: 1px 5px; border-radius: 10px; font-weight: 700;">
-                            {{ tm.items_count }}
-                        </span>
-                        {% else %}
-                        <span style="font-size: 0.7rem; color: #64748b;">-</span>
-                        {% endif %}
+                    <!-- 12-Month Matrix Grid (3 cols x 4 rows) -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                        {% for tm in cy.months %}
+                        <div onclick="filterDeadlinesByMonth('{{ tm.year_month }}', this)"
+                             class="radar-month-row {% if tm.is_current %}is-current{% endif %} {% if tm.items_count > 0 %}has-items{% endif %}"
+                             id="monthRow_{{ tm.year_month }}"
+                             data-ym="{{ tm.year_month }}"
+                             title="{{ tm.full_name }}: {{ tm.items_count }} scadenze ({{ tm.total_expected|eur }})"
+                             style="display: flex; flex-direction: column; justify-content: space-between; padding: 6px 4px; border-radius: 8px; border: 1px solid {% if tm.is_current %}rgba(234, 179, 8, 0.5){% elif tm.items_count > 0 %}rgba(59, 130, 246, 0.35){% else %}rgba(255,255,255,0.05){% endif %}; background: {% if tm.is_current %}rgba(234, 179, 8, 0.14){% elif tm.items_count > 0 %}rgba(59, 130, 246, 0.08){% else %}rgba(0,0,0,0.2){% endif %}; cursor: pointer; transition: all 0.2s; min-height: 48px; text-align: center;">
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 4px;">
+                                <span style="font-size: 0.72rem; font-weight: 800; color: {% if tm.is_current %}#facc15{% else %}#fff{% endif %};">
+                                    {{ tm.short_name }}
+                                </span>
+                                {% if tm.items_count > 0 %}
+                                <span style="font-size: 0.6rem; background: {% if tm.total_remaining == 0 %}rgba(16, 185, 129, 0.25){% else %}rgba(239, 68, 68, 0.25){% endif %}; color: {% if tm.total_remaining == 0 %}#34d399{% else %}#f87171{% endif %}; padding: 1px 4px; border-radius: 10px; font-weight: 800;">
+                                    {{ tm.items_count }}
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <div style="font-size: 0.68rem; font-weight: 800; margin-top: 2px;">
+                                {% if tm.items_count > 0 %}
+                                <span class="privacy-mask" style="color: {% if tm.total_remaining == 0 %}#34d399{% else %}#f87171{% endif %};">
+                                    €{{ "%.0f"|format(tm.total_expected) }}
+                                </span>
+                                {% else %}
+                                <span style="color: rgba(255,255,255,0.15); font-size: 0.65rem;">-</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
                 {% endfor %}
@@ -2454,10 +2477,13 @@ function applyDeadlinesCombinedFilter() {
 function filterDeadlinesByMonth(targetYm, btnElement) {
     activeRadarYm = targetYm;
 
-    // 1. Update active styling on month buttons
+    // 1. Update active styling on matrix month cells
     document.querySelectorAll('.radar-month-row').forEach(row => {
-        row.style.background = row.classList.contains('is-current') ? 'rgba(234, 179, 8, 0.12)' : (row.classList.contains('has-items') ? 'rgba(255,255,255,0.03)' : 'transparent');
-        row.style.borderColor = row.classList.contains('is-current') ? 'rgba(234, 179, 8, 0.45)' : (row.classList.contains('has-items') ? 'rgba(59, 130, 246, 0.25)' : 'rgba(255,255,255,0.04)');
+        const isCur = row.classList.contains('is-current');
+        const hasItm = row.classList.contains('has-items');
+        row.style.background = isCur ? 'rgba(234, 179, 8, 0.14)' : (hasItm ? 'rgba(59, 130, 246, 0.08)' : 'rgba(0,0,0,0.2)');
+        row.style.borderColor = isCur ? 'rgba(234, 179, 8, 0.5)' : (hasItm ? 'rgba(59, 130, 246, 0.35)' : 'rgba(255,255,255,0.05)');
+        row.style.boxShadow = 'none';
     });
     const filterAllBtn = document.getElementById('filterBtnAll');
     if (filterAllBtn) {
@@ -2473,8 +2499,9 @@ function filterDeadlinesByMonth(targetYm, btnElement) {
     }
 
     if (btnElement && targetYm !== 'ALL') {
-        btnElement.style.background = 'rgba(234, 179, 8, 0.25)';
-        btnElement.style.borderColor = '#eab308';
+        btnElement.style.background = 'rgba(234, 179, 8, 0.28)';
+        btnElement.style.borderColor = '#facc15';
+        btnElement.style.boxShadow = '0 0 10px rgba(250, 204, 21, 0.35)';
     }
 
     applyDeadlinesCombinedFilter();
@@ -2613,15 +2640,18 @@ if (document.readyState === 'loading') {
 .btn-radar-month-filter:hover {
     transform: translateY(-1px);
 }
-.radar-month-row:hover {
-    background: rgba(255, 255, 255, 0.06) !important;
-    border-color: rgba(234, 179, 8, 0.4) !important;
-    transform: translateX(2px);
+.radar-month-row {
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
-@media (max-width: 860px) {
+.radar-month-row:hover {
+    transform: translateY(-2px);
+    border-color: rgba(250, 204, 21, 0.6) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+@media (max-width: 992px) {
     .radar-split-container {
         grid-template-columns: 1fr !important;
-        gap: 14px !important;
+        gap: 16px !important;
     }
 }
 </style>

@@ -280,6 +280,9 @@ def is_cost_due_in_month(fc, month_num):
         return month_num % 2 == 1
     elif freq == 'QUARTERLY':
         return month_num in [3, 6, 9, 12]
+    elif freq == 'ANNUAL':
+        # Se non è specificato active_months, ricava il mese da created_at o default mese corrente
+        return True
         
     return True
 

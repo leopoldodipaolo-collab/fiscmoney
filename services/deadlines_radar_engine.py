@@ -116,27 +116,46 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
     total_paid_year = 0.0
     total_remaining_year = 0.0
     
-    # Prepare 12-month calendar structure starting from current month
-    timeline_months = []
-    for i in range(12):
-        m_dt = reference_date.replace(day=1) + relativedelta(months=i)
-        ym_key = m_dt.strftime("%Y-%m")
-        year_str = str(m_dt.year)
-        timeline_months.append({
-            "year_month": ym_key,
-            "month_num": m_dt.month,
-            "year": m_dt.year,
-            "year_short": year_str[-2:],
-            "short_name": MESI_BREVI_IT[m_dt.month - 1],
-            "full_name": f"{MESI_ESTESI_IT[m_dt.month - 1]} {m_dt.year}",
-            "is_current": (ym_key == curr_ym),
-            "deadlines": [],
+    # Prepare 2 full calendar years (Current Year & Next Year) organized as matrices (12 months each)
+    curr_year_int = reference_date.year
+    next_year_int = curr_year_int + 1
+    
+    calendar_years = []
+    month_map = {}
+    
+    for y_val in [curr_year_int, next_year_int]:
+        y_months = []
+        y_expected = 0.0
+        y_paid = 0.0
+        for m_idx in range(1, 13):
+            ym_key = f"{y_val}-{m_idx:02d}"
+            m_obj = {
+                "year_month": ym_key,
+                "month_num": m_idx,
+                "year": y_val,
+                "year_short": str(y_val)[-2:],
+                "short_name": MESI_BREVI_IT[m_idx - 1],
+                "full_name": f"{MESI_ESTESI_IT[m_idx - 1]} {y_val}",
+                "is_current": (ym_key == curr_ym),
+                "is_past": (ym_key < curr_ym),
+                "deadlines": [],
+                "total_expected": 0.0,
+                "total_paid": 0.0,
+                "total_remaining": 0.0,
+                "items_count": 0
+            }
+            y_months.append(m_obj)
+            month_map[ym_key] = m_obj
+            
+        calendar_years.append({
+            "year": y_val,
+            "months": y_months,
             "total_expected": 0.0,
             "total_paid": 0.0,
-            "total_remaining": 0.0,
-            "items_count": 0
+            "is_current_year": (y_val == curr_year_int)
         })
-    month_map = {m['year_month']: m for m in timeline_months}
+        
+    timeline_months = month_map.values()
     
     for row in raw_deadlines:
         item = dict(row)
@@ -292,9 +311,12 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
         total_paid_year += final_total_paid
         total_remaining_year += remaining_to_pay
         
-        # Attach to timeline month(s) if within next 12 months
+        # Attach to calendar matrix month(s)
+        rec_type = item.get('recurrence') or 'ANNUAL'
         c_months_str = item.get('custom_months') or ''
-        if c_months_str and (item.get('recurrence') == 'CUSTOM_MONTHS'):
+        
+        # Mesi target da associare
+        if c_months_str and (rec_type == 'CUSTOM_MONTHS'):
             c_months_list = [int(m.strip()) for m in c_months_str.split(',') if m.strip().isdigit()]
             for ym_k, m_obj in month_map.items():
                 if m_obj['month_num'] in c_months_list:
@@ -303,6 +325,19 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
                     m_obj["total_paid"] += final_total_paid
                     m_obj["total_remaining"] += remaining_to_pay
                     m_obj["items_count"] += 1
+        elif rec_type == 'ANNUAL':
+            # Una scadenza annuale si proietta nel mese di scadenza sia nell'anno corrente che nell'anno prossimo
+            due_month_int = int(due_ym.split('-')[1]) if '-' in due_ym else reference_date.month
+            for ym_k, m_obj in month_map.items():
+                if m_obj['month_num'] == due_month_int:
+                    m_obj["deadlines"].append(formatted_item)
+                    m_obj["total_expected"] += expected
+                    if ym_k == due_ym:
+                        m_obj["total_paid"] += final_total_paid
+                        m_obj["total_remaining"] += remaining_to_pay
+                    else:
+                        m_obj["total_remaining"] += expected
+                    m_obj["items_count"] += 1
         elif due_ym in month_map:
             month_map[due_ym]["deadlines"].append(formatted_item)
             month_map[due_ym]["total_expected"] += expected
@@ -310,6 +345,13 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
             month_map[due_ym]["total_remaining"] += remaining_to_pay
             month_map[due_ym]["items_count"] += 1
             
+    # Calculate totals for each calendar year
+    for cy in calendar_years:
+        cy["total_expected"] = sum(m["total_expected"] for m in cy["months"])
+        cy["total_paid"] = sum(m["total_paid"] for m in cy["months"])
+        cy["total_remaining"] = max(0.0, cy["total_expected"] - cy["total_paid"])
+        cy["progress_pct"] = min(100.0, round((cy["total_paid"] / cy["total_expected"] * 100.0), 1)) if cy["total_expected"] > 0 else 0.0
+
     conn.close()
     
     # Sort deadlines in list: pending first, then by date
@@ -319,7 +361,10 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
     
     return {
         "deadlines": deadlines_list,
-        "timeline_months": timeline_months,
+        "timeline_months": list(month_map.values()),
+        "calendar_years": calendar_years,
+        "curr_year": curr_year_int,
+        "next_year": next_year_int,
         "total_expected": total_expected_year,
         "total_paid": total_paid_year,
         "total_remaining": total_remaining_year,
