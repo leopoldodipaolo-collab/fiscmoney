@@ -339,7 +339,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
                         m_obj["total_paid"] += final_total_paid
                         m_obj["total_remaining"] += remaining_to_pay
                     else:
-                        # Anno futuro (o passato diverso): crea copia con status PENDING
+                        # Anno futuro: crea copia PENDING e aggiungila ANCHE a deadlines_list
                         future_item = dict(formatted_item)
                         future_item["year_month"] = ym_k
                         future_year = ym_k.split('-')[0]
@@ -358,6 +358,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
                         future_item["status_label"] = "Da Saldare 🚨"
                         future_item["status_color"] = "#f87171"
                         m_obj["deadlines"].append(future_item)
+                        deadlines_list.append(future_item)  # <-- card HTML visibile nel filtro 2027
                         m_obj["total_remaining"] += expected
                     m_obj["total_expected"] += expected
                     m_obj["items_count"] += 1
@@ -379,7 +380,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
                         m_obj["total_paid"] += final_total_paid
                         m_obj["total_remaining"] += remaining_to_pay
                     else:
-                        # Anno futuro biennale: crea copia PENDING
+                        # Anno futuro biennale: crea copia PENDING e aggiungila ANCHE a deadlines_list
                         future_item = dict(formatted_item)
                         future_item["year_month"] = ym_k
                         future_year = ym_k.split('-')[0]
@@ -398,6 +399,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
                         future_item["status_label"] = "Da Saldare 🚨"
                         future_item["status_color"] = "#f87171"
                         m_obj["deadlines"].append(future_item)
+                        deadlines_list.append(future_item)  # <-- card HTML visibile nel filtro 2027
                         m_obj["total_remaining"] += expected
                     m_obj["items_count"] += 1
         elif due_ym in month_map:
