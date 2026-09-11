@@ -62,7 +62,73 @@ def init_deadlines_radar_schema():
     conn.close()
 
 
-def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=None, user_profile_name=None):
+
+def _compute_match(pat, target_ym, due_day, target_type, p1_id, p2_id, all_txs, manual_p1=0.0, manual_p2=0.0, is_paid_flag=False, expected=0.0, profiles_count=1):
+    """
+    Calcola l'importo pagato per una scadenza in un determinato anno/mese.
+    Usata sia per l'anno base che per gli anni proiettati (es. 2027 per una scadenza ANNUAL del 2026).
+    """
+    auto_p1_paid = 0.0
+    auto_p2_paid = 0.0
+    matched_count = 0
+    matched_txs = []
+    
+    if pat:
+        clean_pat = pat.strip().lstrip('#')
+        try:
+            due_d = datetime.strptime(f"{target_ym}-{due_day:02d}", "%Y-%m-%d").date()
+        except Exception:
+            due_d = None
+            
+        for tx in all_txs:
+            desc = f"{tx['description'] or ''} {tx['raw_description'] or ''} {tx['tags'] or ''} {tx['category'] or ''}"
+            if re.search(r'\b' + re.escape(clean_pat) + r'\b', desc, re.IGNORECASE) or re.search(re.escape(clean_pat), desc, re.IGNORECASE):
+                try:
+                    tx_d = datetime.strptime(tx['date'], "%Y-%m-%d").date()
+                    day_diff = abs((tx_d - due_d).days) if due_d else (0 if tx['date'][:7] == target_ym else 999)
+                except Exception:
+                    day_diff = 999
+                    
+                if day_diff <= 45:
+                    tx_amt = abs(float(tx['amount']))
+                    matched_txs.append(tx)
+                    matched_count += 1
+                    if target_type == 'LEOPOLDO_ONLY':
+                        auto_p1_paid += tx_amt
+                    elif target_type == 'NUNZIA_ONLY':
+                        auto_p2_paid += tx_amt
+                    else:  # SHARED_50_50
+                        if tx['profile_id'] == p1_id:
+                            auto_p1_paid += tx_amt
+                        elif profiles_count > 1 and tx['profile_id'] == p2_id:
+                            auto_p2_paid += tx_amt
+                        else:
+                            auto_p1_paid += tx_amt
+
+    final_p1 = max(manual_p1, auto_p1_paid)
+    final_p2 = max(manual_p2, auto_p2_paid)
+    
+    if target_type == 'LEOPOLDO_ONLY':
+        total = final_p1
+    elif target_type == 'NUNZIA_ONLY':
+        total = final_p2
+    else:
+        total = final_p1 + final_p2
+    
+    # is_paid flag fallback
+    if is_paid_flag and total == 0:
+        total = expected
+        if target_type == 'LEOPOLDO_ONLY':
+            final_p1 = expected
+        elif target_type == 'NUNZIA_ONLY':
+            final_p2 = expected
+        else:
+            final_p1 = expected / 2
+            final_p2 = expected / 2
+    
+    return total, final_p1, final_p2, matched_count
+
+
     """
     Computes upcoming annual and multi-month financial deadlines:
     1. Monthly timeline distribution (next 12 calendar months).
@@ -102,8 +168,8 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
     query += " ORDER BY year_month ASC, due_day ASC, id ASC"
     raw_deadlines = conn.execute(query, params).fetchall()
     
-    # 3. Fetch all expenses from reference_date - 6 months up to current date for automatic matching
-    from_date_tx = (reference_date - relativedelta(months=6)).strftime("%Y-%m-01")
+    # 3. Fetch all expenses from reference_date - 18 months for matching (copre sia 2026 che il futuro 2027)
+    from_date_tx = (reference_date - relativedelta(months=18)).strftime("%Y-%m-01")
     tx_query = """
         SELECT id, date, amount, description, raw_description, profile_id, category, tags
         FROM transactions
@@ -166,75 +232,35 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
         pat = (item.get('match_pattern') or item.get('name') or '').strip()
         target_type = item.get('target_type') or 'SHARED_50_50'
         
-        # Determine actual paid amounts (auto-match within date window ± 45 days + explicit database values)
-        matched_txs = []
-        auto_p1_paid = 0.0
-        auto_p2_paid = 0.0
-        
-        if pat:
-            # Pulisci o prepara pattern di ricerca per tag o testo
-            clean_pat = pat.strip().lstrip('#')
-            for tx in all_recent_txs:
-                desc = f"{tx['description'] or ''} {tx['raw_description'] or ''} {tx['tags'] or ''} {tx['category'] or ''}"
-                tx_date_ym = tx['date'][:7]
-                if re.search(r'\b' + re.escape(clean_pat) + r'\b', desc, re.IGNORECASE) or re.search(re.escape(clean_pat), desc, re.IGNORECASE):
-                    try:
-                        due_d = datetime.strptime(f"{due_ym}-{due_day:02d}", "%Y-%m-%d").date()
-                        tx_d = datetime.strptime(tx['date'], "%Y-%m-%d").date()
-                        day_diff = abs((tx_d - due_d).days)
-                    except Exception:
-                        day_diff = 0 if tx_date_ym == due_ym else 999
-                        
-                    if day_diff <= 45:
-                        tx_amt = abs(float(tx['amount']))
-                        matched_txs.append(tx)
-                        if target_type == 'LEOPOLDO_ONLY':
-                            auto_p1_paid += tx_amt
-                        elif target_type == 'NUNZIA_ONLY':
-                            auto_p2_paid += tx_amt
-                        else: # SHARED_50_50
-                            if tx['profile_id'] == p1['id']:
-                                auto_p1_paid += tx_amt
-                            elif len(profiles_rows) > 1 and tx['profile_id'] == p2['id']:
-                                auto_p2_paid += tx_amt
-                            else:
-                                auto_p1_paid += tx_amt
-                        
+        # Determine actual paid amounts via helper (auto-match ±45 days + manual DB values)
         manual_p1 = float(item.get('p1_paid_amount') or 0.0)
         manual_p2 = float(item.get('p2_paid_amount') or 0.0)
+        is_paid_flag = bool(item.get('is_paid'))
         
-        final_p1_paid = max(manual_p1, auto_p1_paid)
-        final_p2_paid = max(manual_p2, auto_p2_paid)
+        final_total_paid, final_p1_paid, final_p2_paid, match_count = _compute_match(
+            pat, due_ym, due_day, target_type,
+            p1['id'], p2['id'],
+            all_recent_txs,
+            manual_p1=manual_p1, manual_p2=manual_p2,
+            is_paid_flag=is_paid_flag, expected=expected,
+            profiles_count=len(profiles_rows)
+        )
+        matched_txs_count = match_count
         
+        # Scope labels
         if target_type == 'LEOPOLDO_ONLY':
-            final_total_paid = final_p1_paid
             is_shared = False
             scope_badge = "👤 Personale Leopoldo"
             scope_code = "LEOPOLDO"
         elif target_type == 'NUNZIA_ONLY':
-            final_total_paid = final_p2_paid
             is_shared = False
             scope_badge = "👩 Personale Nunzia"
             scope_code = "NUNZIA"
         else:
-            final_total_paid = final_p1_paid + final_p2_paid
             is_shared = True
             scope_badge = "👥 Spesa Condivisa 50/50"
             scope_code = "SHARED"
-            
-        # If is_paid flag is explicitly 1 and no specific breakdown, assume full payment
-        if item.get('is_paid') and final_total_paid == 0:
-            final_total_paid = expected
-            if target_type == 'LEOPOLDO_ONLY':
-                final_p1_paid = expected
-                final_p2_paid = 0.0
-            elif target_type == 'NUNZIA_ONLY':
-                final_p1_paid = 0.0
-                final_p2_paid = expected
-            else:
-                final_p1_paid = expected / 2
-                final_p2_paid = expected / 2
-            
+        
         is_fully_paid = (final_total_paid >= (expected - 0.05))
         is_partially_paid = (final_total_paid > 0.05 and not is_fully_paid)
         progress_pct = min(100.0, round((final_total_paid / expected * 100.0), 1)) if expected > 0 else 100.0
@@ -305,7 +331,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
             "half_quota": half_quota,
             "p1_name": p1_first,
             "p2_name": p2_first,
-            "matched_txs_count": len(matched_txs),
+            "matched_txs_count": matched_txs_count,
             "notes": item.get('notes') or ''
         }
         deadlines_list.append(formatted_item)
@@ -339,27 +365,49 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
                         m_obj["total_paid"] += final_total_paid
                         m_obj["total_remaining"] += remaining_to_pay
                     else:
-                        # Anno futuro: crea copia PENDING e aggiungila ANCHE a deadlines_list
-                        future_item = dict(formatted_item)
-                        future_item["year_month"] = ym_k
+                        # Anno futuro: ricalcola il matching per QUESTO anno specifico
+                        f_total, f_p1, f_p2, f_cnt = _compute_match(
+                            pat, ym_k, due_day, target_type,
+                            p1['id'], p2['id'], all_recent_txs,
+                            profiles_count=len(profiles_rows)
+                        )
+                        f_is_paid = (f_total >= (expected - 0.05))
+                        f_is_partial = (f_total > 0.05 and not f_is_paid)
+                        f_progress = min(100.0, round(f_total / expected * 100.0, 1)) if expected > 0 else 0.0
+                        f_remaining = max(0.0, round(expected - f_total, 2))
+                        f_p1_missing = max(0.0, round(formatted_item.get('p1_target', 0.0) - f_p1, 2))
+                        f_p2_missing = max(0.0, round(formatted_item.get('p2_target', 0.0) - f_p2, 2))
+                        if f_is_paid:
+                            f_status_code, f_status_label, f_status_color = "COMPLETED", "Completata ✅", "#10b981"
+                        elif f_is_partial:
+                            f_status_code = "PARTIAL"
+                            f_status_label = f"In Corso ({f_progress:.0f}%) ⏳"
+                            f_status_color = "#eab308"
+                        else:
+                            f_status_code, f_status_label, f_status_color = "PENDING", "Da Saldare 🚨", "#f87171"
                         future_year = ym_k.split('-')[0]
-                        future_item["due_date_str"] = f"{due_day} {MESI_BREVI_IT[due_month_int-1]} {future_year}"
-                        future_item["is_paid"] = False
-                        future_item["is_partial"] = False
-                        future_item["total_paid"] = 0.0
-                        future_item["remaining_to_pay"] = expected
-                        future_item["progress_pct"] = 0.0
-                        future_item["p1_paid"] = 0.0
-                        future_item["p2_paid"] = 0.0
-                        future_item["p1_missing"] = future_item.get("p1_target", 0.0)
-                        future_item["p2_missing"] = future_item.get("p2_target", 0.0)
-                        future_item["matched_txs_count"] = 0
-                        future_item["status_code"] = "PENDING"
-                        future_item["status_label"] = "Da Saldare 🚨"
-                        future_item["status_color"] = "#f87171"
+                        future_item = dict(formatted_item)
+                        future_item.update({
+                            "year_month": ym_k,
+                            "due_date_str": f"{due_day} {MESI_BREVI_IT[due_month_int-1]} {future_year}",
+                            "is_paid": f_is_paid,
+                            "is_partial": f_is_partial,
+                            "total_paid": f_total,
+                            "remaining_to_pay": f_remaining,
+                            "progress_pct": f_progress,
+                            "p1_paid": f_p1,
+                            "p2_paid": f_p2,
+                            "p1_missing": f_p1_missing,
+                            "p2_missing": f_p2_missing,
+                            "matched_txs_count": f_cnt,
+                            "status_code": f_status_code,
+                            "status_label": f_status_label,
+                            "status_color": f_status_color,
+                        })
                         m_obj["deadlines"].append(future_item)
-                        deadlines_list.append(future_item)  # <-- card HTML visibile nel filtro 2027
-                        m_obj["total_remaining"] += expected
+                        deadlines_list.append(future_item)
+                        m_obj["total_paid"] += f_total
+                        m_obj["total_remaining"] += f_remaining
                     m_obj["total_expected"] += expected
                     m_obj["items_count"] += 1
         elif rec_type == 'BIENNIAL':
@@ -380,27 +428,49 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
                         m_obj["total_paid"] += final_total_paid
                         m_obj["total_remaining"] += remaining_to_pay
                     else:
-                        # Anno futuro biennale: crea copia PENDING e aggiungila ANCHE a deadlines_list
-                        future_item = dict(formatted_item)
-                        future_item["year_month"] = ym_k
+                        # Anno futuro biennale: ricalcola il matching per QUESTO anno
+                        f_total, f_p1, f_p2, f_cnt = _compute_match(
+                            pat, ym_k, due_day, target_type,
+                            p1['id'], p2['id'], all_recent_txs,
+                            profiles_count=len(profiles_rows)
+                        )
+                        f_is_paid = (f_total >= (expected - 0.05))
+                        f_is_partial = (f_total > 0.05 and not f_is_paid)
+                        f_progress = min(100.0, round(f_total / expected * 100.0, 1)) if expected > 0 else 0.0
+                        f_remaining = max(0.0, round(expected - f_total, 2))
+                        f_p1_missing = max(0.0, round(formatted_item.get('p1_target', 0.0) - f_p1, 2))
+                        f_p2_missing = max(0.0, round(formatted_item.get('p2_target', 0.0) - f_p2, 2))
+                        if f_is_paid:
+                            f_status_code, f_status_label, f_status_color = "COMPLETED", "Completata ✅", "#10b981"
+                        elif f_is_partial:
+                            f_status_code = "PARTIAL"
+                            f_status_label = f"In Corso ({f_progress:.0f}%) ⏳"
+                            f_status_color = "#eab308"
+                        else:
+                            f_status_code, f_status_label, f_status_color = "PENDING", "Da Saldare 🚨", "#f87171"
                         future_year = ym_k.split('-')[0]
-                        future_item["due_date_str"] = f"{due_day} {MESI_BREVI_IT[due_month_int-1]} {future_year}"
-                        future_item["is_paid"] = False
-                        future_item["is_partial"] = False
-                        future_item["total_paid"] = 0.0
-                        future_item["remaining_to_pay"] = expected
-                        future_item["progress_pct"] = 0.0
-                        future_item["p1_paid"] = 0.0
-                        future_item["p2_paid"] = 0.0
-                        future_item["p1_missing"] = future_item.get("p1_target", 0.0)
-                        future_item["p2_missing"] = future_item.get("p2_target", 0.0)
-                        future_item["matched_txs_count"] = 0
-                        future_item["status_code"] = "PENDING"
-                        future_item["status_label"] = "Da Saldare 🚨"
-                        future_item["status_color"] = "#f87171"
+                        future_item = dict(formatted_item)
+                        future_item.update({
+                            "year_month": ym_k,
+                            "due_date_str": f"{due_day} {MESI_BREVI_IT[due_month_int-1]} {future_year}",
+                            "is_paid": f_is_paid,
+                            "is_partial": f_is_partial,
+                            "total_paid": f_total,
+                            "remaining_to_pay": f_remaining,
+                            "progress_pct": f_progress,
+                            "p1_paid": f_p1,
+                            "p2_paid": f_p2,
+                            "p1_missing": f_p1_missing,
+                            "p2_missing": f_p2_missing,
+                            "matched_txs_count": f_cnt,
+                            "status_code": f_status_code,
+                            "status_label": f_status_label,
+                            "status_color": f_status_color,
+                        })
                         m_obj["deadlines"].append(future_item)
-                        deadlines_list.append(future_item)  # <-- card HTML visibile nel filtro 2027
-                        m_obj["total_remaining"] += expected
+                        deadlines_list.append(future_item)
+                        m_obj["total_paid"] += f_total
+                        m_obj["total_remaining"] += f_remaining
                     m_obj["items_count"] += 1
         elif due_ym in month_map:
             month_map[due_ym]["deadlines"].append(formatted_item)
