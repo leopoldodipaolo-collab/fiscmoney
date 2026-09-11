@@ -63,18 +63,20 @@ def init_deadlines_radar_schema():
 
 
 
-def _compute_match(pat, target_ym, due_day, target_type, p1_id, p2_id, all_txs, manual_p1=0.0, manual_p2=0.0, is_paid_flag=False, expected=0.0, profiles_count=1):
+def _compute_match(pat, target_ym, due_day, target_type, p1_id, p2_id, all_txs, manual_p1=0.0, manual_p2=0.0, is_paid_flag=False, expected=0.0, profiles_count=1, full_year_window=False):
     """
     Calcola l'importo pagato per una scadenza in un determinato anno/mese.
-    Usata sia per l'anno base che per gli anni proiettati (es. 2027 per una scadenza ANNUAL del 2026).
+    - full_year_window=True: cattura TUTTE le transazioni nell'anno solare del target_ym
+      (utile per scadenze ANNUAL con pagamenti distribuiti nell'anno, es. Condominio mensile).
+    - full_year_window=False (default): finestra ±45 giorni intorno alla data di scadenza.
     """
     auto_p1_paid = 0.0
     auto_p2_paid = 0.0
     matched_count = 0
-    matched_txs = []
     
     if pat:
         clean_pat = pat.strip().lstrip('#')
+        target_year = target_ym.split('-')[0]  # es. "2026"
         try:
             due_d = datetime.strptime(f"{target_ym}-{due_day:02d}", "%Y-%m-%d").date()
         except Exception:
@@ -85,13 +87,17 @@ def _compute_match(pat, target_ym, due_day, target_type, p1_id, p2_id, all_txs, 
             if re.search(r'\b' + re.escape(clean_pat) + r'\b', desc, re.IGNORECASE) or re.search(re.escape(clean_pat), desc, re.IGNORECASE):
                 try:
                     tx_d = datetime.strptime(tx['date'], "%Y-%m-%d").date()
-                    day_diff = abs((tx_d - due_d).days) if due_d else (0 if tx['date'][:7] == target_ym else 999)
+                    if full_year_window:
+                        # Cattura qualsiasi transazione nell'anno solare target
+                        matches_window = (tx['date'][:4] == target_year)
+                    else:
+                        day_diff = abs((tx_d - due_d).days) if due_d else (0 if tx['date'][:7] == target_ym else 999)
+                        matches_window = (day_diff <= 45)
                 except Exception:
-                    day_diff = 999
+                    matches_window = False
                     
-                if day_diff <= 45:
+                if matches_window:
                     tx_amt = abs(float(tx['amount']))
-                    matched_txs.append(tx)
                     matched_count += 1
                     if target_type == 'LEOPOLDO_ONLY':
                         auto_p1_paid += tx_amt
@@ -238,13 +244,18 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
         manual_p2 = float(item.get('p2_paid_amount') or 0.0)
         is_paid_flag = bool(item.get('is_paid'))
         
+        # Per record ANNUAL in passato (due_ym < curr_ym), usa finestra annuale
+        # per catturare tutti i pagamenti distribuiti nell'anno (es. Condominio mensile)
+        is_past_annual = (rec_type == 'ANNUAL' and due_ym < curr_ym)
+        
         final_total_paid, final_p1_paid, final_p2_paid, match_count = _compute_match(
             pat, due_ym, due_day, target_type,
             p1['id'], p2['id'],
             all_recent_txs,
             manual_p1=manual_p1, manual_p2=manual_p2,
             is_paid_flag=is_paid_flag, expected=expected,
-            profiles_count=len(profiles_rows)
+            profiles_count=len(profiles_rows),
+            full_year_window=is_past_annual  # finestra annuale per record passati
         )
         matched_txs_count = match_count
         
@@ -356,15 +367,20 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
                     m_obj["total_remaining"] += remaining_to_pay
                     m_obj["items_count"] += 1
         elif rec_type == 'ANNUAL':
-            # Una scadenza annuale si proietta nel mese di scadenza sia nell'anno corrente che nell'anno prossimo
+            # Scadenza annuale: proietta nel mese di scadenza per ogni anno nel calendario
             due_month_int = int(due_ym.split('-')[1]) if '-' in due_ym else reference_date.month
             for ym_k, m_obj in month_map.items():
                 if m_obj['month_num'] == due_month_int:
                     if ym_k == due_ym:
-                        # Anno di riferimento: usa l'item già calcolato (con lo stato reale)
-                        m_obj["deadlines"].append(formatted_item)
-                        m_obj["total_paid"] += final_total_paid
-                        m_obj["total_remaining"] += remaining_to_pay
+                        # Anno di riferimento: usa l'item già calcolato
+                        # NON mostrare nel calendario se il mese è nel passato
+                        if due_ym >= curr_ym:
+                            m_obj["deadlines"].append(formatted_item)
+                            m_obj["total_paid"] += final_total_paid
+                            m_obj["total_remaining"] += remaining_to_pay
+                            m_obj["total_expected"] += expected
+                            m_obj["items_count"] += 1
+                        # (Se passato: appare solo nella deadlines_list flat, non nel calendario)
                     else:
                         # Anno futuro: ricalcola il matching per QUESTO anno specifico
                         f_total, f_p1, f_p2, f_cnt = _compute_match(
