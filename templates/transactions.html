@@ -618,7 +618,7 @@
     </div>
 
     <!-- Triage State Tabs & View Switcher Bar -->
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
+    <div class="triage-filter-toolbar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
         <!-- Left: Filter by State (Da Fare vs Completati vs Tutti) -->
         <div class="triage-state-tabs" style="display: flex; gap: 6px; flex-wrap: wrap;">
             <button type="button" 
@@ -3686,15 +3686,18 @@ function updateMerchantTriageVisibility() {
     
     tableRows.forEach(row => {
         const rowState = row.getAttribute('data-triage-state') || 'completed';
-        const stateMatch = (state === 'all' || rowState === state);
+        // Se c'è ricerca testuale q, cerca su tutti i gruppi per trovare subito il merchant richiesto
+        const stateMatch = q ? true : (state === 'all' || rowState === state);
         const text = row.innerText.toLowerCase();
         const textMatch = !q || text.includes(q);
         
         if (stateMatch && textMatch) {
             row.style.display = '';
+            row.classList.remove('is-hidden');
             visibleRowsCount++;
         } else {
             row.style.display = 'none';
+            row.classList.add('is-hidden');
         }
     });
 
@@ -3702,20 +3705,23 @@ function updateMerchantTriageVisibility() {
     const allDoneNotice = document.getElementById('triagePendingAllDoneNotice');
     if (allDoneNotice) {
         allDoneNotice.style.display = (state === 'pending' && visibleRowsCount === 0 && tableRows.length > 0 && !q) ? 'block' : 'none';
+        allDoneNotice.classList.toggle('is-hidden', !(state === 'pending' && visibleRowsCount === 0 && tableRows.length > 0 && !q));
     }
 
     // 2. Filter Chips in Merchant Triage
     const chips = document.querySelectorAll('#merchantChipsContainer .merchant-chip-container');
     chips.forEach(chip => {
         const chipState = chip.getAttribute('data-triage-state') || 'completed';
-        const stateMatch = (state === 'all' || chipState === state);
+        const stateMatch = q ? true : (state === 'all' || chipState === state);
         const text = chip.innerText.toLowerCase();
         const textMatch = !q || text.includes(q);
 
         if (stateMatch && textMatch) {
             chip.style.display = 'inline-flex';
+            chip.classList.remove('is-hidden');
         } else {
             chip.style.display = 'none';
+            chip.classList.add('is-hidden');
         }
     });
 }
@@ -3737,6 +3743,7 @@ function onLiveSearchInput(query) {
     rows.forEach(row => {
         if (!q) {
             row.style.display = 'flex';
+            row.classList.remove('is-hidden');
             visibleCount++;
             return;
         }
@@ -3750,9 +3757,11 @@ function onLiveSearchInput(query) {
         const matches = rowText.includes(q) || descText.includes(q) || catText.includes(q);
         if (matches) {
             row.style.display = 'flex';
+            row.classList.remove('is-hidden');
             visibleCount++;
         } else {
             row.style.display = 'none';
+            row.classList.add('is-hidden');
         }
     });
 
@@ -3768,39 +3777,47 @@ function onLiveSearchInput(query) {
             txRows.forEach(txRow => {
                 if (!q) {
                     txRow.style.display = 'flex';
+                    txRow.classList.remove('is-hidden');
                     blockHasMatch = true;
                     return;
                 }
                 const text = txRow.innerText.toLowerCase();
                 if (text.includes(q)) {
                     txRow.style.display = 'flex';
+                    txRow.classList.remove('is-hidden');
                     blockHasMatch = true;
                 } else {
                     txRow.style.display = 'none';
+                    txRow.classList.add('is-hidden');
                 }
             });
 
             if (blockHasMatch) {
                 block.style.display = 'block';
+                block.classList.remove('is-hidden');
                 cardHasMatch = true;
             } else {
                 block.style.display = 'none';
+                block.classList.add('is-hidden');
             }
         });
 
         if (!q) {
             card.style.display = 'block';
+            card.classList.remove('is-hidden');
             card.classList.remove('is-open');
             const body = card.querySelector('.category-folder-body');
             if (body) body.style.display = 'none';
         } else if (cardHasMatch) {
             card.style.display = 'block';
+            card.classList.remove('is-hidden');
             // Auto open folder if it has matching search results
             card.classList.add('is-open');
             const body = card.querySelector('.category-folder-body');
             if (body) body.style.display = 'block';
         } else {
             card.style.display = 'none';
+            card.classList.add('is-hidden');
         }
     });
     

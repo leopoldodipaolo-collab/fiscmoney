@@ -2933,25 +2933,25 @@ body.privacy-mode-active .advisor-insight-item strong:hover {
   }
 
   /* Barra filtri triage: avvolgi su mobile */
+  .triage-filter-toolbar,
   #merchantTriageSection > div:nth-child(4) {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 8px !important;
   }
 
-  /* TABELLA TRIAGE: nascondi su mobile, usa card stacked */
+  /* TABELLA TRIAGE: nascondi intestazione su mobile, usa card stacked per le righe visibili */
   .merchant-triage-table thead {
     display: none !important;
   }
 
   .merchant-triage-table,
-  .merchant-triage-table tbody,
-  .merchant-triage-table tr {
+  .merchant-triage-table tbody {
     display: block !important;
     width: 100% !important;
   }
 
-  .merchant-triage-table tr.merchant-row {
+  .merchant-triage-table tr.merchant-row:not(.is-hidden) {
     display: flex !important;
     flex-direction: column !important;
     gap: 6px !important;
@@ -2960,6 +2960,10 @@ body.privacy-mode-active .advisor-insight-item strong:hover {
     border: 1px solid rgba(255,255,255,0.08) !important;
     margin-bottom: 6px !important;
     position: relative !important;
+  }
+
+  .merchant-triage-table tr.merchant-row.is-hidden {
+    display: none !important;
   }
 
   .merchant-triage-table td {
@@ -3544,6 +3548,22 @@ body.privacy-mode-active .privacy-switch-dot {
     height: 32px;
   }
 }
+
+/* ======================================================== */
+/* GLOBAL VISIBILITY UTILITY (Guarantees dynamic filtering) */
+/* ======================================================== */
+.is-hidden,
+tr.is-hidden,
+div.is-hidden,
+tr.merchant-row.is-hidden,
+.merchant-chip-container.is-hidden,
+.tx-item.is-hidden,
+.category-folder-card.is-hidden,
+.folder-tx-row.is-hidden,
+.category-merchant-subblock.is-hidden {
+  display: none !important;
+}
+
 
 
 
