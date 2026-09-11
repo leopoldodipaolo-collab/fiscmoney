@@ -310,8 +310,8 @@
                             {% endif %}
                         </span>
                         {% if couple_split_data.child_expenses and couple_split_data.child_expenses.total > 0 %}
-                        <span id="csHeaderChildPill" style="background: rgba(236, 72, 153, 0.15); border: 1px solid rgba(236, 72, 153, 0.35); color: #f472b6; font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; font-weight: 800;">
-                            👶 Figli: {{ couple_split_data.child_expenses.total|eur }}
+                        <span id="csHeaderChildPill" onclick="event.stopPropagation(); openCoupleCategoryDrilldown('Figli & Infanzia', '👶')" style="background: rgba(236, 72, 153, 0.15); border: 1px solid rgba(236, 72, 153, 0.35); color: #f472b6; font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; font-weight: 800; cursor: pointer;">
+                            👶 Figli: {{ couple_split_data.child_expenses.total|eur }} 🔍
                         </span>
                         {% endif %}
                     </div>
@@ -398,8 +398,8 @@
             </div>
         </div>
 
-        <!-- Sub-Focus: 👶 Spese per Figli & Famiglia (In Evidenza) -->
-        <div id="csChildExpensesBox" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(168, 85, 247, 0.08)); border: 1.5px solid rgba(236, 72, 153, 0.35); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <!-- Sub-Focus: 👶 Spese per Figli & Famiglia (In Evidenza & Cliccabile) -->
+        <div id="csChildExpensesBox" onclick="openCoupleCategoryDrilldown('Figli & Infanzia', '👶')" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(168, 85, 247, 0.08)); border: 1.5px solid rgba(236, 72, 153, 0.35); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; cursor: pointer; transition: all 0.2s ease;">
             <div style="display: flex; align-items: center; gap: 10px;">
                 <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(236, 72, 153, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
                     👶
@@ -410,6 +410,7 @@
                         <span class="badge-tag" style="background: rgba(236, 72, 153, 0.2); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.4); font-size: 0.65rem; padding: 1px 6px;">
                             #figlio • asilo • scuola
                         </span>
+                        <span style="font-size: 0.65rem; color: #f472b6; background: rgba(236, 72, 153, 0.15); padding: 1px 6px; border-radius: 4px; font-weight: 700;">🔍 Vedi Spese</span>
                     </div>
                     <div id="csChildSubtitle" style="font-size: 0.72rem; color: #cbd5e1; margin-top: 2px;">
                         {{ couple_split_data.p1.name.split()[0] }}: <strong id="csChildP1Amt" style="color: #38bdf8;">{{ (couple_split_data.child_expenses.p1_amount if couple_split_data.child_expenses else 0)|eur }}</strong> • 

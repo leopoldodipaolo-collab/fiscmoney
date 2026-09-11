@@ -334,8 +334,22 @@ def get_couple_category_transactions(workspace_id: int, category: str, preset: s
     p1 = dict(profiles[0]) if len(profiles) > 0 else {"id": None, "name": "Partner 1"}
     p2 = dict(profiles[1]) if len(profiles) > 1 else {"id": None, "name": "Partner 2"}
     
-    where_clauses = ["t.workspace_id = ?", "t.category = ?", "t.amount < 0", "t.is_transfer = 0"]
-    params = [workspace_id, category]
+    is_child_category = (category in ['__CHILDREN__', 'Figli & Infanzia', 'Spese per Figli & Infanzia'])
+    where_clauses = ["t.workspace_id = ?", "t.amount < 0", "t.is_transfer = 0"]
+    params = [workspace_id]
+    
+    if is_child_category:
+        where_clauses.append("""(
+            t.tags LIKE '%#figlio%' 
+            OR t.tags LIKE '%#figli%' 
+            OR t.tags LIKE '%#asilo%' 
+            OR t.tags LIKE '%#scuola%' 
+            OR LOWER(t.description) LIKE '%asilo%' 
+            OR LOWER(t.description) LIKE '%pediatra%'
+        )""")
+    else:
+        where_clauses.append("t.category = ?")
+        params.append(category)
     
     if start_date and end_date:
         where_clauses.append("t.date >= ? AND t.date <= ?")
