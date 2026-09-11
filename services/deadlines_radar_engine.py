@@ -426,8 +426,9 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
                         deadlines_list.append(future_item)
                         m_obj["total_paid"] += f_total
                         m_obj["total_remaining"] += f_remaining
-                    m_obj["total_expected"] += expected
-                    m_obj["items_count"] += 1
+                        m_obj["total_expected"] += expected
+                        m_obj["items_count"] += 1
+                    # (se due_ym è nel passato e ym_k == due_ym: nessun aggiornamento al calendario)
         elif rec_type == 'BIENNIAL':
             # Una scadenza biennale si ripete ogni 2 anni (es. Revisione auto):
             # se base è 2026, si ripete nel 2028, non nel 2027!
