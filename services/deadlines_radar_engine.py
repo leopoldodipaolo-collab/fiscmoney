@@ -246,6 +246,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
         
         # Per record ANNUAL in passato (due_ym < curr_ym), usa finestra annuale
         # per catturare tutti i pagamenti distribuiti nell'anno (es. Condominio mensile)
+        rec_type = item.get('recurrence') or 'ANNUAL'
         is_past_annual = (rec_type == 'ANNUAL' and due_ym < curr_ym)
         
         final_total_paid, final_p1_paid, final_p2_paid, match_count = _compute_match(
