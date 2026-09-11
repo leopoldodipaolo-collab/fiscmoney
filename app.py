@@ -1191,6 +1191,8 @@ def add_planned_deadline():
     p2_paid_str = request.form.get("p2_paid_amount", "0").replace(",", ".").strip()
     notes = request.form.get("notes", "").strip()
     redirect_to = request.form.get("redirect_to", "dashboard").strip()
+    custom_months_list = request.form.getlist("custom_months")
+    custom_months_str = ",".join(custom_months_list) if custom_months_list else None
     
     if not year_month:
         year_month = datetime.now().strftime("%Y-%m")
@@ -1211,9 +1213,9 @@ def add_planned_deadline():
     cursor.execute('''
         INSERT INTO planned_deadlines (
             workspace_id, name, category, expected_amount, year_month, due_day, 
-            match_pattern, recurrence, target_type, p1_paid_amount, p2_paid_amount, is_paid, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (ws_id, name, category, expected_amount, year_month, due_day, pattern, recurrence, target_type, p1_paid, p2_paid, is_paid, notes))
+            match_pattern, recurrence, target_type, p1_paid_amount, p2_paid_amount, is_paid, custom_months, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (ws_id, name, category, expected_amount, year_month, due_day, pattern, recurrence, target_type, p1_paid, p2_paid, is_paid, custom_months_str, notes))
     conn.commit()
     conn.close()
     
@@ -2969,6 +2971,42 @@ def update_transaction(tx_id):
             INSERT INTO fixed_costs (workspace_id, profile_id, name, category, expected_amount, due_day, frequency, active_months, match_pattern, is_income, is_active)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1)
         ''', (ws_id, tx['profile_id'], fc_name, category, fc_amt, fc_day, fixed_freq, active_m, fc_name))
+        
+    # Pianifica nel Radar Scadenze Future se richiesto dall'utente
+    set_radar_dl = request.form.get("set_radar_deadline") == "1"
+    if set_radar_dl and tx['description']:
+        r_target_type = request.form.get("radar_target_type", "LEOPOLDO_ONLY")
+        r_recurrence = request.form.get("radar_recurrence", "ANNUAL")
+        r_custom_months = request.form.getlist("radar_custom_months")
+        r_custom_months_str = ",".join(r_custom_months) if r_custom_months else None
+        
+        # Estrai nome pulito ed esercente per match pattern (es. "ACI" o "AUTOMOBILE CLUB")
+        pat_clean = extract_clean_merchant_pattern(tx['description'] or tx['raw_description']) or tx['description'][:20].strip()
+        expected_amt = abs(float(tx['amount']))
+        due_day = int(tx['date'].split("-")[2]) if "-" in tx['date'] else 15
+        due_ym = tx['date'][:7] if "-" in tx['date'] else datetime.now().strftime("%Y-%m")
+        
+        # Determina p1 e p2 paid in base alla pertinenza
+        if r_target_type == 'LEOPOLDO_ONLY':
+            p1_paid = expected_amt
+            p2_paid = 0.0
+        elif r_target_type == 'NUNZIA_ONLY':
+            p1_paid = 0.0
+            p2_paid = expected_amt
+        else: # SHARED_50_50
+            p1_paid = expected_amt / 2
+            p2_paid = expected_amt / 2
+
+        cursor.execute('''
+            INSERT INTO planned_deadlines (
+                workspace_id, name, category, expected_amount, year_month, due_day, 
+                match_pattern, recurrence, target_type, p1_paid_amount, p2_paid_amount, is_paid, custom_months, notes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            ws_id, f"{category} - {pat_clean}", category, expected_amt, due_ym, due_day,
+            pat_clean, r_recurrence, r_target_type, p1_paid, p2_paid, 1, r_custom_months_str,
+            f"Registrato automaticamente dal movimento del {tx['date']} ({pat_clean})"
+        ))
         
     conn.commit()
     conn.close()

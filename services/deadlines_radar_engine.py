@@ -42,12 +42,21 @@ def init_deadlines_radar_schema():
         ("p1_paid_amount", "REAL DEFAULT 0.0"),
         ("p2_paid_amount", "REAL DEFAULT 0.0"),
         ("manual_matched_tx_id", "INTEGER"),
+        ("custom_months", "TEXT"), # Comma-separated months: e.g. "1,2,4,12"
         ("notes", "TEXT")
     ]
     for col_name, col_type in new_cols:
         if col_name not in cols:
             cursor.execute(f"ALTER TABLE planned_deadlines ADD COLUMN {col_name} {col_type}")
             
+    # Fix retroattivo: Assicurarsi che le scadenze ACI / Bollo Auto / Assicurazione veicolo siano LEOPOLDO_ONLY
+    cursor.execute("""
+        UPDATE planned_deadlines 
+        SET target_type = 'LEOPOLDO_ONLY'
+        WHERE (LOWER(name) LIKE '%bollo%' OR LOWER(name) LIKE '%aci%' OR LOWER(name) LIKE '%assicurazione%')
+          AND (target_type IS NULL OR target_type = 'SHARED_50_50')
+    """)
+
     conn.commit()
     conn.close()
 
@@ -283,8 +292,18 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
         total_paid_year += final_total_paid
         total_remaining_year += remaining_to_pay
         
-        # Attach to timeline month if within next 12 months
-        if due_ym in month_map:
+        # Attach to timeline month(s) if within next 12 months
+        c_months_str = item.get('custom_months') or ''
+        if c_months_str and (item.get('recurrence') == 'CUSTOM_MONTHS'):
+            c_months_list = [int(m.strip()) for m in c_months_str.split(',') if m.strip().isdigit()]
+            for ym_k, m_obj in month_map.items():
+                if m_obj['month_num'] in c_months_list:
+                    m_obj["deadlines"].append(formatted_item)
+                    m_obj["total_expected"] += expected
+                    m_obj["total_paid"] += final_total_paid
+                    m_obj["total_remaining"] += remaining_to_pay
+                    m_obj["items_count"] += 1
+        elif due_ym in month_map:
             month_map[due_ym]["deadlines"].append(formatted_item)
             month_map[due_ym]["total_expected"] += expected
             month_map[due_ym]["total_paid"] += final_total_paid
