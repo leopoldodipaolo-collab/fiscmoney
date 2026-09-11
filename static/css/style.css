@@ -4259,6 +4259,58 @@ tr.merchant-row.is-hidden,
   display: none !important;
 }
 
+/* ======================================================== */
+/* 📱 CASHFLOW: CARD CONSULENTE & TACHIMETRO GIORNALIERO   */
+/* ======================================================== */
+.advisor-forecast-card {
+  transition: all 0.25s ease;
+}
+
+.advisor-forecast-card:hover {
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.55);
+}
+
+.advisor-card-header:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.daily-speedometer-box {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.daily-speedometer-box:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+@media (max-width: 640px) {
+  .advisor-card-header {
+    padding: 12px !important;
+  }
+
+  .advisor-quick-pill {
+    display: none !important; /* Nascondi pillole saldo/entrate duplicate dall'header su mobile */
+  }
+
+  #advisorForecastCollapseBtn {
+    width: 100% !important;
+    justify-content: center !important;
+    margin-top: 6px !important;
+  }
+
+  .daily-speedometer-box {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 10px 12px !important;
+    gap: 10px !important;
+  }
+
+  .daily-speedometer-box .privacy-mask {
+    font-size: 1.35rem !important;
+  }
+}
+
+
 
 
 
