@@ -280,75 +280,100 @@
     <!-- SPECIAL HUB: ⚖️ BILANCIO DI COPPIA & PAREGGIO SPESE COMUNI -->
     <!-- ======================================================== -->
     {% if couple_split_data and couple_split_data.has_couple %}
-    <div class="card" id="coupleSplitCard" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)); border: 1.5px solid rgba(234, 179, 8, 0.35); box-shadow: 0 10px 30px rgba(0,0,0,0.45); margin-bottom: 20px; border-radius: 16px; position: relative; overflow: hidden; padding: 18px 20px;">
+    <div class="card" id="coupleSplitCard" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)); border: 1.5px solid rgba(234, 179, 8, 0.35); box-shadow: 0 10px 30px rgba(0,0,0,0.45); margin-bottom: 20px; border-radius: 16px; position: relative; overflow: hidden; padding: 16px 18px 20px 18px;">
         <!-- Ambient glow -->
         <div style="position: absolute; top: -50px; left: -50px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(234, 179, 8, 0.15) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
         
-        <!-- Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+        <!-- Header (Clickable to Toggle Collapse/Expand) -->
+        <div id="coupleCardHeader" onclick="toggleCoupleCard()" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; cursor: pointer; user-select: none;">
             <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(234, 179, 8, 0.15); border: 1.5px solid rgba(234, 179, 8, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; flex-shrink: 0;">
                     ⚖️
                 </div>
                 <div>
-                    <h3 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         Bilancio di Coppia & Pareggio Spese
                         <span class="badge-tag" style="background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.4); color: #eab308; font-size: 0.68rem; padding: 3px 8px; font-weight: 800;">
                             🤝 ZERO LITIGI
                         </span>
                     </h3>
-                    <p style="color: var(--text-muted); font-size: 0.76rem; margin: 2px 0 0 0;">
-                        Confronto spese condivise anticipate da <strong style="color: #38bdf8;">{{ couple_split_data.p1.name }}</strong> e <strong style="color: #ec4899;">{{ couple_split_data.p2.name }}</strong>
-                    </p>
+                    <!-- Compact Verdict Pill always visible even when collapsed -->
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
+                        <span id="csHeaderSummaryText" style="color: var(--text-muted); font-size: 0.74rem;">
+                            Spese condivise: <strong id="csHeaderTotalAmt" style="color: #eab308;">{{ couple_split_data.total_shared|eur }}</strong>
+                        </span>
+                        <span id="csHeaderVerdictPill" style="background: {% if couple_split_data.settlement.status == 'EQUAL' %}rgba(16, 185, 129, 0.18){% else %}rgba(234, 179, 8, 0.18){% endif %}; border: 1px solid {% if couple_split_data.settlement.status == 'EQUAL' %}rgba(16, 185, 129, 0.4){% else %}rgba(234, 179, 8, 0.4){% endif %}; color: {% if couple_split_data.settlement.status == 'EQUAL' %}#34d399{% else %}#facc15{% endif %}; font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; font-weight: 800;">
+                            {% if couple_split_data.settlement.status == 'EQUAL' %}
+                                ✓ Perfetto Pareggio
+                            {% else %}
+                                ⚖️ Rimborso: {{ couple_split_data.settlement.formatted_amount }}
+                            {% endif %}
+                        </span>
+                        {% if couple_split_data.child_expenses and couple_split_data.child_expenses.total > 0 %}
+                        <span id="csHeaderChildPill" style="background: rgba(236, 72, 153, 0.15); border: 1px solid rgba(236, 72, 153, 0.35); color: #f472b6; font-size: 0.72rem; padding: 2px 8px; border-radius: 6px; font-weight: 800;">
+                            👶 Figli: {{ couple_split_data.child_expenses.total|eur }}
+                        </span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
 
-            <!-- Period Filter Pills -->
-            <div style="display: inline-flex; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 3px; gap: 4px; flex-wrap: wrap;">
-                <button type="button" onclick="switchCoupleSplitPreset('THIS_MONTH', this)" class="btn btn-sm couple-preset-btn active" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; background: rgba(234, 179, 8, 0.2); color: #eab308; border: none;">Questo Mese</button>
-                <button type="button" onclick="switchCoupleSplitPreset('LAST_MONTH', this)" class="btn btn-sm couple-preset-btn" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; background: transparent; color: #94a3b8; border: none;">Mese Scorso</button>
-                <button type="button" onclick="switchCoupleSplitPreset('LAST_3_MONTHS', this)" class="btn btn-sm couple-preset-btn" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; background: transparent; color: #94a3b8; border: none;">3 Mesi</button>
-                <button type="button" onclick="switchCoupleSplitPreset('YEAR', this)" class="btn btn-sm couple-preset-btn" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; background: transparent; color: #94a3b8; border: none;">Anno</button>
-                <button type="button" onclick="switchCoupleSplitPreset('ALL', this)" class="btn btn-sm couple-preset-btn" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; background: transparent; color: #94a3b8; border: none;">Tutto</button>
+            <!-- Controls: Period Pills + Collapse/Expand Button -->
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <!-- Period Filter Pills -->
+                <div onclick="event.stopPropagation()" style="display: inline-flex; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 3px; gap: 4px; flex-wrap: wrap;">
+                    <button type="button" onclick="switchCoupleSplitPreset('THIS_MONTH', this)" class="btn btn-sm couple-preset-btn active" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; background: rgba(234, 179, 8, 0.2); color: #eab308; border: none;">Questo Mese</button>
+                    <button type="button" onclick="switchCoupleSplitPreset('LAST_MONTH', this)" class="btn btn-sm couple-preset-btn" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; background: transparent; color: #94a3b8; border: none;">Mese Scorso</button>
+                    <button type="button" onclick="switchCoupleSplitPreset('LAST_3_MONTHS', this)" class="btn btn-sm couple-preset-btn" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; background: transparent; color: #94a3b8; border: none;">3 Mesi</button>
+                    <button type="button" onclick="switchCoupleSplitPreset('YEAR', this)" class="btn btn-sm couple-preset-btn" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; background: transparent; color: #94a3b8; border: none;">Anno</button>
+                    <button type="button" onclick="switchCoupleSplitPreset('ALL', this)" class="btn btn-sm couple-preset-btn" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; background: transparent; color: #94a3b8; border: none;">Tutto</button>
+                </div>
+
+                <!-- Expand / Collapse Button -->
+                <button type="button" onclick="event.stopPropagation(); toggleCoupleCard();" id="coupleExpandBtn" class="btn btn-sm" style="background: rgba(234, 179, 8, 0.18); border: 1px solid rgba(234, 179, 8, 0.4); color: #facc15; font-weight: 800; font-size: 0.75rem; padding: 6px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease;">
+                    <span id="coupleExpandArrow">▾ Dettagli</span>
+                </button>
             </div>
         </div>
 
-        <!-- Tug-of-War Balance Card -->
-        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 16px; margin-bottom: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
-                <!-- Partner 1 -->
-                <div>
-                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
-                        <span style="font-size: 1.1rem;">👤</span>
-                        <span id="csP1Name" style="font-weight: 800; font-size: 0.92rem; color: #38bdf8;">{{ couple_split_data.p1.name }}</span>
+        <!-- Collapsible Body Content -->
+        <div id="coupleCardBody" style="display: block; margin-top: 16px; transition: all 0.3s ease;">
+            <!-- Tug-of-War Balance Card -->
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 16px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                    <!-- Partner 1 -->
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 2px;">
+                            <span style="font-size: 1.1rem;">👤</span>
+                            <span id="csP1Name" style="font-weight: 800; font-size: 0.92rem; color: #38bdf8;">{{ couple_split_data.p1.name }}</span>
+                        </div>
+                        <div id="csP1Total" style="font-size: 1.35rem; font-weight: 900; color: #fff;">{{ couple_split_data.p1_total|eur }}</div>
+                        <div id="csP1Pct" style="font-size: 0.72rem; color: #94a3b8;">{{ couple_split_data.p1_pct }}% del totale comune</div>
                     </div>
-                    <div id="csP1Total" style="font-size: 1.35rem; font-weight: 900; color: #fff;">{{ couple_split_data.p1_total|eur }}</div>
-                    <div id="csP1Pct" style="font-size: 0.72rem; color: #94a3b8;">{{ couple_split_data.p1_pct }}% del totale comune</div>
+
+                    <!-- Total Shared Center Box -->
+                    <div style="text-align: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 6px 14px;">
+                        <span style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; display: block;">Totale Spese Comuni</span>
+                        <span id="csTotalShared" style="font-size: 1.1rem; font-weight: 800; color: #eab308;">{{ couple_split_data.total_shared|eur }}</span>
+                    </div>
+
+                    <!-- Partner 2 -->
+                    <div style="text-align: right;">
+                        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-bottom: 2px;">
+                            <span id="csP2Name" style="font-weight: 800; font-size: 0.92rem; color: #ec4899;">{{ couple_split_data.p2.name }}</span>
+                            <span style="font-size: 1.1rem;">👩</span>
+                        </div>
+                        <div id="csP2Total" style="font-size: 1.35rem; font-weight: 900; color: #fff;">{{ couple_split_data.p2_total|eur }}</div>
+                        <div id="csP2Pct" style="font-size: 0.72rem; color: #94a3b8;">{{ couple_split_data.p2_pct }}% del totale comune</div>
+                    </div>
                 </div>
 
-                <!-- Total Shared Center Box -->
-                <div style="text-align: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 6px 14px;">
-                    <span style="font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; display: block;">Totale Spese Comuni</span>
-                    <span id="csTotalShared" style="font-size: 1.1rem; font-weight: 800; color: #eab308;">{{ couple_split_data.total_shared|eur }}</span>
-                </div>
-
-                <!-- Partner 2 -->
-                <div style="text-align: right;">
-                    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-bottom: 2px;">
-                        <span id="csP2Name" style="font-weight: 800; font-size: 0.92rem; color: #ec4899;">{{ couple_split_data.p2.name }}</span>
-                        <span style="font-size: 1.1rem;">👩</span>
-                    </div>
-                    <div id="csP2Total" style="font-size: 1.35rem; font-weight: 900; color: #fff;">{{ couple_split_data.p2_total|eur }}</div>
-                    <div id="csP2Pct" style="font-size: 0.72rem; color: #94a3b8;">{{ couple_split_data.p2_pct }}% del totale comune</div>
+                <!-- Comparison Bar -->
+                <div style="width: 100%; height: 12px; background: rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden; display: flex; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);">
+                    <div id="csBarP1" style="width: {{ couple_split_data.p1_pct }}%; background: linear-gradient(90deg, #0284c7, #38bdf8); transition: width 0.4s ease;"></div>
+                    <div id="csBarP2" style="width: {{ couple_split_data.p2_pct }}%; background: linear-gradient(90deg, #ec4899, #f43f5e); transition: width 0.4s ease;"></div>
                 </div>
             </div>
-
-            <!-- Comparison Bar -->
-            <div style="width: 100%; height: 12px; background: rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden; display: flex; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);">
-                <div id="csBarP1" style="width: {{ couple_split_data.p1_pct }}%; background: linear-gradient(90deg, #0284c7, #38bdf8); transition: width 0.4s ease;"></div>
-                <div id="csBarP2" style="width: {{ couple_split_data.p2_pct }}%; background: linear-gradient(90deg, #ec4899, #f43f5e); transition: width 0.4s ease;"></div>
-            </div>
-        </div>
 
         <!-- Settlement & Equalizer Verdict Banner -->
         <div id="csSettlementBox" style="background: {% if couple_split_data.settlement.status == 'EQUAL' %}rgba(16, 185, 129, 0.12){% else %}rgba(234, 179, 8, 0.12){% endif %}; border: 1.5px solid {% if couple_split_data.settlement.status == 'EQUAL' %}rgba(16, 185, 129, 0.4){% else %}rgba(234, 179, 8, 0.4){% endif %}; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
@@ -370,6 +395,35 @@
 
             <div id="csSettlementBadge" style="background: #eab308; color: #000; font-weight: 900; font-size: 1.05rem; padding: 6px 14px; border-radius: 8px; box-shadow: 0 4px 12px rgba(234, 179, 8, 0.35); display: {% if couple_split_data.settlement.amount > 0 %}block{% else %}none{% endif %};">
                 {{ couple_split_data.settlement.formatted_amount if couple_split_data.settlement.amount > 0 else '' }}
+            </div>
+        </div>
+
+        <!-- Sub-Focus: 👶 Spese per Figli & Famiglia (In Evidenza) -->
+        <div id="csChildExpensesBox" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.12), rgba(168, 85, 247, 0.08)); border: 1.5px solid rgba(236, 72, 153, 0.35); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(236, 72, 153, 0.2); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                    👶
+                </div>
+                <div>
+                    <div style="font-weight: 800; font-size: 0.88rem; color: #fff; display: flex; align-items: center; gap: 6px;">
+                        <span>Spese per Figli & Infanzia</span>
+                        <span class="badge-tag" style="background: rgba(236, 72, 153, 0.2); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.4); font-size: 0.65rem; padding: 1px 6px;">
+                            #figlio • asilo • scuola
+                        </span>
+                    </div>
+                    <div id="csChildSubtitle" style="font-size: 0.72rem; color: #cbd5e1; margin-top: 2px;">
+                        {{ couple_split_data.p1.name.split()[0] }}: <strong id="csChildP1Amt" style="color: #38bdf8;">{{ (couple_split_data.child_expenses.p1_amount if couple_split_data.child_expenses else 0)|eur }}</strong> • 
+                        {{ couple_split_data.p2.name.split()[0] }}: <strong id="csChildP2Amt" style="color: #ec4899;">{{ (couple_split_data.child_expenses.p2_amount if couple_split_data.child_expenses else 0)|eur }}</strong> 
+                        (<span id="csChildCount">{{ couple_split_data.child_expenses.count if couple_split_data.child_expenses else 0 }}</span> movimenti)
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: right;">
+                <span style="font-size: 0.65rem; color: #f472b6; font-weight: 700; text-transform: uppercase; display: block;">Totale Figli</span>
+                <span id="csChildTotalAmt" style="font-size: 1.15rem; font-weight: 900; color: #f472b6;">
+                    {{ (couple_split_data.child_expenses.total if couple_split_data.child_expenses else 0)|eur }}
+                </span>
             </div>
         </div>
 
@@ -409,6 +463,7 @@
                 {% endfor %}
             </div>
         </div>
+        </div> <!-- End of coupleCardBody -->
     </div>
     {% endif %}
 
@@ -2314,6 +2369,49 @@ function switchCoupleSplitPreset(preset, btn) {
                 }
             }
             
+            // Update Header Compact Pills (visible when collapsed)
+            const hTotal = document.getElementById('csHeaderTotalAmt');
+            if (hTotal) hTotal.innerText = fmt(d.total_shared);
+            
+            const hVerdict = document.getElementById('csHeaderVerdictPill');
+            if (hVerdict) {
+                if (d.settlement.status === 'EQUAL') {
+                    hVerdict.style.background = 'rgba(16, 185, 129, 0.18)';
+                    hVerdict.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                    hVerdict.style.color = '#34d399';
+                    hVerdict.innerText = '✓ Perfetto Pareggio';
+                } else {
+                    hVerdict.style.background = 'rgba(234, 179, 8, 0.18)';
+                    hVerdict.style.borderColor = 'rgba(234, 179, 8, 0.4)';
+                    hVerdict.style.color = '#facc15';
+                    hVerdict.innerText = '⚖️ Rimborso: ' + d.settlement.formatted_amount;
+                }
+            }
+
+            // Update Child Expenses Sub-Focus
+            if (d.child_expenses) {
+                const hChildPill = document.getElementById('csHeaderChildPill');
+                if (hChildPill) {
+                    if (d.child_expenses.total > 0) {
+                        hChildPill.style.display = 'inline-block';
+                        hChildPill.innerText = '👶 Figli: ' + fmt(d.child_expenses.total);
+                    } else {
+                        hChildPill.style.display = 'none';
+                    }
+                }
+                const cBox = document.getElementById('csChildExpensesBox');
+                if (cBox) {
+                    const cTotal = document.getElementById('csChildTotalAmt');
+                    const cP1 = document.getElementById('csChildP1Amt');
+                    const cP2 = document.getElementById('csChildP2Amt');
+                    const cCount = document.getElementById('csChildCount');
+                    if (cTotal) cTotal.innerText = fmt(d.child_expenses.total);
+                    if (cP1) cP1.innerText = fmt(d.child_expenses.p1_amount);
+                    if (cP2) cP2.innerText = fmt(d.child_expenses.p2_amount);
+                    if (cCount) cCount.innerText = d.child_expenses.count;
+                }
+            }
+            
             // Categories
             document.getElementById('csTxCount').innerText = d.transactions_count + ' spese condivise nel periodo';
             const catGrid = document.getElementById('csCategoryGrid');
@@ -2347,6 +2445,42 @@ function switchCoupleSplitPreset(preset, btn) {
         })
         .catch(err => console.error("Error switching couple split preset:", err));
 }
+
+// ---------------------------------------------------------
+// ⚖️ TOGGLE COLLAPSE / EXPAND BILANCIO DI COPPIA
+// ---------------------------------------------------------
+function toggleCoupleCard() {
+    const body = document.getElementById('coupleCardBody');
+    const arrow = document.getElementById('coupleExpandArrow');
+    if (!body) return;
+    
+    const isCurrentlyClosed = (body.style.display === 'none');
+    if (isCurrentlyClosed) {
+        body.style.display = 'block';
+        if (arrow) arrow.innerHTML = '▴ Comprimi';
+        localStorage.setItem('fisc_couple_card_collapsed', 'false');
+    } else {
+        body.style.display = 'none';
+        if (arrow) arrow.innerHTML = '▾ Dettagli';
+        localStorage.setItem('fisc_couple_card_collapsed', 'true');
+    }
+}
+
+// Inizializza stato couple card al caricamento (memorizza preferenza utente)
+document.addEventListener('DOMContentLoaded', function() {
+    const savedCoupleCollapsed = localStorage.getItem('fisc_couple_card_collapsed');
+    const body = document.getElementById('coupleCardBody');
+    const arrow = document.getElementById('coupleExpandArrow');
+    if (body) {
+        if (savedCoupleCollapsed === 'true') {
+            body.style.display = 'none';
+            if (arrow) arrow.innerHTML = '▾ Dettagli';
+        } else {
+            body.style.display = 'block';
+            if (arrow) arrow.innerHTML = '▴ Comprimi';
+        }
+    }
+});
 
 // Couple Category Drill-Down Functions
 function openCoupleCategoryDrilldown(catName, catIcon = '📦') {

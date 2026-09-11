@@ -39,7 +39,7 @@ MACRO_CATEGORIES = {
     "Shopping & Abbigliamento": {
         "icon": "🛍️",
         "color": "#ec4899", # Vivid Neon Pink
-        "subcategories": ["Abbigliamento & Scarpe", "Elettronica & Gadget", "Articoli Persona", "Acquisti Online Vari"]
+        "subcategories": ["Abbigliamento & Scarpe", "Infanzia, Giochi & Scuola", "Elettronica & Gadget", "Articoli Persona", "Acquisti Online Vari"]
     },
     "Digitale, Tech & Tel": {
         "icon": "🌐",
@@ -119,6 +119,7 @@ CATEGORY_SMART_TAGS = {
     ],
     "Shopping & Abbigliamento": [
         {"code": "#abbigliamento", "label": "Abbigliamento & Scarpe", "icon": "👗", "subcat": "Abbigliamento & Scarpe"},
+        {"code": "#figlio", "label": "Bimbi, Scuola & Figli", "icon": "👶", "subcat": "Infanzia, Giochi & Scuola"},
         {"code": "#elettronica", "label": "Elettronica & Gadget", "icon": "📱", "subcat": "Elettronica & Gadget"},
         {"code": "#cura_persona", "label": "Articoli Persona", "icon": "🧴", "subcat": "Articoli Persona"},
         {"code": "#amazon_online", "label": "Acquisti Online", "icon": "📦", "subcat": "Acquisti Online Vari"}

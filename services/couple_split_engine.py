@@ -93,6 +93,10 @@ def get_couple_split_analytics(workspace_id, preset='THIS_MONTH', from_ym=None, 
                 t.tags LIKE '%#comune%' 
                 OR t.tags LIKE '%#condivisa%'
                 OR t.tags LIKE '%#famiglia%'
+                OR t.tags LIKE '%#figlio%'
+                OR t.tags LIKE '%#figli%'
+                OR t.tags LIKE '%#asilo%'
+                OR t.tags LIKE '%#scuola%'
             )
         )
     )""")
@@ -108,11 +112,20 @@ def get_couple_split_analytics(workspace_id, preset='THIS_MONTH', from_ym=None, 
     
     rows = conn.execute(query, params).fetchall()
     
-    # 4. Aggregations by Member and by Category
+    # 4. Aggregations by Member, Category, and Child/Kids Sub-Focus
     total_shared = 0.0
     p1_total = 0.0
     p2_total = 0.0
     other_total = 0.0
+
+    # Child Expenses Tracking
+    child_expenses = {
+        "total": 0.0,
+        "p1_amount": 0.0,
+        "p2_amount": 0.0,
+        "count": 0,
+        "transactions": []
+    }
     
     cat_breakdown = {}
     shared_transactions = []
@@ -122,6 +135,8 @@ def get_couple_split_analytics(workspace_id, preset='THIS_MONTH', from_ym=None, 
         total_shared += amt
         prof_id = r['profile_id']
         cat = r['category'] or 'Altro'
+        tx_tags = (r['tags'] or '').lower()
+        desc_lower = (r['description'] or '').lower()
         
         # Attribute to Profile
         if prof_id == p1['id']:
@@ -130,6 +145,32 @@ def get_couple_split_analytics(workspace_id, preset='THIS_MONTH', from_ym=None, 
             p2_total += amt
         else:
             other_total += amt
+
+        # Check if it's a child-dedicated expense
+        is_child_tx = (
+            '#figlio' in tx_tags or 
+            '#figli' in tx_tags or 
+            '#asilo' in tx_tags or 
+            '#scuola' in tx_tags or
+            'asilo nido' in desc_lower or
+            'asilo' in desc_lower or
+            'pediatra' in desc_lower
+        )
+        if is_child_tx:
+            child_expenses["total"] += amt
+            child_expenses["count"] += 1
+            if prof_id == p1['id']:
+                child_expenses["p1_amount"] += amt
+            elif prof_id == p2['id']:
+                child_expenses["p2_amount"] += amt
+            child_expenses["transactions"].append({
+                "id": r['id'],
+                "date": r['date'],
+                "description": r['description'],
+                "amount": amt,
+                "profile_name": r['profile_name'] or 'Membro',
+                "category": cat
+            })
             
         # Category aggregation
         if cat not in cat_breakdown:
@@ -175,6 +216,7 @@ def get_couple_split_analytics(workspace_id, preset='THIS_MONTH', from_ym=None, 
             "profile_id": prof_id,
             "profile_name": r['profile_name'] or ('Cointestato' if not prof_id else 'Membro'),
             "is_shared": 1,
+            "is_child": is_child_tx,
             "account_name": r['account_name'] or r['bank_name'] or 'Conto'
         })
         
@@ -247,6 +289,7 @@ def get_couple_split_analytics(workspace_id, preset='THIS_MONTH', from_ym=None, 
         "p2_target": p2_target,
         "settlement": settlement,
         "categories": sorted_categories,
+        "child_expenses": child_expenses,
         "transactions_count": len(shared_transactions),
         "recent_transactions": shared_transactions[:15]
     }
