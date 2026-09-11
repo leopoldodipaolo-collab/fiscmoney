@@ -338,6 +338,26 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
                     else:
                         m_obj["total_remaining"] += expected
                     m_obj["items_count"] += 1
+        elif rec_type == 'BIENNIAL':
+            # Una scadenza biennale si ripete ogni 2 anni (es. Revisione auto):
+            # se base è 2026, si ripete nel 2028, non nel 2027!
+            try:
+                base_year = int(due_ym.split('-')[0])
+                due_month_int = int(due_ym.split('-')[1])
+            except Exception:
+                base_year = reference_date.year
+                due_month_int = reference_date.month
+
+            for ym_k, m_obj in month_map.items():
+                if m_obj['month_num'] == due_month_int and ((m_obj['year'] - base_year) % 2 == 0):
+                    m_obj["deadlines"].append(formatted_item)
+                    m_obj["total_expected"] += expected
+                    if ym_k == due_ym:
+                        m_obj["total_paid"] += final_total_paid
+                        m_obj["total_remaining"] += remaining_to_pay
+                    else:
+                        m_obj["total_remaining"] += expected
+                    m_obj["items_count"] += 1
         elif due_ym in month_map:
             month_map[due_ym]["deadlines"].append(formatted_item)
             month_map[due_ym]["total_expected"] += expected

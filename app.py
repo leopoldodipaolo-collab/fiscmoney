@@ -2955,64 +2955,52 @@ def update_transaction(tx_id):
         WHERE id = ?
     ''', (category, sub_category, tags, tx_id))
     
-    # Set as recurring fixed cost if requested
-    if set_fixed_cost and tx['description']:
-        # Estrai nome pulito ed ente/esercente (es. "Comune dell'Aquila" da PAGOPA o "ACI" da Bollo)
+    # Gestione Unificata Spesa Ricorrente / Radar Scadenze
+    set_radar_dl = request.form.get("set_radar_deadline") == "1" or request.form.get("set_fixed_cost") == "1"
+    if set_radar_dl and tx['description']:
+        r_target_type = request.form.get("radar_target_type", "LEOPOLDO_ONLY")
+        r_recurrence = request.form.get("radar_recurrence") or request.form.get("fixed_frequency") or "ANNUAL"
+        r_custom_months = request.form.getlist("radar_custom_months")
+        r_custom_months_str = ",".join(r_custom_months) if r_custom_months else None
+        
+        # Estrai nome pulito ed esercente/creditore reale
         raw_desc = tx['description'] or tx['raw_description'] or ''
         clean_name = extract_clean_merchant_pattern(raw_desc)
         if not clean_name or len(clean_name) < 3:
-            # Prova a cercare pattern come "CREDITORE: NomeEnte"
             cred_match = re.search(r'CREDITORE:\s*([^;,\n]+)', raw_desc, re.IGNORECASE)
             if cred_match:
                 clean_name = cred_match.group(1).strip()
             else:
                 clean_name = tx['description'][:24].strip()
 
-        fc_amt = abs(tx['amount'])
-        fc_day = int(tx['date'].split("-")[2]) if "-" in tx['date'] else 1
-        tx_month_num = int(tx['date'].split("-")[1]) if "-" in tx['date'] else datetime.now().month
-        
-        active_m = None
-        if fixed_freq == 'BIMONTHLY_EVEN':
-            active_m = '2,4,6,8,10,12'
-        elif fixed_freq == 'BIMONTHLY_ODD':
-            active_m = '1,3,5,7,9,11'
-        elif fixed_freq == 'ANNUAL':
-            active_m = str(tx_month_num)
-            
-        cursor.execute('''
-            INSERT INTO fixed_costs (workspace_id, profile_id, name, category, expected_amount, due_day, frequency, active_months, match_pattern, is_income, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1)
-        ''', (ws_id, tx['profile_id'], clean_name, category, fc_amt, fc_day, fixed_freq, active_m, clean_name))
-        
-        # Se è un costo fisso ANNUALE, sincronizzalo automaticamente anche nel Radar Scadenze Future!
-        if fixed_freq == 'ANNUAL':
-            due_ym = tx['date'][:7] if "-" in tx['date'] else datetime.now().strftime("%Y-%m")
-            cursor.execute('''
-                INSERT INTO planned_deadlines (
-                    workspace_id, name, category, expected_amount, year_month, due_day,
-                    match_pattern, recurrence, target_type, p1_paid_amount, p2_paid_amount, is_paid, notes
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, 'ANNUAL', 'LEOPOLDO_ONLY', ?, 0.0, 1, ?)
-            ''', (
-                ws_id, clean_name, category, fc_amt, due_ym, fc_day,
-                clean_name, fc_amt, f"Registrato dal movimento {tx['date']}"
-            ))
-        
-    # Pianifica nel Radar Scadenze Future se richiesto dall'utente
-    set_radar_dl = request.form.get("set_radar_deadline") == "1"
-    if set_radar_dl and tx['description']:
-        r_target_type = request.form.get("radar_target_type", "LEOPOLDO_ONLY")
-        r_recurrence = request.form.get("radar_recurrence", "ANNUAL")
-        r_custom_months = request.form.getlist("radar_custom_months")
-        r_custom_months_str = ",".join(r_custom_months) if r_custom_months else None
-        
-        # Estrai nome pulito ed esercente per match pattern (es. "ACI" o "AUTOMOBILE CLUB")
-        pat_clean = extract_clean_merchant_pattern(tx['description'] or tx['raw_description']) or tx['description'][:20].strip()
         expected_amt = abs(float(tx['amount']))
         due_day = int(tx['date'].split("-")[2]) if "-" in tx['date'] else 15
         due_ym = tx['date'][:7] if "-" in tx['date'] else datetime.now().strftime("%Y-%m")
-        
-        # Determina p1 e p2 paid in base alla pertinenza
+        tx_month_num = int(tx['date'].split("-")[1]) if "-" in tx['date'] else datetime.now().month
+
+        # 1. Salva anche nei Costi Fissi Ricorrenti del Cash Flow
+        fc_active_m = None
+        if r_recurrence == 'BIMONTHLY_EVEN':
+            fc_active_m = '2,4,6,8,10,12'
+        elif r_recurrence == 'BIMONTHLY_ODD':
+            fc_active_m = '1,3,5,7,9,11'
+        elif r_recurrence in ('ANNUAL', 'BIENNIAL'):
+            fc_active_m = str(tx_month_num)
+        elif r_recurrence == 'CUSTOM_MONTHS' and r_custom_months_str:
+            fc_active_m = r_custom_months_str
+
+        fc_freq_mapped = 'MONTHLY'
+        if r_recurrence in ('BIMONTHLY_EVEN', 'BIMONTHLY_ODD'):
+            fc_freq_mapped = r_recurrence
+        elif r_recurrence in ('ANNUAL', 'BIENNIAL'):
+            fc_freq_mapped = 'ANNUAL'
+
+        cursor.execute('''
+            INSERT INTO fixed_costs (workspace_id, profile_id, name, category, expected_amount, due_day, frequency, active_months, match_pattern, is_income, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1)
+        ''', (ws_id, tx['profile_id'], clean_name, category, expected_amt, due_day, fc_freq_mapped, fc_active_m, clean_name))
+
+        # 2. Salva nel Radar Scadenze Future
         if r_target_type == 'LEOPOLDO_ONLY':
             p1_paid = expected_amt
             p2_paid = 0.0
@@ -3029,9 +3017,9 @@ def update_transaction(tx_id):
                 match_pattern, recurrence, target_type, p1_paid_amount, p2_paid_amount, is_paid, custom_months, notes
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            ws_id, f"{category} - {pat_clean}", category, expected_amt, due_ym, due_day,
-            pat_clean, r_recurrence, r_target_type, p1_paid, p2_paid, 1, r_custom_months_str,
-            f"Registrato automaticamente dal movimento del {tx['date']} ({pat_clean})"
+            ws_id, f"{category} - {clean_name}", category, expected_amt, due_ym, due_day,
+            clean_name, r_recurrence, r_target_type, p1_paid, p2_paid, 1, r_custom_months_str,
+            f"Registrato dal movimento {tx['date']} ({clean_name})"
         ))
         
     conn.commit()

@@ -990,7 +990,14 @@
 
             <div id="deadlinesListContainer" style="display: flex; flex-direction: column; gap: 10px;">
                 {% for dl in deadlines_radar.deadlines %}
-                <div class="deadline-item-card" data-ym="{{ dl.year_month }}" data-scope="{{ dl.scope_code }}" style="background: rgba(255,255,255,0.025); border: 1.5px solid {% if dl.is_paid %}rgba(16, 185, 129, 0.35){% elif dl.is_partial %}rgba(234, 179, 8, 0.4){% else %}rgba(239, 68, 68, 0.4){% endif %}; border-radius: 12px; padding: 12px 16px; transition: all 0.2s;">
+                {% set dl_month_num = dl.year_month.split('-')[1]|int if '-' in dl.year_month else 1 %}
+                <div class="deadline-item-card" 
+                     data-ym="{{ dl.year_month }}" 
+                     data-month-num="{{ dl_month_num }}"
+                     data-recurrence="{{ dl.recurrence }}"
+                     data-custom-months="{{ dl.custom_months or '' }}"
+                     data-scope="{{ dl.scope_code }}" 
+                     style="background: rgba(255,255,255,0.025); border: 1.5px solid {% if dl.is_paid %}rgba(16, 185, 129, 0.35){% elif dl.is_partial %}rgba(234, 179, 8, 0.4){% else %}rgba(239, 68, 68, 0.4){% endif %}; border-radius: 12px; padding: 12px 16px; transition: all 0.2s;">
                     
                     <!-- Main Info Header -->
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
@@ -2442,8 +2449,35 @@ function applyDeadlinesCombinedFilter() {
     cards.forEach(card => {
         const cardYm = card.getAttribute('data-ym');
         const cardScope = card.getAttribute('data-scope'); // 'LEOPOLDO', 'SHARED', 'NUNZIA'
+        const cardRec = card.getAttribute('data-recurrence') || 'ANNUAL';
+        const cardMonthNum = parseInt(card.getAttribute('data-month-num') || '0', 10);
+        const cardCustomMonths = card.getAttribute('data-custom-months') || '';
         
-        const matchesYm = (activeRadarYm === 'ALL' || cardYm === activeRadarYm);
+        let matchesYm = false;
+        if (activeRadarYm === 'ALL') {
+            matchesYm = true;
+        } else if (cardYm === activeRadarYm) {
+            matchesYm = true;
+        } else {
+            // Proiezione scadenze periodiche su altri anni
+            const [targetYearStr, targetMonthStr] = activeRadarYm.split('-');
+            const targetYear = parseInt(targetYearStr, 10);
+            const targetMonth = parseInt(targetMonthStr, 10);
+            
+            const cardYear = parseInt(cardYm.split('-')[0], 10);
+            
+            if (cardRec === 'ANNUAL') {
+                // Stesso mese in qualunque anno futuro o passato
+                matchesYm = (cardMonthNum === targetMonth);
+            } else if (cardRec === 'BIENNIAL') {
+                // Stesso mese ma solo ad anni alterni (pari distanza dall'anno base)
+                matchesYm = (cardMonthNum === targetMonth) && ((targetYear - cardYear) % 2 === 0);
+            } else if (cardRec === 'CUSTOM_MONTHS') {
+                const cMonths = cardCustomMonths.split(',').map(m => parseInt(m.trim(), 10));
+                matchesYm = cMonths.includes(targetMonth);
+            }
+        }
+        
         let matchesScope = true;
         if (activeRadarScope === 'LEOPOLDO') {
             matchesScope = (cardScope === 'LEOPOLDO');
