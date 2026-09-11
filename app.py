@@ -1186,6 +1186,7 @@ def add_planned_deadline():
     due_day_str = request.form.get("due_day", "15").strip()
     pattern = request.form.get("match_pattern", "").strip()
     recurrence = request.form.get("recurrence", "ANNUAL").strip()
+    target_type = request.form.get("target_type", "SHARED_50_50").strip()
     p1_paid_str = request.form.get("p1_paid_amount", "0").replace(",", ".").strip()
     p2_paid_str = request.form.get("p2_paid_amount", "0").replace(",", ".").strip()
     notes = request.form.get("notes", "").strip()
@@ -1210,9 +1211,9 @@ def add_planned_deadline():
     cursor.execute('''
         INSERT INTO planned_deadlines (
             workspace_id, name, category, expected_amount, year_month, due_day, 
-            match_pattern, recurrence, p1_paid_amount, p2_paid_amount, is_paid, notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (ws_id, name, category, expected_amount, year_month, due_day, pattern, recurrence, p1_paid, p2_paid, is_paid, notes))
+            match_pattern, recurrence, target_type, p1_paid_amount, p2_paid_amount, is_paid, notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (ws_id, name, category, expected_amount, year_month, due_day, pattern, recurrence, target_type, p1_paid, p2_paid, is_paid, notes))
     conn.commit()
     conn.close()
     

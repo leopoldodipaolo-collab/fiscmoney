@@ -38,7 +38,7 @@ def init_deadlines_radar_schema():
     
     new_cols = [
         ("recurrence", "TEXT DEFAULT 'ANNUAL'"),
-        ("target_type", "TEXT DEFAULT 'SHARED_50_50'"),
+        ("target_type", "TEXT DEFAULT 'SHARED_50_50'"), # 'SHARED_50_50', 'LEOPOLDO_ONLY', 'NUNZIA_ONLY'
         ("p1_paid_amount", "REAL DEFAULT 0.0"),
         ("p2_paid_amount", "REAL DEFAULT 0.0"),
         ("manual_matched_tx_id", "INTEGER"),
@@ -52,12 +52,13 @@ def init_deadlines_radar_schema():
     conn.close()
 
 
-def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=None):
+def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=None, user_profile_name=None):
     """
     Computes upcoming annual and multi-month financial deadlines:
     1. Monthly timeline distribution (next 12 calendar months).
     2. Progress bar tracking (Expected vs Paid with Partner 1 and Partner 2 quotas).
     3. Auto-matching against banking transactions by pattern/dates or manual links.
+    4. Target Type: PERSONAL (Leopoldo only / Nunzia only) vs SHARED (50/50 family).
     """
     init_deadlines_radar_schema()
     conn = get_db_connection()
@@ -78,8 +79,8 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
     p1 = dict(profiles_rows[0]) if len(profiles_rows) > 0 else {"id": 1, "name": "Leopoldo"}
     p2 = dict(profiles_rows[1]) if len(profiles_rows) > 1 else {"id": 2, "name": "Nunzia"}
     
-    p1_first = p1['name'].split()[0]
-    p2_first = p2['name'].split()[0] if len(profiles_rows) > 1 else "Nunzia"
+    p1_first = "Leopoldo"
+    p2_first = "Nunzia"
     
     # 2. Fetch all planned deadlines for this workspace
     query = "SELECT * FROM planned_deadlines WHERE workspace_id = ?"
@@ -134,6 +135,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
         due_ym = item.get('year_month') or curr_ym
         due_day = int(item.get('due_day') or 15)
         pat = (item.get('match_pattern') or item.get('name') or '').strip()
+        target_type = item.get('target_type') or 'SHARED_50_50'
         
         # Determine actual paid amounts (auto-match within date window ± 45 days + explicit database values)
         matched_txs = []
@@ -144,9 +146,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
             for tx in all_recent_txs:
                 desc = f"{tx['description'] or ''} {tx['raw_description'] or ''}"
                 tx_date_ym = tx['date'][:7]
-                # Match pattern AND check if transaction is within the deadline's target month or adjacent
                 if re.search(pat, desc, re.IGNORECASE):
-                    # Check date proximity to the deadline's due_ym
                     try:
                         due_d = datetime.strptime(f"{due_ym}-{due_day:02d}", "%Y-%m-%d").date()
                         tx_d = datetime.strptime(tx['date'], "%Y-%m-%d").date()
@@ -157,36 +157,77 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
                     if day_diff <= 45:
                         tx_amt = abs(float(tx['amount']))
                         matched_txs.append(tx)
-                        # Distribute between partners based on tx profile
-                        if tx['profile_id'] == p1['id']:
+                        if target_type == 'LEOPOLDO_ONLY':
                             auto_p1_paid += tx_amt
-                        elif len(profiles_rows) > 1 and tx['profile_id'] == p2['id']:
+                        elif target_type == 'NUNZIA_ONLY':
                             auto_p2_paid += tx_amt
-                        else:
-                            auto_p1_paid += tx_amt
+                        else: # SHARED_50_50
+                            if tx['profile_id'] == p1['id']:
+                                auto_p1_paid += tx_amt
+                            elif len(profiles_rows) > 1 and tx['profile_id'] == p2['id']:
+                                auto_p2_paid += tx_amt
+                            else:
+                                auto_p1_paid += tx_amt
                         
         manual_p1 = float(item.get('p1_paid_amount') or 0.0)
         manual_p2 = float(item.get('p2_paid_amount') or 0.0)
         
         final_p1_paid = max(manual_p1, auto_p1_paid)
         final_p2_paid = max(manual_p2, auto_p2_paid)
-        final_total_paid = final_p1_paid + final_p2_paid
         
+        if target_type == 'LEOPOLDO_ONLY':
+            final_total_paid = final_p1_paid
+            is_shared = False
+            scope_badge = "👤 Personale Leopoldo"
+            scope_code = "LEOPOLDO"
+        elif target_type == 'NUNZIA_ONLY':
+            final_total_paid = final_p2_paid
+            is_shared = False
+            scope_badge = "👩 Personale Nunzia"
+            scope_code = "NUNZIA"
+        else:
+            final_total_paid = final_p1_paid + final_p2_paid
+            is_shared = True
+            scope_badge = "👥 Spesa Condivisa 50/50"
+            scope_code = "SHARED"
+            
         # If is_paid flag is explicitly 1 and no specific breakdown, assume full payment
         if item.get('is_paid') and final_total_paid == 0:
             final_total_paid = expected
-            final_p1_paid = expected / 2
-            final_p2_paid = expected / 2
+            if target_type == 'LEOPOLDO_ONLY':
+                final_p1_paid = expected
+                final_p2_paid = 0.0
+            elif target_type == 'NUNZIA_ONLY':
+                final_p1_paid = 0.0
+                final_p2_paid = expected
+            else:
+                final_p1_paid = expected / 2
+                final_p2_paid = expected / 2
             
         is_fully_paid = (final_total_paid >= (expected - 0.05))
         is_partially_paid = (final_total_paid > 0.05 and not is_fully_paid)
         progress_pct = min(100.0, round((final_total_paid / expected * 100.0), 1)) if expected > 0 else 100.0
         remaining_to_pay = max(0.0, round(expected - final_total_paid, 2))
         
-        # Half quota targets (e.g. 2.000 € ciascuno per condominio 4.000 €)
-        half_quota = round(expected / 2.0, 2)
-        p1_missing = max(0.0, round(half_quota - final_p1_paid, 2))
-        p2_missing = max(0.0, round(half_quota - final_p2_paid, 2))
+        # Quota targets
+        if is_shared:
+            half_quota = round(expected / 2.0, 2)
+            p1_target = half_quota
+            p2_target = half_quota
+            p1_missing = max(0.0, round(half_quota - final_p1_paid, 2))
+            p2_missing = max(0.0, round(half_quota - final_p2_paid, 2))
+        elif target_type == 'LEOPOLDO_ONLY':
+            p1_target = expected
+            p2_target = 0.0
+            p1_missing = remaining_to_pay
+            p2_missing = 0.0
+            half_quota = expected
+        else: # NUNZIA_ONLY
+            p1_target = 0.0
+            p2_target = expected
+            p1_missing = 0.0
+            p2_missing = remaining_to_pay
+            half_quota = expected
         
         # Status verdict
         if is_fully_paid:
@@ -212,6 +253,10 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
             "due_date_str": f"{due_day} {MESI_BREVI_IT[int(due_ym.split('-')[1])-1]} {due_ym.split('-')[0]}",
             "recurrence": item.get('recurrence') or 'ANNUAL',
             "match_pattern": pat,
+            "target_type": target_type,
+            "is_shared": is_shared,
+            "scope_badge": scope_badge,
+            "scope_code": scope_code,
             "is_paid": is_fully_paid,
             "is_partial": is_partially_paid,
             "total_paid": final_total_paid,
@@ -224,6 +269,8 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
             "p2_paid": final_p2_paid,
             "p1_missing": p1_missing,
             "p2_missing": p2_missing,
+            "p1_target": p1_target,
+            "p2_target": p2_target,
             "half_quota": half_quota,
             "p1_name": p1_first,
             "p2_name": p2_first,
@@ -270,8 +317,8 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
 
 def auto_seed_typical_family_deadlines(workspace_id, current_year=2026):
     """
-    Pre-populates or offers typical recurring family deadlines for the current year
-    (e.g. Condominio, Bollo Auto ACI, TARI, Assicurazione) if none exist.
+    Pre-populates typical deadlines distinguishing between SHARED (Condominio, TARI)
+    and PERSONAL (Bollo Auto di Leopoldo, Assicurazione RC Auto).
     """
     init_deadlines_radar_schema()
     conn = get_db_connection()
@@ -287,6 +334,7 @@ def auto_seed_typical_family_deadlines(workspace_id, current_year=2026):
                 "due_day": 30,
                 "match_pattern": "condomin|amministrat",
                 "recurrence": "ANNUAL",
+                "target_type": "SHARED_50_50",
                 "p1_paid_amount": 0.0,
                 "p2_paid_amount": 2000.0, # Quota Nunzia anticipata (€2.000)
                 "is_paid": 0,
@@ -300,10 +348,11 @@ def auto_seed_typical_family_deadlines(workspace_id, current_year=2026):
                 "due_day": 30,
                 "match_pattern": "aci|bollo|automobile club",
                 "recurrence": "ANNUAL",
+                "target_type": "LEOPOLDO_ONLY", # Riguarda solo Leopoldo!
                 "p1_paid_amount": 265.20,
                 "p2_paid_amount": 0.0,
                 "is_paid": 1,
-                "notes": "Pagato con CBILL da internet banking."
+                "notes": "Spesa personale di Leopoldo. Pagato con CBILL da internet banking."
             },
             {
                 "name": "TARI (Tassa Rifiuti Comune)",
@@ -313,10 +362,11 @@ def auto_seed_typical_family_deadlines(workspace_id, current_year=2026):
                 "due_day": 31,
                 "match_pattern": "tari|rifiuti|tributi comunali",
                 "recurrence": "ANNUAL",
+                "target_type": "SHARED_50_50",
                 "p1_paid_amount": 0.0,
                 "p2_paid_amount": 0.0,
                 "is_paid": 0,
-                "notes": "Avviso pagamento TARI rata annuale."
+                "notes": "Spesa casa condivisa al 50%. Avviso pagamento TARI rata annuale."
             },
             {
                 "name": "Assicurazione RC Auto Semestrale",
@@ -326,10 +376,11 @@ def auto_seed_typical_family_deadlines(workspace_id, current_year=2026):
                 "due_day": 15,
                 "match_pattern": "assicuraz|allianz|unipol|genial",
                 "recurrence": "SEMIANNUAL",
+                "target_type": "LEOPOLDO_ONLY", # Spesa personale auto Leopoldo
                 "p1_paid_amount": 0.0,
                 "p2_paid_amount": 0.0,
                 "is_paid": 0,
-                "notes": "Rinnovo polizza veicolo."
+                "notes": "Spesa personale di Leopoldo. Rinnovo polizza veicolo."
             }
         ]
         
@@ -337,12 +388,12 @@ def auto_seed_typical_family_deadlines(workspace_id, current_year=2026):
             conn.execute("""
                 INSERT INTO planned_deadlines (
                     workspace_id, name, category, expected_amount, year_month, due_day, 
-                    match_pattern, recurrence, p1_paid_amount, p2_paid_amount, is_paid, notes
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    match_pattern, recurrence, target_type, p1_paid_amount, p2_paid_amount, is_paid, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 workspace_id, it['name'], it['category'], it['expected_amount'], it['year_month'],
-                it['due_day'], it['match_pattern'], it['recurrence'], it['p1_paid_amount'],
-                it['p2_paid_amount'], it['is_paid'], it['notes']
+                it['due_day'], it['match_pattern'], it['recurrence'], it['target_type'],
+                it['p1_paid_amount'], it['p2_paid_amount'], it['is_paid'], it['notes']
             ))
             
         conn.commit()
