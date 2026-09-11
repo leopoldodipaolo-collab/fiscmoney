@@ -2461,26 +2461,12 @@ function applyDeadlinesCombinedFilter() {
         if (activeRadarYm === 'ALL') {
             matchesYm = true;
         } else if (cardYm === activeRadarYm) {
+            // Match esatto: la card è già nel mese/anno corretto (le occorrenze future
+            // sono già state create con year_month corretto dal server)
             matchesYm = true;
-        } else {
-            // Proiezione scadenze periodiche su altri anni
-            const [targetYearStr, targetMonthStr] = activeRadarYm.split('-');
-            const targetYear = parseInt(targetYearStr, 10);
-            const targetMonth = parseInt(targetMonthStr, 10);
-            
-            const cardYear = parseInt(cardYm.split('-')[0], 10);
-            
-            if (cardRec === 'ANNUAL') {
-                // Stesso mese in qualunque anno futuro o passato
-                matchesYm = (cardMonthNum === targetMonth);
-            } else if (cardRec === 'BIENNIAL') {
-                // Stesso mese ma solo ad anni alterni (pari distanza dall'anno base)
-                matchesYm = (cardMonthNum === targetMonth) && ((targetYear - cardYear) % 2 === 0);
-            } else if (cardRec === 'CUSTOM_MONTHS') {
-                const cMonths = cardCustomMonths.split(',').map(m => parseInt(m.trim(), 10));
-                matchesYm = cMonths.includes(targetMonth);
-            }
         }
+        // NOTA: NON facciamo più proiezione JS per ANNUAL/BIENNIAL perché il backend
+        // crea già card distinte per ogni anno con data-ym corretto.
         
         let matchesScope = true;
         if (activeRadarScope === 'LEOPOLDO') {
