@@ -688,17 +688,22 @@
                         <tr class="merchant-row" 
                             id="merchantRow_{{ loop.index }}" 
                             data-triage-state="{{ 'pending' if is_pending else 'completed' }}"
+                            data-pattern="{{ g.pattern|replace("'", "\\'") }}"
+                            data-tx-ids='{{ g.tx_ids|tojson }}'
+                            data-count="{{ g.count }}"
+                            data-total="{{ g.total_amount }}"
+                            data-primary-cat="{{ g.primary_category if not g.is_unassigned else '' }}"
                             style="background: {% if is_pending %}rgba(245, 158, 11, 0.04){% else %}rgba(255,255,255,0.03){% endif %}; transition: all 0.15s ease; border-radius: 8px;">
                             
-                            <!-- Frequency Count Badge -->
-                            <td style="padding: 8px 10px; border-top-left-radius: 8px; border-bottom-left-radius: 8px;">
+                            <!-- DESKTOP TD: Frequency Count Badge -->
+                            <td class="desktop-only-cell" style="padding: 8px 10px; border-top-left-radius: 8px; border-bottom-left-radius: 8px;">
                                 <div class="badge-freq" style="display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; background: {% if is_pending %}rgba(239, 68, 68, 0.2){% elif g.count >= 5 %}rgba(99, 102, 241, 0.25){% elif g.count >= 2 %}rgba(56, 189, 248, 0.2){% else %}rgba(255,255,255,0.08){% endif %}; color: {% if is_pending %}#fca5a5{% elif g.count >= 5 %}#a5b4fc{% elif g.count >= 2 %}#7dd3fc{% else %}#94a3b8{% endif %}; border: 1px solid {% if is_pending %}rgba(239, 68, 68, 0.4){% elif g.count >= 5 %}rgba(99, 102, 241, 0.4){% elif g.count >= 2 %}rgba(56, 189, 248, 0.4){% else %}rgba(255,255,255,0.1){% endif %};">
                                     <span>x {{ g.count }}</span>
                                 </div>
                             </td>
 
-                            <!-- Merchant Name & Filter Trigger -->
-                            <td style="padding: 8px 10px;">
+                            <!-- DESKTOP TD: Merchant Name & Filter Trigger -->
+                            <td class="desktop-only-cell" style="padding: 8px 10px;">
                                 <div style="display: flex; align-items: center; gap: 8px; cursor: pointer;" onclick="onMerchantClickFilter('{{ g.pattern|replace("'", "\\'") }}')" title="Clicca per isolare i movimenti nella tabella sottostante">
                                     <span style="font-size: 1.1rem;">{{ g.icon }}</span>
                                     <div>
@@ -713,8 +718,8 @@
                                 </div>
                             </td>
 
-                            <!-- Average (Prominent) & Total Amount -->
-                            <td style="padding: 8px 10px; text-align: right;">
+                            <!-- DESKTOP TD: Average & Total Amount -->
+                            <td class="desktop-only-cell" style="padding: 8px 10px; text-align: right;">
                                 <div style="font-weight: 800; font-size: 0.86rem; color: {% if g.is_income %}#10b981{% else %}#38bdf8{% endif %};">
                                     ~{{ g.avg_amount|eur }} <span style="font-size: 0.67rem; font-weight: 600; color: var(--text-muted);">/ mov</span>
                                 </div>
@@ -723,8 +728,8 @@
                                 </div>
                             </td>
 
-                            <!-- Current Status Badge -->
-                            <td style="padding: 8px 10px;">
+                            <!-- DESKTOP TD: Current Status Badge -->
+                            <td class="desktop-only-cell" style="padding: 8px 10px;">
                                 {% if g.is_unassigned %}
                                 <span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 0.72rem; padding: 3px 8px; border-radius: 12px; font-weight: 700;">
                                     ⚡ Da Assegnare
@@ -740,8 +745,8 @@
                                 {% endif %}
                             </td>
 
-                            <!-- Modal Open Action Button -->
-                            <td style="padding: 8px 10px; text-align: right; border-top-right-radius: 8px; border-bottom-right-radius: 8px;">
+                            <!-- DESKTOP TD: Modal Open Action Button -->
+                            <td class="desktop-only-cell" style="padding: 8px 10px; text-align: right; border-top-right-radius: 8px; border-bottom-right-radius: 8px;">
                                 <div style="display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px;">
                                     {% if is_pending %}
                                     <button type="button" 
@@ -767,6 +772,71 @@
                                             title="Isola movimenti nella tabella sottostante">
                                         🔍
                                     </button>
+                                </div>
+                            </td>
+
+                            <!-- SMARTPHONE DEDICATED MOBILE CARD VIEW (Visibile solo <= 640px) -->
+                            <td class="mobile-only-cell" style="padding: 0; border: none; width: 100%;">
+                                <div class="triage-mobile-card">
+                                    <!-- Header: Frequenza, Esercente e Totale -->
+                                    <div class="triage-m-top">
+                                        <div class="triage-m-left">
+                                            <span class="triage-m-freq">x{{ g.count }}</span>
+                                            <div class="triage-m-merchant" onclick="onMerchantClickFilter('{{ g.pattern|replace("'", "\\'") }}')" title="Tocca per isolare i movimenti">
+                                                <div class="triage-m-name">{{ g.pattern }}</div>
+                                                <div class="triage-m-sub">
+                                                    <span>~{{ g.avg_amount|eur }}/spesa</span>
+                                                    {% if g.latest_date %}<span>• Ultimo: {{ g.latest_date }}</span>{% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="triage-m-total {% if g.is_income %}income{% else %}expense{% endif %}">
+                                            {{ g.total_amount|eur_sign if g.is_income else g.total_amount|eur }}
+                                        </div>
+                                    </div>
+
+                                    <!-- Status & Quick Actions Container -->
+                                    <div class="triage-m-actions">
+                                        <div class="triage-m-status-row">
+                                            {% if g.is_unassigned %}
+                                            <span class="triage-m-badge unassigned">⚡ Da Assegnare</span>
+                                            {% elif not g.is_homogeneous %}
+                                            <span class="triage-m-badge mixed">⚠️ Categorie Miste</span>
+                                            {% else %}
+                                            <span class="triage-m-badge assigned" style="border-color: {{ g.color }}55; color: {{ g.color }}; background: {{ g.color }}22;">
+                                                ✓ {{ g.icon }} {{ g.primary_category }}
+                                            </span>
+                                            {% endif %}
+                                            
+                                            <div class="triage-m-quick-pill-container" id="quickSugg_{{ loop.index }}">
+                                                <!-- Popolato via JS con 1-tap categorization button se riconosciuto -->
+                                            </div>
+                                        </div>
+
+                                        <!-- Bottone principale grande per pollice -->
+                                        <div class="triage-m-btn-group">
+                                            {% if is_pending %}
+                                            <button type="button" 
+                                                    class="triage-m-main-btn primary"
+                                                    onclick="openGroupClassifyModal('{{ g.pattern|replace("'", "\\'") }}', {{ g.tx_ids|tojson }}, '{{ g.primary_category if not g.is_unassigned else '' }}', {{ g.count }}, {{ g.total_amount }})">
+                                                <span>⚡ Classifica Gruppo ({{ g.count }})</span>
+                                            </button>
+                                            {% else %}
+                                            <button type="button" 
+                                                    class="triage-m-main-btn secondary"
+                                                    onclick="openGroupClassifyModal('{{ g.pattern|replace("'", "\\'") }}', {{ g.tx_ids|tojson }}, '{{ g.primary_category }}', {{ g.count }}, {{ g.total_amount }})">
+                                                <span>✏️ Modifica ({{ g.count }})</span>
+                                            </button>
+                                            {% endif %}
+                                            
+                                            <button type="button" 
+                                                    class="triage-m-icon-btn" 
+                                                    onclick="onMerchantClickFilter('{{ g.pattern|replace("'", "\\'") }}')"
+                                                    title="Isola movimenti">
+                                                🔍
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </td>
                         </tr>
@@ -4546,6 +4616,115 @@ async function submitGroupClassify() {
     }
 }
 
+// Quick 1-Tap Direct Classification from Mobile Card Suggestion
+async function quickAssignMerchantGroup(pattern, txIds, category, subCategory, tags, btnEl) {
+    if (!category) return;
+    const origHtml = btnEl.innerHTML;
+    btnEl.disabled = true;
+    btnEl.innerHTML = '⏳ Salvataggio...';
+    btnEl.style.opacity = '0.8';
+
+    try {
+        const resp = await fetch('/api/transactions/batch-categorize-merchant', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                pattern: pattern,
+                tx_ids: txIds,
+                category: category,
+                sub_category: subCategory || '',
+                tags: Array.isArray(tags) ? tags.join(' ') : (tags || ''),
+                save_rule: true
+            })
+        });
+        const res = await resp.json();
+        if (res.success) {
+            btnEl.innerHTML = '✓ Salvato!';
+            btnEl.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            btnEl.style.borderColor = '#10b981';
+            
+            // Trova la riga parente e rimuovila o aggiorna lo stato visivo con una micro-animazione fluida
+            const row = btnEl.closest('tr.merchant-row');
+            if (row) {
+                row.setAttribute('data-triage-state', 'completed');
+                row.style.transition = 'all 0.35s ease';
+                row.style.transform = 'translateX(10px)';
+                row.style.opacity = '0';
+                setTimeout(() => {
+                    if (currentTriageState === 'pending') {
+                        row.classList.add('is-hidden');
+                        row.style.display = 'none';
+                    } else {
+                        row.style.transform = 'none';
+                        row.style.opacity = '1';
+                        // Aggiorna il badge di stato
+                        const badge = row.querySelector('.triage-m-badge');
+                        if (badge) {
+                            badge.className = 'triage-m-badge assigned';
+                            badge.style.background = 'rgba(16, 185, 129, 0.18)';
+                            badge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                            badge.style.color = '#86efac';
+                            badge.innerHTML = `✓ ${category}`;
+                        }
+                    }
+                    updateMerchantTriageVisibility();
+                }, 350);
+            }
+        } else {
+            alert('Errore: ' + (res.error || 'Impossibile completare il salvataggio rapido'));
+            btnEl.disabled = false;
+            btnEl.innerHTML = origHtml;
+            btnEl.style.opacity = '1';
+        }
+    } catch(e) {
+        console.error(e);
+        alert('Errore di connessione durante il salvataggio rapido');
+        btnEl.disabled = false;
+        btnEl.innerHTML = origHtml;
+        btnEl.style.opacity = '1';
+    }
+}
+
+// Popola automaticamente i chip "1-Tap Suggestion" sulle card mobile al caricamento
+function populateMobileQuickSuggestions() {
+    const rows = document.querySelectorAll('#merchantTriageTbody tr.merchant-row');
+    rows.forEach((row, idx) => {
+        const pattern = row.getAttribute('data-pattern');
+        const isPending = (row.getAttribute('data-triage-state') === 'pending');
+        const container = row.querySelector('.triage-m-quick-pill-container');
+        if (!pattern || !container || !isPending) return;
+
+        // Cerca se l'AI o la Knowledge Base ha un suggerimento valido per questo pattern
+        const sugg = (typeof detectAiSuggestionForPattern === 'function') ? detectAiSuggestionForPattern(pattern) : null;
+        if (sugg && sugg.category) {
+            let txIds = [];
+            try {
+                txIds = JSON.parse(row.getAttribute('data-tx-ids') || '[]');
+            } catch(e) {}
+            
+            const catMeta = (typeof MACRO_CATEGORIES_OBJ !== 'undefined' && MACRO_CATEGORIES_OBJ[sugg.category]) ? MACRO_CATEGORIES_OBJ[sugg.category] : { icon: '🏷️', color: '#38bdf8' };
+            const icon = catMeta.icon || '🏷️';
+            
+            const safePattern = pattern.replace(/"/g, '&quot;');
+            const safeCat = sugg.category.replace(/"/g, '&quot;');
+            const safeSub = (sugg.subcategory || '').replace(/"/g, '&quot;');
+            const safeTags = JSON.stringify(sugg.tags || []).replace(/"/g, '&quot;');
+            const safeTxIds = JSON.stringify(txIds).replace(/"/g, '&quot;');
+            
+            container.innerHTML = `
+                <button type="button" 
+                        class="triage-m-quick-tap-pill" 
+                        onclick="quickAssignMerchantGroup('${safePattern}', ${safeTxIds}, '${safeCat}', '${safeSub}', ${safeTags}, this)"
+                        title="Tocca per categorizzare istantaneamente in ${sugg.category}">
+                    <span class="pill-sparkle">✨</span>
+                    <span>${icon} ${sugg.category}</span>
+                    <span class="pill-check">✓</span>
+                </button>
+            `;
+        }
+    });
+}
+
 // --- TRIAGE STATE FILTERING (DA FARE vs GIÀ CLASSIFICATI vs TUTTI) ---
 let currentTriageState = '{% if triage_stats and triage_stats.pending_count > 0 %}pending{% else %}completed{% endif %}';
 
@@ -4670,7 +4849,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Apply initial triage state filter (default to 'pending' if pending items exist, else 'completed')
     filterTriageByState(currentTriageState);
 
-    // 4. Focus on Triage Section if requested (?triage=1 or #merchantTriageSection)
+    // 4. Populate mobile 1-tap categorization suggestions
+    populateMobileQuickSuggestions();
+
+    // 5. Focus on Triage Section if requested (?triage=1 or #merchantTriageSection)
     applyTriageFocusIfRequested();
 });
 
