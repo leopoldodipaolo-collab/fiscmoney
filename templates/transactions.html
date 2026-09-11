@@ -362,47 +362,6 @@
 {% endif %}
 
 <!-- ======================================================== -->
-<!-- SELETTORE MESI A TAB: BANCO DI LAVORO MENSILE            -->
-<!-- ======================================================== -->
-{% if available_months|length > 0 %}
-<div id="monthTabsSection" class="month-workbench-tabs" style="display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 14px 2px; margin-bottom: 16px; scrollbar-width: thin;">
-    
-
-
-    <!-- Mesi Singoli in Ordine Cronologico -->
-    {% for m in available_months %}
-    {% set is_m_active = (selected_month == m.ym) %}
-    <a href="/transactions?month={{ m.ym }}" 
-       class="month-tab-btn {% if is_m_active %}active{% endif %} {% if m.is_current_month %}is-current{% endif %}">
-        <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 1rem;">{% if m.is_current_month %}📍{% else %}🗓️{% endif %}</span>
-            <strong style="font-size: 0.85rem; color: #fff;">{{ m.name_full }}</strong>
-            {% if m.is_current_month %}
-            <span style="font-size: 0.65rem; background: rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 1px 5px; border-radius: 4px; font-weight: 800;">IN CORSO</span>
-            {% endif %}
-        </div>
-        
-        <!-- Status indicator badge -->
-        <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 0.72rem;">
-            {% if m.uncat_count > 0 %}
-            <span style="color: #f87171; font-weight: 700; background: rgba(239, 68, 68, 0.2); padding: 1px 6px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.4);">
-                ⚡ {{ m.uncat_count }} da fare
-            </span>
-            {% elif m.untagged_count > 0 %}
-            <span style="color: #fbbf24; font-weight: 700; background: rgba(245, 158, 11, 0.2); padding: 1px 6px; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.4);">
-                🏷️ {{ m.untagged_count }} senza tag
-            </span>
-            {% else %}
-            <span style="color: #86efac; font-weight: 700; background: rgba(16, 185, 129, 0.15); padding: 1px 6px; border-radius: 10px; border: 1px solid rgba(16, 185, 129, 0.3);">
-                ✓ 100% Classificato
-            </span>
-            {% endif %}
-            <span style="color: var(--text-muted);">{{ m.tx_count }} mov.</span>
-        </div>
-    </a>
-    {% endfor %}
-</div>
-{% endif %}
 
 <!-- ======================================================== -->
 <!-- SCHEDA BANCO DI LAVORO DEL MESE (STREAMLINED WORKBENCH)   -->
@@ -615,6 +574,44 @@
             </button>
         </div>
     </div>
+
+    <!-- SELETTORE MESI INTEGRATO & COMPATTO (TOUCH & DESKTOP) -->
+    {% if available_months|length > 0 %}
+    <div class="triage-months-wrapper" style="margin-bottom: 12px; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 6px 8px; border: 1px solid rgba(255,255,255,0.06);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; padding: 0 4px;">
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                <span>🗓️ Mese di Riferimento</span>
+            </div>
+            <a href="/transactions?month=all{% if selected_category %}&category={{ selected_category|urlencode }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+               style="font-size: 0.68rem; color: {% if selected_month == 'all' %}#38bdf8{% else %}var(--text-muted){% endif %}; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; background: {% if selected_month == 'all' %}rgba(56, 189, 248, 0.15){% else %}rgba(255,255,255,0.04){% endif %}; padding: 2px 8px; border-radius: 8px; border: 1px solid {% if selected_month == 'all' %}rgba(56, 189, 248, 0.4){% else %}rgba(255,255,255,0.08){% endif %};">
+                <span>🌐 Tutti i Mesi (Storico)</span>
+            </a>
+        </div>
+        <div class="triage-months-scroll" style="display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 2px 0 4px 0;">
+            {% for m in available_months %}
+            {% set is_m_active = (selected_month == m.ym) %}
+            <a href="/transactions?month={{ m.ym }}{% if selected_category %}&category={{ selected_category|urlencode }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}" 
+               class="triage-month-capsule {% if is_m_active %}active{% endif %} {% if m.is_current_month %}is-current{% endif %}">
+                <div class="month-capsule-title">
+                    <span>{% if m.is_current_month %}📍{% else %}🗓️{% endif %}</span>
+                    <strong>{{ m.name_short or m.name_full }}</strong>
+                    {% if m.is_current_month %}
+                    <span class="badge-current">NOW</span>
+                    {% endif %}
+                </div>
+                <div class="month-capsule-meta">
+                    {% if m.uncat_count > 0 %}
+                    <span class="badge-uncat">⚡ {{ m.uncat_count }}</span>
+                    {% else %}
+                    <span class="badge-done">✓</span>
+                    {% endif %}
+                    <span class="count-tx">{{ m.tx_count }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Triage Progress Bar -->
     <div style="margin: 6px 0 12px 0;">

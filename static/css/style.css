@@ -2608,6 +2608,112 @@ body {
   background: rgba(255, 255, 255, 0.18);
 }
 
+/* ======================================================== */
+/* SELETTORE MESI COMPATTO DENTRO TRIAGE                   */
+/* ======================================================== */
+.triage-months-scroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 0 4px 0;
+}
+
+.triage-months-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.triage-month-capsule {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.18s ease;
+  user-select: none;
+}
+
+.triage-month-capsule:hover {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.35);
+  transform: translateY(-1px);
+  color: #fff;
+}
+
+.triage-month-capsule.active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.28), rgba(30, 41, 67, 0.95));
+  border-color: var(--accent-primary);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(59, 130, 246, 0.3);
+}
+
+.triage-month-capsule.is-current {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.triage-month-capsule.is-current.active {
+  border-color: #38bdf8;
+  box-shadow: 0 3px 12px rgba(56, 189, 248, 0.35);
+}
+
+.month-capsule-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+}
+
+.month-capsule-title strong {
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+.month-capsule-title .badge-current {
+  font-size: 0.58rem;
+  background: rgba(56, 189, 248, 0.25);
+  color: #38bdf8;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.month-capsule-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+}
+
+.month-capsule-meta .badge-uncat {
+  color: #f87171;
+  font-weight: 800;
+  background: rgba(239, 68, 68, 0.2);
+  padding: 0 5px;
+  border-radius: 6px;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.month-capsule-meta .badge-done {
+  color: #86efac;
+  font-weight: 800;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 0 4px;
+  border-radius: 6px;
+}
+
+.month-capsule-meta .count-tx {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+}
+
 .merchant-cat-select:focus {
   outline: none;
   border-color: #6366f1 !important;
@@ -2943,37 +3049,47 @@ body {
   box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4);
 }
 
+.category-folders-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
 .category-folder-card {
-  background: linear-gradient(135deg, rgba(22, 30, 49, 0.7), rgba(15, 23, 42, 0.85));
+  background: linear-gradient(135deg, rgba(22, 30, 49, 0.75), rgba(15, 23, 42, 0.9));
   border: 1.5px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-lg);
-  margin-bottom: 12px;
+  border-radius: 14px;
   overflow: hidden;
-  transition: all 0.25s ease;
+  transition: all 0.22s ease;
   backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
 }
 
 .category-folder-card:hover {
-  border-color: rgba(99, 102, 241, 0.4);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  border-color: rgba(99, 102, 241, 0.45);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  transform: translateY(-2px);
 }
 
 .category-folder-card.is-open {
-  border-color: rgba(99, 102, 241, 0.5);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border-color: rgba(99, 102, 241, 0.6);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45);
+  grid-column: 1 / -1; /* Quando si apre, si espande a tutta larghezza per una comoda consultazione! */
 }
 
 .category-folder-header {
-  padding: 14px 18px;
+  padding: 12px 14px;
   cursor: pointer;
   user-select: none;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
   background: rgba(255, 255, 255, 0.02);
   transition: background 0.15s ease;
+  flex: 1;
 }
 
 .category-folder-header:hover {
@@ -2981,10 +3097,11 @@ body {
 }
 
 .category-folder-chevron {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   display: inline-block;
+  flex-shrink: 0;
 }
 
 .category-folder-card.is-open .category-folder-chevron {
@@ -2993,9 +3110,9 @@ body {
 }
 
 .category-folder-body {
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 14px 18px;
-  background: rgba(0, 0, 0, 0.18);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 14px 16px;
+  background: rgba(0, 0, 0, 0.22);
 }
 
 .category-merchant-subblock {
@@ -3602,6 +3719,20 @@ body.privacy-mode-active .privacy-switch-dot {
     justify-content: center !important;
     padding: 8px 14px !important;
     font-size: 0.8rem !important;
+  }
+
+  /* --- VISTA CATEGORIE A MATRICE SU MOBILE --- */
+  .category-folders-container {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .category-folder-header {
+    padding: 10px 12px !important;
+  }
+
+  .category-folder-card.is-open {
+    grid-column: auto !important;
   }
 
   /* --- GRID CONTI: 2 colonne fisse su smartphone --- */
