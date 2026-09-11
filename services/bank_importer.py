@@ -249,7 +249,7 @@ RULES_PATTERNS = [
     (r"\b(prelievo atm|prelievo bancomat|prelievo contant|prelievo carta|sportello automatico|postamat prelievo|prelievo c/o|prelievo c\\o|prelievo)\b", "Tasse, Fisco & Banche", "Prelievo Contante & Bancomat", "#prelievo_contante"),
     (r"\b(f24|agenzia delle entrate|imposte|tasse|irpef|addizionale)\b", "Tasse, Fisco & Banche", "F24 & Imposte", "#f24_imposte"),
     (r"\b(tari|imu|tasi|tribut|imposta di bollo|bollo c/c)\b", "Tasse, Fisco & Banche", "IMU & Tributi Locali", "#imu_tari"),
-    (r"\b(canone mensile carta|commissioni|spese tenuta conto|interessi passivi|spese liquidazione)\b", "Tasse, Fisco & Banche", "Canoni & Commissioni", "#canoni_commissioni"),
+    (r"\b(canone mensile carta|commissioni|commissione|comm\.\s*bon|spese tenuta conto|interessi passivi|spese liquidazione)\b", "Tasse, Fisco & Banche", "Canoni & Commissioni", "#canoni_commissioni"),
     (r"\b(commercialista|caf |patronato|consulente del lavoro|parcella avvocato)\b", "Tasse, Fisco & Banche", "Consulenze & CAF", "#consulenze_caf")
 ]
 
@@ -314,6 +314,16 @@ def extract_clean_merchant_pattern(description):
         return ""
     text = description
     
+    # 0. Specialized unification for bank fees / commissions
+    if re.search(r'\b(?:COMMISSIONI?\s+BONIFIC[IO]|COMM\.\s*BON\b|COMMISSIONI?\s+PAGAMENTO\s+BOLLETTINO|COMMISSIONI?\s+CBILL|COMMISSIONE\s+TELEPASS)\b', text, flags=re.IGNORECASE):
+        if re.search(r'\b(?:COMMISSIONI?\s+BONIFIC[IO]|COMM\.\s*BON\b)', text, flags=re.IGNORECASE):
+            return "Commissioni Bonifico"
+        elif re.search(r'\b(?:BOLLETTINO|CBILL)\b', text, flags=re.IGNORECASE):
+            return "Commissioni Bollettini & CBILL"
+        elif re.search(r'\bTELEPASS\b', text, flags=re.IGNORECASE):
+            return "Commissioni Telepass"
+        return "Commissioni Bancarie"
+
     # 1. Remove initial transaction types / prefixes
     text = re.sub(r'^\s*(?:PAGAMENTO\s+POS|PAGAMENTO\s+P\.O\.S\.|POS|COMMISSIONI|COMMISSIONE|BONIFICO\s+SEPA|BONIFICO|DISPOSIZIONE|ACCREDITO|STIPENDIO/PENSIONE|STIPENDIO|PENSIONE|ADDEBITO\s+DIRETTO\s+SDD|ADDEBITO\s+SDD|SDD|MAV|RAV|F24|PAGAM\.\s+DELEGA\s+UNIFICATA)\s*[:\-]?\s*', '', text, flags=re.IGNORECASE)
     

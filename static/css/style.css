@@ -4477,6 +4477,50 @@ tr.merchant-row.is-hidden,
   }
 }
 
+/* ======================================================== */
+/* 🪙 FILTRO MICRO-SPESE (< 1 €): Matrice & Lista          */
+/* ======================================================== */
+.micro-expense-toggle-btn {
+  font-size: 0.75rem;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.micro-expense-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* Quando il filtro è ATTIVO, nascondi tutte le micro-spese e i micro-esercenti da matrice e lista */
+body.hide-micro-expenses .category-merchant-subblock.is-micro-merchant {
+  display: none !important;
+}
+
+body.hide-micro-expenses .folder-tx-row.is-micro-tx {
+  display: none !important;
+}
+
+body.hide-micro-expenses .tx-item.is-micro-tx {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  .micro-expense-toggle-btn {
+    font-size: 0.72rem;
+    padding: 4px 8px;
+  }
+}
+
 
 
 

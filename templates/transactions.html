@@ -937,14 +937,25 @@
             {% endif %}
         </div>
 
-        <!-- View Mode Switcher: Cassetti per Categoria vs Elenco Cronologico -->
-        <div class="tx-main-view-switcher">
-            <button type="button" id="btnMainViewFolders" class="tx-view-btn active" onclick="switchMainTxView('folders')" title="Organizza per Cartelle / Macro-Categorie">
-                <span>📂 Per Categoria</span>
+        <!-- View Mode Switcher: Cassetti per Categoria vs Elenco Cronologico + Micro-Spese Filter -->
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <button type="button" 
+                    id="btnToggleMicroExpenses" 
+                    class="btn btn-sm micro-expense-toggle-btn" 
+                    onclick="toggleMicroExpenses()" 
+                    title="Nasconde o mostra le commissioni e i micro-movimenti inferiori a 1 €">
+                <span id="microExpenseIcon">🪙</span>
+                <span id="microExpenseText">Nascondi &lt; 1€</span>
             </button>
-            <button type="button" id="btnMainViewFlat" class="tx-view-btn" onclick="switchMainTxView('flat')" title="Elenco cronologico classico">
-                <span>📋 Elenco Cronologico</span>
-            </button>
+
+            <div class="tx-main-view-switcher">
+                <button type="button" id="btnMainViewFolders" class="tx-view-btn active" onclick="switchMainTxView('folders')" title="Organizza per Cartelle / Macro-Categorie">
+                    <span>📂 Per Categoria</span>
+                </button>
+                <button type="button" id="btnMainViewFlat" class="tx-view-btn" onclick="switchMainTxView('flat')" title="Elenco cronologico classico">
+                    <span>📋 Elenco Cronologico</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1009,7 +1020,8 @@
                 <!-- Folder Body (Expanded Content) -->
                 <div class="category-folder-body" style="display: none;">
                     {% for m in folder.merchants %}
-                    <div class="category-merchant-subblock">
+                    {% set is_m_micro = (m.total_amount|abs < 1.0) %}
+                    <div class="category-merchant-subblock {% if is_m_micro %}is-micro-merchant{% endif %}" data-amount="{{ m.total_amount }}" data-count="{{ m.count }}">
                         <!-- Merchant Sub-Header -->
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.04);">
                             <div style="display: flex; align-items: center; gap: 6px;">
@@ -1026,7 +1038,8 @@
 
                         <!-- List of Single Transactions for this Merchant -->
                         {% for tx in m.transactions %}
-                        <div class="folder-tx-row" id="folderTxRow-{{ tx.id }}">
+                        {% set is_tx_micro = (tx.amount|abs < 1.0) %}
+                        <div class="folder-tx-row {% if is_tx_micro %}is-micro-tx{% endif %}" id="folderTxRow-{{ tx.id }}" data-amount="{{ tx.amount }}">
                             <div style="display: flex; align-items: center; gap: 10px; flex: 1; overflow: hidden;">
                                 <span style="color: var(--text-muted); font-size: 0.75rem; white-space: nowrap; font-variant-numeric: tabular-nums;">{{ tx.date }}</span>
                                 <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
@@ -1097,7 +1110,8 @@
         {% else %}
         <div class="tx-list">
             {% for tx in transactions %}
-            <div class="tx-item" id="txRow-{{ tx.id }}">
+            {% set is_flat_micro = (tx.amount|abs < 1.0) %}
+            <div class="tx-item {% if is_flat_micro %}is-micro-tx{% endif %}" id="txRow-{{ tx.id }}" data-amount="{{ tx.amount }}">
                 
                 <!-- Lead: Checkbox + Date -->
                 <div class="tx-lead">
@@ -4814,6 +4828,50 @@ function switchMainTxView(mode) {
         localStorage.setItem('fisc_tx_main_view', 'flat');
     }
 }
+
+// ---------------------------------------------------------
+// 🪙 FILTRO MICRO-SPESE (< 1 €): Gestione Nascondi / Mostra
+// ---------------------------------------------------------
+function toggleMicroExpenses(forcedState) {
+    const isCurrentlyHidden = document.body.classList.contains('hide-micro-expenses');
+    const newState = (forcedState !== undefined) ? forcedState : !isCurrentlyHidden;
+    
+    const btn = document.getElementById('btnToggleMicroExpenses');
+    const textSpan = document.getElementById('microExpenseText');
+    const iconSpan = document.getElementById('microExpenseIcon');
+    
+    if (newState) {
+        document.body.classList.add('hide-micro-expenses');
+        if (btn) {
+            btn.classList.add('active');
+            btn.style.background = 'rgba(245, 158, 11, 0.2)';
+            btn.style.borderColor = 'rgba(245, 158, 11, 0.5)';
+            btn.style.color = '#fbbf24';
+        }
+        if (textSpan) textSpan.textContent = 'Spese < 1€ Nascoste';
+        if (iconSpan) iconSpan.textContent = '🙈';
+        localStorage.setItem('fisc_hide_micro_expenses', 'true');
+    } else {
+        document.body.classList.remove('hide-micro-expenses');
+        if (btn) {
+            btn.classList.remove('active');
+            btn.style.background = 'rgba(255, 255, 255, 0.06)';
+            btn.style.borderColor = 'rgba(255, 255, 255, 0.12)';
+            btn.style.color = 'var(--text-muted)';
+        }
+        if (textSpan) textSpan.textContent = 'Nascondi < 1€';
+        if (iconSpan) iconSpan.textContent = '🪙';
+        localStorage.setItem('fisc_hide_micro_expenses', 'false');
+    }
+}
+
+// Inizializza stato micro-spese all'avvio (attivo di default se mai impostato per massima pulizia)
+document.addEventListener('DOMContentLoaded', function() {
+    const savedState = localStorage.getItem('fisc_hide_micro_expenses');
+    // Di default nascondi per pulire la visuale se non diversamente specificato
+    const shouldHide = (savedState === null || savedState === 'true');
+    toggleMicroExpenses(shouldHide);
+});
 
 function toggleCategoryFolder(folderId) {
     const folder = document.getElementById(folderId);
