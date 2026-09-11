@@ -2513,38 +2513,46 @@ body {
 }
 
 .chip-content-wrap {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   cursor: pointer;
+  flex: 1;
+  min-width: 0;
 }
 
 .chip-icon {
-  font-size: 1rem;
+  font-size: 1.1rem;
+  flex-shrink: 0;
 }
 
 .chip-info {
   display: flex;
   flex-direction: column;
-  line-height: 1.15;
+  line-height: 1.25;
+  flex: 1;
+  min-width: 0;
 }
 
 .chip-name {
   font-size: 0.82rem;
   color: #fff;
   font-weight: 700;
-  max-width: 170px;
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .chip-stats {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   font-size: 0.68rem;
-  margin-top: 1px;
+  margin-top: 2px;
+  flex-wrap: wrap;
 }
 
 .chip-avg {
@@ -2565,17 +2573,18 @@ body {
 }
 
 .chip-action-btn {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   border: none;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 800;
   flex-shrink: 0;
+  margin-left: 6px;
   transition: all 0.15s ease;
 }
 
@@ -3581,6 +3590,18 @@ body.privacy-mode-active .privacy-switch-dot {
     max-width: 100% !important;
     min-width: 0 !important;
     box-sizing: border-box !important;
+  }
+
+  /* Header toggle conti espandibile */
+  .accounts-collapse-header {
+    width: 100% !important;
+  }
+
+  .accounts-collapse-header button {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 8px 14px !important;
+    font-size: 0.8rem !important;
   }
 
   /* --- GRID CONTI: 2 colonne fisse su smartphone --- */

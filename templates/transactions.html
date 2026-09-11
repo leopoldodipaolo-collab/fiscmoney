@@ -124,8 +124,25 @@
         {% endif %}
     </div>
 
-    <!-- Interactive Bank Account Cards Grid -->
-    <div class="accounts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
+    <!-- Collapsible Bar per Conti / Carte (Chiusa di default su smartphone) -->
+    <div class="accounts-collapse-header" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px; margin-top: 4px; display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" 
+                id="accountsCollapseToggleBtn" 
+                onclick="toggleAccountsCollapse()" 
+                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; border-radius: 20px; padding: 5px 12px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
+            <span id="accountsCollapseIcon">🔽</span>
+            <span id="accountsCollapseText">Mostra Conti & Carte ({{ accounts|length }})</span>
+        </button>
+        {% if selected_account_id %}
+        <span class="badge-tag" style="background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); font-size: 0.68rem;">
+            Filtro conto attivo
+        </span>
+        {% endif %}
+    </div>
+
+    <!-- Interactive Bank Account Cards Grid Container -->
+    <div id="accountsGridBody" style="margin-top: 10px;">
+        <div class="accounts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px;">
         <!-- Global View Card (Tutti i Conti) -->
         <a href="/transactions?{% if selected_category %}category={{ selected_category|urlencode }}&{% endif %}{% if search_query %}q={{ search_query }}&{% endif %}" 
            style="text-decoration: none; color: inherit; background: {% if not selected_account_id %}rgba(59, 130, 246, 0.15){% else %}rgba(255,255,255,0.03){% endif %}; border: 1.5px solid {% if not selected_account_id %}var(--accent-primary){% else %}var(--border-color){% endif %}; border-radius: var(--radius-md); padding: 12px; transition: all 0.2s ease; display: flex; flex-direction: column; justify-content: space-between;">
@@ -182,6 +199,7 @@
             </button>
         </div>
         {% endfor %}
+        </div>
     </div>
 </div>
 {% endif %}
@@ -4005,6 +4023,26 @@ function toggleTriageCollapse() {
     }
 }
 
+function toggleAccountsCollapse() {
+    const body = document.getElementById('accountsGridBody');
+    const icon = document.getElementById('accountsCollapseIcon');
+    const text = document.getElementById('accountsCollapseText');
+    if (!body) return;
+    
+    const isHidden = (body.style.display === 'none');
+    if (isHidden) {
+        body.style.display = 'block';
+        if (icon) icon.innerText = '🔼';
+        if (text) text.innerText = 'Nascondi Schede Conti';
+        localStorage.setItem('fisc_accounts_collapsed', '0');
+    } else {
+        body.style.display = 'none';
+        if (icon) icon.innerText = '🔽';
+        if (text) text.innerText = 'Mostra Conti & Carte ({{ accounts|length }})';
+        localStorage.setItem('fisc_accounts_collapsed', '1');
+    }
+}
+
 function onMerchantClickFilter(pattern) {
     const input = document.getElementById('liveTxSearchInput');
     if (input) {
@@ -4871,7 +4909,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // 5. Populate mobile 1-tap categorization suggestions
     populateMobileQuickSuggestions();
 
-    // 6. Focus on Triage Section if requested (?triage=1 or #merchantTriageSection)
+    // 6. Manage Accounts Grid Collapsible State (Closed by default on smartphone unless account filter active)
+    const accountsGridBody = document.getElementById('accountsGridBody');
+    const accountsIcon = document.getElementById('accountsCollapseIcon');
+    const accountsText = document.getElementById('accountsCollapseText');
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasAccountFilter = !!urlParams.get('account_id');
+    const savedAccountsCollapsed = localStorage.getItem('fisc_accounts_collapsed');
+
+    if (accountsGridBody) {
+        let shouldCollapse = false;
+        if (savedAccountsCollapsed !== null) {
+            shouldCollapse = (savedAccountsCollapsed === '1');
+        } else if (isMobileDevice) {
+            // Su mobile chiusa di default, ma se c'è un filtro conto attivo mostriamo la griglia
+            shouldCollapse = !hasAccountFilter;
+        }
+
+        if (shouldCollapse) {
+            accountsGridBody.style.display = 'none';
+            if (accountsIcon) accountsIcon.innerText = '🔽';
+            if (accountsText) accountsText.innerText = 'Mostra Conti & Carte ({{ accounts|length }})';
+        } else {
+            accountsGridBody.style.display = 'block';
+            if (accountsIcon) accountsIcon.innerText = '🔼';
+            if (accountsText) accountsText.innerText = 'Nascondi Schede Conti';
+        }
+    }
+
+    // 7. Focus on Triage Section if requested (?triage=1 or #merchantTriageSection)
     applyTriageFocusIfRequested();
 });
 
