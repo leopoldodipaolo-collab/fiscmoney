@@ -38,7 +38,7 @@ def init_deadlines_radar_schema():
     
     new_cols = [
         ("recurrence", "TEXT DEFAULT 'ANNUAL'"),
-        ("target_type", "TEXT DEFAULT 'SHARED_50_50'"), # 'SHARED_50_50', 'PERSONAL', 'CUSTOM_QUOTAS'
+        ("target_type", "TEXT DEFAULT 'SHARED_50_50'"),
         ("p1_paid_amount", "REAL DEFAULT 0.0"),
         ("p2_paid_amount", "REAL DEFAULT 0.0"),
         ("manual_matched_tx_id", "INTEGER"),
@@ -67,7 +67,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
         
     curr_ym = reference_date.strftime("%Y-%m")
     
-    # 1. Fetch workspace profiles (e.g. Leopoldo & Nunzia)
+    # 1. Fetch workspace profiles (Primary = Leopoldo, Partner = Nunzia)
     profiles_rows = conn.execute("""
         SELECT id, name, is_primary 
         FROM profiles 
@@ -75,11 +75,11 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
         ORDER BY is_primary DESC, id ASC
     """, (workspace_id,)).fetchall()
     
-    p1 = dict(profiles_rows[0]) if len(profiles_rows) > 0 else {"id": 1, "name": "Partner 1"}
-    p2 = dict(profiles_rows[1]) if len(profiles_rows) > 1 else {"id": 2, "name": "Partner 2"}
+    p1 = dict(profiles_rows[0]) if len(profiles_rows) > 0 else {"id": 1, "name": "Leopoldo"}
+    p2 = dict(profiles_rows[1]) if len(profiles_rows) > 1 else {"id": 2, "name": "Nunzia"}
     
     p1_first = p1['name'].split()[0]
-    p2_first = p2['name'].split()[0]
+    p2_first = p2['name'].split()[0] if len(profiles_rows) > 1 else "Nunzia"
     
     # 2. Fetch all planned deadlines for this workspace
     query = "SELECT * FROM planned_deadlines WHERE workspace_id = ?"
@@ -111,10 +111,12 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
     for i in range(12):
         m_dt = reference_date.replace(day=1) + relativedelta(months=i)
         ym_key = m_dt.strftime("%Y-%m")
+        year_str = str(m_dt.year)
         timeline_months.append({
             "year_month": ym_key,
             "month_num": m_dt.month,
             "year": m_dt.year,
+            "year_short": year_str[-2:],
             "short_name": MESI_BREVI_IT[m_dt.month - 1],
             "full_name": f"{MESI_ESTESI_IT[m_dt.month - 1]} {m_dt.year}",
             "is_current": (ym_key == curr_ym),
@@ -133,7 +135,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
         due_day = int(item.get('due_day') or 15)
         pat = (item.get('match_pattern') or item.get('name') or '').strip()
         
-        # Determine actual paid amounts (auto-match + explicit database values)
+        # Determine actual paid amounts (auto-match within date window ± 45 days + explicit database values)
         matched_txs = []
         auto_p1_paid = 0.0
         auto_p2_paid = 0.0
@@ -141,17 +143,27 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
         if pat:
             for tx in all_recent_txs:
                 desc = f"{tx['description'] or ''} {tx['raw_description'] or ''}"
-                # Check regex/substring match and date window (within 60 days of due date)
+                tx_date_ym = tx['date'][:7]
+                # Match pattern AND check if transaction is within the deadline's target month or adjacent
                 if re.search(pat, desc, re.IGNORECASE):
-                    tx_amt = abs(float(tx['amount']))
-                    matched_txs.append(tx)
-                    if tx['profile_id'] == p1['id']:
-                        auto_p1_paid += tx_amt
-                    elif tx['profile_id'] == p2['id']:
-                        auto_p2_paid += tx_amt
-                    else:
-                        auto_p1_paid += tx_amt / 2
-                        auto_p2_paid += tx_amt / 2
+                    # Check date proximity to the deadline's due_ym
+                    try:
+                        due_d = datetime.strptime(f"{due_ym}-{due_day:02d}", "%Y-%m-%d").date()
+                        tx_d = datetime.strptime(tx['date'], "%Y-%m-%d").date()
+                        day_diff = abs((tx_d - due_d).days)
+                    except Exception:
+                        day_diff = 0 if tx_date_ym == due_ym else 999
+                        
+                    if day_diff <= 45:
+                        tx_amt = abs(float(tx['amount']))
+                        matched_txs.append(tx)
+                        # Distribute between partners based on tx profile
+                        if tx['profile_id'] == p1['id']:
+                            auto_p1_paid += tx_amt
+                        elif len(profiles_rows) > 1 and tx['profile_id'] == p2['id']:
+                            auto_p2_paid += tx_amt
+                        else:
+                            auto_p1_paid += tx_amt
                         
         manual_p1 = float(item.get('p1_paid_amount') or 0.0)
         manual_p2 = float(item.get('p2_paid_amount') or 0.0)
@@ -250,6 +262,8 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
         "completed_count": len([d for d in deadlines_list if d['is_paid']]),
         "p1": p1,
         "p2": p2,
+        "p1_first": p1_first,
+        "p2_first": p2_first,
         "catalog": DEADLINES_CATALOG
     }
 
@@ -274,9 +288,9 @@ def auto_seed_typical_family_deadlines(workspace_id, current_year=2026):
                 "match_pattern": "condomin|amministrat",
                 "recurrence": "ANNUAL",
                 "p1_paid_amount": 0.0,
-                "p2_paid_amount": 2000.0, # Nunzia ha già anticipato 2000€
+                "p2_paid_amount": 2000.0, # Quota Nunzia anticipata (€2.000)
                 "is_paid": 0,
-                "notes": "Spesa condivisa al 50%. Quota Nunzia anticipata (€2.000), quota Leopoldo da saldare."
+                "notes": "Spesa condivisa 50/50. Nunzia ha già anticipato 2.000 €, quota Leopoldo da saldare."
             },
             {
                 "name": "Bollo Auto ACI (Regionale)",
@@ -286,8 +300,8 @@ def auto_seed_typical_family_deadlines(workspace_id, current_year=2026):
                 "due_day": 30,
                 "match_pattern": "aci|bollo|automobile club",
                 "recurrence": "ANNUAL",
-                "p1_paid_amount": 0.0,
-                "p2_paid_amount": 265.20,
+                "p1_paid_amount": 265.20,
+                "p2_paid_amount": 0.0,
                 "is_paid": 1,
                 "notes": "Pagato con CBILL da internet banking."
             },

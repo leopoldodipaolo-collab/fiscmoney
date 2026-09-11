@@ -832,19 +832,20 @@
 {% endif %}
 
 <!-- ======================================================== -->
+<!-- ======================================================== -->
 <!-- 🗓️ SCADENZARIO & RADAR USCITE FUTURE (FAMILY BUDGET)    -->
 <!-- ======================================================== -->
 {% if deadlines_radar and deadlines_radar.deadlines|length > 0 %}
-<div class="card deadlines-radar-card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.88)); border: 1.5px solid rgba(234, 179, 8, 0.35); margin-bottom: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.45); overflow: hidden;">
+<div class="card deadlines-radar-card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.90)); border: 1.5px solid rgba(234, 179, 8, 0.35); margin-bottom: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.45); border-radius: 16px; padding: 18px 20px;">
     
-    <!-- Top Header & Summary Action Bar -->
+    <!-- Top Header: Title & Controls -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.35); display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.35); display: flex; align-items: center; justify-content: center; font-size: 1.45rem;">
                 🗓️
             </div>
             <div>
-                <h3 style="font-size: 1.08rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                     Radar Scadenze Future & Spese Famiglia
                     <span class="badge-tag" style="background: rgba(234, 179, 8, 0.18); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.4); font-size: 0.68rem; font-weight: 800;">
                         12 MESI
@@ -854,188 +855,216 @@
                     </span>
                 </h3>
                 <p style="color: var(--text-muted); font-size: 0.76rem; margin: 2px 0 0 0;">
-                    Monitoraggio uscite importanti previste (Condominio, Bollo, TARI, Assicurazioni) con ripartizione quote coppia
+                    Pianificazione impegni importanti (Condominio, Bollo, TARI, Assicurazioni) con monitoraggio quote di coppia
                 </p>
             </div>
         </div>
 
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <button type="button" onclick="openAddDeadlineModal()" class="btn btn-primary btn-sm" style="font-size: 0.74rem; font-weight: 800; padding: 5px 12px; background: linear-gradient(135deg, #eab308, #ca8a04); border: none; color: #000;">
+            <button type="button" onclick="openAddDeadlineModal()" class="btn btn-primary btn-sm" style="font-size: 0.76rem; font-weight: 800; padding: 6px 14px; background: linear-gradient(135deg, #eab308, #ca8a04); border: none; color: #000; border-radius: 8px; box-shadow: 0 2px 8px rgba(234, 179, 8, 0.3);">
                 ➕ Nuova Scadenza
             </button>
-            <a href="/cashflow" class="btn btn-secondary btn-sm" style="font-size: 0.74rem; padding: 5px 10px; border-color: rgba(234, 179, 8, 0.35); color: #fde047;">
+            <a href="/cashflow" class="btn btn-secondary btn-sm" style="font-size: 0.74rem; padding: 5px 12px; border-color: rgba(234, 179, 8, 0.35); color: #fde047; border-radius: 8px;">
                 Vedi nel Cash Flow →
             </a>
         </div>
     </div>
 
-    <!-- KPI Strip: Totale Atteso vs Già Coperto vs Rimanente -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 16px;">
-        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 12px;">
-            <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">🎯 Totale Scadenze Previste</span>
-            <div class="privacy-mask" style="font-size: 1.15rem; font-weight: 900; color: #fff; margin-top: 2px;">
+    <!-- Executive KPI Bar -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 16px;">
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 8px 12px;">
+            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">🎯 Totale Previsto</span>
+            <div class="privacy-mask" style="font-size: 1.1rem; font-weight: 900; color: #fff; margin-top: 2px;">
                 {{ deadlines_radar.total_expected|eur }}
             </div>
         </div>
-        <div style="background: rgba(16, 185, 129, 0.08); border: 1.5px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 10px 12px;">
-            <span style="font-size: 0.68rem; color: #34d399; font-weight: 700; text-transform: uppercase;">✓ Già Coperte / Anticipate</span>
-            <div class="privacy-mask" style="font-size: 1.15rem; font-weight: 900; color: #34d399; margin-top: 2px;">
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1.5px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 8px 12px;">
+            <span style="font-size: 0.65rem; color: #34d399; font-weight: 700; text-transform: uppercase;">✓ Già Coperto / Anticipato</span>
+            <div class="privacy-mask" style="font-size: 1.1rem; font-weight: 900; color: #34d399; margin-top: 2px;">
                 {{ deadlines_radar.total_paid|eur }}
-                <small style="font-size: 0.72rem; color: #a7f3d0; font-weight: 700;">({{ deadlines_radar.overall_progress }}%)</small>
+                <small style="font-size: 0.7rem; color: #a7f3d0; font-weight: 700;">({{ deadlines_radar.overall_progress }}%)</small>
             </div>
         </div>
-        <div style="background: rgba(239, 68, 68, 0.08); border: 1.5px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 10px 12px;">
-            <span style="font-size: 0.68rem; color: #f87171; font-weight: 700; text-transform: uppercase;">🚨 Da Completare / Mancanti</span>
-            <div class="privacy-mask" style="font-size: 1.15rem; font-weight: 900; color: #f87171; margin-top: 2px;">
+        <div style="background: rgba(239, 68, 68, 0.08); border: 1.5px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 8px 12px;">
+            <span style="font-size: 0.65rem; color: #f87171; font-weight: 700; text-transform: uppercase;">🚨 Da Completare / Mancanti</span>
+            <div class="privacy-mask" style="font-size: 1.1rem; font-weight: 900; color: #f87171; margin-top: 2px;">
                 {{ deadlines_radar.total_remaining|eur }}
             </div>
         </div>
     </div>
 
-    <!-- 12-Month Horizontal Timeline Ribbon (Mini-Calendario 12 Mesi) -->
-    <div style="margin-bottom: 16px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 0.76rem; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">
-                📅 Calendario Prossime Uscite (12 Mesi)
-            </span>
-            <small style="font-size: 0.7rem; color: var(--text-muted);">Tocca un mese per filtrare</small>
-        </div>
+    <!-- ======================================================== -->
+    <!-- 2-COLUMN SPLIT: CALENDARIO A SINISTRA | DETTAGLI A DESTRA -->
+    <!-- ======================================================== -->
+    <div class="radar-split-container" style="display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: start;">
         
-        <div class="deadlines-timeline-scroll" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; -webkit-overflow-scrolling: touch;">
-            {% for tm in deadlines_radar.timeline_months %}
-            <div class="timeline-month-box {% if tm.is_current %}current-month-box{% endif %} {% if tm.items_count > 0 %}has-deadlines{% endif %}" 
-                 style="flex: 0 0 78px; background: {% if tm.is_current %}rgba(234, 179, 8, 0.15){% elif tm.items_count > 0 %}rgba(255,255,255,0.04){% else %}rgba(255,255,255,0.015){% endif %}; border: 1px solid {% if tm.is_current %}rgba(234, 179, 8, 0.45){% elif tm.items_count > 0 %}rgba(59, 130, 246, 0.3){% else %}rgba(255,255,255,0.06){% endif %}; border-radius: 8px; padding: 6px 4px; text-align: center; cursor: pointer; transition: all 0.2s;"
-                 title="{{ tm.full_name }}: {{ tm.items_count }} scadenze ({% if tm.total_expected > 0 %}{{ tm.total_expected|eur }}{% else %}Nessuna{% endif %})">
-                <div style="font-size: 0.72rem; font-weight: 800; color: {% if tm.is_current %}#facc15{% else %}#fff{% endif %};">
-                    {{ tm.short_name }}
-                    <span style="font-size: 0.6rem; color: var(--text-muted);">{{ tm.year|string|slice(-2) }}</span>
-                </div>
-                
-                <div style="font-size: 0.68rem; font-weight: 800; margin-top: 3px; color: {% if tm.total_remaining > 0 %}#f87171{% elif tm.total_expected > 0 %}#34d399{% else %}#64748b{% endif %};">
-                    {% if tm.total_expected > 0 %}
-                        € {{ "%.0f"|format(tm.total_expected) }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </div>
-                
-                {% if tm.items_count > 0 %}
-                <div style="display: flex; justify-content: center; gap: 2px; margin-top: 3px;">
-                    {% for d in tm.deadlines %}
-                        <span style="width: 5px; height: 5px; border-radius: 50%; background: {{ d.status_color }}; display: inline-block;"></span>
-                    {% endfor %}
-                </div>
-                {% endif %}
+        <!-- LEFT COLUMN: CALENDARIO DEI MESI & TIMELINE -->
+        <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
+                <span style="font-size: 0.76rem; font-weight: 800; color: #facc15; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                    📅 Calendario Mesi
+                </span>
+                <button type="button" onclick="filterDeadlinesByMonth('ALL', this)" class="btn-radar-month-filter active" id="filterBtnAll" style="font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; cursor: pointer;">
+                    Tutti ({{ deadlines_radar.deadlines|length }})
+                </button>
             </div>
-            {% endfor %}
-        </div>
-    </div>
 
-    <!-- Deadlines List with Progress Bars & Partner Quotas -->
-    <div style="display: flex; flex-direction: column; gap: 10px;">
-        {% for dl in deadlines_radar.deadlines %}
-        <div class="deadline-item-card" style="background: rgba(255,255,255,0.02); border: 1.5px solid {% if dl.is_paid %}rgba(16, 185, 129, 0.3){% elif dl.is_partial %}rgba(234, 179, 8, 0.35){% else %}rgba(239, 68, 68, 0.35){% endif %}; border-radius: 12px; padding: 12px 16px; transition: all 0.2s;">
+            <!-- Month by Month Mini Cards List -->
+            <div style="display: flex; flex-direction: column; gap: 6px; max-height: 480px; overflow-y: auto; padding-right: 2px;" class="custom-scroll">
+                {% for tm in deadlines_radar.timeline_months %}
+                <div onclick="filterDeadlinesByMonth('{{ tm.year_month }}', this)" 
+                     class="radar-month-row {% if tm.is_current %}is-current{% endif %} {% if tm.items_count > 0 %}has-items{% endif %}"
+                     id="monthRow_{{ tm.year_month }}"
+                     data-ym="{{ tm.year_month }}"
+                     style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 8px; border: 1px solid {% if tm.is_current %}rgba(234, 179, 8, 0.45){% elif tm.items_count > 0 %}rgba(59, 130, 246, 0.25){% else %}rgba(255,255,255,0.04){% endif %}; background: {% if tm.is_current %}rgba(234, 179, 8, 0.12){% elif tm.items_count > 0 %}rgba(255,255,255,0.03){% else %}transparent{% endif %}; cursor: pointer; transition: all 0.2s;">
+                    
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.78rem; font-weight: 800; color: {% if tm.is_current %}#facc15{% else %}#fff{% endif %};">
+                            {{ tm.short_name }} '{{ tm.year_short }}
+                        </span>
+                        {% if tm.is_current %}
+                        <span style="font-size: 0.62rem; background: rgba(234, 179, 8, 0.2); color: #fde047; padding: 1px 5px; border-radius: 4px; font-weight: 700;">In Corso</span>
+                        {% endif %}
+                    </div>
+
+                    <div style="text-align: right; display: flex; align-items: center; gap: 6px;">
+                        {% if tm.items_count > 0 %}
+                        <span style="font-size: 0.75rem; font-weight: 900; color: {% if tm.total_remaining > 0 %}#f87171{% else %}#34d399{% endif %};">
+                            € {{ "%.0f"|format(tm.total_expected) }}
+                        </span>
+                        <span style="font-size: 0.65rem; background: rgba(255,255,255,0.08); color: #cbd5e1; padding: 1px 5px; border-radius: 10px; font-weight: 700;">
+                            {{ tm.items_count }}
+                        </span>
+                        {% else %}
+                        <span style="font-size: 0.7rem; color: #64748b;">-</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: DETTAGLIO SCADENZE & BARRE DI COPERTURA -->
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span id="deadlinesListHeaderTitle" style="font-size: 0.78rem; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">
+                    📋 Tutte le Scadenze Programmate
+                </span>
+                <span id="activeFilterBadge" style="font-size: 0.7rem; color: #94a3b8;">
+                    Mostrando {{ deadlines_radar.deadlines|length }} elementi
+                </span>
+            </div>
+
+            <div id="deadlinesListContainer" style="display: flex; flex-direction: column; gap: 10px;">
+                {% for dl in deadlines_radar.deadlines %}
+                <div class="deadline-item-card" data-ym="{{ dl.year_month }}" style="background: rgba(255,255,255,0.025); border: 1.5px solid {% if dl.is_paid %}rgba(16, 185, 129, 0.35){% elif dl.is_partial %}rgba(234, 179, 8, 0.4){% else %}rgba(239, 68, 68, 0.4){% endif %}; border-radius: 12px; padding: 12px 16px; transition: all 0.2s;">
+                    
+                    <!-- Main Info Header -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <span style="font-weight: 800; font-size: 0.98rem; color: #fff;">{{ dl.name }}</span>
+                                <span class="badge-tag" style="background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1); font-size: 0.65rem; padding: 1px 6px;">
+                                    {{ dl.category }}
+                                </span>
+                                <span class="badge-tag" style="background: {{ dl.status_color }}22; color: {{ dl.status_color }}; border: 1px solid {{ dl.status_color }}55; font-size: 0.68rem; font-weight: 800; padding: 1px 6px;">
+                                    {{ dl.status_label }}
+                                </span>
+                            </div>
+                            <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <span>📅 Scadenza: <strong style="color: #fff;">{{ dl.due_date_str }}</strong></span>
+                                <span>🔄 <strong style="color: #cbd5e1;">{{ dl.recurrence }}</strong></span>
+                                {% if dl.notes %}
+                                <span style="color: #93c5fd;">💬 {{ dl.notes }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div style="text-align: right;">
+                            <div class="privacy-mask" style="font-size: 1.2rem; font-weight: 900; color: #fff;">
+                                {{ dl.expected_amount|eur }}
+                            </div>
+                            <div style="font-size: 0.72rem; color: {% if dl.remaining_to_pay > 0 %}#f87171{% else %}#34d399{% endif %}; font-weight: 800;">
+                                {% if dl.remaining_to_pay > 0 %}
+                                    Mancano {{ dl.remaining_to_pay|eur }}
+                                {% else %}
+                                    Saldato al 100% ✓
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visual Progress Bar (Partner 1 vs Partner 2 vs Missing) -->
+                    <div style="margin-bottom: 8px;">
+                        <div style="width: 100%; height: 9px; background: rgba(255,255,255,0.06); border-radius: 6px; overflow: hidden; display: flex;">
+                            {% if dl.expected_amount > 0 %}
+                            <div style="width: {{ (dl.p1_paid / dl.expected_amount * 100)|round(1) }}%; background: #38bdf8;" title="{{ dl.p1_name }}: {{ dl.p1_paid|eur }}"></div>
+                            <div style="width: {{ (dl.p2_paid / dl.expected_amount * 100)|round(1) }}%; background: #ec4899;" title="{{ dl.p2_name }}: {{ dl.p2_paid|eur }}"></div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Bottom Partner Details & Action Buttons -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.72rem;">
+                        <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                            <!-- Partner 1 Status (Leopoldo) -->
+                            <span style="color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
+                                <span style="width: 7px; height: 7px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
+                                <strong style="color: #38bdf8;">{{ dl.p1_name }}:</strong> 
+                                <span class="privacy-mask">{{ dl.p1_paid|eur }}</span>
+                                {% if dl.p1_missing > 0 %}
+                                    <span style="color: #f87171; font-weight: 700;">(Mancano {{ dl.p1_missing|eur }})</span>
+                                {% else %}
+                                    <span style="color: #34d399; font-weight: 700;">✓ Quota OK</span>
+                                {% endif %}
+                            </span>
+
+                            <!-- Partner 2 Status (Nunzia) -->
+                            <span style="color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
+                                <span style="width: 7px; height: 7px; border-radius: 50%; background: #ec4899; display: inline-block;"></span>
+                                <strong style="color: #ec4899;">{{ dl.p2_name }}:</strong> 
+                                <span class="privacy-mask">{{ dl.p2_paid|eur }}</span>
+                                {% if dl.p2_missing > 0 %}
+                                    <span style="color: #f87171; font-weight: 700;">(Mancano {{ dl.p2_missing|eur }})</span>
+                                {% else %}
+                                    <span style="color: #34d399; font-weight: 700;">✓ Quota OK</span>
+                                {% endif %}
+                            </span>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <button type="button" onclick="openEditQuotaModal({{ dl.id }}, '{{ dl.name.replace('\'', '\\\'') }}', {{ dl.expected_amount }}, {{ dl.p1_paid }}, {{ dl.p2_paid }}, '{{ dl.p1_name }}', '{{ dl.p2_name }}')" 
+                                    class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 3px 8px; border-color: rgba(255,255,255,0.15);">
+                                ✏️ Modifica Quote
+                            </button>
+
+                            <form method="POST" action="/deadlines/toggle-paid/{{ dl.id }}" style="margin: 0;">
+                                <input type="hidden" name="redirect_to" value="dashboard">
+                                <button type="submit" class="btn btn-sm" style="font-size: 0.68rem; padding: 3px 8px; background: {% if dl.is_paid %}rgba(255,255,255,0.06){% else %}rgba(16, 185, 129, 0.2){% endif %}; color: {% if dl.is_paid %}#94a3b8{% else %}#34d399{% endif %}; border: 1px solid {% if dl.is_paid %}rgba(255,255,255,0.1){% else %}rgba(16, 185, 129, 0.4){% endif %};">
+                                    {% if dl.is_paid %}Segna come Da Saldare{% else %}✓ Salda Tutto{% endif %}
+                                </button>
+                            </form>
+
+                            <form method="POST" action="/deadlines/delete/{{ dl.id }}" onsubmit="return confirm('Vuoi davvero rimuovere questa scadenza?');" style="margin: 0;">
+                                <input type="hidden" name="redirect_to" value="dashboard">
+                                <button type="submit" class="btn btn-sm" style="background: transparent; border: none; color: #94a3b8; font-size: 0.8rem; cursor: pointer; padding: 2px 4px;" title="Elimina Scadenza">
+                                    🗑️
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+                {% endfor %}
+            </div>
             
-            <!-- Main Info Row -->
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-                <div>
-                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <span style="font-weight: 800; font-size: 0.95rem; color: #fff;">{{ dl.name }}</span>
-                        <span class="badge-tag" style="background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1); font-size: 0.65rem; padding: 1px 6px;">
-                            {{ dl.category }}
-                        </span>
-                        <span class="badge-tag" style="background: {{ dl.status_color }}22; color: {{ dl.status_color }}; border: 1px solid {{ dl.status_color }}55; font-size: 0.68rem; font-weight: 800; padding: 1px 6px;">
-                            {{ dl.status_label }}
-                        </span>
-                    </div>
-                    <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                        <span>📅 Scadenza: <strong style="color: #fff;">{{ dl.due_date_str }}</strong></span>
-                        <span>🔄 Frequenza: <strong style="color: #fff;">{{ dl.recurrence }}</strong></span>
-                        {% if dl.notes %}
-                        <span style="color: #93c5fd;">💬 {{ dl.notes }}</span>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div style="text-align: right;">
-                    <div class="privacy-mask" style="font-size: 1.15rem; font-weight: 900; color: #fff;">
-                        {{ dl.expected_amount|eur }}
-                    </div>
-                    <div style="font-size: 0.7rem; color: {% if dl.remaining_to_pay > 0 %}#f87171{% else %}#34d399{% endif %}; font-weight: 700;">
-                        {% if dl.remaining_to_pay > 0 %}
-                            Mancano {{ dl.remaining_to_pay|eur }}
-                        {% else %}
-                            Saldato al 100%
-                        {% endif %}
-                    </div>
-                </div>
+            <div id="deadlinesEmptyMsg" style="display: none; text-align: center; padding: 40px 10px; color: var(--text-muted); font-size: 0.85rem; background: rgba(255,255,255,0.015); border-radius: 12px; border: 1px dashed rgba(255,255,255,0.08);">
+                <span style="font-size: 1.8rem; display: block; margin-bottom: 6px;">🍃</span>
+                Nessuna spesa programmata per il mese selezionato.
             </div>
-
-            <!-- Visual Progress Bar (Partner 1 vs Partner 2 vs Missing) -->
-            <div style="margin-bottom: 8px;">
-                <div style="width: 100%; height: 9px; background: rgba(255,255,255,0.06); border-radius: 6px; overflow: hidden; display: flex;">
-                    <!-- Partner 1 Quota bar (Blue) -->
-                    {% if dl.expected_amount > 0 %}
-                    <div style="width: {{ (dl.p1_paid / dl.expected_amount * 100)|round(1) }}%; background: #38bdf8;" title="{{ dl.p1_name }}: {{ dl.p1_paid|eur }}"></div>
-                    <!-- Partner 2 Quota bar (Pink) -->
-                    <div style="width: {{ (dl.p2_paid / dl.expected_amount * 100)|round(1) }}%; background: #ec4899;" title="{{ dl.p2_name }}: {{ dl.p2_paid|eur }}"></div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Bottom Partner Details & Action Buttons -->
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.72rem;">
-                <div style="display: flex; gap: 14px; flex-wrap: wrap;">
-                    <!-- Partner 1 Status -->
-                    <span style="color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
-                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
-                        <strong style="color: #38bdf8;">{{ dl.p1_name }}:</strong> 
-                        <span class="privacy-mask">{{ dl.p1_paid|eur }}</span>
-                        {% if dl.p1_missing > 0 %}
-                            <span style="color: #f87171; font-weight: 700;">(Mancano {{ dl.p1_missing|eur }})</span>
-                        {% else %}
-                            <span style="color: #34d399; font-weight: 700;">✓ Quota OK</span>
-                        {% endif %}
-                    </span>
-
-                    <!-- Partner 2 Status -->
-                    <span style="color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
-                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #ec4899; display: inline-block;"></span>
-                        <strong style="color: #ec4899;">{{ dl.p2_name }}:</strong> 
-                        <span class="privacy-mask">{{ dl.p2_paid|eur }}</span>
-                        {% if dl.p2_missing > 0 %}
-                            <span style="color: #f87171; font-weight: 700;">(Mancano {{ dl.p2_missing|eur }})</span>
-                        {% else %}
-                            <span style="color: #34d399; font-weight: 700;">✓ Quota OK</span>
-                        {% endif %}
-                    </span>
-                </div>
-
-                <!-- Quick Action Buttons: Update Quotas / Mark Paid / Delete -->
-                <div style="display: flex; align-items: center; gap: 6px;">
-                    <button type="button" onclick="openEditQuotaModal({{ dl.id }}, '{{ dl.name.replace('\'', '\\\'') }}', {{ dl.expected_amount }}, {{ dl.p1_paid }}, {{ dl.p2_paid }}, '{{ dl.p1_name }}', '{{ dl.p2_name }}')" 
-                            class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 3px 8px; border-color: rgba(255,255,255,0.15);">
-                        ✏️ Modifica Quote
-                    </button>
-
-                    <form method="POST" action="/deadlines/toggle-paid/{{ dl.id }}" style="margin: 0;">
-                        <input type="hidden" name="redirect_to" value="dashboard">
-                        <button type="submit" class="btn btn-sm" style="font-size: 0.68rem; padding: 3px 8px; background: {% if dl.is_paid %}rgba(255,255,255,0.06){% else %}rgba(16, 185, 129, 0.2){% endif %}; color: {% if dl.is_paid %}#94a3b8{% else %}#34d399{% endif %}; border: 1px solid {% if dl.is_paid %}rgba(255,255,255,0.1){% else %}rgba(16, 185, 129, 0.4){% endif %};">
-                            {% if dl.is_paid %}Segna come Da Saldare{% else %}✓ Salda Tutto{% endif %}
-                        </button>
-                    </form>
-
-                    <form method="POST" action="/deadlines/delete/{{ dl.id }}" onsubmit="return confirm('Vuoi davvero rimuovere questa scadenza?');" style="margin: 0;">
-                        <input type="hidden" name="redirect_to" value="dashboard">
-                        <button type="submit" class="btn btn-sm" style="background: transparent; border: none; color: #94a3b8; font-size: 0.8rem; cursor: pointer; padding: 2px 4px;" title="Elimina Scadenza">
-                            🗑️
-                        </button>
-                    </form>
-                </div>
-            </div>
-
         </div>
-        {% endfor %}
+
     </div>
 
 </div>
@@ -1100,11 +1129,11 @@
                 </span>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div>
-                        <label style="font-size: 0.7rem; color: #38bdf8; font-weight: 700; display: block; margin-bottom: 2px;">{{ deadlines_radar.p1.name.split()[0] if deadlines_radar else 'Partner 1' }} (€)</label>
+                        <label style="font-size: 0.7rem; color: #38bdf8; font-weight: 700; display: block; margin-bottom: 2px;">{{ deadlines_radar.p1_first if deadlines_radar else 'Partner 1' }} (€)</label>
                         <input type="number" step="0.01" name="p1_paid_amount" value="0.00" class="form-control" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; padding: 6px 10px; color: #fff;">
                     </div>
                     <div>
-                        <label style="font-size: 0.7rem; color: #ec4899; font-weight: 700; display: block; margin-bottom: 2px;">{{ deadlines_radar.p2.name.split()[0] if deadlines_radar else 'Partner 2' }} (€)</label>
+                        <label style="font-size: 0.7rem; color: #ec4899; font-weight: 700; display: block; margin-bottom: 2px;">{{ deadlines_radar.p2_first if deadlines_radar else 'Partner 2' }} (€)</label>
                         <input type="number" step="0.01" name="p2_paid_amount" value="0.00" class="form-control" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid rgba(236, 72, 153, 0.3); border-radius: 6px; padding: 6px 10px; color: #fff;">
                     </div>
                 </div>
@@ -2311,6 +2340,61 @@ function closeEditQuotaModal() {
     }
 }
 
+function filterDeadlinesByMonth(targetYm, btnElement) {
+    // 1. Update active styling on month buttons
+    document.querySelectorAll('.radar-month-row').forEach(row => {
+        row.style.background = row.classList.contains('is-current') ? 'rgba(234, 179, 8, 0.12)' : (row.classList.contains('has-items') ? 'rgba(255,255,255,0.03)' : 'transparent');
+        row.style.borderColor = row.classList.contains('is-current') ? 'rgba(234, 179, 8, 0.45)' : (row.classList.contains('has-items') ? 'rgba(59, 130, 246, 0.25)' : 'rgba(255,255,255,0.04)');
+    });
+    const filterAllBtn = document.getElementById('filterBtnAll');
+    if (filterAllBtn) {
+        if (targetYm === 'ALL') {
+            filterAllBtn.style.background = '#eab308';
+            filterAllBtn.style.color = '#000';
+            filterAllBtn.style.fontWeight = '800';
+        } else {
+            filterAllBtn.style.background = 'rgba(255,255,255,0.08)';
+            filterAllBtn.style.color = '#cbd5e1';
+            filterAllBtn.style.fontWeight = '600';
+        }
+    }
+
+    if (btnElement && targetYm !== 'ALL') {
+        btnElement.style.background = 'rgba(234, 179, 8, 0.25)';
+        btnElement.style.borderColor = '#eab308';
+    }
+
+    // 2. Filter deadline cards on the right
+    const cards = document.querySelectorAll('.deadline-item-card');
+    let visibleCount = 0;
+    cards.forEach(card => {
+        const cardYm = card.getAttribute('data-ym');
+        if (targetYm === 'ALL' || cardYm === targetYm) {
+            card.style.display = 'block';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    // 3. Update header label
+    const headerTitle = document.getElementById('deadlinesListHeaderTitle');
+    const badge = document.getElementById('activeFilterBadge');
+    const emptyMsg = document.getElementById('deadlinesEmptyMsg');
+
+    if (targetYm === 'ALL') {
+        if (headerTitle) headerTitle.innerText = '📋 Tutte le Scadenze Programmate';
+        if (badge) badge.innerText = `Mostrando ${visibleCount} elementi`;
+    } else {
+        if (headerTitle) headerTitle.innerText = `📅 Scadenze Mese ${targetYm}`;
+        if (badge) badge.innerText = `${visibleCount} spese trovate`;
+    }
+
+    if (emptyMsg) {
+        emptyMsg.style.display = (visibleCount === 0) ? 'block' : 'none';
+    }
+}
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
         initDashboardTrendChart();
@@ -2395,6 +2479,29 @@ if (document.readyState === 'loading') {
     }
     .assistant-kpi-grid > div:last-child {
         grid-column: span 2 !important;
+    }
+}
+
+/* Radar Scadenze Responsiveness & Polish */
+.btn-radar-month-filter {
+    background: #eab308;
+    color: #000;
+    border: none;
+    font-weight: 800;
+    transition: all 0.2s ease;
+}
+.btn-radar-month-filter:hover {
+    transform: translateY(-1px);
+}
+.radar-month-row:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(234, 179, 8, 0.4) !important;
+    transform: translateX(2px);
+}
+@media (max-width: 860px) {
+    .radar-split-container {
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
     }
 }
 </style>
