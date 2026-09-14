@@ -1040,7 +1040,9 @@
                             <span style="font-size: 1.1rem; flex-shrink: 0;">{% if dl.is_paid %}🟢{% elif dl.is_partial %}🟡{% elif dl.is_past %}⚪{% else %}⏳{% endif %}</span>
                             <div style="overflow: hidden;">
                                 <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                    <strong style="font-size: 0.88rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;">{{ dl.name }}</strong>
+                                    <strong style="font-size: 0.92rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;">
+                                        🏷️ {{ dl.display_title }}
+                                    </strong>
                                     <span class="badge-tag" style="background: rgba(255,255,255,0.05); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.08); font-size: 0.62rem; padding: 1px 5px;">
                                         {{ dl.category }}
                                     </span>
@@ -1052,6 +1054,10 @@
                                     <span>📅 {{ dl.due_date_str }}</span>
                                     <span>•</span>
                                     <span>🔄 {{ dl.recurrence }}</span>
+                                    {% if dl.raw_detail %}
+                                    <span>•</span>
+                                    <span style="color: #64748b; font-size: 0.66rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ dl.name }}">{{ dl.raw_detail }}</span>
+                                    {% endif %}
                                     {% if dl.is_past %}
                                     <span>•</span>
                                     <span style="color: #94a3b8; font-weight: 600;">Storico</span>
@@ -2601,7 +2607,8 @@ function filterDeadlinesByMonth(targetYm, btnElement) {
                         <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 6px; padding: 5px 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem;">
                             <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
                                 <span>📌</span>
-                                <span style="color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${it.name}</span>
+                                <span style="color: #fff; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${it.name}</span>
+                                ${it.tag ? `<span class="badge-tag" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.6rem; padding: 0 4px; border-radius: 4px;">${it.tag}</span>` : ''}
                                 <span style="color: var(--text-muted); font-size: 0.65rem;">(g.${it.due_day})</span>
                             </div>
                             <strong style="color: #38bdf8; white-space: nowrap; margin-left: 6px;">€ ${Number(it.amount).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong>

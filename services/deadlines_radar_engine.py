@@ -235,8 +235,17 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
                 if _is_fc_in_month(fc_item, m_idx):
                     exp_amt = float(fc_item.get('expected_amount') or 0.0)
                     month_fc_total += exp_amt
+                    raw_fc_name = fc_item.get('name') or ''
+                    fc_pat = (fc_item.get('match_pattern') or '').strip().title()
+                    # Se il nome è un pattern generico come DISPOSIZIONE o BONIFICO ma il pattern è es. Mutuo, usa il pattern
+                    if raw_fc_name.upper() in ('DISPOSIZIONE', 'BONIFICO', 'PAGAMENTO') and fc_pat:
+                        clean_fc_name = fc_pat
+                    else:
+                        clean_fc_name = raw_fc_name
+                        
                     month_fc_items.append({
-                        "name": fc_item.get('name'),
+                        "name": clean_fc_name,
+                        "tag": fc_pat if fc_pat and fc_pat.lower() not in clean_fc_name.lower() else None,
                         "category": fc_item.get('category'),
                         "amount": exp_amt,
                         "due_day": fc_item.get('due_day', 1)
@@ -371,10 +380,27 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
                 status_code = "PENDING"
                 status_label = "Da Saldare 🚨"
                 status_color = "#f87171"
+                
+        # Estrai un'etichetta pulita (Tag / Nome Breve) anziché la lunga stringa di transazione bancaria
+        raw_name = item.get('name') or ''
+        category_name = item.get('category') or ''
+        clean_tag = (pat or '').strip().lstrip('#')
+        
+        # Se raw_name contiene il prefisso "Categoria - ", rimuovilo
+        short_title = raw_name
+        if category_name and short_title.lower().startswith(f"{category_name.lower()} - "):
+            short_title = short_title[len(category_name) + 3:].strip()
             
+        # Se abbiamo un match_pattern / tag riconosciuto (es. Mutuo, Tari, Bollo, Revisione, Assicurazione, Condominio),
+        # usalo come titolo principale ben visibile
+        display_title = clean_tag.title() if clean_tag else short_title
+        
         formatted_item = {
             "id": item['id'],
             "name": item['name'],
+            "display_title": display_title,
+            "display_tag": clean_tag.upper() if clean_tag else None,
+            "raw_detail": short_title if short_title != display_title else None,
             "category": item['category'],
             "expected_amount": expected,
             "year_month": due_ym,
