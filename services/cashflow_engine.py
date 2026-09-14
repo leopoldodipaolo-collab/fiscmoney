@@ -681,7 +681,7 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
             
         planned_deadlines_list.append(item)
 
-    # 6.6. Extract Variable Transactions (all expense transactions not matched to fixed costs or deadlines)
+    # 6.6. Extract Variable Transactions & Separate Investments / PAC
     all_matched_ids = set()
     for fi in fixed_items_due:
         for tid in fi.get('matched_tx_ids', []):
@@ -691,6 +691,8 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
             all_matched_ids.add(tid)
             
     variable_tx_list = []
+    investment_tx_list = []
+    
     for tx in tx_rows:
         if tx['is_transfer']:
             continue
@@ -703,7 +705,8 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
                 category=tx['category'] or '',
                 amount=abs(tx['amount'])
             )
-            variable_tx_list.append({
+            
+            tx_data_item = {
                 'id': tx['id'],
                 'date': tx['date'],
                 'amount': abs(tx['amount']),
@@ -711,17 +714,32 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
                 'description': tx['description'] or 'Spesa',
                 'display_title': vt_title,
                 'clean_tag': vt_tag
-            })
+            }
             
-    # Sort variable transactions by date descending
+            # Check if this transaction is an investment (e.g. Directa, ETF, PAC, broker)
+            is_inv = (
+                (vt_tag in ['DIRECTA', 'PAC', 'ETF', 'INVESTIMENTI', 'INVESTIMENTI_PAC'])
+                or ('directa' in (tx['description'] or '').lower())
+                or ('investiment' in (tx['category'] or '').lower())
+                or ('investiment' in tx_tags_raw.lower())
+            )
+            
+            if is_inv:
+                investment_tx_list.append(tx_data_item)
+            else:
+                variable_tx_list.append(tx_data_item)
+            
+    # Sort by date descending
     variable_tx_list.sort(key=lambda x: x['date'], reverse=True)
+    investment_tx_list.sort(key=lambda x: x['date'], reverse=True)
 
-    # Variable Expenses = sum of variable tx list
+    # Variable Expenses & Investments totals
     variable_expenses = sum(t['amount'] for t in variable_tx_list)
+    total_investments_month = sum(t['amount'] for t in investment_tx_list)
 
-    # 7. MONTHLY BUDGET & DISPOSABLE INCOME (Calibrato su stipendio, costi fissi e scadenze del mese!)
+    # 7. MONTHLY BUDGET & DISPOSABLE INCOME (Calibrato su stipendio, costi fissi, scadenze e investimenti del mese!)
     monthly_net_margin = max(0.0, expected_month_income - total_fixed_expenses_expected)
-    monthly_safe_to_spend = max(0.0, monthly_net_margin - variable_expenses - total_deadlines_pending)
+    monthly_safe_to_spend = max(0.0, monthly_net_margin - variable_expenses - total_deadlines_pending - total_investments_month)
     daily_safe_budget = monthly_safe_to_spend / days_remaining if days_remaining > 0 else 0.0
     burn_rate_daily = actual_month_expenses / current_day if current_day > 0 else 0.0
 
@@ -1126,6 +1144,8 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         "verdict_desc": verdict_desc,
         "variable_expenses": variable_expenses,
         "variable_transactions": variable_tx_list,
+        "total_investments_month": total_investments_month,
+        "investment_transactions": investment_tx_list,
         "fixed_items": fixed_items_due,
         "fixed_items_skipped": fixed_items_skipped,
         "planned_deadlines": planned_deadlines_list,

@@ -399,6 +399,46 @@
             </div>
             {% endif %}
 
+            <!-- Investments / PAC Row (Dedicated Section) -->
+            {% if data.total_investments_month > 0 %}
+            <div onclick="toggleCascade('cascadeInvestments', 'arrowInv')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 6px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); transition: all 0.2s ease;" title="Clicca per aprire i dettagli degli investimenti e PAC del mese">
+                <div style="display: flex; align-items: center; gap: 6px; color: #38bdf8;">
+                    <span id="arrowInv" style="font-size: 0.7rem; transition: transform 0.2s ease;">▶</span>
+                    <span style="font-weight: 600;">📈 Investimenti & PAC</span>
+                </div>
+                <strong style="color: #38bdf8;">{{ (-data.total_investments_month)|eur }}</strong>
+            </div>
+
+            <!-- Cascade Drawer: Investments Breakdown -->
+            <div id="cascadeInvestments" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 8px; max-height: 180px; overflow-y: auto;">
+                <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase;">
+                    Investimenti / PAC del Mese ({{ data.investment_transactions|length }} voci):
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    {% for inv in data.investment_transactions %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="overflow: hidden; padding-right: 8px; flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 5px; flex-wrap: nowrap;">
+                                <div style="color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 175px;" title="{{ inv.description }}">
+                                    {{ inv.display_title or inv.description }}
+                                </div>
+                                {% if inv.clean_tag %}
+                                <span class="badge-tag" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 0.6rem; padding: 0 4px; font-weight: 700; border-radius: 4px; flex-shrink: 0;">
+                                    #{{ inv.clean_tag }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">📅 {{ inv.date }} • {{ inv.category }}</div>
+                        </div>
+                        <div style="text-align: right; white-space: nowrap;">
+                            <strong style="color: #38bdf8;">{{ (-inv.amount)|eur }}</strong>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Variable Expenses Row (Clickable Trigger) -->
             <div onclick="toggleCascade('cascadeVariableExpenses', 'arrowVar')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 8px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); transition: all 0.2s ease;" title="Clicca per aprire la lista delle spese variabili del mese">
                 <div style="display: flex; align-items: center; gap: 6px; color: #f87171;">
@@ -542,16 +582,16 @@
 
             <!-- Planned Deadlines Row (if any) -->
             {% if data.total_deadlines_paid > 0 %}
-            <div onclick="toggleCascade('cascadeDeadlines', 'arrowDl')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 6px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); transition: all 0.2s ease;" title="Clicca per aprire le scadenze saldate nel mese">
+            <div onclick="toggleCascade('cascadeDeadlinesPast', 'arrowDlPast')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 6px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); transition: all 0.2s ease;" title="Clicca per aprire le scadenze saldate nel mese">
                 <div style="display: flex; align-items: center; gap: 6px; color: #c084fc;">
-                    <span id="arrowDl" style="font-size: 0.7rem; transition: transform 0.2s ease;">▶</span>
+                    <span id="arrowDlPast" style="font-size: 0.7rem; transition: transform 0.2s ease;">▶</span>
                     <span style="font-weight: 600;">📅 Scadenze Straordinarie Saldate</span>
                 </div>
                 <strong style="color: #c084fc;">{{ (-data.total_deadlines_paid)|eur }}</strong>
             </div>
 
             <!-- Cascade Drawer: Planned Deadlines Breakdown -->
-            <div id="cascadeDeadlines" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 8px; max-height: 180px; overflow-y: auto;">
+            <div id="cascadeDeadlinesPast" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 8px; max-height: 180px; overflow-y: auto;">
                 <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase;">
                     Scadenze del Mese ({{ data.planned_deadlines|length }} voci):
                 </div>
@@ -581,6 +621,46 @@
                             <strong style="color: var(--accent-success);">
                                 {{ (-(dl.actual_amount if dl.is_paid else dl.expected_amount))|eur }}
                             </strong>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Investments / PAC Row (Historical Months) -->
+            {% if data.total_investments_month > 0 %}
+            <div onclick="toggleCascade('cascadeInvestmentsPast', 'arrowInvPast')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 6px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); transition: all 0.2s ease;" title="Clicca per aprire i dettagli degli investimenti e PAC">
+                <div style="display: flex; align-items: center; gap: 6px; color: #38bdf8;">
+                    <span id="arrowInvPast" style="font-size: 0.7rem; transition: transform 0.2s ease;">▶</span>
+                    <span style="font-weight: 600;">📈 Investimenti & PAC Effettuati</span>
+                </div>
+                <strong style="color: #38bdf8;">{{ (-data.total_investments_month)|eur }}</strong>
+            </div>
+
+            <!-- Cascade Drawer: Investments Breakdown -->
+            <div id="cascadeInvestmentsPast" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 8px; max-height: 180px; overflow-y: auto;">
+                <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase;">
+                    Investimenti / PAC del Mese ({{ data.investment_transactions|length }} voci):
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    {% for inv in data.investment_transactions %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="overflow: hidden; padding-right: 8px; flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 5px; flex-wrap: nowrap;">
+                                <div style="color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 175px;" title="{{ inv.description }}">
+                                    {{ inv.display_title or inv.description }}
+                                </div>
+                                {% if inv.clean_tag %}
+                                <span class="badge-tag" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-size: 0.6rem; padding: 0 4px; font-weight: 700; border-radius: 4px; flex-shrink: 0;">
+                                    #{{ inv.clean_tag }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">📅 {{ inv.date }} • {{ inv.category }}</div>
+                        </div>
+                        <div style="text-align: right; white-space: nowrap;">
+                            <strong style="color: #38bdf8;">{{ (-inv.amount)|eur }}</strong>
                         </div>
                     </div>
                     {% endfor %}
@@ -659,7 +739,7 @@
             <span class="kpi-label">💳 Spese Sostenute Finora</span>
             <div class="kpi-value amount-expense">{{ (-data.actual_month_expenses)|eur }}</div>
             <small style="color: var(--text-muted); font-size: 0.7rem;">
-                Fisse: {{ data.total_fixed_expenses_paid|eur }} • Var: {{ data.variable_expenses|eur }}
+                Fisse: {{ data.total_fixed_expenses_paid|eur }}{% if data.total_investments_month > 0 %} • Inv: {{ data.total_investments_month|eur }}{% endif %} • Var: {{ data.variable_expenses|eur }}
             </small>
         </div>
 
