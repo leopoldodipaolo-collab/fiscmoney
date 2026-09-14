@@ -46,8 +46,14 @@ def format_clean_tag_display(raw_name, tags="", match_pattern="", category="", a
     def has_kw(kw, text):
         return bool(re.search(r'\b' + re.escape(kw) + r'\b', text, re.IGNORECASE))
 
+    # Commissioni bancarie hanno priorità se importo ridotto o parola chiave commissioni
+    _is_commission = any(has_kw(k, combined_hints) for k in ['commissioni', 'comm.', 'commissione']) or (abs(amount) <= 1.5 and any(has_kw(k, combined_hints) for k in ['cbill', 'pagopa', 'bonifico', 'prepaga', 'directa']))
+    
     # Riconoscimento intelligente dei casi noti (Directa/Investimenti hanno priorità su euristica importo mutuo)
-    if any(has_kw(k, combined_hints) for k in ['directa', 'investimenti_pac', 'pac', 'etf']):
+    if _is_commission:
+        display_title = "Canoni e Commissioni Bancarie"
+        clean_tag = "CANONI_COMMISSIONI"
+    elif any(has_kw(k, combined_hints) for k in ['directa', 'investimenti_pac', 'pac', 'etf']) and abs(amount) > 1.5:
         display_title = "Investimento PAC (Directa)"
         clean_tag = "DIRECTA"
     elif any(has_kw(k, combined_hints) for k in ['mutuo', 'prima casa']) or _is_mortgage_by_amt:
@@ -533,6 +539,9 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         matched_txs = []
         for tx in tx_rows:
             desc = (tx['description'] or '') + " " + (tx['raw_description'] or '')
+            # Evita che investimenti Directa o PAC vengano agganciati erroneamente a costi fissi (es. Mutuo)
+            if 'directa' in desc.lower() and 'directa' not in pat.lower():
+                continue
             if re.search(pat, desc, re.IGNORECASE):
                 if (fc['is_income'] and tx['amount'] > 0) or (not fc['is_income'] and tx['amount'] < 0):
                     matched_txs.append(tx)
