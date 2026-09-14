@@ -490,6 +490,23 @@ def dashboard():
         if row and row['total']:
             total_balance = row['total']
             
+    # Calculate Total Invested and Net Worth (Liquid Balance + Investments)
+    total_invested = 0.0
+    if ws_id:
+        try:
+            if not is_admin and sharing_mode in ['ADMIN_ONLY', 'HYBRID'] and my_profile:
+                inv_row = conn.execute("SELECT SUM(total_invested) as total FROM investments WHERE workspace_id = ? AND (profile_id = ? OR profile_id IS NULL)", (ws_id, my_profile['id'])).fetchone()
+            elif active_filter == 'all':
+                inv_row = conn.execute("SELECT SUM(total_invested) as total FROM investments WHERE workspace_id = ?", (ws_id,)).fetchone()
+            else:
+                inv_row = conn.execute("SELECT SUM(total_invested) as total FROM investments WHERE workspace_id = ? AND (profile_id = ? OR profile_id IS NULL)", (ws_id, selected_profile['id'])).fetchone()
+            if inv_row and inv_row['total']:
+                total_invested = round(float(inv_row['total']), 2)
+        except Exception:
+            total_invested = 0.0
+
+    net_worth = round(total_balance + total_invested, 2)
+
     # Calculate Balance per profile for family breakdown
     member_balances = []
     if ws_id:
@@ -500,6 +517,19 @@ def dashboard():
             ).fetchone()
             p_total = p_bal_row['total'] if p_bal_row and p_bal_row['total'] else 0.0
             p_acc_count = p_bal_row['acc_count'] if p_bal_row else 0
+            
+            # Investments per profile
+            p_inv_val = 0.0
+            try:
+                p_inv_row = conn.execute(
+                    "SELECT SUM(total_invested) as total FROM investments WHERE workspace_id = ? AND profile_id = ?",
+                    (ws_id, p['id'])
+                ).fetchone()
+                if p_inv_row and p_inv_row['total']:
+                    p_inv_val = round(float(p_inv_row['total']), 2)
+            except Exception:
+                p_inv_val = 0.0
+
             member_balances.append({
                 'id': p['id'],
                 'name': p['name'],
@@ -508,6 +538,8 @@ def dashboard():
                 'invited_email': p['invited_email'] if 'invited_email' in p.keys() else None,
                 'linked_user_id': p['linked_user_id'] if 'linked_user_id' in p.keys() else None,
                 'total_balance': p_total,
+                'total_invested': p_inv_val,
+                'net_worth': round(p_total + p_inv_val, 2),
                 'accounts_count': p_acc_count
             })
             
@@ -692,6 +724,8 @@ def dashboard():
         active_filter=active_filter,
         selected_profile=selected_profile,
         total_balance=total_balance,
+        total_invested=total_invested,
+        net_worth=net_worth,
         member_balances=member_balances,
         bank_groups=bank_groups_list,
         cashflow=cashflow_summary,

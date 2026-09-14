@@ -114,7 +114,12 @@
             
             <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
                 <div style="text-align: right;">
-                    <div class="privacy-mask" style="font-weight: 800; font-size: 0.95rem; color: #fff;" title="Passa sopra per sbirciare">{{ m.total_balance|eur }}</div>
+                    <div class="privacy-mask" style="font-weight: 800; font-size: 0.95rem; color: #fff;" title="Liquidità Conti Correnti">{{ m.total_balance|eur }}</div>
+                    {% if m.total_invested and m.total_invested > 0 %}
+                    <div style="font-size: 0.68rem; color: #34d399; font-weight: 700; margin-top: 1px;">
+                        +{{ m.total_invested|eur }} <span style="color: var(--text-muted); font-size: 0.62rem;">investiti</span>
+                    </div>
+                    {% endif %}
                     {% if is_admin and not m.is_primary and not m.linked_user_id %}
                     <button type="button" onclick="openInviteModal({{ m.id }}, '{{ m.name }}', '{{ m.invited_email or '' }}')" class="btn btn-sm" style="font-size: 0.65rem; padding: 2px 6px; margin-top: 2px; background: rgba(37, 211, 102, 0.15); border: 1px solid rgba(37, 211, 102, 0.4); color: #25d366; font-weight: 700; border-radius: 4px;">
                         📲 Invita WhatsApp
@@ -466,10 +471,24 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
         <div>
             {% if active_filter == 'all' %}
-                <h3 style="font-size: 1.15rem; font-weight: 800;">Patrimonio Complessivo Famiglia 🛡️</h3>
-                <p style="color: var(--text-muted); font-size: 0.8rem;">Vista aggregata di tutti i membri del nucleo</p>
+                <h3 style="font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    Patrimonio Complessivo Famiglia 🛡️
+                    {% if total_invested and total_invested > 0 %}
+                    <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.72rem; font-weight: 800;">
+                        Net Worth: {{ net_worth|eur }}
+                    </span>
+                    {% endif %}
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.8rem;">Vista aggregata patrimonio liquido e investimenti del nucleo</p>
             {% else %}
-                <h3 style="font-size: 1.15rem; font-weight: 800;">Riepilogo: {{ selected_profile.name }} 👤</h3>
+                <h3 style="font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    Riepilogo: {{ selected_profile.name }} 👤
+                    {% if total_invested and total_invested > 0 %}
+                    <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.72rem; font-weight: 800;" title="Patrimonio Totale = Saldo Liquido + Investimenti">
+                        Patrimonio Netto: {{ net_worth|eur }}
+                    </span>
+                    {% endif %}
+                </h3>
                 <p style="color: var(--text-muted); font-size: 0.8rem;">Ruolo: {{ selected_profile.role_title or 'Componente' }}</p>
             {% endif %}
         </div>
@@ -503,6 +522,16 @@
             </div>
             <div class="privacy-mask" style="font-size: 1.35rem; font-weight: 800; color: #fff; margin-top: 4px;" title="Passa sopra per sbirciare il saldo">{{ total_balance|eur }}</div>
             <a href="/transactions" style="color: var(--accent-primary); font-size: 0.72rem; text-decoration: none; display: inline-block; margin-top: 4px;">Vedi tutti i conti →</a>
+        </div>
+
+        <!-- Invested Capital in ETFs / Broker -->
+        <div style="background: rgba(16, 185, 129, 0.05); padding: 14px; border-radius: var(--radius-md); border: 1px solid rgba(16, 185, 129, 0.25);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #34d399; font-size: 0.75rem; font-weight: 700;">Investimenti & PAC (Directa)</span>
+                <span style="font-size: 0.8rem;">📈</span>
+            </div>
+            <div class="privacy-mask" style="font-size: 1.35rem; font-weight: 800; color: #34d399; margin-top: 4px;" title="Capitale investito in titoli/ETF">{{ total_invested|eur }}</div>
+            <a href="#investmentsCard" style="color: #34d399; font-size: 0.72rem; text-decoration: none; display: inline-block; margin-top: 4px; font-weight: 600;">Portafoglio ETF (VWCE) ↓</a>
         </div>
 
         <!-- Latest Net Salary -->
@@ -700,7 +729,7 @@
 <!-- ======================================================== -->
 <!-- 📈 WIDGET: PORTAFOGLIO INVESTIMENTI & PAC ETF (DIRECTA)   -->
 <!-- ======================================================== -->
-<div class="card" style="background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(16, 185, 129, 0.35); box-shadow: 0 10px 28px rgba(0,0,0,0.35); margin-bottom: 16px; position: relative; overflow: hidden;">
+<div id="investmentsCard" class="card" style="background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(16, 185, 129, 0.35); box-shadow: 0 10px 28px rgba(0,0,0,0.35); margin-bottom: 16px; position: relative; overflow: hidden;">
     
     <!-- Header: Title, Broker Badge & Action Buttons -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
@@ -1578,6 +1607,42 @@
             </div>
         </div>
         {% endfor %}
+
+        <!-- Directa SIM / Broker Account Card (Investimenti & PAC) -->
+        {% if total_invested and total_invested > 0 %}
+        <div style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.3); border-left: 4px solid #10b981; border-radius: var(--radius-md); padding: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.2rem;">📈</span>
+                    <div>
+                        <strong style="color: #fff; font-size: 0.95rem;">Directa SIM (Conto Titoli & PAC)</strong>
+                        <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.65rem; margin-left: 6px;">Investimenti</span>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="privacy-mask" style="font-weight: 800; font-size: 1.05rem; color: #34d399;" title="Capitale Titoli">{{ total_invested|eur }}</span>
+                </div>
+            </div>
+
+            <!-- Sub Accounts / ETF List -->
+            <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid rgba(16, 185, 129, 0.15); padding-top: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span>🌍</span>
+                        <div>
+                            <div style="color: #fff; font-weight: 600;">Portafoglio Titoli & ETF Azionario Globale</div>
+                            <div style="color: var(--text-muted); font-size: 0.7rem;">
+                                VWCE (IE00BK5BQT80) • Directa Trading Account
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <a href="#investmentsCard" style="color: #34d399; font-size: 0.75rem; text-decoration: none; font-weight: 700;">Gestisci Quote →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endif %}
