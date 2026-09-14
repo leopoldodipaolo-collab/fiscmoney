@@ -203,12 +203,14 @@ def init_db():
             tags TEXT,
             match_type TEXT DEFAULT 'CONTAINS', -- 'CONTAINS', 'EXACT', 'REGEX'
             priority INTEGER DEFAULT 10,
+            amount_min REAL DEFAULT NULL,  -- Optional: min absolute amount filter
+            amount_max REAL DEFAULT NULL,  -- Optional: max absolute amount filter
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
         )
     ''')
     
-    # Safe migration: add tags, match_type, priority to category_rules if missing
+    # Safe migration: add tags, match_type, priority, amount_min, amount_max to category_rules if missing
     cursor.execute("PRAGMA table_info(category_rules)")
     cr_cols = [col[1] for col in cursor.fetchall()]
     if "tags" not in cr_cols:
@@ -217,6 +219,10 @@ def init_db():
         cursor.execute("ALTER TABLE category_rules ADD COLUMN match_type TEXT DEFAULT 'CONTAINS'")
     if "priority" not in cr_cols:
         cursor.execute("ALTER TABLE category_rules ADD COLUMN priority INTEGER DEFAULT 10")
+    if "amount_min" not in cr_cols:
+        cursor.execute("ALTER TABLE category_rules ADD COLUMN amount_min REAL DEFAULT NULL")
+    if "amount_max" not in cr_cols:
+        cursor.execute("ALTER TABLE category_rules ADD COLUMN amount_max REAL DEFAULT NULL")
         
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_cat_rules_ws ON category_rules(workspace_id, pattern)")
     

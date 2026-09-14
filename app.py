@@ -1922,14 +1922,26 @@ def settings_rules_save():
     match_type = request.form.get("match_type", "CONTAINS").strip()
     apply_retro = request.form.get("apply_retro") == "1"
     
+    # Optional amount range filter
+    def _parse_amt(val):
+        try:
+            v = float(val)
+            return v if v > 0 else None
+        except (TypeError, ValueError):
+            return None
+    amount_min = _parse_amt(request.form.get("amount_min"))
+    amount_max = _parse_amt(request.form.get("amount_max"))
+    
     if not pattern or not category:
         flash("Pattern e Categoria sono obbligatori.", "error")
         return redirect(url_for('settings_rules'))
         
-    save_or_update_category_rule(ws_id, pattern, category, sub_category, tags, match_type)
+    save_or_update_category_rule(ws_id, pattern, category, sub_category, tags, match_type,
+                                  amount_min=amount_min, amount_max=amount_max)
     
     if apply_retro:
-        count = apply_rule_retroactively(ws_id, pattern, category, sub_category, tags, match_type)
+        count = apply_rule_retroactively(ws_id, pattern, category, sub_category, tags, match_type,
+                                          amount_min=amount_min, amount_max=amount_max)
         flash(f"Regola per '{pattern}' salvata e applicata retroattivamente a {count} transazioni!", "success")
     else:
         flash(f"Regola per '{pattern}' salvata con successo per i futuri import!", "success")
@@ -2358,6 +2370,16 @@ def quick_update_transaction():
     conn.commit()
     conn.close()
     
+    # Optional amount range filter for rule disambiguation
+    def _parse_amt(val):
+        try:
+            v = float(val)
+            return v if v > 0 else None
+        except (TypeError, ValueError):
+            return None
+    amount_min = _parse_amt(data.get("amount_min"))
+    amount_max = _parse_amt(data.get("amount_max"))
+
     retro_count = 0
     pat = None
     if learn_rule and (tx['description'] or tx['raw_description']):
@@ -2369,7 +2391,9 @@ def quick_update_transaction():
                 category=category,
                 sub_category=sub_category,
                 tags=tags,
-                match_type='CONTAINS'
+                match_type='CONTAINS',
+                amount_min=amount_min,
+                amount_max=amount_max
             )
             retro_count = apply_rule_retroactively(
                 workspace_id=ws_id,
@@ -2377,7 +2401,9 @@ def quick_update_transaction():
                 category=category,
                 sub_category=sub_category,
                 tags=tags,
-                match_type='CONTAINS'
+                match_type='CONTAINS',
+                amount_min=amount_min,
+                amount_max=amount_max
             )
             
     cat_info = MACRO_CATEGORIES.get(category, {"icon": "📦", "color": "#64748b"})
@@ -2511,13 +2537,24 @@ def batch_categorize_merchant():
     # 2. Save Rule if requested
     rule_saved = False
     if save_rule and pattern:
+        def _parse_amt(val):
+            try:
+                v = float(val)
+                return v if v > 0 else None
+            except (TypeError, ValueError):
+                return None
+        amount_min = _parse_amt(data.get("amount_min"))
+        amount_max = _parse_amt(data.get("amount_max"))
+
         save_or_update_category_rule(
             workspace_id=ws_id,
             pattern=pattern,
             category=category,
             sub_category=sub_category if sub_category else None,
             tags=tags if tags else None,
-            match_type='CONTAINS'
+            match_type='CONTAINS',
+            amount_min=amount_min,
+            amount_max=amount_max
         )
         apply_rule_retroactively(
             workspace_id=ws_id,
@@ -2525,7 +2562,9 @@ def batch_categorize_merchant():
             category=category,
             sub_category=sub_category if sub_category else None,
             tags=tags if tags else None,
-            match_type='CONTAINS'
+            match_type='CONTAINS',
+            amount_min=amount_min,
+            amount_max=amount_max
         )
         rule_saved = True
         
@@ -3048,6 +3087,15 @@ def update_transaction(tx_id):
 
     # Save learning rule & apply retroactively if requested (now that DB connection is closed)
     if learn_rule and tx['description']:
+        def _parse_amt(val):
+            try:
+                v = float(val)
+                return v if v > 0 else None
+            except (TypeError, ValueError):
+                return None
+        amount_min = _parse_amt(request.form.get("amount_min"))
+        amount_max = _parse_amt(request.form.get("amount_max"))
+
         pat = extract_clean_merchant_pattern(tx['description'] or tx['raw_description'])
         if pat:
             save_or_update_category_rule(
@@ -3056,7 +3104,9 @@ def update_transaction(tx_id):
                 category=category,
                 sub_category=sub_category,
                 tags=tags,
-                match_type='CONTAINS'
+                match_type='CONTAINS',
+                amount_min=amount_min,
+                amount_max=amount_max
             )
             retro_count = apply_rule_retroactively(
                 workspace_id=ws_id,
@@ -3064,7 +3114,9 @@ def update_transaction(tx_id):
                 category=category,
                 sub_category=sub_category,
                 tags=tags,
-                match_type='CONTAINS'
+                match_type='CONTAINS',
+                amount_min=amount_min,
+                amount_max=amount_max
             )
             flash(f"Movimento aggiornato! Regola per '{pat}' salvata e applicata a {retro_count} movimenti storici e futuri!", "success")
         else:

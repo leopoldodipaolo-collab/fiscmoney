@@ -309,12 +309,13 @@ def extract_clean_merchant_pattern(description):
     """
     Extracts a clean, representative merchant pattern from bank descriptions.
     Strips initial boilerplate (POS, BONIFICO, DISPOSIZIONE, etc.), account holder prefixes,
-    and cuts off trailing transaction metadata (Spese, Num. Bonifico, RIF, Operazione, timestamps, TRN, etc.).
+    creditor / user / contract noise, addresses and numeric codes,
+    returning a clean textual pattern suitable for general categorization rules.
     """
     if not description:
         return ""
     text = description
-    
+
     # 0. Specialized unification for bank fees / commissions
     if re.search(r'\b(?:COMMISSIONI?\s+BONIFIC[IO]|COMM\.\s*BON\b|COMMISSIONI?\s+PAGAMENTO\s+BOLLETTINO|COMMISSIONI?\s+CBILL|COMMISSIONE\s+TELEPASS)\b', text, flags=re.IGNORECASE):
         if re.search(r'\b(?:COMMISSIONI?\s+BONIFIC[IO]|COMM\.\s*BON\b)', text, flags=re.IGNORECASE):
@@ -325,32 +326,61 @@ def extract_clean_merchant_pattern(description):
             return "Commissioni Telepass"
         return "Commissioni Bancarie"
 
-    # 1. Remove initial transaction types / prefixes
-    text = re.sub(r'^\s*(?:PAGAMENTO\s+POS|PAGAMENTO\s+P\.O\.S\.|POS|COMMISSIONI|COMMISSIONE|BONIFICO\s+SEPA|BONIFICO|DISPOSIZIONE|ACCREDITO|STIPENDIO/PENSIONE|STIPENDIO|PENSIONE|ADDEBITO\s+DIRETTO\s+SDD|ADDEBITO\s+SDD|SDD|MAV|RAV|F24|PAGAM\.\s+DELEGA\s+UNIFICATA)\s*[:\-]?\s*', '', text, flags=re.IGNORECASE)
-    
-    # 2. Remove 'a favore di Nome Cognome' / 'a carico di' if followed by known bank / company / institution
-    text = re.sub(r'^\s*(?:a\s+favore\s+di|a\s+carico\s+di|disposto\s+da)\s+.*?(?=\b(?:BCC|BNL|INTESA|UNICREDIT|POSTE|MUTUO|FINANZIARIA|ENEL|ENI|CONAD|COOP|CARREFOUR|MEDIAWORLD|DECATHLON|TELEPASS)\b)', '', text, flags=re.IGNORECASE)
+    # Special well-known telepass & pedaggi
+    if re.search(r'\bTELEPASS\b', text, flags=re.IGNORECASE):
+        return "TELEPASS"
+    if re.search(r'\bILIAD\b', text, flags=re.IGNORECASE):
+        return "ILIAD"
 
-    # 3. Cut off trailing transaction metadata starting at noise keywords
-    text = re.sub(r'\b(?:Operazione\b|Op\.?\s*\d|Carta\b|CARTA\b|PAN\b|TRN\b|Mandato\b|per\s+c/|ABI-CAB|Spese\s*:|Spesa\s*:|Num\.?\s*Bonifico|Numero\s*Bonifico|RIF\.?\s*|Riferimento\b|DEB:\s*|ID:\s*|CBI\s+DEL\s*:?|Codice\s+Dispositivo|Cod\.?\s*Disp|del\s+\d{2}[/\-\.]\d{2}|in\s+data\s+\d|ore\s+\d|presso\s+pos|o/c:?|N:\s*\d+/\d+).*', '', text, flags=re.IGNORECASE)
-    
-    # 4. Remove dates, times, card masks
+    # Extract creditor if CBILL / PagoPA contains 'CREDITORE: ...'
+    cred_m = re.search(r'\bCREDITORE\s*:\s*([^;\n]+)', text, flags=re.IGNORECASE)
+    if cred_m:
+        c_text = cred_m.group(1).strip()
+        c_text = re.sub(r'[\s\-]+(?:del\s+\d|del|tramite|csa|i\.b\.).*', '', c_text, flags=re.IGNORECASE).strip()
+        if len(c_text) >= 3:
+            return c_text
+
+    # 1. Remove initial transaction types / prefixes
+    text = re.sub(r'^\s*(?:PAGAMENTO\s+POS|PAGAMENTO\s+P\.O\.S\.|POS|COMMISSIONI\s+CARTA\s+PREPAGATA|CARTA\s+PREPAGATA|COMMISSIONI|COMMISSIONE|BONIFICO\s+SEPA|BONIFICO\s+ISTANTANEO|BONIFICO|DISPOSIZIONE|ACCREDITO|STIPENDIO/PENSIONE|STIPENDIO|EMOLUMENTI|PENSIONE|ADDEBITO\s+DIRETTO\s+SDD|ADDEBITO\s+SDD|ADDEBITO|SDD|MAV|RAV|F24|PAGAM\.\s+DELEGA\s+UNIFICATA|PAGAMENTI\s+DIVERSI\s+DA\s+INTERNET\s+BANKING.*?PAGAMENTO\s+BOLLETTINO\s+CBILL|PAGAMENTO\s+BOLLETTINO\s+CBILL|BOLLETTINO\s+CBILL|PAGAMENTO\s+PAGOPA|PAGOPA)\s*[:\-]?\s*', '', text, flags=re.IGNORECASE)
+
+    # 2. Check 'o/c: NAME' (ordinante / azienda)
+    oc_m = re.search(r'\bo/c\s*:\s*([^;]+?)(?=\s+ABI|\s+a\s+favore|\s+Num|\s+Spese|$)', text, flags=re.IGNORECASE)
+    if oc_m:
+        return oc_m.group(1).strip()
+
+    # 3. Cut off user/contract/account/notice codes (e.g. - Utente: 167653098, Avviso n.306900...)
+    text = re.sub(r'[\s\-]+(?:Utente|Codice\s*Utente|Cod\.?\s*Fisc|Codice\s*Fiscale|Contratto|Cliente|Cod\.?\s*Cliente|N\.|Num\.?|Avviso(?:\s+n\.?)?)\s*[:\-]?\s*[\dA-Z]+.*', '', text, flags=re.IGNORECASE)
+
+    # 4. Remove 'a favore di' / 'a carico di' / 'disposto da'
+    text = re.sub(r'^\s*(?:a\s+favore\s+di|a\s+carico\s+di|disposto\s+da)\s+', '', text, flags=re.IGNORECASE)
+
+    # 5. Cut off trailing transaction metadata starting at noise keywords
+    text = re.sub(r'\b(?:Operazione\b|Op\.?\s*\d|Carta\b|CARTA\b|PAN\b|TRN\b|Mandato\b|per\s+c/|ABI-CAB|Spese\s*:|Spesa\s*:|Num\.?\s*Bonifico|Numero\s*Bonifico|Num\.?\s*Bon|RIF\.?\s*|Riferimento\b|DEB:\s*|ID:\s*|CBI\s+DEL\s*:?|Codice\s+Dispositivo|Cod\.?\s*Disp|del\s+\d{2}[/\-\.]\d{2}|in\s+data\s+\d|ore\s+\d|presso\s+pos|o/c:?|N:\s*\d+/\d+|Comm\.bonifico\b|Comm\.\s*di\s*maggiorazione|EUR\s+[\d\.,]+).*', '', text, flags=re.IGNORECASE)
+
+    # 6. Cut off street addresses & numbers
+    text = re.sub(r'\b\d+\s+(?:Largo|Via|Viale|Piazza|Corso|Strada|Vicolo)\b.*', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'\b(?:Largo|Via|Viale|Piazza|Corso|Strada|Vicolo)\s+[A-Za-z0-9\s]+', '', text, flags=re.IGNORECASE)
+
+    # 7. Remove dates, times, card masks
     text = re.sub(r'\b\d{2}[/\-\.]\d{2}[/\-\.]\d{2,4}\b', ' ', text)
     text = re.sub(r'\b\d{2}[\.:]\d{2}(?:[\.:]\d{2})?\b', ' ', text)
     text = re.sub(r'\*{2,}\d*', ' ', text)
-    
-    # 5. Remove trailing country codes / noise
+
+    # 8. Remove numbers of 2+ digits (e.g. branch codes, postal codes 67100, POS ids)
+    text = re.sub(r'\b\d{2,}\b', ' ', text)
+
+    # 9. Remove trailing country codes / noise
     text = re.sub(r'\s+(?:ITA|ITALIA|ITALY)\b', '', text, flags=re.IGNORECASE)
-    
-    # 6. Clean punctuation & extra spaces
-    text = re.sub(r'[*_#]+', ' ', text)
+
+    # 10. Clean punctuation & extra spaces
+    text = re.sub(r'[*_#:\-]+', ' ', text)
     text = re.sub(r'\s+', ' ', text).strip()
-    
+
     # If string is too short or empty, fallback to first 2-3 words of original
     if len(text) < 3:
-        words = description.split()[:3]
-        text = " ".join(words)
-        
+        words = [w for w in description.split() if not w.isdigit()][:3]
+        text = " ".join(words) if words else description[:25].strip()
+
     return text
 
 def aggregate_transactions_by_merchant(tx_list):
@@ -636,7 +666,8 @@ def load_workspace_category_rules(workspace_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT id, pattern, match_type, category, sub_category, tags, priority
+        SELECT id, pattern, match_type, category, sub_category, tags, priority,
+               amount_min, amount_max
         FROM category_rules
         WHERE workspace_id = ?
         ORDER BY priority DESC, id DESC
@@ -645,7 +676,7 @@ def load_workspace_category_rules(workspace_id):
     conn.close()
     return rules
 
-def save_or_update_category_rule(workspace_id, pattern, category, sub_category="", tags="", match_type="CONTAINS"):
+def save_or_update_category_rule(workspace_id, pattern, category, sub_category="", tags="", match_type="CONTAINS", amount_min=None, amount_max=None):
     """Inserts or updates a custom category rule for a workspace."""
     from database import get_db_connection
     conn = get_db_connection()
@@ -656,25 +687,51 @@ def save_or_update_category_rule(workspace_id, pattern, category, sub_category="
         conn.close()
         return None
 
-    # Check if exact rule pattern already exists
-    cursor.execute('''
-        SELECT id FROM category_rules
-        WHERE workspace_id = ? AND LOWER(pattern) = LOWER(?)
-    ''', (workspace_id, clean_pat))
-    existing = cursor.fetchone()
+    # Normalize amount range: use None if not provided or zero-like
+    def _clean_amt(v):
+        try:
+            f = float(v)
+            return f if f > 0 else None
+        except (TypeError, ValueError):
+            return None
+    a_min = _clean_amt(amount_min)
+    a_max = _clean_amt(amount_max)
+
+    # Check if rule with same pattern AND matching amount range already exists
+    if a_min is not None or a_max is not None:
+        cursor.execute('''
+            SELECT id FROM category_rules
+            WHERE workspace_id = ? AND LOWER(pattern) = LOWER(?)
+              AND ((amount_min IS ? AND amount_max IS ?) 
+                   OR (amount_min = ? AND amount_max = ?)
+                   OR (amount_min = ? AND amount_max IS ?)
+                   OR (amount_min IS ? AND amount_max = ?))
+        ''', (workspace_id, clean_pat, a_min, a_max, a_min, a_max, a_min, a_max, a_min, a_max))
+        existing = cursor.fetchone()
+    else:
+        cursor.execute('''
+            SELECT id FROM category_rules
+            WHERE workspace_id = ? AND LOWER(pattern) = LOWER(?)
+              AND amount_min IS NULL AND amount_max IS NULL
+        ''', (workspace_id, clean_pat))
+        existing = cursor.fetchone()
     
+    # Priority: higher priority for amount-specific rules (so 48.75 or 7.99 checks match before generic)
+    rule_priority = 25 if (a_min is not None or a_max is not None) else 10
+
     if existing:
         cursor.execute('''
             UPDATE category_rules
-            SET category = ?, sub_category = ?, tags = ?, match_type = ?, created_at = CURRENT_TIMESTAMP
+            SET category = ?, sub_category = ?, tags = ?, match_type = ?,
+                amount_min = ?, amount_max = ?, priority = ?, created_at = CURRENT_TIMESTAMP
             WHERE id = ?
-        ''', (category, sub_category, tags, match_type, existing['id']))
+        ''', (category, sub_category, tags, match_type, a_min, a_max, rule_priority, existing['id']))
         rule_id = existing['id']
     else:
         cursor.execute('''
-            INSERT INTO category_rules (workspace_id, pattern, match_type, category, sub_category, tags, priority)
-            VALUES (?, ?, ?, ?, ?, ?, 10)
-        ''', (workspace_id, clean_pat, match_type, category, sub_category, tags))
+            INSERT INTO category_rules (workspace_id, pattern, match_type, category, sub_category, tags, priority, amount_min, amount_max)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (workspace_id, clean_pat, match_type, category, sub_category, tags, rule_priority, a_min, a_max))
         rule_id = cursor.lastrowid
         
     conn.commit()
@@ -812,10 +869,15 @@ def normalize_for_matching(text):
     t = re.sub(r'[*_\-/#\.,:;@\(\)\[\]\+]+', ' ', str(text).lower())
     return re.sub(r'\s+', ' ', t).strip()
 
-def matches_rule_pattern(pattern, description, raw_description="", match_type="CONTAINS"):
+def matches_rule_pattern(pattern, description, raw_description="", match_type="CONTAINS", amount=None, amount_min=None, amount_max=None):
     """
     Checks if a pattern matches a transaction description or raw_description,
     supporting standard CONTAINS, token-level matching, EXACT, and REGEX.
+    
+    Optional amount range filter (amount_min / amount_max):
+    - Uses the ABSOLUTE value of the transaction amount.
+    - Both bounds are inclusive. If only amount_min is set, acts as lower bound only.
+    - If neither is set, no amount filtering is applied.
     """
     if not pattern:
         return False
@@ -833,37 +895,50 @@ def matches_rule_pattern(pattern, description, raw_description="", match_type="C
     mtype = (match_type or 'CONTAINS').upper()
 
     if mtype == 'EXACT':
-        return (p_norm and (p_norm == d_norm or p_norm == raw_norm)) or (pat_lower and (pat_lower == d_lower or pat_lower == raw_lower))
-
-    if mtype == 'REGEX':
+        text_match = (p_norm and (p_norm == d_norm or p_norm == raw_norm)) or (pat_lower and (pat_lower == d_lower or pat_lower == raw_lower))
+    elif mtype == 'REGEX':
         try:
-            return bool(re.search(pat_clean, description or '', re.IGNORECASE) or (raw_description and re.search(pat_clean, raw_description, re.IGNORECASE)))
+            text_match = bool(re.search(pat_clean, description or '', re.IGNORECASE) or (raw_description and re.search(pat_clean, raw_description, re.IGNORECASE)))
         except Exception:
-            return pat_lower in d_lower or pat_lower in raw_lower
+            text_match = pat_lower in d_lower or pat_lower in raw_lower
+    else:
+        # CONTAINS (Default smart matching)
+        text_match = False
+        # 1. Direct raw substring match
+        if pat_lower and (pat_lower in d_lower or (raw_lower and pat_lower in raw_lower)):
+            text_match = True
+        # 2. Normalized contiguous substring match
+        elif p_norm and (p_norm in d_norm or (raw_norm and p_norm in raw_norm)):
+            text_match = True
+        else:
+            # 3. All individual tokens match
+            tokens = [t for t in p_norm.split() if len(t) > 1]
+            if tokens:
+                if all(t in d_norm for t in tokens):
+                    text_match = True
+                elif raw_norm and all(t in raw_norm for t in tokens):
+                    text_match = True
 
-    # CONTAINS (Default smart matching)
-    # 1. Direct raw substring match
-    if pat_lower and (pat_lower in d_lower or (raw_lower and pat_lower in raw_lower)):
-        return True
+    if not text_match:
+        return False
 
-    # 2. Normalized contiguous substring match
-    if p_norm and (p_norm in d_norm or (raw_norm and p_norm in raw_norm)):
-        return True
+    # --- Optional Amount Range Check ---
+    # Uses absolute amount value (expenses come in as negative)
+    if amount_min is not None or amount_max is not None:
+        if amount is None:
+            return False  # can't verify range without amount
+        abs_amount = abs(float(amount))
+        if amount_min is not None and abs_amount < float(amount_min):
+            return False
+        if amount_max is not None and abs_amount > float(amount_max):
+            return False
 
-    # 3. All individual tokens match (e.g. pattern has 'PAYPAL' and 'GEDIMPIANTI')
-    tokens = [t for t in p_norm.split() if len(t) > 1]
-    if tokens:
-        if all(t in d_norm for t in tokens):
-            return True
-        if raw_norm and all(t in raw_norm for t in tokens):
-            return True
+    return True
 
-    return False
-
-def apply_rule_retroactively(workspace_id, pattern, category, sub_category="", tags="", match_type="CONTAINS"):
+def apply_rule_retroactively(workspace_id, pattern, category, sub_category="", tags="", match_type="CONTAINS", amount_min=None, amount_max=None):
     """
     Updates all existing matching transactions in the workspace with the new category and tags,
-    using smart normalized matching.
+    using smart normalized matching with optional amount range filter.
     Returns the number of affected rows.
     """
     from database import get_db_connection
@@ -875,12 +950,13 @@ def apply_rule_retroactively(workspace_id, pattern, category, sub_category="", t
         conn.close()
         return 0
 
-    cursor.execute("SELECT id, description, raw_description, category, sub_category, tags FROM transactions WHERE workspace_id = ?", (workspace_id,))
+    cursor.execute("SELECT id, description, raw_description, amount, category, sub_category, tags FROM transactions WHERE workspace_id = ?", (workspace_id,))
     rows = cursor.fetchall()
     
     matching_ids = []
     for r in rows:
-        if matches_rule_pattern(clean_pat, r['description'], r['raw_description'], match_type):
+        if matches_rule_pattern(clean_pat, r['description'], r['raw_description'], match_type,
+                                amount=r['amount'], amount_min=amount_min, amount_max=amount_max):
             matching_ids.append(r['id'])
 
     affected = 0
@@ -920,7 +996,13 @@ def apply_all_workspace_rules(workspace_id):
     for tx in txs:
         desc = tx['description'] or tx['raw_description'] or ''
         for rule in rules:
-            if matches_rule_pattern(rule['pattern'], desc, tx['raw_description'], rule.get('match_type', 'CONTAINS')):
+            if matches_rule_pattern(
+                rule['pattern'], desc, tx['raw_description'],
+                rule.get('match_type', 'CONTAINS'),
+                amount=tx['amount'],
+                amount_min=rule.get('amount_min'),
+                amount_max=rule.get('amount_max')
+            ):
                 cat = rule['category']
                 sub_cat = rule.get('sub_category') or None
                 tags = rule.get('tags') or None
@@ -951,7 +1033,10 @@ def categorize_transaction(description, amount, is_transfer=False, custom_rules=
         for rule in custom_rules:
             pat = rule.get('pattern', '')
             mtype = rule.get('match_type', 'CONTAINS')
-            if matches_rule_pattern(pat, clean_desc, match_type=mtype):
+            if matches_rule_pattern(pat, clean_desc, match_type=mtype,
+                                    amount=amount,
+                                    amount_min=rule.get('amount_min'),
+                                    amount_max=rule.get('amount_max')):
                 return rule['category'], rule.get('sub_category', ''), rule.get('tags', ''), is_transfer
 
     # 2. Check Giroconti / Internal Transfers / Ricarica Prepagata
