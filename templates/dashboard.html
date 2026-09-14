@@ -1020,7 +1020,7 @@
                 </div>
             </div>
 
-            <div id="deadlinesListContainer" style="display: flex; flex-direction: column; gap: 10px;">
+            <div id="deadlinesListContainer" style="display: flex; flex-direction: column; gap: 8px;">
                 {% for dl in deadlines_radar.deadlines %}
                 {% set dl_month_num = dl.year_month.split('-')[1]|int if '-' in dl.year_month else 1 %}
                 <div class="deadline-item-card" 
@@ -1030,139 +1030,142 @@
                      data-custom-months="{{ dl.custom_months or '' }}"
                      data-scope="{{ dl.scope_code }}"
                      data-is-past="{{ '1' if dl.is_past else '0' }}" 
-                     style="background: rgba(255,255,255,0.025); border: 1.5px solid {% if dl.is_past %}rgba(100, 116, 139, 0.3){% elif dl.is_paid %}rgba(16, 185, 129, 0.35){% elif dl.is_partial %}rgba(234, 179, 8, 0.4){% else %}rgba(239, 68, 68, 0.4){% endif %}; border-radius: 12px; padding: 12px 16px; transition: all 0.2s; {% if dl.is_past %}opacity: 0.65; filter: grayscale(15%); background: rgba(0,0,0,0.25);{% endif %}">
+                     style="background: rgba(255,255,255,0.02); border: 1px solid {% if dl.is_past %}rgba(100, 116, 139, 0.25){% elif dl.is_paid %}rgba(16, 185, 129, 0.3){% elif dl.is_partial %}rgba(234, 179, 8, 0.35){% else %}rgba(239, 68, 68, 0.35){% endif %}; border-radius: 10px; padding: 10px 14px; transition: all 0.2s; {% if dl.is_past %}opacity: 0.65; background: rgba(0,0,0,0.2);{% endif %}">
                     
-                    <!-- Main Info Header -->
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-                        <div>
-                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                <span style="font-weight: 800; font-size: 0.98rem; color: #fff;">{{ dl.name }}</span>
-                                <span class="badge-tag" style="background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1); font-size: 0.65rem; padding: 1px 6px;">
-                                    {{ dl.category }}
-                                </span>
-                                <span class="badge-tag" style="background: {% if dl.is_shared %}rgba(234, 179, 8, 0.15){% elif dl.target_type == 'LEOPOLDO_ONLY' %}rgba(56, 189, 248, 0.15){% else %}rgba(236, 72, 153, 0.15){% endif %}; color: {% if dl.is_shared %}#facc15{% elif dl.target_type == 'LEOPOLDO_ONLY' %}#38bdf8{% else %}#ec4899{% endif %}; border: 1px solid {% if dl.is_shared %}rgba(234, 179, 8, 0.35){% elif dl.target_type == 'LEOPOLDO_ONLY' %}rgba(56, 189, 248, 0.35){% else %}rgba(236, 72, 153, 0.35){% endif %}; font-size: 0.65rem; font-weight: 700; padding: 1px 6px;">
-                                    {{ dl.scope_badge }}
-                                </span>
-                                <span class="badge-tag" style="background: {{ dl.status_color }}22; color: {{ dl.status_color }}; border: 1px solid {{ dl.status_color }}55; font-size: 0.68rem; font-weight: 800; padding: 1px 6px;">
-                                    {{ dl.status_label }}
-                                </span>
+                    <!-- Primary Compact Row -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        
+                        <!-- Left: Info & Badges -->
+                        <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 240px; overflow: hidden;">
+                            <span style="font-size: 1.1rem; flex-shrink: 0;">{% if dl.is_paid %}🟢{% elif dl.is_partial %}🟡{% elif dl.is_past %}⚪{% else %}⏳{% endif %}</span>
+                            <div style="overflow: hidden;">
+                                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                    <strong style="font-size: 0.88rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;">{{ dl.name }}</strong>
+                                    <span class="badge-tag" style="background: rgba(255,255,255,0.05); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.08); font-size: 0.62rem; padding: 1px 5px;">
+                                        {{ dl.category }}
+                                    </span>
+                                    <span class="badge-tag" style="background: {% if dl.is_shared %}rgba(234, 179, 8, 0.12){% elif dl.target_type == 'LEOPOLDO_ONLY' %}rgba(56, 189, 248, 0.12){% else %}rgba(236, 72, 153, 0.12){% endif %}; color: {% if dl.is_shared %}#facc15{% elif dl.target_type == 'LEOPOLDO_ONLY' %}#38bdf8{% else %}#ec4899{% endif %}; border: 1px solid {% if dl.is_shared %}rgba(234, 179, 8, 0.3){% elif dl.target_type == 'LEOPOLDO_ONLY' %}rgba(56, 189, 248, 0.3){% else %}rgba(236, 72, 153, 0.3){% endif %}; font-size: 0.62rem; font-weight: 700; padding: 1px 5px;">
+                                        {{ dl.scope_badge }}
+                                    </span>
+                                </div>
+                                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 8px;">
+                                    <span>📅 {{ dl.due_date_str }}</span>
+                                    <span>•</span>
+                                    <span>🔄 {{ dl.recurrence }}</span>
+                                    {% if dl.is_past %}
+                                    <span>•</span>
+                                    <span style="color: #94a3b8; font-weight: 600;">Storico</span>
+                                    {% endif %}
+                                </div>
                             </div>
-                            <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                                <span>📅 Scadenza: <strong style="color: #fff;">{{ dl.due_date_str }}</strong></span>
-                                <span>🔄 <strong style="color: #cbd5e1;">{{ dl.recurrence }}</strong></span>
-                                {% if dl.is_past %}
-                                <span style="background: rgba(100, 116, 139, 0.2); color: #94a3b8; padding: 1px 6px; border-radius: 4px; font-size: 0.66rem; font-weight: 700;">🏛️ Evento Storico Passato</span>
+                        </div>
+
+                        <!-- Right: Amount & Quick Actions -->
+                        <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+                            <div style="text-align: right;">
+                                <div class="privacy-mask" style="font-size: 1.05rem; font-weight: 900; color: #fff;">
+                                    {{ dl.expected_amount|eur }}
+                                </div>
+                                <div style="font-size: 0.68rem; color: {% if dl.is_past %}#94a3b8{% elif dl.remaining_to_pay > 0 %}#f87171{% else %}#34d399{% endif %}; font-weight: 700;">
+                                    {% if dl.is_past %}
+                                        {% if dl.is_paid %}Saldato ✓{% else %}Chiuso{% endif %}
+                                    {% elif dl.remaining_to_pay > 0 %}
+                                        Mancano {{ dl.remaining_to_pay|eur }}
+                                    {% else %}
+                                        Saldato al 100% ✓
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Fast Toggle Paid Button -->
+                            <form method="POST" action="/deadlines/toggle-paid/{{ dl.id }}" style="margin: 0;">
+                                <input type="hidden" name="redirect_to" value="dashboard">
+                                <button type="submit" class="btn btn-sm" style="font-size: 0.68rem; padding: 4px 8px; border-radius: 6px; background: {% if dl.is_paid %}rgba(255,255,255,0.06){% else %}rgba(16, 185, 129, 0.18){% endif %}; color: {% if dl.is_paid %}#94a3b8{% else %}#34d399{% endif %}; border: 1px solid {% if dl.is_paid %}rgba(255,255,255,0.1){% else %}rgba(16, 185, 129, 0.4){% endif %}; cursor: pointer;" title="{% if dl.is_paid %}Segna come da saldare{% else %}Segna interamente come pagata{% endif %}">
+                                    {% if dl.is_paid %}✓ Saldato{% else %}Salda{% endif %}
+                                </button>
+                            </form>
+
+                            <!-- Accordion Toggle Button for Details -->
+                            <button type="button" onclick="toggleDeadlineDetails({{ dl.id }})" id="btnDlToggle_{{ dl.id }}" style="background: none; border: none; color: #94a3b8; font-size: 0.8rem; cursor: pointer; padding: 2px 4px; transition: transform 0.2s;" title="Dettagli e quote">
+                                ▾
+                            </button>
+
+                            <!-- Delete Form -->
+                            <form method="POST" action="/deadlines/delete/{{ dl.id }}" onsubmit="return confirm('Vuoi davvero rimuovere questa scadenza?');" style="margin: 0;">
+                                <input type="hidden" name="redirect_to" value="dashboard">
+                                <button type="submit" class="btn btn-sm" style="background: transparent; border: none; color: #64748b; font-size: 0.78rem; cursor: pointer; padding: 2px;" title="Elimina Scadenza">
+                                    🗑️
+                                </button>
+                            </form>
+                        </div>
+
+                    </div>
+
+                    <!-- Mini Progress Bar -->
+                    <div style="width: 100%; height: 5px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; display: flex; margin-top: 8px;">
+                        {% if dl.expected_amount > 0 %}
+                            {% if dl.is_shared %}
+                                <div style="width: {{ (dl.p1_paid / dl.expected_amount * 100)|round(1) }}%; background: #38bdf8;" title="{{ dl.p1_name }}: {{ dl.p1_paid|eur }}"></div>
+                                <div style="width: {{ (dl.p2_paid / dl.expected_amount * 100)|round(1) }}%; background: #ec4899;" title="{{ dl.p2_name }}: {{ dl.p2_paid|eur }}"></div>
+                            {% elif dl.target_type == 'LEOPOLDO_ONLY' %}
+                                <div style="width: {{ (dl.p1_paid / dl.expected_amount * 100)|round(1) }}%; background: linear-gradient(90deg, #0284c7, #38bdf8);" title="{{ dl.p1_name }}: {{ dl.p1_paid|eur }}"></div>
+                            {% else %}
+                                <div style="width: {{ (dl.p2_paid / dl.expected_amount * 100)|round(1) }}%; background: linear-gradient(90deg, #db2777, #ec4899);" title="{{ dl.p2_name }}: {{ dl.p2_paid|eur }}"></div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+
+                    <!-- Collapsible Drawer: Sub-quotas & notes -->
+                    <div id="dlDetailsDrawer_{{ dl.id }}" style="display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.08); font-size: 0.72rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                            <div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center;">
+                                {% if dl.is_shared %}
+                                    <span style="color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
+                                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
+                                        <strong style="color: #38bdf8;">{{ dl.p1_name }}:</strong> 
+                                        <span class="privacy-mask">{{ dl.p1_paid|eur }}</span>
+                                        {% if dl.p1_missing > 0 %}
+                                            <span style="color: #f87171; font-weight: 700;">(Mancano {{ dl.p1_missing|eur }})</span>
+                                        {% else %}
+                                            <span style="color: #34d399; font-weight: 700;">✓ Quota OK</span>
+                                        {% endif %}
+                                    </span>
+
+                                    <span style="color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
+                                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #ec4899; display: inline-block;"></span>
+                                        <strong style="color: #ec4899;">{{ dl.p2_name }}:</strong> 
+                                        <span class="privacy-mask">{{ dl.p2_paid|eur }}</span>
+                                        {% if dl.p2_missing > 0 %}
+                                            <span style="color: #f87171; font-weight: 700;">(Mancano {{ dl.p2_missing|eur }})</span>
+                                        {% else %}
+                                            <span style="color: #34d399; font-weight: 700;">✓ Quota OK</span>
+                                        {% endif %}
+                                    </span>
+                                {% elif dl.target_type == 'LEOPOLDO_ONLY' %}
+                                    <span style="color: #cbd5e1; display: flex; align-items: center; gap: 6px;">
+                                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
+                                        <strong style="color: #38bdf8;">Spesa Personale (Leopoldo):</strong>
+                                        <span class="privacy-mask">{{ dl.p1_paid|eur }} su {{ dl.expected_amount|eur }}</span>
+                                    </span>
+                                {% else %}
+                                    <span style="color: #cbd5e1; display: flex; align-items: center; gap: 6px;">
+                                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #ec4899; display: inline-block;"></span>
+                                        <strong style="color: #ec4899;">Spesa Personale (Nunzia):</strong>
+                                        <span class="privacy-mask">{{ dl.p2_paid|eur }} su {{ dl.expected_amount|eur }}</span>
+                                    </span>
                                 {% endif %}
+
                                 {% if dl.notes %}
                                 <span style="color: #93c5fd;">💬 {{ dl.notes }}</span>
                                 {% endif %}
                             </div>
-                        </div>
 
-                        <div style="text-align: right;">
-                            <div class="privacy-mask" style="font-size: 1.2rem; font-weight: 900; color: #fff;">
-                                {{ dl.expected_amount|eur }}
-                            </div>
-                            <div style="font-size: 0.72rem; color: {% if dl.is_past %}#94a3b8{% elif dl.remaining_to_pay > 0 %}#f87171{% else %}#34d399{% endif %}; font-weight: 800;">
-                                {% if dl.is_past %}
-                                    {% if dl.is_paid %}Saldato al 100% ✓{% else %}Chiuso / Storico{% endif %}
-                                {% elif dl.remaining_to_pay > 0 %}
-                                    Mancano {{ dl.remaining_to_pay|eur }}
-                                {% else %}
-                                    Saldato al 100% ✓
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Visual Progress Bar -->
-                    <div style="margin-bottom: 8px;">
-                        <div style="width: 100%; height: 9px; background: rgba(255,255,255,0.06); border-radius: 6px; overflow: hidden; display: flex;">
-                            {% if dl.expected_amount > 0 %}
-                                {% if dl.is_shared %}
-                                    <!-- Shared 50/50: Partner 1 (Blue) & Partner 2 (Pink) -->
-                                    <div style="width: {{ (dl.p1_paid / dl.expected_amount * 100)|round(1) }}%; background: #38bdf8;" title="{{ dl.p1_name }}: {{ dl.p1_paid|eur }}"></div>
-                                    <div style="width: {{ (dl.p2_paid / dl.expected_amount * 100)|round(1) }}%; background: #ec4899;" title="{{ dl.p2_name }}: {{ dl.p2_paid|eur }}"></div>
-                                {% elif dl.target_type == 'LEOPOLDO_ONLY' %}
-                                    <!-- Leopoldo Personal: Full Blue Bar -->
-                                    <div style="width: {{ (dl.p1_paid / dl.expected_amount * 100)|round(1) }}%; background: linear-gradient(90deg, #0284c7, #38bdf8);" title="{{ dl.p1_name }}: {{ dl.p1_paid|eur }}"></div>
-                                {% else %}
-                                    <!-- Nunzia Personal: Full Pink Bar -->
-                                    <div style="width: {{ (dl.p2_paid / dl.expected_amount * 100)|round(1) }}%; background: linear-gradient(90deg, #db2777, #ec4899);" title="{{ dl.p2_name }}: {{ dl.p2_paid|eur }}"></div>
-                                {% endif %}
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Bottom Details & Action Buttons -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.72rem;">
-                        <div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center;">
-                            {% if dl.is_shared %}
-                                <!-- Partner 1 Status (Leopoldo) -->
-                                <span style="color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
-                                    <span style="width: 7px; height: 7px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
-                                    <strong style="color: #38bdf8;">{{ dl.p1_name }}:</strong> 
-                                    <span class="privacy-mask">{{ dl.p1_paid|eur }}</span>
-                                    {% if dl.p1_missing > 0 %}
-                                        <span style="color: #f87171; font-weight: 700;">(Mancano {{ dl.p1_missing|eur }})</span>
-                                    {% else %}
-                                        <span style="color: #34d399; font-weight: 700;">✓ Quota OK</span>
-                                    {% endif %}
-                                </span>
-
-                                <!-- Partner 2 Status (Nunzia) -->
-                                <span style="color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
-                                    <span style="width: 7px; height: 7px; border-radius: 50%; background: #ec4899; display: inline-block;"></span>
-                                    <strong style="color: #ec4899;">{{ dl.p2_name }}:</strong> 
-                                    <span class="privacy-mask">{{ dl.p2_paid|eur }}</span>
-                                    {% if dl.p2_missing > 0 %}
-                                        <span style="color: #f87171; font-weight: 700;">(Mancano {{ dl.p2_missing|eur }})</span>
-                                    {% else %}
-                                        <span style="color: #34d399; font-weight: 700;">✓ Quota OK</span>
-                                    {% endif %}
-                                </span>
-                            {% elif dl.target_type == 'LEOPOLDO_ONLY' %}
-                                <span style="color: #cbd5e1; display: flex; align-items: center; gap: 6px;">
-                                    <span style="width: 7px; height: 7px; border-radius: 50%; background: #38bdf8; display: inline-block;"></span>
-                                    <strong style="color: #38bdf8;">Spesa 100% Personale (Leopoldo):</strong>
-                                    <span class="privacy-mask">{{ dl.p1_paid|eur }} su {{ dl.expected_amount|eur }}</span>
-                                    {% if dl.remaining_to_pay > 0 %}
-                                        <span style="color: #f87171; font-weight: 700;">(Mancano {{ dl.remaining_to_pay|eur }})</span>
-                                    {% else %}
-                                        <span style="color: #34d399; font-weight: 700;">✓ Saldato</span>
-                                    {% endif %}
-                                </span>
-                            {% else %}
-                                <span style="color: #cbd5e1; display: flex; align-items: center; gap: 6px;">
-                                    <span style="width: 7px; height: 7px; border-radius: 50%; background: #ec4899; display: inline-block;"></span>
-                                    <strong style="color: #ec4899;">Spesa 100% Personale (Nunzia):</strong>
-                                    <span class="privacy-mask">{{ dl.p2_paid|eur }} su {{ dl.expected_amount|eur }}</span>
-                                </span>
-                            {% endif %}
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div style="display: flex; align-items: center; gap: 6px;">
                             {% if dl.is_shared %}
                             <button type="button" onclick="openEditQuotaModal({{ dl.id }}, '{{ dl.name.replace('\'', '\\\'') }}', {{ dl.expected_amount }}, {{ dl.p1_paid }}, {{ dl.p2_paid }}, '{{ dl.p1_name }}', '{{ dl.p2_name }}')" 
-                                    class="btn btn-secondary btn-sm" style="font-size: 0.68rem; padding: 3px 8px; border-color: rgba(255,255,255,0.15);">
+                                    class="btn btn-secondary btn-sm" style="font-size: 0.65rem; padding: 2px 8px; border-color: rgba(255,255,255,0.15);">
                                 ✏️ Modifica Quote
                             </button>
                             {% endif %}
-
-                            <form method="POST" action="/deadlines/toggle-paid/{{ dl.id }}" style="margin: 0;">
-                                <input type="hidden" name="redirect_to" value="dashboard">
-                                <button type="submit" class="btn btn-sm" style="font-size: 0.68rem; padding: 3px 8px; background: {% if dl.is_paid %}rgba(255,255,255,0.06){% else %}rgba(16, 185, 129, 0.2){% endif %}; color: {% if dl.is_paid %}#94a3b8{% else %}#34d399{% endif %}; border: 1px solid {% if dl.is_paid %}rgba(255,255,255,0.1){% else %}rgba(16, 185, 129, 0.4){% endif %};">
-                                    {% if dl.is_paid %}Segna come Da Saldare{% else %}✓ Salda Tutto{% endif %}
-                                </button>
-                            </form>
-
-                            <form method="POST" action="/deadlines/delete/{{ dl.id }}" onsubmit="return confirm('Vuoi davvero rimuovere questa scadenza?');" style="margin: 0;">
-                                <input type="hidden" name="redirect_to" value="dashboard">
-                                <button type="submit" class="btn btn-sm" style="background: transparent; border: none; color: #94a3b8; font-size: 0.8rem; cursor: pointer; padding: 2px 4px;" title="Elimina Scadenza">
-                                    🗑️
-                                </button>
-                            </form>
                         </div>
                     </div>
 
@@ -2631,6 +2634,19 @@ function toggleRadarFixedCostsDrawer() {
     } else {
         drawer.style.display = 'none';
         if (btn) btn.innerHTML = btn.innerHTML.replace('▴', '▾');
+    }
+}
+
+function toggleDeadlineDetails(dlId) {
+    const drawer = document.getElementById('dlDetailsDrawer_' + dlId);
+    const btn = document.getElementById('btnDlToggle_' + dlId);
+    if (!drawer) return;
+    if (drawer.style.display === 'none' || drawer.style.display === '') {
+        drawer.style.display = 'block';
+        if (btn) btn.innerText = '▴';
+    } else {
+        drawer.style.display = 'none';
+        if (btn) btn.innerText = '▾';
     }
 }
 
