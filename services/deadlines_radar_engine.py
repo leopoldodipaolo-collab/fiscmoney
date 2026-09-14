@@ -230,6 +230,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
             # Calculate recurring fixed costs due in this specific month
             month_fc_items = []
             month_fc_total = 0.0
+            month_fc_no_mortgage_total = 0.0
             for r in fc_rows:
                 fc_item = dict(r)
                 if _is_fc_in_month(fc_item, m_idx):
@@ -242,13 +243,18 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
                         clean_fc_name = fc_pat
                     else:
                         clean_fc_name = raw_fc_name
+                    
+                    fc_is_mortgage = ('mutuo' in (raw_fc_name + ' ' + fc_pat + ' ' + (fc_item.get('category') or '')).lower())
+                    if not fc_is_mortgage:
+                        month_fc_no_mortgage_total += exp_amt
                         
                     month_fc_items.append({
                         "name": clean_fc_name,
                         "tag": fc_pat if fc_pat and fc_pat.lower() not in clean_fc_name.lower() else None,
                         "category": fc_item.get('category'),
                         "amount": exp_amt,
-                        "due_day": fc_item.get('due_day', 1)
+                        "due_day": fc_item.get('due_day', 1),
+                        "is_mortgage": fc_is_mortgage
                     })
             
             m_obj = {
@@ -266,6 +272,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
                 "total_remaining": 0.0,
                 "items_count": 0,
                 "fixed_costs_total": round(month_fc_total, 2),
+                "fixed_costs_without_mortgage": round(month_fc_no_mortgage_total, 2),
                 "fixed_costs_items": month_fc_items,
                 "grand_total_month": round(month_fc_total, 2)
             }
@@ -278,6 +285,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
             "total_expected": 0.0,
             "total_paid": 0.0,
             "total_fixed_costs": sum(m["fixed_costs_total"] for m in y_months),
+            "total_fixed_costs_without_mortgage": sum(m["fixed_costs_without_mortgage"] for m in y_months),
             "is_current_year": (y_val == curr_year_int)
         })
         
@@ -391,9 +399,30 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
         if category_name and short_title.lower().startswith(f"{category_name.lower()} - "):
             short_title = short_title[len(category_name) + 3:].strip()
             
-        # Se abbiamo un match_pattern / tag riconosciuto (es. Mutuo, Tari, Bollo, Revisione, Assicurazione, Condominio),
-        # usalo come titolo principale ben visibile
-        display_title = clean_tag.title() if clean_tag else short_title
+        # Rileva tag o tipologia nota da pattern, nome o categoria (TARI, BOLLO, REVISIONE, MUTUO, CONDOMINIO, ECC.)
+        all_text_hints = f"{clean_tag} {short_title} {category_name}".lower()
+        if 'tari' in all_text_hints or 'pagopa' in all_text_hints:
+            display_title = "Tari (PagoPA)"
+        elif 'bollo' in all_text_hints or 'aci' in all_text_hints:
+            display_title = "Bollo Auto (ACI)"
+        elif 'revisione' in all_text_hints:
+            display_title = "Revisione Auto"
+        elif 'mutuo' in all_text_hints:
+            display_title = "Rata Mutuo"
+        elif 'condominio' in all_text_hints:
+            display_title = "Spese Condominio"
+        elif 'polizza' in all_text_hints or 'assicuraz' in all_text_hints:
+            display_title = "Assicurazione"
+        elif clean_tag and len(clean_tag) <= 25 and not clean_tag.isupper():
+            display_title = clean_tag.title()
+        elif short_title and len(short_title) <= 25:
+            display_title = short_title.title()
+        else:
+            # Fallback pulito: prendi le prime parole significative
+            words = [w for w in re.split(r'[\s\-_]+', short_title) if w and len(w) > 2 and not w.isdigit()]
+            display_title = " ".join(words[:3]).title() if words else short_title[:20].title()
+        
+        is_mortgage = ('mutuo' in all_text_hints)
         
         formatted_item = {
             "id": item['id'],
@@ -410,6 +439,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
             "match_pattern": pat,
             "target_type": target_type,
             "is_shared": is_shared,
+            "is_mortgage": is_mortgage,
             "scope_badge": scope_badge,
             "scope_code": scope_code,
             "is_paid": is_fully_paid,

@@ -938,6 +938,7 @@
                              data-ym="{{ tm.year_month }}"
                              data-fc-json="{{ tm.fixed_costs_items|tojson|forceescape }}"
                              data-fc-total="{{ tm.fixed_costs_total }}"
+                             data-fc-no-mortgage="{{ tm.fixed_costs_without_mortgage }}"
                              title="{{ tm.full_name }}: {% if tm.items_count > 0 %}{{ tm.items_count }} scadenze ({{ tm.total_expected|eur }}){% else %}Nessuna scadenza straordinaria{% endif %}{% if tm.fixed_costs_total > 0 %} + Costi Fissi Ricorrenti: {{ tm.fixed_costs_total|eur }}{% endif %}"
                              style="display: flex; flex-direction: column; justify-content: space-between; padding: 6px 4px; border-radius: 8px; border: 1px solid {% if tm.is_current %}rgba(234, 179, 8, 0.5){% elif tm.items_count > 0 %}rgba(59, 130, 246, 0.35){% else %}rgba(255,255,255,0.05){% endif %}; background: {% if tm.is_current %}rgba(234, 179, 8, 0.14){% elif tm.items_count > 0 %}rgba(59, 130, 246, 0.08){% else %}rgba(0,0,0,0.2){% endif %}; cursor: pointer; transition: all 0.2s; min-height: 52px; text-align: center; {% if tm.is_past %}opacity: 0.6; filter: grayscale(25%);{% endif %}">
                             
@@ -963,9 +964,9 @@
                             </div>
 
                             {% if tm.fixed_costs_total > 0 %}
-                            <div style="font-size: 0.56rem; color: #38bdf8; opacity: 0.85; margin-top: 1px; display: flex; align-items: center; justify-content: center; gap: 2px;" title="Costi fissi mensili ricorrenti: {{ tm.fixed_costs_total|eur }}">
+                            <div class="radar-matrix-fc-pill" data-fc-total="{{ tm.fixed_costs_total }}" data-fc-no-mortgage="{{ tm.fixed_costs_without_mortgage }}" style="font-size: 0.56rem; color: #38bdf8; opacity: 0.85; margin-top: 1px; display: flex; align-items: center; justify-content: center; gap: 2px;" title="Costi fissi mensili ricorrenti: {{ tm.fixed_costs_total|eur }}">
                                 <span>🔄</span>
-                                <span>€{{ "%.0f"|format(tm.fixed_costs_total) }}</span>
+                                <span class="fc-pill-amt">€{{ "%.0f"|format(tm.fixed_costs_total) }}</span>
                             </div>
                             {% endif %}
                         </div>
@@ -983,16 +984,24 @@
                     📋 Tutte le Scadenze Programmate
                 </span>
                 
-                <!-- Scope Quick Filter (Tutte / Mie Personali / Condivise Famiglia) -->
-                <div style="display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.3); padding: 2px 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
-                    <button type="button" onclick="filterDeadlinesByScope('ALL', this)" class="btn-radar-scope active" id="scopeBtnAll" style="font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; border: none; background: #eab308; color: #000; font-weight: 800; cursor: pointer;">
-                        Tutte
-                    </button>
-                    <button type="button" onclick="filterDeadlinesByScope('LEOPOLDO', this)" class="btn-radar-scope" id="scopeBtnLeo" style="font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; border: none; background: transparent; color: #38bdf8; font-weight: 700; cursor: pointer;">
-                        👤 Solo Leopoldo
-                    </button>
-                    <button type="button" onclick="filterDeadlinesByScope('SHARED', this)" class="btn-radar-scope" id="scopeBtnShared" style="font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; border: none; background: transparent; color: #facc15; font-weight: 700; cursor: pointer;">
-                        👥 Condivise 50/50
+                <!-- Scope Quick Filter & Mortgage Toggle -->
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.3); padding: 2px 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                        <button type="button" onclick="filterDeadlinesByScope('ALL', this)" class="btn-radar-scope active" id="scopeBtnAll" style="font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; border: none; background: #eab308; color: #000; font-weight: 800; cursor: pointer;">
+                            Tutte
+                        </button>
+                        <button type="button" onclick="filterDeadlinesByScope('LEOPOLDO', this)" class="btn-radar-scope" id="scopeBtnLeo" style="font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; border: none; background: transparent; color: #38bdf8; font-weight: 700; cursor: pointer;">
+                            👤 Solo Leopoldo
+                        </button>
+                        <button type="button" onclick="filterDeadlinesByScope('SHARED', this)" class="btn-radar-scope" id="scopeBtnShared" style="font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; border: none; background: transparent; color: #facc15; font-weight: 700; cursor: pointer;">
+                            👥 Condivise 50/50
+                        </button>
+                    </div>
+
+                    <!-- Interruttore Mutuo ON / OFF -->
+                    <button type="button" id="btnToggleMortgage" onclick="toggleMortgageFilter(this)" style="font-size: 0.68rem; padding: 3px 9px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s;" title="Clicca per escludere o includere la rata del mutuo">
+                        <span id="btnMortgageIcon">🏠</span>
+                        <span id="btnMortgageText">Mutuo: INCLUSO</span>
                     </button>
                 </div>
             </div>
@@ -1030,6 +1039,7 @@
                      data-custom-months="{{ dl.custom_months or '' }}"
                      data-scope="{{ dl.scope_code }}"
                      data-is-past="{{ '1' if dl.is_past else '0' }}" 
+                     data-is-mortgage="{{ '1' if dl.is_mortgage else '0' }}"
                      style="background: rgba(255,255,255,0.02); border: 1px solid {% if dl.is_past %}rgba(100, 116, 139, 0.25){% elif dl.is_paid %}rgba(16, 185, 129, 0.3){% elif dl.is_partial %}rgba(234, 179, 8, 0.35){% else %}rgba(239, 68, 68, 0.35){% endif %}; border-radius: 10px; padding: 10px 14px; transition: all 0.2s; {% if dl.is_past %}opacity: 0.65; background: rgba(0,0,0,0.2);{% endif %}">
                     
                     <!-- Primary Compact Row -->
@@ -2492,6 +2502,46 @@ function closeEditQuotaModal() {
 
 let activeRadarYm = 'ALL';
 let activeRadarScope = 'ALL';
+let includeMortgage = true;
+
+function toggleMortgageFilter(btn) {
+    includeMortgage = !includeMortgage;
+    const btnText = document.getElementById('btnMortgageText');
+    const btnIcon = document.getElementById('btnMortgageIcon');
+    
+    if (includeMortgage) {
+        btn.style.background = 'rgba(56, 189, 248, 0.15)';
+        btn.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+        btn.style.color = '#38bdf8';
+        if (btnText) btnText.innerText = 'Mutuo: INCLUSO';
+        if (btnIcon) btnIcon.innerText = '🏠';
+    } else {
+        btn.style.background = 'rgba(239, 68, 68, 0.15)';
+        btn.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+        btn.style.color = '#f87171';
+        if (btnText) btnText.innerText = 'Mutuo: ESCLUSO';
+        if (btnIcon) btnIcon.innerText = '🚫';
+    }
+
+    // Aggiorna le pillole dei costi fissi nella matrice di sinistra
+    document.querySelectorAll('.radar-matrix-fc-pill').forEach(pill => {
+        const total = parseFloat(pill.getAttribute('data-fc-total') || '0');
+        const noMortgage = parseFloat(pill.getAttribute('data-fc-no-mortgage') || '0');
+        const amtSpan = pill.querySelector('.fc-pill-amt');
+        const activeAmt = includeMortgage ? total : noMortgage;
+        if (amtSpan) {
+            amtSpan.innerText = '€' + Math.round(activeAmt);
+        }
+        pill.style.display = (activeAmt > 0) ? 'flex' : 'none';
+    });
+
+    // Ricarica drawer costi fissi se aperto
+    if (activeRadarYm !== 'ALL') {
+        renderMonthFixedCosts(activeRadarYm);
+    }
+
+    applyDeadlinesCombinedFilter();
+}
 
 function applyDeadlinesCombinedFilter() {
     const cards = document.querySelectorAll('.deadline-item-card');
@@ -2500,20 +2550,14 @@ function applyDeadlinesCombinedFilter() {
     cards.forEach(card => {
         const cardYm = card.getAttribute('data-ym');
         const cardScope = card.getAttribute('data-scope'); // 'LEOPOLDO', 'SHARED', 'NUNZIA'
-        const cardRec = card.getAttribute('data-recurrence') || 'ANNUAL';
-        const cardMonthNum = parseInt(card.getAttribute('data-month-num') || '0', 10);
-        const cardCustomMonths = card.getAttribute('data-custom-months') || '';
+        const isMortgage = (card.getAttribute('data-is-mortgage') === '1');
         
         let matchesYm = false;
         if (activeRadarYm === 'ALL') {
             matchesYm = true;
         } else if (cardYm === activeRadarYm) {
-            // Match esatto: la card è già nel mese/anno corretto (le occorrenze future
-            // sono già state create con year_month corretto dal server)
             matchesYm = true;
         }
-        // NOTA: NON facciamo più proiezione JS per ANNUAL/BIENNIAL perché il backend
-        // crea già card distinte per ogni anno con data-ym corretto.
         
         let matchesScope = true;
         if (activeRadarScope === 'LEOPOLDO') {
@@ -2521,8 +2565,13 @@ function applyDeadlinesCombinedFilter() {
         } else if (activeRadarScope === 'SHARED') {
             matchesScope = (cardScope === 'SHARED');
         }
+
+        let matchesMortgage = true;
+        if (!includeMortgage && isMortgage) {
+            matchesMortgage = false;
+        }
         
-        if (matchesYm && matchesScope) {
+        if (matchesYm && matchesScope && matchesMortgage) {
             card.style.display = 'block';
             visibleCount++;
         } else {
@@ -2540,6 +2589,9 @@ function applyDeadlinesCombinedFilter() {
 
     if (activeRadarYm !== 'ALL') {
         titleText += `(${activeRadarYm})`;
+    }
+    if (!includeMortgage) {
+        titleText += ' [Senza Mutuo]';
     }
     if (headerTitle) headerTitle.innerText = titleText;
     if (emptyMsg) emptyMsg.style.display = (visibleCount === 0) ? 'block' : 'none';
@@ -2577,58 +2629,74 @@ function filterDeadlinesByMonth(targetYm, btnElement) {
 
     // Aggiorna il banner riepilogo del mese (scadenze straordinarie + costi fissi)
     const banner = document.getElementById('radarMonthSummaryBanner');
-    const bannerText = document.getElementById('radarMonthSummaryText');
     const drawer = document.getElementById('radarFixedCostsDrawer');
-    const fcList = document.getElementById('radarFixedCostsList');
-    const fcToggleBtn = document.getElementById('btnToggleMonthFixedCosts');
 
-    if (banner && bannerText) {
+    if (banner) {
         if (targetYm === 'ALL') {
             banner.style.display = 'none';
             if (drawer) drawer.style.display = 'none';
         } else {
-            const targetCell = document.getElementById('monthRow_' + targetYm);
-            const cellTitle = targetCell ? targetCell.getAttribute('title') : targetYm;
-            bannerText.innerHTML = `<strong>🗓️ Riepilogo Mese (${targetYm}):</strong> ${cellTitle}`;
-            banner.style.display = 'block';
-
-            // Popola i singoli costi fissi del mese
-            if (targetCell && fcList) {
-                let items = [];
-                try {
-                    const rawJson = targetCell.getAttribute('data-fc-json') || '[]';
-                    items = JSON.parse(rawJson);
-                } catch(e) {
-                    items = [];
-                }
-
-                if (items.length > 0) {
-                    fcList.innerHTML = items.map(it => `
-                        <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 6px; padding: 5px 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem;">
-                            <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
-                                <span>📌</span>
-                                <span style="color: #fff; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${it.name}</span>
-                                ${it.tag ? `<span class="badge-tag" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.6rem; padding: 0 4px; border-radius: 4px;">${it.tag}</span>` : ''}
-                                <span style="color: var(--text-muted); font-size: 0.65rem;">(g.${it.due_day})</span>
-                            </div>
-                            <strong style="color: #38bdf8; white-space: nowrap; margin-left: 6px;">€ ${Number(it.amount).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong>
-                        </div>
-                    `).join('');
-                    if (fcToggleBtn) {
-                        fcToggleBtn.style.display = 'inline-block';
-                        fcToggleBtn.innerText = `🔄 Costi Fissi Mese (${items.length} voci) ▾`;
-                    }
-                } else {
-                    fcList.innerHTML = '<span style="font-size: 0.7rem; color: var(--text-muted);">Nessun costo fisso ricorrente previsto per questo mese.</span>';
-                    if (fcToggleBtn) {
-                        fcToggleBtn.style.display = 'none';
-                    }
-                }
-            }
+            renderMonthFixedCosts(targetYm);
         }
     }
 
     applyDeadlinesCombinedFilter();
+}
+
+function renderMonthFixedCosts(targetYm) {
+    const banner = document.getElementById('radarMonthSummaryBanner');
+    const bannerText = document.getElementById('radarMonthSummaryText');
+    const fcList = document.getElementById('radarFixedCostsList');
+    const fcToggleBtn = document.getElementById('btnToggleMonthFixedCosts');
+    const targetCell = document.getElementById('monthRow_' + targetYm);
+    if (!targetCell || !banner) return;
+
+    const cellTitle = targetCell.getAttribute('title') || targetYm;
+    if (bannerText) {
+        let text = `<strong>🗓️ Riepilogo Mese (${targetYm}):</strong> ${cellTitle}`;
+        if (!includeMortgage) {
+            text += ' <span style="color: #f87171; font-weight: 700;">(Senza Mutuo)</span>';
+        }
+        bannerText.innerHTML = text;
+    }
+    banner.style.display = 'block';
+
+    if (fcList) {
+        let items = [];
+        try {
+            const rawJson = targetCell.getAttribute('data-fc-json') || '[]';
+            items = JSON.parse(rawJson);
+        } catch(e) {
+            items = [];
+        }
+
+        const filteredItems = items.filter(it => includeMortgage || !it.is_mortgage);
+
+        if (filteredItems.length > 0) {
+            fcList.innerHTML = filteredItems.map(it => `
+                <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 6px; padding: 5px 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem;">
+                    <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                        <span>📌</span>
+                        <span style="color: #fff; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${it.name}</span>
+                        ${it.tag ? `<span class="badge-tag" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.6rem; padding: 0 4px; border-radius: 4px;">${it.tag}</span>` : ''}
+                        ${it.is_mortgage ? `<span class="badge-tag" style="background: rgba(239, 68, 68, 0.15); color: #f87171; font-size: 0.6rem; padding: 0 4px; border-radius: 4px;">Mutuo</span>` : ''}
+                        <span style="color: var(--text-muted); font-size: 0.65rem;">(g.${it.due_day})</span>
+                    </div>
+                    <strong style="color: #38bdf8; white-space: nowrap; margin-left: 6px;">€ ${Number(it.amount).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong>
+                </div>
+            `).join('');
+            if (fcToggleBtn) {
+                fcToggleBtn.style.display = 'inline-block';
+                fcToggleBtn.innerText = `🔄 Costi Fissi Mese (${filteredItems.length} voci) ▾`;
+            }
+        } else {
+            fcList.innerHTML = '<span style="font-size: 0.7rem; color: var(--text-muted);">Nessun costo fisso ricorrente previsto per questo mese (escluso eventuale mutuo).</span>';
+            if (fcToggleBtn) {
+                fcToggleBtn.style.display = 'inline-block';
+                fcToggleBtn.innerText = `🔄 Costi Fissi Mese (0 voci) ▾`;
+            }
+        }
+    }
 }
 
 function toggleRadarFixedCostsDrawer() {
