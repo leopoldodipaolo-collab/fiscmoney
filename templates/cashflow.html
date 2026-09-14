@@ -231,35 +231,39 @@
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
         <div>
             <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.2rem;">🎯</span>
-                <span style="color: var(--accent-success); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800;">
-                    Disponibilità Residua del Mese (Safe-to-Spend)
+                <span style="font-size: 1.2rem;">{% if data.monthly_budget_overrun > 0 %}⚠️{% else %}🎯{% endif %}</span>
+                <span style="color: {% if data.monthly_budget_overrun > 0 %}#f87171{% else %}var(--accent-success){% endif %}; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800;">
+                    {% if data.monthly_budget_overrun > 0 %}Disavanzo Mensile (Budget Superato){% else %}Disponibilità Residua del Mese (Safe-to-Spend){% endif %}
                 </span>
             </div>
             
-            <div class="privacy-mask" style="font-size: 2.2rem; font-weight: 800; color: #fff; margin-top: 4px; letter-spacing: -0.5px;" title="Passa sopra per sbirciare">
-                {{ data.monthly_safe_to_spend|eur }}
+            <div class="privacy-mask" style="font-size: 2.2rem; font-weight: 800; color: {% if data.monthly_budget_overrun > 0 %}#f87171{% else %}#fff{% endif %}; margin-top: 4px; letter-spacing: -0.5px;" title="Passa sopra per sbirciare">
+                {% if data.monthly_budget_overrun > 0 %}
+                    -{{ data.monthly_budget_overrun|eur }}
+                {% else %}
+                    {{ data.monthly_safe_to_spend|eur }}
+                {% endif %}
             </div>
 
             <!-- TACHIMETRO & GAUGE VISIVO: VELOCITÀ DI SPESA GIORNALIERA -->
-            <div class="daily-speedometer-box" style="margin-top: 12px; display: inline-flex; align-items: center; gap: 14px; background: rgba(0, 0, 0, 0.45); border: 1.5px solid {% if data.daily_safe_budget > 40 %}rgba(16, 185, 129, 0.45){% elif data.daily_safe_budget > 15 %}rgba(245, 158, 11, 0.45){% else %}rgba(239, 68, 68, 0.45){% endif %}; border-radius: 14px; padding: 10px 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+            <div class="daily-speedometer-box" style="margin-top: 12px; display: inline-flex; align-items: center; gap: 14px; background: rgba(0, 0, 0, 0.45); border: 1.5px solid {% if data.monthly_budget_overrun > 0 %}rgba(239, 68, 68, 0.5){% elif data.daily_safe_budget > 40 %}rgba(16, 185, 129, 0.45){% elif data.daily_safe_budget > 15 %}rgba(245, 158, 11, 0.45){% else %}rgba(239, 68, 68, 0.45){% endif %}; border-radius: 14px; padding: 10px 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
                 <!-- Speedometer Dial Visual -->
-                <div class="speedometer-dial" style="width: 46px; height: 46px; border-radius: 50%; background: {% if data.daily_safe_budget > 40 %}conic-gradient(#10b981 0% 75%, rgba(255,255,255,0.1) 75% 100%){% elif data.daily_safe_budget > 15 %}conic-gradient(#f59e0b 0% 50%, rgba(255,255,255,0.1) 50% 100%){% else %}conic-gradient(#ef4444 0% 25%, rgba(255,255,255,0.1) 25% 100%){% endif %}; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 12px {% if data.daily_safe_budget > 40 %}rgba(16, 185, 129, 0.35){% elif data.daily_safe_budget > 15 %}rgba(245, 158, 11, 0.35){% else %}rgba(239, 68, 68, 0.35){% endif %};">
+                <div class="speedometer-dial" style="width: 46px; height: 46px; border-radius: 50%; background: {% if data.monthly_budget_overrun > 0 %}conic-gradient(#ef4444 0% 100%, rgba(255,255,255,0.1) 100% 100%){% elif data.daily_safe_budget > 40 %}conic-gradient(#10b981 0% 75%, rgba(255,255,255,0.1) 75% 100%){% elif data.daily_safe_budget > 15 %}conic-gradient(#f59e0b 0% 50%, rgba(255,255,255,0.1) 50% 100%){% else %}conic-gradient(#ef4444 0% 25%, rgba(255,255,255,0.1) 25% 100%){% endif %}; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 12px {% if data.monthly_budget_overrun > 0 %}rgba(239, 68, 68, 0.35){% elif data.daily_safe_budget > 40 %}rgba(16, 185, 129, 0.35){% elif data.daily_safe_budget > 15 %}rgba(245, 158, 11, 0.35){% else %}rgba(239, 68, 68, 0.35){% endif %};">
                     <div style="width: 36px; height: 36px; border-radius: 50%; background: #0f172a; display: flex; align-items: center; justify-content: center; font-size: 1.15rem;">
-                        {% if data.daily_safe_budget > 40 %}🚀{% elif data.daily_safe_budget > 15 %}⚡{% else %}⚠️{% endif %}
+                        {% if data.monthly_budget_overrun > 0 %}🛑{% elif data.daily_safe_budget > 40 %}🚀{% elif data.daily_safe_budget > 15 %}⚡{% else %}⚠️{% endif %}
                     </div>
                 </div>
 
                 <!-- Daily Rate & Remaining Days -->
                 <div>
-                    <div style="font-size: 0.68rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; color: {% if data.daily_safe_budget > 40 %}#34d399{% elif data.daily_safe_budget > 15 %}#fbbf24{% else %}#f87171{% endif %};">
-                        Velocità di Spesa Libera
+                    <div style="font-size: 0.68rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; color: {% if data.monthly_budget_overrun > 0 %}#f87171{% elif data.daily_safe_budget > 40 %}#34d399{% elif data.daily_safe_budget > 15 %}#fbbf24{% else %}#f87171{% endif %};">
+                        {% if data.monthly_budget_overrun > 0 %}Budget Mensile Esaurito{% else %}Velocità di Spesa Libera{% endif %}
                     </div>
                     <div style="display: flex; align-items: baseline; gap: 6px;">
                         <span class="privacy-mask" style="font-size: 1.55rem; font-weight: 900; color: #fff; letter-spacing: -0.5px;" title="Passa sopra per sbirciare">
-                            {{ data.daily_safe_budget|eur }}
+                            {% if data.monthly_budget_overrun > 0 %}0,00 €{% else %}{{ data.daily_safe_budget|eur }}{% endif %}
                         </span>
-                        <span style="font-size: 0.78rem; font-weight: 800; color: {% if data.daily_safe_budget > 40 %}#34d399{% elif data.daily_safe_budget > 15 %}#fbbf24{% else %}#f87171{% endif %}; text-transform: uppercase;">
+                        <span style="font-size: 0.78rem; font-weight: 800; color: {% if data.monthly_budget_overrun > 0 %}#f87171{% elif data.daily_safe_budget > 40 %}#34d399{% elif data.daily_safe_budget > 15 %}#fbbf24{% else %}#f87171{% endif %}; text-transform: uppercase;">
                             / GIORNO
                         </span>
                     </div>
@@ -481,10 +485,15 @@
                 {% endif %}
             </div>
 
-            <!-- Total Safe-to-Spend Row -->
+            <!-- Total Safe-to-Spend / Overrun Row -->
             <div style="border-top: 1px dashed rgba(255,255,255,0.15); padding-top: 6px; display: flex; justify-content: space-between; font-size: 0.85rem;">
+                {% if data.monthly_budget_overrun > 0 %}
+                <span style="color: #f87171; font-weight: 700;">= Disavanzo Mese (Assorbito da Riserva)</span>
+                <strong style="color: #f87171; font-weight: 800;">-{{ data.monthly_budget_overrun|eur }}</strong>
+                {% else %}
                 <span style="color: var(--accent-success); font-weight: 700;">= Safe-to-Spend Rimasto</span>
                 <strong style="color: var(--accent-success); font-weight: 800;">{{ data.monthly_safe_to_spend|eur }}</strong>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -739,7 +748,7 @@
             <span class="kpi-label">💳 Spese Sostenute Finora</span>
             <div class="kpi-value amount-expense">{{ (-data.actual_month_expenses)|eur }}</div>
             <small style="color: var(--text-muted); font-size: 0.7rem;">
-                Fisse: {{ data.total_fixed_expenses_paid|eur }}{% if data.total_investments_month > 0 %} • Inv: {{ data.total_investments_month|eur }}{% endif %} • Var: {{ data.variable_expenses|eur }}
+                Fisse: {{ data.total_fixed_expenses_paid|eur }}{% if data.total_deadlines_paid > 0 %} • Scad: {{ data.total_deadlines_paid|eur }}{% endif %}{% if data.total_investments_month > 0 %} • Inv: {{ data.total_investments_month|eur }}{% endif %} • Var: {{ data.variable_expenses|eur }}
             </small>
         </div>
 

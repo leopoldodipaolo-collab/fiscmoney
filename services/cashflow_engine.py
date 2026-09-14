@@ -746,9 +746,12 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
     variable_expenses = sum(t['amount'] for t in variable_tx_list)
     total_investments_month = sum(t['amount'] for t in investment_tx_list)
 
-    # 7. MONTHLY BUDGET & DISPOSABLE INCOME (Calibrato su stipendio, costi fissi, scadenze e investimenti del mese!)
+    # 7. MONTHLY BUDGET & DISPOSABLE INCOME (Calibrato su stipendio, costi fissi, tutte le scadenze del mese e investimenti!)
+    # Se il mese presenta scadenze straordinarie (es. Bollo, TARI) sia pagate che pendenti, vanno entrambe dedotte dal budget mensile.
+    total_all_deadlines = total_deadlines_paid + total_deadlines_pending
     monthly_net_margin = max(0.0, expected_month_income - total_fixed_expenses_expected)
-    monthly_safe_to_spend = max(0.0, monthly_net_margin - variable_expenses - total_deadlines_pending - total_investments_month)
+    monthly_safe_to_spend = max(0.0, expected_month_income - total_fixed_expenses_expected - variable_expenses - total_all_deadlines - total_investments_month)
+    monthly_budget_overrun = max(0.0, (total_fixed_expenses_expected + variable_expenses + total_all_deadlines + total_investments_month) - expected_month_income)
     daily_safe_budget = monthly_safe_to_spend / days_remaining if days_remaining > 0 else 0.0
     burn_rate_daily = actual_month_expenses / current_day if current_day > 0 else 0.0
 
@@ -1167,6 +1170,8 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         "total_fixed_expenses_pending": total_fixed_expenses_pending,
         "monthly_net_margin": monthly_net_margin,
         "monthly_safe_to_spend": monthly_safe_to_spend,
+        "monthly_budget_overrun": monthly_budget_overrun,
+        "total_all_deadlines": total_all_deadlines,
         "daily_safe_budget": daily_safe_budget,
         "burn_rate_daily": burn_rate_daily,
         "smart_alerts": smart_alerts
