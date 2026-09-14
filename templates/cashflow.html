@@ -297,6 +297,7 @@
             </div>
 
             <!-- Cascade Drawer: Fixed Costs Breakdown -->
+            <!-- Cascade Drawer: Fixed Costs Breakdown -->
             <div id="cascadeFixedCosts" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 8px; max-height: 220px; overflow-y: auto;">
                 <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase;">
                     Dettaglio Costi Fissi ({{ data.fixed_items|length }} voci):
@@ -304,11 +305,25 @@
                 <div style="display: flex; flex-direction: column; gap: 5px;">
                     {% for it in data.fixed_items %}
                     {% if not it.is_income %}
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; flex: 1; padding-right: 8px;">
                             <span>{% if it.is_paid %}🟢{% else %}⏳{% endif %}</span>
-                            <span style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">{{ it.name }}</span>
-                            <span style="color: var(--text-muted); font-size: 0.65rem;">(g.{{ it.due_day }})</span>
+                            <div style="overflow: hidden;">
+                                <div style="display: flex; align-items: center; gap: 5px; flex-wrap: nowrap;">
+                                    <span style="color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;" title="{{ it.display_title or it.name }}">
+                                        {{ it.display_title or it.name }}
+                                    </span>
+                                    {% if it.clean_tag %}
+                                    <span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.6rem; padding: 0 4px; font-weight: 700; border-radius: 4px; flex-shrink: 0;">
+                                        #{{ it.clean_tag }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div style="color: var(--text-muted); font-size: 0.65rem;">
+                                    <span>giorno {{ it.due_day }}</span>
+                                    {% if it.is_paid and it.paid_date %} • <span style="color: var(--accent-success);">saldata il {{ it.paid_date }}</span>{% endif %}
+                                </div>
+                            </div>
                         </div>
                         <div style="text-align: right; white-space: nowrap;">
                             <strong style="color: {% if it.is_paid %}var(--accent-success){% else %}#f59e0b{% endif %};">
@@ -350,11 +365,25 @@
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 5px;">
                     {% for dl in data.planned_deadlines %}
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; flex: 1; padding-right: 8px;">
                             <span>{% if dl.is_paid %}🟢{% else %}⏳{% endif %}</span>
-                            <span style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">{{ dl.name }}</span>
-                            <span style="color: var(--text-muted); font-size: 0.65rem;">(g.{{ dl.due_day }})</span>
+                            <div style="overflow: hidden;">
+                                <div style="display: flex; align-items: center; gap: 5px; flex-wrap: nowrap;">
+                                    <span style="color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;" title="{{ dl.display_title or dl.name }}">
+                                        {{ dl.display_title or dl.name }}
+                                    </span>
+                                    {% if dl.clean_tag %}
+                                    <span class="badge-tag" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); font-size: 0.6rem; padding: 0 4px; font-weight: 700; border-radius: 4px; flex-shrink: 0;">
+                                        #{{ dl.clean_tag }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div style="color: var(--text-muted); font-size: 0.65rem;">
+                                    <span>giorno {{ dl.due_day }}</span>
+                                    {% if dl.is_paid and dl.paid_date %} • <span style="color: var(--accent-success);">saldata il {{ dl.paid_date }}</span>{% endif %}
+                                </div>
+                            </div>
                         </div>
                         <div style="text-align: right; white-space: nowrap;">
                             <strong style="color: {% if dl.is_paid %}var(--accent-success){% else %}#c084fc{% endif %};">
@@ -390,8 +419,17 @@
                 <div style="display: flex; flex-direction: column; gap: 5px;">
                     {% for vt in data.variable_transactions %}
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <div style="overflow: hidden; padding-right: 8px;">
-                            <div style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;" title="{{ vt.description }}">{{ vt.description }}</div>
+                        <div style="overflow: hidden; padding-right: 8px; flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 5px; flex-wrap: nowrap;">
+                                <div style="color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 175px;" title="{{ vt.description }}">
+                                    {{ vt.display_title or vt.description }}
+                                </div>
+                                {% if vt.clean_tag %}
+                                <span class="badge-tag" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 0.6rem; padding: 0 4px; font-weight: 700; border-radius: 4px; flex-shrink: 0;">
+                                    #{{ vt.clean_tag }}
+                                </span>
+                                {% endif %}
+                            </div>
                             <div style="font-size: 0.65rem; color: var(--text-muted);">📅 {{ vt.date }} • {{ vt.category }}</div>
                         </div>
                         <div style="text-align: right; white-space: nowrap;">
@@ -468,11 +506,25 @@
                 <div style="display: flex; flex-direction: column; gap: 5px;">
                     {% for it in data.fixed_items %}
                     {% if not it.is_income %}
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; flex: 1; padding-right: 8px;">
                             <span>{% if it.is_paid %}🟢{% else %}⏳{% endif %}</span>
-                            <span style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">{{ it.name }}</span>
-                            <span style="color: var(--text-muted); font-size: 0.65rem;">(g.{{ it.due_day }})</span>
+                            <div style="overflow: hidden;">
+                                <div style="display: flex; align-items: center; gap: 5px; flex-wrap: nowrap;">
+                                    <span style="color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;" title="{{ it.display_title or it.name }}">
+                                        {{ it.display_title or it.name }}
+                                    </span>
+                                    {% if it.clean_tag %}
+                                    <span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.6rem; padding: 0 4px; font-weight: 700; border-radius: 4px; flex-shrink: 0;">
+                                        #{{ it.clean_tag }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div style="color: var(--text-muted); font-size: 0.65rem;">
+                                    <span>giorno {{ it.due_day }}</span>
+                                    {% if it.is_paid and it.paid_date %} • <span style="color: var(--accent-success);">saldata il {{ it.paid_date }}</span>{% endif %}
+                                </div>
+                            </div>
                         </div>
                         <div style="text-align: right; white-space: nowrap;">
                             <strong style="color: {% if it.is_paid %}var(--accent-success){% else %}#f59e0b{% endif %};">
@@ -505,10 +557,25 @@
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 5px;">
                     {% for dl in data.planned_deadlines %}
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; flex: 1; padding-right: 8px;">
                             <span>{% if dl.is_paid %}🟢{% else %}⏳{% endif %}</span>
-                            <span style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">{{ dl.name }}</span>
+                            <div style="overflow: hidden;">
+                                <div style="display: flex; align-items: center; gap: 5px; flex-wrap: nowrap;">
+                                    <span style="color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;" title="{{ dl.display_title or dl.name }}">
+                                        {{ dl.display_title or dl.name }}
+                                    </span>
+                                    {% if dl.clean_tag %}
+                                    <span class="badge-tag" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); font-size: 0.6rem; padding: 0 4px; font-weight: 700; border-radius: 4px; flex-shrink: 0;">
+                                        #{{ dl.clean_tag }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div style="color: var(--text-muted); font-size: 0.65rem;">
+                                    <span>giorno {{ dl.due_day }}</span>
+                                    {% if dl.is_paid and dl.paid_date %} • <span style="color: var(--accent-success);">saldata il {{ dl.paid_date }}</span>{% endif %}
+                                </div>
+                            </div>
                         </div>
                         <div style="text-align: right; white-space: nowrap;">
                             <strong style="color: var(--accent-success);">
@@ -538,8 +605,17 @@
                 <div style="display: flex; flex-direction: column; gap: 5px;">
                     {% for vt in data.variable_transactions %}
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <div style="overflow: hidden; padding-right: 8px;">
-                            <div style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;" title="{{ vt.description }}">{{ vt.description }}</div>
+                        <div style="overflow: hidden; padding-right: 8px; flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 5px; flex-wrap: nowrap;">
+                                <div style="color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 175px;" title="{{ vt.description }}">
+                                    {{ vt.display_title or vt.description }}
+                                </div>
+                                {% if vt.clean_tag %}
+                                <span class="badge-tag" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 0.6rem; padding: 0 4px; font-weight: 700; border-radius: 4px; flex-shrink: 0;">
+                                    #{{ vt.clean_tag }}
+                                </span>
+                                {% endif %}
+                            </div>
                             <div style="font-size: 0.65rem; color: var(--text-muted);">📅 {{ vt.date }} • {{ vt.category }}</div>
                         </div>
                         <div style="text-align: right; white-space: nowrap;">

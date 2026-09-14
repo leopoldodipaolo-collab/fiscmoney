@@ -14,6 +14,89 @@ MONTH_NAMES_IT_SHORT = {
     7: "Lug", 8: "Ago", 9: "Set", 10: "Ott", 11: "Nov", 12: "Dic"
 }
 
+def format_clean_tag_display(raw_name, tags="", match_pattern="", category="", amount=0.0):
+    """
+    Restituisce (display_title, clean_tag, tag_badge) puliti basandosi su tag e regole,
+    evitando etichette generiche bancarie (es. DISPOSIZIONE, BONIFICO, PAGAMENTI DIVERSI).
+    """
+    raw_name_str = (raw_name or '').strip()
+    tags_str = (tags or '').strip()
+    pat_str = (match_pattern or '').strip().lstrip('#')
+    cat_str = (category or '').strip()
+    
+    # Riconoscimento tag primario pulito
+    primary_tag = None
+    if tags_str:
+        tag_list = [t.strip().lstrip('#') for t in tags_str.split() if t.strip()]
+        for t in tag_list:
+            t_low = t.lower()
+            if t_low not in ['spese', 'generale', 'altro', 'casa', 'bonifico']:
+                primary_tag = t
+                break
+        if not primary_tag and tag_list:
+            primary_tag = tag_list[0]
+            
+    combined_hints = f"{raw_name_str} {tags_str} {pat_str} {cat_str}".lower()
+    
+    _generic_names = ('disposizione', 'bonifico', 'pagamento', 'rata', 'accredito')
+    _is_generic = any(raw_name_str.lower().startswith(g) for g in _generic_names) or raw_name_str.upper() in ('DISPOSIZIONE', 'BONIFICO', 'PAGAMENTO')
+    _is_mortgage_by_amt = (900.0 <= abs(amount) <= 1200.0 and _is_generic)
+    
+    # Helper per match su parole intere
+    def has_kw(kw, text):
+        return bool(re.search(r'\b' + re.escape(kw) + r'\b', text, re.IGNORECASE))
+
+    # Riconoscimento intelligente dei casi noti (Directa/Investimenti hanno priorità su euristica importo mutuo)
+    if any(has_kw(k, combined_hints) for k in ['directa', 'investimenti_pac', 'pac', 'etf']):
+        display_title = "Investimento PAC (Directa)"
+        clean_tag = "DIRECTA"
+    elif any(has_kw(k, combined_hints) for k in ['mutuo', 'prima casa']) or _is_mortgage_by_amt:
+        display_title = "Rata Mutuo (BCC)"
+        clean_tag = "MUTUO"
+    elif has_kw('tari', combined_hints) or has_kw('pagopa', combined_hints) or (has_kw('comune', combined_hints) and has_kw('aquila', combined_hints)):
+        display_title = "TARI (Tassa Rifiuti)"
+        clean_tag = "TARI"
+    elif has_kw('bollo', combined_hints) or has_kw('aci', combined_hints):
+        display_title = "Bollo Auto (ACI)"
+        clean_tag = "BOLLO"
+    elif any(has_kw(k, combined_hints) for k in ['officina', 'tagliando', 'revisione']):
+        display_title = "Manutenzione Auto / Tagliando"
+        clean_tag = "TAGLIANDO"
+    elif 'iliad' in combined_hints:
+        if abs(amount) > 15.0 or 'fibra' in combined_hints:
+            display_title = "Fibra Casa (Iliad)"
+            clean_tag = "FIBRA"
+        else:
+            display_title = "SIM Mobile (Iliad)"
+            clean_tag = "SIM"
+    elif 'enel' in combined_hints:
+        display_title = "Luce & Gas (Enel)"
+        clean_tag = "BOLLETTE"
+    elif 'telepass' in combined_hints:
+        display_title = "Telepass & Autostrade"
+        clean_tag = "TELEPASS"
+    elif 'canone' in combined_hints and 'carta' in combined_hints or 'canone mensile' in combined_hints:
+        display_title = "Canone Mensile Carta BPER"
+        clean_tag = "CANONE"
+    elif 'stipendio' in combined_hints or 'emolumenti' in combined_hints:
+        display_title = "Stipendio Mensile"
+        clean_tag = "STIPENDIO"
+    elif primary_tag:
+        display_title = primary_tag.replace('_', ' ').title()
+        clean_tag = primary_tag.upper()
+    elif _is_generic and pat_str:
+        display_title = pat_str.title()
+        clean_tag = pat_str.upper()
+    else:
+        # Pulisci prefissi categoria o stringhe troppo lunghe
+        short_title = raw_name_str
+        if cat_str and short_title.lower().startswith(f"{cat_str.lower()} - "):
+            short_title = short_title[len(cat_str) + 3:].strip()
+        display_title = short_title if len(short_title) <= 28 else short_title[:26].strip() + '...'
+        clean_tag = (primary_tag or pat_str or '').upper() if (primary_tag or pat_str) else None
+
+    return display_title, clean_tag
+
 # ---------------------------------------------------------
 # CATALOGO SCADENZE & TASSE FREQUENTI ITALIANE (PRECOMPILATE)
 # ---------------------------------------------------------
@@ -458,6 +541,17 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         actual_amount = sum(abs(t['amount']) for t in matched_txs) if is_paid else 0.0
         paid_date = matched_txs[0]['date'] if is_paid else None
         
+        tx_tags = " ".join([t['tags'] or '' for t in matched_txs]) if matched_txs else ""
+        disp_title, clean_tg = format_clean_tag_display(
+            raw_name=fc['name'],
+            tags=tx_tags,
+            match_pattern=fc['match_pattern'] or '',
+            category=fc['category'] or '',
+            amount=actual_amount if is_paid else fc['expected_amount']
+        )
+        item['display_title'] = disp_title
+        item['clean_tag'] = clean_tg
+        
         item['is_paid'] = is_paid
         item['actual_amount'] = actual_amount
         item['paid_date'] = paid_date
@@ -485,36 +579,52 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         """, (workspace_id,)).fetchall()
         
         for rec in all_recurring:
-            try:
-                r_year, r_month = [int(x) for x in rec['year_month'].split('-')]
-            except Exception:
-                continue
-                
-            should_roll = False
-            if rec['recurrence'] == 'ANNUAL':
-                if cur_month == r_month and cur_year > r_year:
-                    should_roll = True
-            elif rec['recurrence'] == 'BIENNIAL':
-                if cur_month == r_month and cur_year > r_year and ((cur_year - r_year) % 2 == 0):
-                    should_roll = True
-            elif rec['recurrence'] == 'SEMIANNUAL':
-                diff_months = (cur_year - r_year) * 12 + (cur_month - r_month)
-                if diff_months > 0 and (diff_months % 6 == 0):
-                    should_roll = True
-                    
-            if should_roll:
-                exists = conn.execute("""
+            rec_dict = dict(rec)
+            rec_type = rec_dict.get('recurrence')
+            orig_ym = rec_dict.get('year_month')
+            
+            should_exist = False
+            if orig_ym:
+                try:
+                    orig_y, orig_m = [int(x) for x in orig_ym.split('-')]
+                    if rec_type == 'ANNUAL' and orig_m == cur_month:
+                        should_exist = True
+                    elif rec_type == 'BIENNIAL' and orig_m == cur_month and ((cur_year - orig_y) % 2 == 0):
+                        should_exist = True
+                    elif rec_type == 'SEMIANNUAL' and (orig_m == cur_month or (orig_m + 6 - 1) % 12 + 1 == cur_month):
+                        should_exist = True
+                except Exception:
+                    pass
+            
+            if should_exist:
+                check_existing = conn.execute("""
                     SELECT id FROM planned_deadlines 
-                    WHERE workspace_id = ? AND name = ? AND year_month = ?
-                """, (workspace_id, rec['name'], year_month)).fetchone()
-                if not exists:
-                    conn.execute("""
-                        INSERT INTO planned_deadlines (workspace_id, profile_id, name, category, expected_amount, year_month, due_day, match_pattern, recurrence, is_paid)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
-                    """, (workspace_id, rec['profile_id'], rec['name'], rec['category'], rec['expected_amount'], year_month, rec['due_day'], rec['match_pattern'], rec['recurrence']))
-                    conn.commit()
-    except Exception as e:
-        print(f"Auto-rollover check warning: {e}")
+                    WHERE workspace_id = ? AND year_month = ? AND (name = ? OR match_pattern = ?)
+                """, (workspace_id, year_month, rec_dict['name'], rec_dict.get('match_pattern'))).fetchone()
+                
+                if not check_existing:
+                    try:
+                        conn.execute("""
+                            INSERT INTO planned_deadlines (
+                                workspace_id, profile_id, name, category, expected_amount,
+                                year_month, due_day, recurrence, match_pattern, is_paid
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+                        """, (
+                            workspace_id,
+                            rec_dict.get('profile_id'),
+                            rec_dict['name'],
+                            rec_dict.get('category') or 'Spese Straordinarie',
+                            rec_dict.get('expected_amount') or 0.0,
+                            year_month,
+                            rec_dict.get('due_day') or 1,
+                            rec_type,
+                            rec_dict.get('match_pattern')
+                        ))
+                        conn.commit()
+                    except Exception:
+                        pass
+    except Exception:
+        pass
 
     dl_query = "SELECT * FROM planned_deadlines WHERE workspace_id = ? AND year_month = ?"
     dl_params = [workspace_id, year_month]
@@ -546,6 +656,17 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         paid_amt = sum(abs(t['amount']) for t in matched_txs) if auto_matched else (item.get('paid_amount') or item['expected_amount']) if is_paid else 0.0
         paid_dt = matched_txs[0]['date'] if auto_matched else (item.get('paid_date') or None)
         
+        tx_tags = " ".join([t['tags'] or '' for t in matched_txs]) if matched_txs else ""
+        disp_title, clean_tg = format_clean_tag_display(
+            raw_name=dl['name'],
+            tags=tx_tags,
+            match_pattern=dl['match_pattern'] or '',
+            category=dl['category'] or '',
+            amount=paid_amt if is_paid else dl['expected_amount']
+        )
+        item['display_title'] = disp_title
+        item['clean_tag'] = clean_tg
+        
         item['is_paid'] = is_paid
         item['auto_matched'] = auto_matched
         item['actual_amount'] = paid_amt
@@ -574,12 +695,22 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         if tx['is_transfer']:
             continue
         if tx['amount'] < 0 and tx['id'] not in all_matched_ids:
+            tx_tags_raw = (tx['tags'] or '').strip()
+            vt_title, vt_tag = format_clean_tag_display(
+                raw_name=tx['description'],
+                tags=tx_tags_raw,
+                match_pattern="",
+                category=tx['category'] or '',
+                amount=abs(tx['amount'])
+            )
             variable_tx_list.append({
                 'id': tx['id'],
                 'date': tx['date'],
                 'amount': abs(tx['amount']),
                 'category': tx['category'] or 'Altro',
-                'description': tx['description'] or 'Spesa'
+                'description': tx['description'] or 'Spesa',
+                'display_title': vt_title,
+                'clean_tag': vt_tag
             })
             
     # Sort variable transactions by date descending
