@@ -936,6 +936,8 @@
                              class="radar-month-row {% if tm.is_current %}is-current{% endif %} {% if tm.items_count > 0 %}has-items{% endif %}"
                              id="monthRow_{{ tm.year_month }}"
                              data-ym="{{ tm.year_month }}"
+                             data-fc-json="{{ tm.fixed_costs_items|tojson|forceescape }}"
+                             data-fc-total="{{ tm.fixed_costs_total }}"
                              title="{{ tm.full_name }}: {% if tm.items_count > 0 %}{{ tm.items_count }} scadenze ({{ tm.total_expected|eur }}){% else %}Nessuna scadenza straordinaria{% endif %}{% if tm.fixed_costs_total > 0 %} + Costi Fissi Ricorrenti: {{ tm.fixed_costs_total|eur }}{% endif %}"
                              style="display: flex; flex-direction: column; justify-content: space-between; padding: 6px 4px; border-radius: 8px; border: 1px solid {% if tm.is_current %}rgba(234, 179, 8, 0.5){% elif tm.items_count > 0 %}rgba(59, 130, 246, 0.35){% else %}rgba(255,255,255,0.05){% endif %}; background: {% if tm.is_current %}rgba(234, 179, 8, 0.14){% elif tm.items_count > 0 %}rgba(59, 130, 246, 0.08){% else %}rgba(0,0,0,0.2){% endif %}; cursor: pointer; transition: all 0.2s; min-height: 52px; text-align: center; {% if tm.is_past %}opacity: 0.6; filter: grayscale(25%);{% endif %}">
                             
@@ -996,10 +998,25 @@
             </div>
 
             <!-- Banner info mese selezionato e costi fissi (dinamico) -->
-            <div id="radarMonthSummaryBanner" style="display: none; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 8px 12px; margin-bottom: 12px; font-size: 0.76rem; color: #cbd5e1;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <div id="radarMonthSummaryBanner" style="display: none; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.76rem; color: #cbd5e1;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                     <span id="radarMonthSummaryText"></span>
-                    <button type="button" onclick="filterDeadlinesByMonth('ALL', null)" style="background: none; border: none; color: #38bdf8; font-size: 0.72rem; cursor: pointer; text-decoration: underline; padding: 0;">Mostra Tutti i Mesi ✕</button>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <button type="button" id="btnToggleMonthFixedCosts" onclick="toggleRadarFixedCostsDrawer()" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer;">
+                            🔄 Mostra Costi Fissi Mese ▾
+                        </button>
+                        <button type="button" onclick="filterDeadlinesByMonth('ALL', null)" style="background: none; border: none; color: #94a3b8; font-size: 0.72rem; cursor: pointer; text-decoration: underline; padding: 0;">Mostra Tutti i Mesi ✕</button>
+                    </div>
+                </div>
+
+                <!-- Cassetto Dettaglio Costi Fissi Ricorrenti del Mese Selezionato -->
+                <div id="radarFixedCostsDrawer" style="display: none; margin-top: 10px; padding-top: 8px; border-top: 1px dashed rgba(56, 189, 248, 0.25);">
+                    <div style="font-size: 0.72rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                        <span>🔄</span> Costi Fissi Mensili Ricorrenti per questo Mese:
+                    </div>
+                    <div id="radarFixedCostsList" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 6px;">
+                        <!-- Popolato dinamicamente da JS -->
+                    </div>
                 </div>
             </div>
 
@@ -2552,18 +2569,69 @@ function filterDeadlinesByMonth(targetYm, btnElement) {
     // Aggiorna il banner riepilogo del mese (scadenze straordinarie + costi fissi)
     const banner = document.getElementById('radarMonthSummaryBanner');
     const bannerText = document.getElementById('radarMonthSummaryText');
+    const drawer = document.getElementById('radarFixedCostsDrawer');
+    const fcList = document.getElementById('radarFixedCostsList');
+    const fcToggleBtn = document.getElementById('btnToggleMonthFixedCosts');
+
     if (banner && bannerText) {
         if (targetYm === 'ALL') {
             banner.style.display = 'none';
+            if (drawer) drawer.style.display = 'none';
         } else {
             const targetCell = document.getElementById('monthRow_' + targetYm);
             const cellTitle = targetCell ? targetCell.getAttribute('title') : targetYm;
             bannerText.innerHTML = `<strong>🗓️ Riepilogo Mese (${targetYm}):</strong> ${cellTitle}`;
             banner.style.display = 'block';
+
+            // Popola i singoli costi fissi del mese
+            if (targetCell && fcList) {
+                let items = [];
+                try {
+                    const rawJson = targetCell.getAttribute('data-fc-json') || '[]';
+                    items = JSON.parse(rawJson);
+                } catch(e) {
+                    items = [];
+                }
+
+                if (items.length > 0) {
+                    fcList.innerHTML = items.map(it => `
+                        <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 6px; padding: 5px 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem;">
+                            <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                                <span>📌</span>
+                                <span style="color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${it.name}</span>
+                                <span style="color: var(--text-muted); font-size: 0.65rem;">(g.${it.due_day})</span>
+                            </div>
+                            <strong style="color: #38bdf8; white-space: nowrap; margin-left: 6px;">€ ${Number(it.amount).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong>
+                        </div>
+                    `).join('');
+                    if (fcToggleBtn) {
+                        fcToggleBtn.style.display = 'inline-block';
+                        fcToggleBtn.innerText = `🔄 Costi Fissi Mese (${items.length} voci) ▾`;
+                    }
+                } else {
+                    fcList.innerHTML = '<span style="font-size: 0.7rem; color: var(--text-muted);">Nessun costo fisso ricorrente previsto per questo mese.</span>';
+                    if (fcToggleBtn) {
+                        fcToggleBtn.style.display = 'none';
+                    }
+                }
+            }
         }
     }
 
     applyDeadlinesCombinedFilter();
+}
+
+function toggleRadarFixedCostsDrawer() {
+    const drawer = document.getElementById('radarFixedCostsDrawer');
+    const btn = document.getElementById('btnToggleMonthFixedCosts');
+    if (!drawer) return;
+    if (drawer.style.display === 'none' || drawer.style.display === '') {
+        drawer.style.display = 'block';
+        if (btn) btn.innerHTML = btn.innerHTML.replace('▾', '▴');
+    } else {
+        drawer.style.display = 'none';
+        if (btn) btn.innerHTML = btn.innerHTML.replace('▴', '▾');
+    }
 }
 
 function filterDeadlinesByScope(targetScope, btnElement) {

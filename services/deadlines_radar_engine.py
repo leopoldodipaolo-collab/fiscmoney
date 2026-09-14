@@ -289,10 +289,9 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
         manual_p2 = float(item.get('p2_paid_amount') or 0.0)
         is_paid_flag = bool(item.get('is_paid'))
         
-        # Per scadenze annuali passate (es. Condominio creato a Gennaio 2026),
-        # finestra annuale per catturare le quote versate nell'anno
-        is_past_item = (due_ym < curr_ym)
-        is_past_annual = (rec_type == 'ANNUAL' and is_past_item)
+        # Per qualsiasi scadenza annuale (es. Condominio), utilizziamo l'intera finestra dell'anno
+        # solare target per catturare rate/acconti versati nei vari mesi dello stesso anno.
+        is_annual = (rec_type == 'ANNUAL')
         
         final_total_paid, final_p1_paid, final_p2_paid, match_count = _compute_match(
             pat, due_ym, due_day, target_type,
@@ -301,7 +300,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
             manual_p1=manual_p1, manual_p2=manual_p2,
             is_paid_flag=is_paid_flag, expected=expected,
             profiles_count=len(profiles_rows),
-            full_year_window=is_past_annual
+            full_year_window=is_annual
         )
         
         # Scope labels

@@ -331,7 +331,16 @@
                     <span id="arrowDl" style="font-size: 0.7rem; transition: transform 0.2s ease;">▶</span>
                     <span style="font-weight: 600;">📅 Scadenze Programmate Mese</span>
                 </div>
-                <strong style="color: #c084fc;">{{ (-data.total_deadlines_pending)|eur }}</strong>
+                <div style="text-align: right;">
+                    {% if data.total_deadlines_pending == 0 and data.total_deadlines_paid > 0 %}
+                    <strong style="color: var(--accent-success); font-size: 0.78rem;">✓ Tutte Saldate ({{ (-data.total_deadlines_paid)|eur }})</strong>
+                    {% else %}
+                    <strong style="color: #c084fc;">{{ (-data.total_deadlines_pending)|eur }}</strong>
+                    {% if data.total_deadlines_paid > 0 %}
+                    <span style="font-size: 0.65rem; color: var(--accent-success); display: block;">Pagati {{ data.total_deadlines_paid|eur }}</span>
+                    {% endif %}
+                    {% endif %}
+                </div>
             </div>
 
             <!-- Cascade Drawer: Planned Deadlines Breakdown -->
