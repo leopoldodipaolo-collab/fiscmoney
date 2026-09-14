@@ -289,6 +289,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
         manual_p2 = float(item.get('p2_paid_amount') or 0.0)
         is_paid_flag = bool(item.get('is_paid'))
         
+        is_past_item = (due_ym < curr_ym)
         # Per qualsiasi scadenza annuale (es. Condominio), utilizziamo l'intera finestra dell'anno
         # solare target per catturare rate/acconti versati nei vari mesi dello stesso anno.
         is_annual = (rec_type == 'ANNUAL')
