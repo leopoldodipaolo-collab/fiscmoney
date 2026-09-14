@@ -697,6 +697,140 @@
 </div>
 {% endif %}
 
+<!-- ======================================================== -->
+<!-- 📈 WIDGET: PORTAFOGLIO INVESTIMENTI & PAC ETF (DIRECTA)   -->
+<!-- ======================================================== -->
+<div class="card" style="background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(16, 185, 129, 0.35); box-shadow: 0 10px 28px rgba(0,0,0,0.35); margin-bottom: 16px; position: relative; overflow: hidden;">
+    
+    <!-- Header: Title, Broker Badge & Action Buttons -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.35); display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
+                📈
+            </div>
+            <div>
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    Portafoglio ETF & Investimenti PAC
+                    <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">
+                        Directa & PAC
+                    </span>
+                </h3>
+                <span style="font-size: 0.74rem; color: var(--text-muted);">
+                    Accumulo capitale a lungo termine, Prezzo Medio di Carico (PMC) e quote possedute
+                </span>
+            </div>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" onclick="openInvestmentModal()" class="btn btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 700; border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                <span>➕ Registra Acquisto ETF</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Smart Callout: Detected Unlinked Broker Deposit (es. Bonifico 1.000 € verso Directa) -->
+    {% if portfolio_summary and portfolio_summary.pending_broker_deposits and portfolio_summary.pending_broker_deposits|length > 0 %}
+    {% set p_dep = portfolio_summary.pending_broker_deposits[0] %}
+    <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.3rem;">⚡</span>
+            <div>
+                <strong style="color: #fbbf24; font-size: 0.85rem; display: block;">
+                    Versamento rilevato: € {{ "%.2f"|format(p_dep.amount) }} su {{ p_dep.detected_broker }} ({{ p_dep.date }})
+                </strong>
+                <span style="font-size: 0.73rem; color: #cbd5e1;">
+                    Hai inviato fondi a {{ p_dep.detected_broker }}. Vuoi registrare le quote acquistate di <strong>{{ p_dep.suggested_ticker }} ({{ p_dep.suggested_isin }})</strong>?
+                </span>
+            </div>
+        </div>
+        <button type="button" onclick="prefillInvestmentFromDeposit({{ p_dep.transaction_id }}, '{{ p_dep.suggested_isin }}', '{{ p_dep.suggested_ticker }}', '{{ p_dep.suggested_name }}', '{{ p_dep.detected_broker }}', '{{ p_dep.date }}', {{ p_dep.amount }})" class="btn btn-sm" style="background: #fbbf24; color: #000; font-weight: 800; font-size: 0.75rem; padding: 5px 12px; border-radius: 6px; border: none; cursor: pointer;">
+            ⚡ Assegna Quote ETF
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Global Highlights Bar -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 14px;">
+        <!-- Capitale Totale Investito -->
+        <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.25);">
+            <div style="font-size: 0.68rem; color: #34d399; font-weight: 700; text-transform: uppercase;">💰 Capitale Versato Totale</div>
+            <div class="privacy-mask" style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;" title="Passa sopra per sbirciare">
+                {{ portfolio_summary.total_capital_invested|eur if portfolio_summary else '€ 0,00' }}
+            </div>
+            <small style="color: var(--text-muted); font-size: 0.68rem;">{{ portfolio_summary.total_orders_count if portfolio_summary else 0 }} acquisti registrati</small>
+        </div>
+
+        <!-- Strumenti in Accumulo -->
+        <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: 0.68rem; color: #38bdf8; font-weight: 700; text-transform: uppercase;">📊 ETF / Strumenti PAC</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;">
+                {{ portfolio_summary.instruments_count if portfolio_summary else 0 }} Titoli
+            </div>
+            <small style="color: var(--text-muted); font-size: 0.68rem;">{{ 'Vanguard All-World' if portfolio_summary.instruments_count > 0 else 'In attesa di primo acquisto' }}</small>
+        </div>
+
+        <!-- Commissioni Broker -->
+        <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: 0.68rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">🛡️ Commissioni Eseguite</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #cbd5e1; margin-top: 2px;">
+                {{ portfolio_summary.total_fees_paid|eur if portfolio_summary else '€ 0,00' }}
+            </div>
+            <small style="color: #34d399; font-size: 0.68rem;">PAC Gratuito / Zero commissioni Directa</small>
+        </div>
+    </div>
+
+    <!-- Active Instruments List / Table -->
+    {% if portfolio_summary and portfolio_summary.instruments and portfolio_summary.instruments|length > 0 %}
+    <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px 14px;">
+        <div style="font-size: 0.75rem; font-weight: 800; color: #cbd5e1; text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <span>Dettaglio Strumenti in Accumulo</span>
+            <span style="font-size: 0.7rem; color: #38bdf8; font-weight: 600;">{{ portfolio_summary.instruments|length }} attivo/i</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            {% for inst in portfolio_summary.instruments %}
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <strong style="color: #fff; font-size: 0.95rem;">{{ inst.name }}</strong>
+                        <span class="badge-tag" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.68rem; font-weight: 700;">{{ inst.ticker }}</span>
+                        <span style="font-family: monospace; font-size: 0.72rem; color: var(--text-muted);">{{ inst.isin }}</span>
+                        <span class="badge-tag" style="background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 0.65rem;">Broker: {{ inst.broker }}</span>
+                    </div>
+                    <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 3px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <span>📦 <strong>{{ inst.total_shares }}</strong> quote accumulate</span>
+                        <span>•</span>
+                        <span>🎯 Prezzo Medio di Carico (PMC): <strong>€ {{ "%.2f"|format(inst.pmc) }}</strong></span>
+                        {% if inst.last_date %}
+                        <span>•</span>
+                        <span>📅 Ultimo acquisto: {{ inst.last_date }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div style="text-align: right;">
+                    <div class="privacy-mask" style="font-size: 1.15rem; font-weight: 900; color: #34d399;" title="Passa sopra per sbirciare">
+                        {{ inst.total_invested|eur }}
+                    </div>
+                    <span style="font-size: 0.68rem; color: var(--text-muted);">Capitale Investito</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 18px 10px; background: rgba(0,0,0,0.15); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.1);">
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0 0 10px 0;">
+            Non hai ancora registrato nessun acquisto titoli o ETF nel tuo portafoglio.
+        </p>
+        <button type="button" onclick="openInvestmentModal()" class="btn btn-sm btn-secondary" style="font-size: 0.75rem;">
+            ➕ Registra il primo acquisto ETF (es. Vanguard FTSE All-World)
+        </button>
+    </div>
+    {% endif %}
+
+</div>
+
 <!-- Monthly Cash Flow & Safe-to-Spend Cockpit Card -->
 {% if cashflow %}
 <div class="card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(18, 24, 38, 0.95)); border: 1.5px solid rgba(16, 185, 129, 0.3); margin-bottom: 16px;">
@@ -1789,7 +1923,220 @@
     </div>
 </div>
 
+<!-- ======================================================== -->
+<!-- MODAL: REGISTRA ACQUISTO ETF / PAC INVESTIMENTI          -->
+<!-- ======================================================== -->
+<div id="investmentModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 520px; width: 92%; padding: 22px; background: #0f172a; border: 1.5px solid #10b981; border-radius: var(--radius-lg); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.9);">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.4rem;">📈</span>
+                <div>
+                    <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">Registra Acquisto ETF / PAC</h3>
+                    <p style="color: #34d399; font-size: 0.76rem; margin: 2px 0 0 0; font-weight: 600;">Accumulo capitale su conto Directa / Broker</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeInvestmentModal()">&times;</button>
+        </div>
+
+        <form id="investmentForm" onsubmit="event.preventDefault(); submitInvestmentOrder();">
+            <input type="hidden" id="invTxId" value="">
+
+            <!-- Preset Quick Selection (Vanguard All-World, iShares S&P500, etc.) -->
+            <div style="margin-bottom: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 10px;">
+                <label style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 6px;">
+                    🎯 Scelta Rapida Strumento:
+                </label>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                    <button type="button" onclick="setInvestmentPreset('IE00BK5BQT80', 'VWCE', 'Vanguard FTSE All-World UCITS ETF (Acc)')" class="btn btn-sm" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); font-weight: 700;">
+                        ⭐ Vanguard All-World (VWCE)
+                    </button>
+                    <button type="button" onclick="setInvestmentPreset('IE00B4L5Y983', 'SWDA', 'iShares Core MSCI World UCITS ETF (Acc)')" class="btn btn-sm" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
+                        SWDA World
+                    </button>
+                    <button type="button" onclick="setInvestmentPreset('IE00B5BMR087', 'CSSPX', 'iShares Core S&P 500 UCITS ETF (Acc)')" class="btn btn-sm" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
+                        S&P 500
+                    </button>
+                </div>
+            </div>
+
+            <!-- ISIN & Ticker -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div class="form-group" style="margin: 0;">
+                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700;">Codice ISIN *</label>
+                    <input type="text" id="invIsin" class="form-control" value="IE00BK5BQT80" placeholder="es. IE00BK5BQT80" required style="font-family: monospace; font-size: 0.85rem; text-transform: uppercase;">
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700;">Ticker (Opz.)</label>
+                    <input type="text" id="invTicker" class="form-control" value="VWCE" placeholder="VWCE" style="font-weight: 700; font-size: 0.85rem; text-transform: uppercase;">
+                </div>
+            </div>
+
+            <!-- Instrument Name -->
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700;">Nome Strumento / ETF *</label>
+                <input type="text" id="invName" class="form-control" value="Vanguard FTSE All-World UCITS ETF (Acc)" required style="font-size: 0.85rem;">
+            </div>
+
+            <!-- Broker & Date -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div class="form-group" style="margin: 0;">
+                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700;">Broker / Intermediario</label>
+                    <input type="text" id="invBroker" class="form-control" value="Directa" placeholder="es. Directa, Scalable, Degiro" style="font-size: 0.85rem;">
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700;">Data Esecuzione *</label>
+                    <input type="date" id="invDate" class="form-control" required style="font-size: 0.85rem;">
+                </div>
+            </div>
+
+            <!-- Shares & Price per Share -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <div class="form-group" style="margin: 0;">
+                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700;">Numero Quote *</label>
+                    <input type="number" step="0.0001" id="invShares" class="form-control" placeholder="es. 5" required oninput="calcInvestmentTotal()" style="font-size: 0.95rem; font-weight: 700; color: #38bdf8;">
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700;">Prezzo per Quota (€) *</label>
+                    <input type="number" step="0.0001" id="invPrice" class="form-control" placeholder="es. 167.00" required oninput="calcInvestmentTotal()" style="font-size: 0.95rem; font-weight: 700; color: #34d399;">
+                </div>
+            </div>
+
+            <!-- Total Invested & Fees Calculation Display -->
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <span style="font-size: 0.72rem; color: var(--text-muted); display: block;">Capitale Investito Totale:</span>
+                    <strong id="invTotalDisplay" style="font-size: 1.25rem; color: #34d399;">€ 0,00</strong>
+                </div>
+                <div style="text-align: right; width: 45%;">
+                    <label style="font-size: 0.68rem; color: #cbd5e1; display: block; margin-bottom: 2px;">Commissioni Broker (€):</label>
+                    <input type="number" step="0.01" id="invFees" class="form-control" value="0.00" style="padding: 4px 6px; font-size: 0.75rem; text-align: right;">
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label style="font-size: 0.72rem; color: var(--text-muted);">Note / Dettagli Ordine (Opzionale)</label>
+                <input type="text" id="invNotes" class="form-control" placeholder="es. PAC mensile Settembre Directa" style="font-size: 0.8rem;">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeInvestmentModal()" style="padding: 8px 16px;">Annulla</button>
+                <button type="submit" id="invSubmitBtn" class="btn btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; padding: 8px 22px; border: none;">
+                    💾 Salva nel Portafoglio
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+
+function openInvestmentModal() {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const dateEl = document.getElementById('invDate');
+    if (dateEl && !dateEl.value) dateEl.value = todayStr;
+    document.getElementById('investmentModal').classList.add('open');
+    setTimeout(() => {
+        const sh = document.getElementById('invShares');
+        if (sh) sh.focus();
+    }, 150);
+}
+
+function closeInvestmentModal() {
+    document.getElementById('investmentModal').classList.remove('open');
+}
+
+function setInvestmentPreset(isin, ticker, name) {
+    document.getElementById('invIsin').value = isin;
+    document.getElementById('invTicker').value = ticker;
+    document.getElementById('invName').value = name;
+    calcInvestmentTotal();
+}
+
+function prefillInvestmentFromDeposit(txId, isin, ticker, name, broker, dateVal, amount) {
+    document.getElementById('invTxId').value = txId || '';
+    document.getElementById('invIsin').value = isin || 'IE00BK5BQT80';
+    document.getElementById('invTicker').value = ticker || 'VWCE';
+    document.getElementById('invName').value = name || 'Vanguard FTSE All-World UCITS ETF (Acc)';
+    document.getElementById('invBroker').value = broker || 'Directa';
+    document.getElementById('invDate').value = dateVal || new Date().toISOString().split('T')[0];
+    
+    // Default estimated price for Vanguard FTSE All-World ~167 €
+    const estimatedPrice = 167.00;
+    const estShares = Math.floor(amount / estimatedPrice);
+    
+    document.getElementById('invPrice').value = estimatedPrice.toFixed(2);
+    document.getElementById('invShares').value = estShares > 0 ? estShares : 1;
+    document.getElementById('invNotes').value = `Allocazione bonifico Directa del ${dateVal} (€ ${amount.toFixed(2)})`;
+    
+    calcInvestmentTotal();
+    openInvestmentModal();
+}
+
+function calcInvestmentTotal() {
+    const shares = parseFloat(document.getElementById('invShares').value) || 0;
+    const price = parseFloat(document.getElementById('invPrice').value) || 0;
+    const tot = shares * price;
+    const disp = document.getElementById('invTotalDisplay');
+    if (disp) {
+        disp.innerText = '€ ' + tot.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+}
+
+async function submitInvestmentOrder() {
+    const submitBtn = document.getElementById('invSubmitBtn');
+    const origHtml = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '⏳ Salvataggio...';
+    }
+
+    const shares = parseFloat(document.getElementById('invShares').value) || 0;
+    const price = parseFloat(document.getElementById('invPrice').value) || 0;
+    const fees = parseFloat(document.getElementById('invFees').value) || 0;
+    const tot = shares * price;
+
+    const payload = {
+        transaction_id: document.getElementById('invTxId').value || null,
+        isin: document.getElementById('invIsin').value.trim().toUpperCase(),
+        ticker: document.getElementById('invTicker').value.trim().toUpperCase(),
+        name: document.getElementById('invName').value.trim(),
+        broker: document.getElementById('invBroker').value.trim(),
+        date: document.getElementById('invDate').value,
+        shares: shares,
+        price: price,
+        total_invested: tot,
+        fees: fees,
+        notes: document.getElementById('invNotes').value.trim()
+    };
+
+    try {
+        const resp = await fetch('/api/investments/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const res = await resp.json();
+        if (res.success) {
+            closeInvestmentModal();
+            window.location.reload();
+        } else {
+            alert('Errore: ' + (res.error || 'Impossibile salvare l\'ordine'));
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = origHtml;
+            }
+        }
+    } catch(e) {
+        console.error("Investment submit error:", e);
+        alert('Errore di connessione con il server.');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = origHtml;
+        }
+    }
+}
 
 function openPersonalizationModal() {
     document.getElementById('personalizationModal').classList.add('open');

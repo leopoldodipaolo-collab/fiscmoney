@@ -52,6 +52,12 @@ from services.deadlines_radar_engine import (
     get_annual_deadlines_radar,
     auto_seed_typical_family_deadlines
 )
+from services.investment_engine import (
+    get_portfolio_summary,
+    record_investment_order,
+    delete_investment_order,
+    POPULAR_INSTRUMENTS
+)
 from services.paystub_engine import (
     calculate_paystub_metrics,
     find_candidate_bank_transfers,
@@ -664,6 +670,17 @@ def dashboard():
     tx_count = conn.execute("SELECT COUNT(*) FROM transactions WHERE workspace_id = ?", (ws_id,)).fetchone()[0] if ws_id else 0
     uncat_count = conn.execute("SELECT COUNT(*) FROM transactions WHERE workspace_id = ? AND (category IS NULL OR category = '' OR category = 'Da Categorizzare' OR category = 'Altro')", (ws_id,)).fetchone()[0] if ws_id else 0
 
+    # Fetch Investments & PAC Portfolio Summary
+    portfolio_summary = get_portfolio_summary(ws_id, p_id_filter) if ws_id else {
+        "instruments": [],
+        "total_capital_invested": 0.0,
+        "total_fees_paid": 0.0,
+        "instruments_count": 0,
+        "total_orders_count": 0,
+        "recent_orders": [],
+        "pending_broker_deposits": []
+    }
+
     conn.close()
     
     return render_template(
@@ -686,6 +703,8 @@ def dashboard():
         mortgage_data=mortgage_data,
         active_focus_categories=active_focus_categories,
         deadlines_radar=deadlines_radar,
+        portfolio_summary=portfolio_summary,
+        popular_etfs=POPULAR_INSTRUMENTS,
         assistant_briefing=dashboard_briefing,
         dashboard_briefing=dashboard_briefing,
         is_admin=is_admin,
@@ -2576,6 +2595,54 @@ def batch_categorize_merchant():
         "sub_category": sub_category,
         "rule_saved": rule_saved
     })
+
+
+# --- INVESTMENTS & PAC API ENDPOINTS ---
+@app.route("/api/investments/save", methods=["POST"])
+@login_required
+def api_save_investment():
+    ws_id = session.get('workspace_id')
+    u_id = session.get('user_id')
+    if not ws_id:
+        return jsonify({"success": False, "error": "Sessione non valida"}), 401
+
+    data = request.get_json(silent=True) or {}
+    isin = (data.get("isin") or "IE00BK5BQT80").strip().upper()
+    shares = float(data.get("shares") or 0.0)
+    price = float(data.get("price") or 0.0)
+
+    if not isin or shares <= 0 or price <= 0:
+        return jsonify({"success": False, "error": "ISIN, numero quote e prezzo devono essere maggiori di zero."}), 400
+
+    profile_id = data.get("profile_id")
+    if not profile_id:
+        # Fallback to current primary profile
+        conn = get_db_connection()
+        p = conn.execute("SELECT id FROM profiles WHERE workspace_id = ? AND is_primary = 1", (ws_id,)).fetchone()
+        conn.close()
+        profile_id = p['id'] if p else None
+
+    try:
+        new_id = record_investment_order(ws_id, profile_id, data)
+        return jsonify({"success": True, "order_id": new_id, "message": "Ordine di acquisto registrato con successo!"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/investments/delete/<int:order_id>", methods=["POST"])
+@login_required
+def api_delete_investment(order_id):
+    ws_id = session.get('workspace_id')
+    if not ws_id:
+        return jsonify({"success": False, "error": "Sessione non valida"}), 401
+
+    try:
+        ok = delete_investment_order(ws_id, order_id)
+        if ok:
+            return jsonify({"success": True, "message": "Operazione rimossa con successo"})
+        else:
+            return jsonify({"success": False, "error": "Operazione non trovata"}), 404
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route("/api/ai/online-merchant-lookup", methods=["POST"])

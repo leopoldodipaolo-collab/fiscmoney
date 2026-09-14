@@ -1539,16 +1539,36 @@ def get_monthly_forecast_and_considerations(cashflow_data, custom_salary=None, c
             })
 
     # 5. Consigli mirati sui tagli delle spese discrezionali/evitabili
+    # (NOTA: Escludiamo 'RISPARMIO', 'INVESTIMENTI', 'FONDO PENSIONE' perché costituiscono accumulo patrimoniale virtuoso, non sprechi di consumo!)
     discretionary_items = []
+    investment_items_total = 0.0
     for cat in cashflow_data.get('category_breakdown', []):
         c_amt = cat.get('amount', 0.0)
         if c_amt > 0:
             c_name_upper = cat['name'].upper()
+            is_investment = any(kw in c_name_upper for kw in ['RISPARMIO', 'INVESTIMENT', 'PATRIMONIO', 'PAC'])
+            if is_investment:
+                investment_items_total += c_amt
+                continue
+
             is_fixed = any(kw in c_name_upper for kw in ['MUTUO', 'FINANZIAMENT', 'BOLLETT', 'UTENZ', 'CASA', 'TASSE', 'BANCA', 'COMMISSION', 'GIROCONTO', 'PREPAGATA'])
             if not is_fixed:
                 discretionary_items.append(cat)
 
     discretionary_items.sort(key=lambda x: x['amount'], reverse=True)
+
+    # Nota Strategica PAC & Investimenti se presenti nel mese
+    if investment_items_total > 0:
+        real_consumption_expense = max(0.0, expense - investment_items_total)
+        real_saving_with_invest = round(effective_income - real_consumption_expense, 2)
+        real_saving_rate = round((real_saving_with_invest / effective_income * 100), 1) if effective_income > 0 else 0.0
+        
+        considerations.append({
+            'type': 'info',
+            'icon': '📈',
+            'title': 'Investimenti & Accumulo PAC del Mese',
+            'text': f"Nel mese hai destinato <strong>€ {format_eur_advisor(investment_items_total)}</strong> a <strong>Risparmio & Investimenti (PAC / ETF / Broker)</strong>. Questa uscita riduce la liquidità spendibile sul conto corrente ma <strong>accresce il tuo patrimonio netto</strong>: le tue spese vive reali di consumo sono di € {format_eur_advisor(real_consumption_expense)}, portando il tuo reale tasso di risparmio/accumulo al <strong>{real_saving_rate}%</strong>!"
+        })
 
     if days_remaining > 0 and discretionary_items:
         top_disc_names = [f"<strong>{cat['name']}</strong> (€ {format_eur_advisor(cat['amount'])})" for cat in discretionary_items[:3]]

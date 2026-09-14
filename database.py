@@ -446,6 +446,32 @@ def init_db():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_invitation_token ON workspace_invitations(invite_token)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_invitation_profile ON workspace_invitations(profile_id, status)")
 
+    # 13. Investments & PAC Table (ETF, Stocks, Funds)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS investments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            workspace_id INTEGER NOT NULL,
+            profile_id INTEGER,
+            transaction_id INTEGER,
+            isin TEXT NOT NULL,
+            ticker TEXT,
+            name TEXT NOT NULL,
+            broker TEXT DEFAULT 'Directa',
+            date TEXT NOT NULL,
+            shares REAL NOT NULL,
+            price REAL NOT NULL,
+            total_invested REAL NOT NULL,
+            fees REAL DEFAULT 0.0,
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
+            FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE SET NULL,
+            FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE SET NULL
+        )
+    ''')
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_investments_ws ON investments(workspace_id, isin)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_investments_date ON investments(workspace_id, date)")
+
     # Seed Default Super-Admin if none exists
     cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'SUPER_ADMIN'")
     if cursor.fetchone()[0] == 0:
