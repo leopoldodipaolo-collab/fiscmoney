@@ -238,13 +238,27 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
                     month_fc_total += exp_amt
                     raw_fc_name = fc_item.get('name') or ''
                     fc_pat = (fc_item.get('match_pattern') or '').strip().title()
-                    # Se il nome è un pattern generico come DISPOSIZIONE o BONIFICO ma il pattern è es. Mutuo, usa il pattern
-                    if raw_fc_name.upper() in ('DISPOSIZIONE', 'BONIFICO', 'PAGAMENTO') and fc_pat:
+                    clean_lower = (raw_fc_name + ' ' + fc_pat + ' ' + (fc_item.get('category') or '')).lower()
+                    # Riconoscimento mutuo robusto:
+                    # - "mutuo" o "bcc" o "prima casa" nel nome/pattern
+                    # - OPPURE: importo ~€1050 (+/-10%) E nome generico (Disposizione, Bonifico, ecc.)
+                    _generic_names = ('disposizione', 'bonifico', 'pagamento', 'rata', 'accredito')
+                    _amt_is_mortgage = (900.0 <= exp_amt <= 1200.0)
+                    _name_is_generic = any(g in clean_lower for g in _generic_names)
+                    fc_is_mortgage = (
+                        'mutuo' in clean_lower
+                        or 'bcc' in clean_lower
+                        or 'prima casa' in clean_lower
+                        or (_amt_is_mortgage and _name_is_generic)
+                    )
+                    
+                    if fc_is_mortgage:
+                        clean_fc_name = "Rata Mutuo (BCC)"
+                    elif raw_fc_name.upper() in ('DISPOSIZIONE', 'BONIFICO', 'PAGAMENTO') and fc_pat:
                         clean_fc_name = fc_pat
                     else:
                         clean_fc_name = raw_fc_name
                     
-                    fc_is_mortgage = ('mutuo' in (raw_fc_name + ' ' + fc_pat + ' ' + (fc_item.get('category') or '')).lower())
                     if not fc_is_mortgage:
                         month_fc_no_mortgage_total += exp_amt
                         
@@ -399,17 +413,32 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
         if category_name and short_title.lower().startswith(f"{category_name.lower()} - "):
             short_title = short_title[len(category_name) + 3:].strip()
             
-        # Rileva tag o tipologia nota da pattern, nome o categoria (TARI, BOLLO, REVISIONE, MUTUO, CONDOMINIO, ECC.)
-        all_text_hints = f"{clean_tag} {short_title} {category_name}".lower()
+        # Combina TUTTI gli hint disponibili: pattern, nome, categoria, importo
+        # Così anche se il nome è "Pagamenti Diversi Internet" ma il pattern è "bollo", viene riconosciuto
+        all_text_hints = f"{clean_tag} {short_title} {category_name} {raw_name}".lower()
+        
+        # Rilevamento mutuo: keyword O importo generico ~€1050
+        _generic_raw = any(g in (raw_name + ' ' + clean_tag).lower() for g in ('disposizione', 'bonifico', 'pagamento', 'rata'))
+        _is_mortgage_by_amount = (900.0 <= expected <= 1200.0 and _generic_raw)
+        
         if 'tari' in all_text_hints or 'pagopa' in all_text_hints:
             display_title = "Tari (PagoPA)"
-        elif 'bollo' in all_text_hints or 'aci' in all_text_hints:
+        elif (
+            'bollo' in all_text_hints
+            or 'aci' in all_text_hints
+            or ('pagamenti diversi' in all_text_hints and 'auto' in all_text_hints)
+            or ('internet banking' in all_text_hints and 'auto' in all_text_hints)
+        ):
             display_title = "Bollo Auto (ACI)"
-        elif 'revisione' in all_text_hints:
+        elif (
+            'revisione' in all_text_hints
+            or ('officina' in all_text_hints and 'auto' in all_text_hints)
+            or ('officina' in all_text_hints and 'mobilit' in all_text_hints)
+        ):
             display_title = "Revisione Auto"
-        elif 'mutuo' in all_text_hints:
+        elif 'mutuo' in all_text_hints or 'bcc' in all_text_hints or 'prima casa' in all_text_hints or _is_mortgage_by_amount:
             display_title = "Rata Mutuo"
-        elif 'condominio' in all_text_hints:
+        elif 'condominio' in all_text_hints or 'vastarini' in all_text_hints:
             display_title = "Spese Condominio"
         elif 'polizza' in all_text_hints or 'assicuraz' in all_text_hints:
             display_title = "Assicurazione"
@@ -422,7 +451,7 @@ def get_annual_deadlines_radar(workspace_id, profile_id=None, reference_date=Non
             words = [w for w in re.split(r'[\s\-_]+', short_title) if w and len(w) > 2 and not w.isdigit()]
             display_title = " ".join(words[:3]).title() if words else short_title[:20].title()
         
-        is_mortgage = ('mutuo' in all_text_hints)
+        is_mortgage = ('mutuo' in all_text_hints or 'bcc' in all_text_hints or 'prima casa' in all_text_hints or _is_mortgage_by_amount)
         
         formatted_item = {
             "id": item['id'],
