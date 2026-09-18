@@ -755,30 +755,94 @@
   margin-bottom: 14px;
 }
 
-/* RESPONSIVE MOBILE TWEAKS */
+/* RESPONSIVE MOBILE TWEAKS (Full Smartphone Optimization) */
 @media (max-width: 640px) {
   .landing-page-root {
-    padding: 14px 12px 60px 12px;
+    padding: 10px 12px 60px 12px;
   }
   .lp-section {
-    margin-bottom: 48px;
+    margin-bottom: 42px;
+  }
+  .lp-hero-section {
+    padding: 28px 6px 20px 6px;
+  }
+  .lp-hero-headline {
+    font-size: 2rem;
+    line-height: 1.18;
+    margin-bottom: 14px;
+  }
+  .lp-hero-subheadline {
+    font-size: 1rem;
+    line-height: 1.48;
+    margin-bottom: 12px;
+  }
+  .lp-hero-highlights {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+  .lp-hero-emblem-badge {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 12px;
+  }
+  .lp-hero-watermark-logo {
+    width: min(300px, 86vw);
+    height: min(300px, 86vw);
+    opacity: 0.22;
+  }
+  .lp-hero-neon-ring {
+    width: min(320px, 88vw);
+    height: min(320px, 88vw);
+  }
+  .lp-hero-cosmic-halo {
+    width: min(340px, 94vw);
+    height: min(340px, 94vw);
   }
   .lp-problem-card,
   .lp-couple-card,
   .lp-safetospend-card,
   .lp-privacy-card,
   .lp-beta-card {
-    padding: 24px 16px;
+    padding: 22px 14px;
     border-radius: 16px;
+  }
+  .lp-problem-lead {
+    font-size: 1.25rem;
+    line-height: 1.35;
+  }
+  .lp-expenses-pills {
+    gap: 6px;
+  }
+  .lp-expense-tag {
+    font-size: 0.78rem;
+    padding: 5px 10px;
   }
   .lp-safe-widget-mock {
     flex-direction: column;
     align-items: flex-start;
+    padding: 16px;
+  }
+  .lp-safe-amount {
+    font-size: 2.2rem;
   }
   .lp-btn-primary {
     width: 100%;
-    padding: 15px 20px;
+    padding: 15px 18px;
     font-size: 1rem;
+    border-radius: 12px;
+  }
+  .lp-hero-trust-subtext {
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.76rem;
+  }
+  .lp-pillars-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .lp-auth-panel {
+    padding: 20px 16px;
   }
 }
 </style>
