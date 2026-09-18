@@ -1,1429 +1,1138 @@
 {% extends "base.html" %}
 
-{% block title %}FiscMoney | Intelligence Finanziaria, Cash Flow e Fisco 730{% endblock %}
+{% block title %}FiscMoney — Sai davvero dove finiscono i soldi di casa?{% endblock %}
 
 {% block content %}
-<div class="auth-landing-wrapper">
-    <!-- Ambient Background Glow Effects -->
-    <div class="glow-orb glow-orb-1"></div>
-    <div class="glow-orb glow-orb-2"></div>
-    <div class="glow-orb glow-orb-3"></div>
-
-    <!-- ========================================================== -->
-    <!-- HERO & AUTH SECTION                                        -->
-    <!-- ========================================================== -->
-    <div class="auth-grid-card" id="authBox">
-        <!-- Left Hero Showcase Pane (Desktop) -->
-        <div class="auth-hero-pane">
-            <div class="auth-hero-brand">
-                <div class="auth-logo-badge">
-                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FiscMoney Logo" class="auth-logo-img">
-                </div>
-                <div>
-                    <h1 class="auth-hero-title">Fisc<span style="color: var(--accent-primary, #ef4444);">Money</span></h1>
-                    <span class="auth-hero-subtitle">Financial & Tax Intelligence Hub</span>
-                </div>
-            </div>
-
-            <h2 class="auth-main-hook">
-                Il controllo totale dei tuoi soldi e delle tue tasse. <span style="color: #fef08a;">Senza fogli Excel.</span>
-            </h2>
-
-            <p class="auth-hero-lead">
-                Dall'estratto conto al Modello 730: importa i movimenti bancari, monitora entrate e uscite e scopri in automatico tutte le detrazioni fiscali che ti spettano.
-            </p>
-
-            <!-- 60-Day Trial Special Callout Card -->
-            <div class="auth-trial-pill">
-                <div class="trial-pill-badge">✨ 60 GIORNI PRO</div>
-                <div>
-                    <strong style="color: #fff; font-size: 0.88rem; display: block;">Prova Gratuita Completa Inclusa</strong>
-                    <span style="color: #cbd5e1; font-size: 0.78rem;">Tutte le funzionalità PRO sbloccate per 2 mesi. Nessuna carta richiesta.</span>
-                </div>
-            </div>
-
-            <!-- Feature Bullet Pills -->
-            <div class="auth-features-list">
-                <div class="auth-feature-item">
-                    <span class="feature-icon">⚡</span>
-                    <div>
-                        <strong>Smart Import Multi-Banca</strong>
-                        <p>Trascina il file della tua banca: categorizzazione istantanea con regole intelligenti.</p>
-                    </div>
-                </div>
-
-                <div class="auth-feature-item">
-                    <span class="feature-icon">🏛️</span>
-                    <div>
-                        <strong>Fisco, Cedolini & Modello 730</strong>
-                        <p>Riconoscimento automatico spese sanitarie, interessi mutuo e detrazioni IRPEF 19%.</p>
-                    </div>
-                </div>
-
-                <div class="auth-feature-item">
-                    <span class="feature-icon">🛡️</span>
-                    <div>
-                        <strong>100% Privato & Zero Password di Banca</strong>
-                        <p>Non chiediamo mai le credenziali del tuo conto. I tuoi dati restano esclusivamente tuoi.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="auth-hero-footer">
-                <span>© 2026 FiscMoney &bull; <a href="/privacy" target="_blank" style="color: #94a3b8; text-decoration: underline;">Informativa Privacy & GDPR</a></span>
-            </div>
-        </div>
-
-        <!-- Right Interactive Form Pane -->
-        <div class="auth-form-pane">
-            <!-- Mobile-only compact brand bar -->
-            <div class="mobile-brand-bar">
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" class="mobile-logo-mini">
-                <div>
-                    <div style="font-weight: 800; font-size: 1.25rem; color: #fff; line-height: 1.1;">Fisc<span style="color: var(--accent-primary, #ef4444);">Money</span></div>
-                    <div style="font-size: 0.7rem; color: #fbbf24; font-weight: 700;">✨ 60 Giorni PRO Inclusi &bull; Senza Carta</div>
-                </div>
-            </div>
-
-            <!-- Segmented Tab Switcher -->
-            <div class="auth-tab-bar">
-                <button type="button" id="tabBtnLogin" class="auth-tab-btn active" onclick="switchAuthTab('login')">
-                    <span>🔑</span> Accedi
-                </button>
-                <button type="button" id="tabBtnRegister" class="auth-tab-btn" onclick="switchAuthTab('register')">
-                    <span>✨</span> Registrati <span class="tab-badge-free">60gg Free</span>
-                </button>
-            </div>
-
-            <!-- ========================================== -->
-            <!-- TAB 1: FORM LOGIN                         -->
-            <!-- ========================================== -->
-            <div id="authPaneLogin" class="auth-pane-content active">
-                <div class="auth-pane-header">
-                    <h2>Bentornato!</h2>
-                    <p>Inserisci le tue credenziali per accedere al tuo workspace.</p>
-                </div>
-
-                <form method="POST" action="/login" class="auth-form-body">
-                    <div class="auth-input-group">
-                        <label for="loginEmail">Email</label>
-                        <div class="input-with-icon">
-                            <span class="input-icon">✉️</span>
-                            <input type="email" id="loginEmail" name="email" class="auth-input" placeholder="nome@esempio.it" required autofocus autocomplete="email">
-                        </div>
-                    </div>
-
-                    <div class="auth-input-group">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                            <label for="loginPassword" style="margin-bottom: 0;">Password</label>
-                            <span style="font-size: 0.72rem; color: #94a3b8;" title="Se hai dimenticato la password, contatta l'amministratore per un reset immediato.">Persa? <span style="color: #38bdf8;">Chiedi all'Admin</span></span>
-                        </div>
-                        <div class="input-with-icon">
-                            <span class="input-icon">🔒</span>
-                            <input type="password" id="loginPassword" name="password" class="auth-input" placeholder="••••••••" required autocomplete="current-password">
-                        </div>
-                    </div>
-
-                    <button type="submit" class="auth-submit-btn">
-                        <span>Accedi a FiscMoney</span>
-                        <span style="font-size: 1.1rem; transition: transform 0.2s;">➔</span>
-                    </button>
-                </form>
-
-                <div class="auth-switch-prompt">
-                    Non hai ancora un account?
-                    <a href="javascript:void(0)" onclick="switchAuthTab('register')" style="color: var(--accent-primary, #ef4444); font-weight: 700; text-decoration: underline; margin-left: 4px;">Inizia la Prova Gratuita (60gg)</a>
-                </div>
-            </div>
-
-            <!-- ========================================== -->
-            <!-- TAB 2: FORM REGISTRAZIONE                  -->
-            <!-- ========================================== -->
-            <div id="authPaneRegister" class="auth-pane-content">
-                <div class="auth-pane-header">
-                    <h2>Crea il tuo Account</h2>
-                    <p>60 giorni di piano PRO completo senza alcun impegno.</p>
-                </div>
-
-                <form method="POST" action="/register" class="auth-form-body">
-                    <div class="auth-input-group">
-                        <label for="regFullName">Nome Completo</label>
-                        <div class="input-with-icon">
-                            <span class="input-icon">👤</span>
-                            <input type="text" id="regFullName" name="full_name" class="auth-input" placeholder="Mario Rossi" required autocomplete="name">
-                        </div>
-                    </div>
-
-                    <div class="auth-input-group">
-                        <label for="regEmail">Email</label>
-                        <div class="input-with-icon">
-                            <span class="input-icon">✉️</span>
-                            <input type="email" id="regEmail" name="email" class="auth-input" placeholder="mario.rossi@email.it" required autocomplete="email">
-                        </div>
-                    </div>
-
-                    <div class="auth-input-group">
-                        <label for="regPassword">Password di Sicurezza</label>
-                        <div class="input-with-icon">
-                            <span class="input-icon">🔒</span>
-                            <input type="password" id="regPassword" name="password" minlength="8" class="auth-input" placeholder="Min. 8 caratteri, numero e simbolo" required autocomplete="new-password">
-                        </div>
-                        <!-- Live Password Complexity Checklist -->
-                        <div class="pwd-requirements-box" id="pwdRequirementsBox">
-                            <div class="pwd-req-item" id="reqLength">
-                                <span class="req-icon">○</span> Minimo 8 caratteri
-                            </div>
-                            <div class="pwd-req-item" id="reqNumber">
-                                <span class="req-icon">○</span> 1 numero (0-9)
-                            </div>
-                            <div class="pwd-req-item" id="reqSpecial">
-                                <span class="req-icon">○</span> 1 simbolo speciale (!@#$%&*)
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="auth-privacy-box">
-                        <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; font-size: 0.76rem; color: #cbd5e1; line-height: 1.35;">
-                            <input type="checkbox" name="privacy_consent" value="1" required style="margin-top: 2px; accent-color: var(--accent-primary, #ef4444); width: 16px; height: 16px; flex-shrink: 0;">
-                            <span>Accetto l'<a href="/privacy" target="_blank" style="color: #38bdf8; text-decoration: underline; font-weight: 600;">Informativa Privacy</a>. Dati privati, crittografati e non ceduti a terzi.</span>
-                        </label>
-                    </div>
-
-                    <button type="submit" class="auth-submit-btn reg-btn">
-                        <span>Attiva Licenza PRO (60 Giorni)</span>
-                        <span style="font-size: 1.1rem; transition: transform 0.2s;">✨</span>
-                    </button>
-                </form>
-
-                <div class="auth-switch-prompt">
-                    Hai già un account registrato?
-                    <a href="javascript:void(0)" onclick="switchAuthTab('login')" style="color: #38bdf8; font-weight: 700; text-decoration: underline; margin-left: 4px;">Accedi qui</a>
-                </div>
-            </div>
-
-            <!-- Trust Badges -->
-            <div class="auth-trust-strip">
-                <div class="trust-item">
-                    <span>🔒</span> Crittografia Forte
-                </div>
-                <div class="trust-item">
-                    <span>🛡️</span> Zero Carte
-                </div>
-                <div class="trust-item">
-                    <span>📜</span> GDPR Compliant
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- ========================================================== -->
-    <!-- SUPPORTED BANKS TICKER STRIP                               -->
-    <!-- ========================================================== -->
-    <div class="banks-strip-container">
-        <div class="banks-strip-label">
-            <span>⚡ COMPATIBILITÀ DIRETTA CON ESTRATTI CONTO DI OLTRE 15 BANCHE ITALIANE ED EUROPEE</span>
-        </div>
-        <div class="banks-badges-wrapper">
-            <span class="bank-badge">🏦 Intesa Sanpaolo</span>
-            <span class="bank-badge">💳 Fineco Bank</span>
-            <span class="bank-badge">⚡ Revolut</span>
-            <span class="bank-badge">🏛️ UniCredit</span>
-            <span class="bank-badge">🌿 BCC & Iccrea</span>
-            <span class="bank-badge">📱 Illimity Bank</span>
-            <span class="bank-badge">📮 Poste Italiane (Postepay / Bancoposta)</span>
-            <span class="bank-badge">🌐 BBVA</span>
-            <span class="bank-badge">🏢 BNL / Hello bank!</span>
-            <span class="bank-badge">💼 Banca Mediolanum</span>
-            <span class="bank-badge">🪙 Amex & Carte di Credito</span>
-            <span class="bank-badge">📄 Formati CSV / XLS / XLSX</span>
-        </div>
-    </div>
-
-
-    <!-- ========================================================== -->
-    <!-- 3 PILLARS VALUE SHOWCASE                                   -->
-    <!-- ========================================================== -->
-    <div class="landing-showcase-section">
-        <div class="section-heading">
-            <span class="section-tag">PERCHÉ SCEGLIERE FISCMONEY</span>
-            <h2 class="section-title">Tre potenti motori in una sola interfaccia</h2>
-            <p class="section-subtitle">Tutto ciò che serve per non perdere mai più un euro in spese inutili o detrazioni fiscali non richieste.</p>
-        </div>
-
-        <div class="pillars-grid">
-            <!-- Pillar 1 -->
-            <div class="pillar-card">
-                <div class="pillar-icon-box" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">
-                    📊
-                </div>
-                <h3 class="pillar-title">Cash Flow & Budgeting Intelligente</h3>
-                <p class="pillar-desc">
-                    Importa gli estratti conto in 3 secondi. Il motore categorizza automaticamente le transazioni (stipendi, bollette, spesa, mutuo) e ti mostra l'andamento del tuo patrimonio netto mese per mese.
-                </p>
-                <ul class="pillar-checklist">
-                    <li>✓ Grafici entrate/uscite e tasso di risparmio in tempo reale</li>
-                    <li>✓ Rilevamento automatico di spese ricorrenti e abbonamenti</li>
-                    <li>✓ Regole personalizzate per categorizzare qualsiasi voce</li>
-                </ul>
-            </div>
-
-            <!-- Pillar 2 -->
-            <div class="pillar-card highlight-pillar">
-                <div class="pillar-badge-popular">PIÙ AMATO DAGLI UTENTI</div>
-                <div class="pillar-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.35);">
-                    🏛️
-                </div>
-                <h3 class="pillar-title">Fisco, Cedolini & Detrazioni 730</h3>
-                <p class="pillar-desc">
-                    FiscMoney analizza le tue spese e identifica in automatico quelle che puoi scaricare dalle tasse (farmaci, visite specialistiche, interessi mutuo prima casa, previdenza complementare).
-                </p>
-                <ul class="pillar-checklist">
-                    <li>✓ Calcolo istantaneo del rimborso IRPEF spettante (19%)</li>
-                    <li>✓ Monitoraggio franchigia sanitaria e massimali di legge</li>
-                    <li>✓ Archivio cedolini e buste paga con storico netto e lordo</li>
-                </ul>
-            </div>
-
-            <!-- Pillar 3 -->
-            <div class="pillar-card">
-                <div class="pillar-icon-box" style="background: rgba(52, 211, 153, 0.12); color: #34d399; border-color: rgba(52, 211, 153, 0.3);">
-                    👨‍👩‍👧
-                </div>
-                <h3 class="pillar-title">Workspace Singolo o Familiare</h3>
-                <p class="pillar-desc">
-                    Gestisci le tue finanze personali in totale autonomia oppure crea un workspace condiviso per coordinare il budget di coppia o di famiglia, mantenendo la massima riservatezza.
-                </p>
-                <ul class="pillar-checklist">
-                    <li>✓ Profili separati per ciascun membro della famiglia</li>
-                    <li>✓ Modalità Privacy "Shift+P" per oscurare le cifre in pubblico</li>
-                    <li>✓ Esportazione completa Excel e backup del database con 1 clic</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- ========================================================== -->
-    <!-- TESTIMONIALS & REAL FEEDBACK                               -->
-    <!-- ========================================================== -->
-    <div class="testimonials-section">
-        <div class="section-heading">
-            <span class="section-tag">RISULTATI & TESTIMONIANZE REALI</span>
-            <h2 class="section-title">Cosa dicono i nostri primi utilizzatori</h2>
-            <p class="section-subtitle">Dall'addio ai fogli Excel al recupero delle detrazioni fiscali: ecco l'impatto reale di FiscMoney.</p>
-        </div>
-
-        <div class="testimonials-grid">
-            <!-- Review 1: Excel replacement -->
-            <div class="testimonial-card">
-                <div class="testimonial-rating">
-                    <span class="stars">★★★★★</span>
-                    <span class="outcome-tag outcome-time">⏱️ -4 Ore/Mese</span>
-                </div>
-                <p class="testimonial-text">
-                    “Usavo un foglio Excel da oltre 5 anni che a fine mese diventava puntualmente un incubo da aggiornare. Con FiscMoney trascino l'estratto conto e in 10 secondi ho tutto categorizzato con grafici e patrimonio netto. Non tornerei mai indietro.”
-                </p>
-                <div class="testimonial-author">
-                    <div class="author-avatar" style="background: linear-gradient(135deg, #38bdf8, #0284c7);">MT</div>
-                    <div>
-                        <strong class="author-name">Marco T.</strong>
-                        <span class="author-role">Ingegnere &bull; Utente Beta</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Review 2: IRPEF 730 recovery -->
-            <div class="testimonial-card highlight-testimonial">
-                <div class="testimonial-rating">
-                    <span class="stars">★★★★★</span>
-                    <span class="outcome-tag outcome-money">💰 +420€ Detrazioni 730</span>
-                </div>
-                <p class="testimonial-text">
-                    “A maggio il 730 era sempre una corsa contro il tempo tra scontrini della farmacia e fatture di visite private dimenticate. Il modulo 730 mi ha trovato oltre 400€ di spese detraibili che altrimenti non avrei portato al CAF!”
-                </p>
-                <div class="testimonial-author">
-                    <div class="author-avatar" style="background: linear-gradient(135deg, #f59e0b, #d97706);">ER</div>
-                    <div>
-                        <strong class="author-name">Elena R.</strong>
-                        <span class="author-role">Project Manager &bull; Mamma</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Review 3: Missing expenses / cash flow discovery -->
-            <div class="testimonial-card">
-                <div class="testimonial-rating">
-                    <span class="stars">★★★★★</span>
-                    <span class="outcome-tag outcome-budget">🎯 -180€ Spese Inutili</span>
-                </div>
-                <p class="testimonial-text">
-                    “Analizzando il cash flow mese per mese mi sono accorto di mancanze e di oltre 180€ di addebiti ricorrenti e abbonamenti doppi che continuavano a scalare soldi senza che me ne accorgessi. Ti cambia davvero la consapevolezza delle spese.”
-                </p>
-                <div class="testimonial-author">
-                    <div class="author-avatar" style="background: linear-gradient(135deg, #34d399, #059669);">DM</div>
-                    <div>
-                        <strong class="author-name">Davide M.</strong>
-                        <span class="author-role">Consulente IT &bull; Tester</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Review 4: Couple / Family peace of mind -->
-            <div class="testimonial-card highlight-testimonial">
-                <div class="testimonial-rating">
-                    <span class="stars">★★★★★</span>
-                    <span class="outcome-tag outcome-couple">💑 Zero Litigi di Coppia</span>
-                </div>
-                <p class="testimonial-text">
-                    “Da quando usiamo FiscMoney non litigo più con mia moglie per i conti di casa: sappiamo esattamente quanto ho speso io, quanto ha speso lei e quanto a fine mese dobbiamo conguagliarci 😉. Ha salvato la serenità del nostro budget familiare!”
-                </p>
-                <div class="testimonial-author">
-                    <div class="author-avatar" style="background: linear-gradient(135deg, #f43f5e, #ec4899);">LG</div>
-                    <div>
-                        <strong class="author-name">Luca &amp; Giulia</strong>
-                        <span class="author-role">Coppia &bull; Workspace Familiare</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- ========================================================== -->
-    <!-- 3-STEP QUICK ONBOARDING HOW IT WORKS                       -->
-    <!-- ========================================================== -->
-    <div class="how-it-works-section">
-        <div class="section-heading">
-            <span class="section-tag">SEMPLICE & VELOCE</span>
-            <h2 class="section-title">Come iniziare in 3 semplici passaggi</h2>
-        </div>
-
-        <div class="steps-grid">
-            <div class="step-card">
-                <div class="step-number">1</div>
-                <h4>Crea il tuo Account</h4>
-                <p>Inserisci nome ed email. Sei subito operativo con 60 giorni di licenza PRO completa senza dover inserire carte di credito.</p>
-            </div>
-            <div class="step-card">
-                <div class="step-number">2</div>
-                <h4>Trascina i tuoi Movimenti</h4>
-                <p>Scarica l'estratto conto dalla tua banca o home banking in formato CSV/Excel e rilascialo nella schermata di import.</p>
-            </div>
-            <div class="step-card">
-                <div class="step-number">3</div>
-                <h4>Scopri Risparmi e Tasse</h4>
-                <p>Visualizza all'istante grafici di cash flow, categorie di spesa e l'anteprima delle detrazioni fiscali per il tuo prossimo 730.</p>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- ========================================================== -->
-    <!-- BOTTOM CALL TO ACTION BANNER                               -->
-    <!-- ========================================================== -->
-    <div class="bottom-cta-banner">
-        <div class="cta-banner-content">
-            <div class="cta-pill">✨ PROVA GRATUITA 60 GIORNI SENZA VINCOLI</div>
-            <h3 class="cta-title">Prendi il controllo del tuo patrimonio oggi stesso.</h3>
-            <p class="cta-subtitle">Unisciti agli utenti che usano FiscMoney per gestire conti, monitorare il cash flow e ottimizzare le detrazioni fiscali.</p>
-            <button type="button" onclick="scrollToAuthAndRegister()" class="cta-main-btn">
-                <span>Inizia la Prova Gratuita di 60 Giorni</span>
-                <span style="font-size: 1.2rem;">➔</span>
-            </button>
-            <div style="font-size: 0.76rem; color: #94a3b8; margin-top: 10px;">
-                🔒 Nessuna carta richiesta &bull; Setup in 30 secondi &bull; 100% Riservato
-            </div>
-        </div>
-    </div>
-</div>
-
 <style>
 /* ========================================================== */
-/* BASE & AMBIENT STYLES                                      */
+/* FISCMONEY NEW MINIMALIST CONVERSION LANDING DESIGN SYSTEM   */
 /* ========================================================== */
-.auth-landing-wrapper {
-    position: relative;
-    max-width: 1060px;
-    margin: 20px auto 60px auto;
-    padding: 0 16px;
-    z-index: 1;
-    box-sizing: border-box;
+:root {
+  --lp-bg: #070a12;
+  --lp-card-bg: rgba(15, 23, 42, 0.7);
+  --lp-card-border: rgba(255, 255, 255, 0.08);
+  --lp-accent: #38bdf8;
+  --lp-accent-glow: rgba(56, 189, 248, 0.25);
+  --lp-accent-gold: #facc15;
+  --lp-text-title: #ffffff;
+  --lp-text-muted: #94a3b8;
+  --lp-text-body: #cbd5e1;
 }
 
-/* Glowing Ambient Orbs */
-.glow-orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(85px);
-    opacity: 0.32;
-    pointer-events: none;
-    z-index: 0;
-    animation: floatOrb 14s ease-in-out infinite alternate;
+.landing-page-root {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px 16px 80px 16px;
+  color: var(--lp-text-body);
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
 }
 
-.glow-orb-1 {
-    width: 360px;
-    height: 360px;
-    background: radial-gradient(circle, rgba(239, 68, 68, 0.55) 0%, transparent 70%);
-    top: -40px;
-    left: -40px;
+/* Ambient glow */
+.lp-ambient-orb {
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(100px);
+  opacity: 0.18;
+  z-index: 0;
+}
+.lp-orb-top {
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, #38bdf8 0%, #6366f1 70%, transparent);
 }
 
-.glow-orb-2 {
-    width: 380px;
-    height: 380px;
-    background: radial-gradient(circle, rgba(245, 158, 11, 0.4) 0%, transparent 70%);
-    top: 400px;
-    right: -40px;
-    animation-delay: -7s;
+/* Common Section Container with Breathable Space */
+.lp-section {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 72px;
 }
 
-.glow-orb-3 {
-    width: 280px;
-    height: 280px;
-    background: radial-gradient(circle, rgba(56, 189, 248, 0.3) 0%, transparent 70%);
-    bottom: 200px;
-    left: 20%;
-    animation-delay: -3.5s;
+/* HERO SECTION */
+.lp-hero-section {
+  text-align: center;
+  padding: 50px 10px 30px 10px;
 }
 
-@keyframes floatOrb {
-    0% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(30px, -20px) scale(1.08); }
-    100% { transform: translate(-20px, 25px) scale(0.95); }
+.lp-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--lp-accent);
+  margin-bottom: 24px;
+  letter-spacing: 0.5px;
 }
 
-/* ========================================================== */
-/* AUTH CARD (2-COLUMN)                                       */
-/* ========================================================== */
-.auth-grid-card {
-    position: relative;
-    z-index: 2;
-    display: grid;
-    grid-template-columns: 1.15fr 1fr;
-    background: rgba(15, 23, 42, 0.82);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 24px;
-    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(239, 68, 68, 0.12);
-    overflow: hidden;
-    margin-bottom: 36px;
+.lp-hero-headline {
+  font-size: clamp(2.2rem, 5.5vw, 3.4rem);
+  font-weight: 900;
+  color: var(--lp-text-title);
+  line-height: 1.15;
+  letter-spacing: -1px;
+  margin: 0 auto 20px auto;
+  max-width: 780px;
 }
 
-/* Left Hero Pane */
-.auth-hero-pane {
-    padding: 36px 32px;
-    background: linear-gradient(145deg, rgba(30, 41, 59, 0.55) 0%, rgba(15, 23, 42, 0.85) 100%);
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+.lp-hero-subheadline {
+  font-size: clamp(1.05rem, 2.2vw, 1.25rem);
+  color: var(--lp-text-body);
+  max-width: 640px;
+  margin: 0 auto 16px auto;
+  line-height: 1.55;
+  font-weight: 400;
 }
 
-.auth-hero-brand {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 12px;
+.lp-hero-highlights {
+  color: var(--lp-text-muted);
+  font-size: 0.92rem;
+  max-width: 580px;
+  margin: 0 auto 30px auto;
+  line-height: 1.6;
 }
 
-.auth-logo-img {
-    width: 54px;
-    height: 54px;
-    border-radius: 16px;
-    box-shadow: 0 0 25px rgba(239, 68, 68, 0.5);
-    border: 2px solid rgba(255, 255, 255, 0.15);
-    object-fit: cover;
+.lp-hero-highlights strong {
+  color: #fff;
+  font-weight: 600;
 }
 
-.auth-hero-title {
-    font-size: 1.8rem;
-    font-weight: 800;
-    color: #fff;
-    letter-spacing: -0.5px;
-    margin: 0;
-    line-height: 1.1;
+/* CTA BUTTONS & TRUST SIGNALS */
+.lp-cta-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
-.auth-hero-subtitle {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: #94a3b8;
-    font-weight: 700;
-    display: block;
-    margin-top: 3px;
+.lp-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  color: #04101e;
+  font-size: 1.1rem;
+  font-weight: 800;
+  padding: 16px 36px;
+  border-radius: 14px;
+  text-decoration: none;
+  border: none;
+  box-shadow: 0 10px 30px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.auth-main-hook {
-    font-size: 1.22rem;
-    font-weight: 800;
-    color: #fff;
-    line-height: 1.35;
-    margin: 10px 0 10px 0;
+.lp-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 36px rgba(56, 189, 248, 0.5);
+  background: linear-gradient(135deg, #0ea5e9, #7dd3fc);
+  color: #04101e;
 }
 
-.auth-hero-lead {
-    font-size: 0.85rem;
-    color: #cbd5e1;
-    line-height: 1.5;
-    margin: 0 0 18px 0;
+.lp-hero-trust-subtext {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: var(--lp-text-muted);
+  margin-top: 4px;
 }
 
-/* 60-Day Trial Callout */
-.auth-trial-pill {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.18) 0%, rgba(239, 68, 68, 0.18) 100%);
-    border: 1px solid rgba(245, 158, 11, 0.4);
-    border-radius: 14px;
-    padding: 11px 14px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.12);
+.lp-hero-trust-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.trial-pill-badge {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: #000;
-    font-weight: 900;
-    font-size: 0.72rem;
-    padding: 4px 8px;
-    border-radius: 8px;
-    letter-spacing: 0.5px;
-    white-space: nowrap;
+/* PROBLEM STATEMENT SECTION */
+.lp-problem-card {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.85));
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  padding: 36px 30px;
+  text-align: center;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
 }
 
-/* Feature List */
-.auth-features-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 20px;
+.lp-problem-lead {
+  font-size: clamp(1.2rem, 2.8vw, 1.55rem);
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.35;
+  margin-bottom: 22px;
 }
 
-.auth-feature-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
+.lp-problem-lead span {
+  color: #f87171;
 }
 
-.feature-icon {
-    font-size: 1.1rem;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    flex-shrink: 0;
+.lp-expenses-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 20px auto 26px auto;
+  max-width: 680px;
 }
 
-.auth-feature-item strong {
-    font-size: 0.82rem;
-    color: #f1f5f9;
-    display: block;
-    margin-bottom: 1px;
+.lp-expense-tag {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #cbd5e1;
 }
 
-.auth-feature-item p {
-    font-size: 0.74rem;
-    color: #94a3b8;
-    margin: 0;
-    line-height: 1.35;
+.lp-punchline {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--lp-accent-gold);
+  margin-top: 14px;
 }
 
-.auth-hero-footer {
-    font-size: 0.72rem;
-    color: #64748b;
-    padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+/* 3 STEPS SECTION */
+.lp-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  margin-top: 24px;
 }
 
-/* Right Interactive Form Pane */
-.auth-form-pane {
-    padding: 32px 30px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    background: rgba(15, 23, 42, 0.6);
+.lp-step-card {
+  background: var(--lp-card-bg);
+  border: 1px solid var(--lp-card-border);
+  border-radius: 16px;
+  padding: 24px 20px;
+  position: relative;
+  transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
-.mobile-brand-bar {
-    display: none;
+.lp-step-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(56, 189, 248, 0.35);
 }
 
-/* Segmented Tab Bar */
-.auth-tab-bar {
-    display: flex;
-    background: rgba(0, 0, 0, 0.35);
-    padding: 4px;
-    border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    margin-bottom: 18px;
-    gap: 4px;
+.lp-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--lp-accent);
+  font-weight: 900;
+  font-size: 0.95rem;
+  margin-bottom: 12px;
 }
 
-.auth-tab-btn {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    background: transparent;
-    border: none;
-    color: #94a3b8;
-    padding: 10px 12px;
-    border-radius: 10px;
-    font-size: 0.86rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.25s ease;
-    min-height: 42px;
-    -webkit-tap-highlight-color: transparent;
+.lp-step-title {
+  font-size: 1.08rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 6px;
 }
 
-.auth-tab-btn:hover {
-    color: #fff;
+.lp-step-desc {
+  font-size: 0.85rem;
+  color: var(--lp-text-muted);
+  line-height: 1.45;
+  margin: 0;
 }
 
-.auth-tab-btn.active {
-    background: rgba(255, 255, 255, 0.12);
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+/* FEATURE SHOWCASE: I SOLDI DI COPPIA (HERO FEATURE 1) */
+.lp-couple-card {
+  background: linear-gradient(135deg, rgba(30, 41, 67, 0.9), rgba(15, 23, 42, 0.95));
+  border: 1.5px solid rgba(236, 72, 153, 0.35);
+  border-radius: 20px;
+  padding: 34px 28px;
+  box-shadow: 0 15px 45px rgba(236, 72, 153, 0.15);
 }
 
-.tab-badge-free {
-    background: rgba(245, 158, 11, 0.25);
-    color: #fef08a;
-    font-size: 0.65rem;
-    padding: 2px 6px;
-    border-radius: 6px;
-    font-weight: 800;
-    border: 1px solid rgba(245, 158, 11, 0.4);
+.lp-feature-header {
+  margin-bottom: 22px;
 }
 
-/* Panes */
-.auth-pane-content {
-    display: none;
-    animation: fadeInTab 0.25s ease;
+.lp-feature-kicker {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #f472b6;
+  margin-bottom: 6px;
 }
 
-.auth-pane-content.active {
-    display: block;
+.lp-feature-title {
+  font-size: clamp(1.4rem, 3.2vw, 1.9rem);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.25;
 }
 
-@keyframes fadeInTab {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
+/* Couple Highlight Widget Mock */
+.lp-couple-widget-mock {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 20px 0;
+  text-align: center;
 }
 
-.auth-pane-header {
-    margin-bottom: 16px;
+.lp-couple-amount-lead {
+  font-size: clamp(2.2rem, 5vw, 3.2rem);
+  font-weight: 900;
+  color: #34d399;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin-bottom: 6px;
 }
 
-.auth-pane-header h2 {
-    font-size: 1.3rem;
-    font-weight: 800;
-    color: #fff;
-    margin: 0 0 3px 0;
+.lp-couple-claim-subtext {
+  font-size: 1.05rem;
+  color: #fff;
+  font-weight: 700;
+  margin-bottom: 12px;
 }
 
-.auth-pane-header p {
-    font-size: 0.78rem;
-    color: #94a3b8;
-    margin: 0;
+.lp-couple-pill-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  color: #7dd3fc;
+  font-weight: 600;
 }
 
-/* Form inputs */
-.auth-form-body {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+.lp-feature-footer-quote {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fde047;
+  text-align: center;
+  margin-top: 18px;
 }
 
-.auth-input-group label {
-    display: block;
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: #cbd5e1;
-    margin-bottom: 4px;
+/* FEATURE SHOWCASE: SAFE-TO-SPEND (HERO FEATURE 2) */
+.lp-safetospend-card {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(15, 23, 42, 0.95));
+  border: 1.5px solid rgba(16, 185, 129, 0.35);
+  border-radius: 20px;
+  padding: 34px 28px;
+  box-shadow: 0 15px 45px rgba(16, 185, 129, 0.12);
 }
 
-.input-with-icon {
-    position: relative;
-    display: flex;
-    align-items: center;
+.lp-safe-kicker {
+  color: #34d399;
 }
 
-.input-icon {
-    position: absolute;
-    left: 12px;
-    font-size: 0.95rem;
-    pointer-events: none;
-    opacity: 0.75;
+.lp-safe-widget-mock {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 20px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
-.auth-input {
-    width: 100%;
-    background: rgba(30, 41, 59, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 11px;
-    color: #fff;
-    padding: 12px 12px 12px 38px;
-    font-size: 16px; /* Prevents iOS auto-zoom */
-    line-height: 1.2;
-    transition: all 0.2s ease;
-    box-sizing: border-box;
-    -webkit-appearance: none;
+.lp-safe-widget-left {
+  text-align: left;
 }
 
-.auth-input:focus {
-    outline: none;
-    background: rgba(30, 41, 59, 0.95);
-    border-color: var(--accent-primary, #ef4444);
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+.lp-safe-amount {
+  font-size: clamp(2rem, 4.5vw, 2.8rem);
+  font-weight: 900;
+  color: #34d399;
+  letter-spacing: -0.5px;
 }
 
-.auth-privacy-box {
-    background: rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 10px;
-    padding: 9px 11px;
-    margin: 2px 0;
+.lp-safe-math-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: var(--lp-text-muted);
 }
 
-/* Submit Buttons */
-.auth-submit-btn {
-    width: 100%;
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #fff;
-    font-weight: 800;
-    font-size: 0.92rem;
-    padding: 13px 18px;
-    border-radius: 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
-    transition: all 0.25s ease;
-    margin-top: 4px;
-    min-height: 48px;
-    -webkit-tap-highlight-color: transparent;
+.lp-safe-math-tag {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.auth-submit-btn:hover, .auth-submit-btn:active {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 25px rgba(239, 68, 68, 0.55);
+/* 4 PILLARS (CASA, CASH FLOW, FAMIGLIA, FISCO) */
+.lp-four-pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-top: 20px;
 }
 
-.auth-submit-btn.reg-btn {
-    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
+.lp-pillar-box {
+  background: var(--lp-card-bg);
+  border: 1px solid var(--lp-card-border);
+  border-radius: 14px;
+  padding: 20px 16px;
+  transition: all 0.2s ease;
 }
 
-.auth-submit-btn.reg-btn:hover, .auth-submit-btn.reg-btn:active {
-    box-shadow: 0 10px 25px rgba(245, 158, 11, 0.5);
+.lp-pillar-box:hover {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(30, 41, 59, 0.6);
 }
 
-.auth-switch-prompt {
-    text-align: center;
-    font-size: 0.78rem;
-    color: #94a3b8;
-    margin-top: 12px;
+.lp-pillar-icon {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+  display: block;
 }
 
-/* Trust Strip */
-.auth-trust-strip {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    margin-top: 16px;
-    padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+.lp-pillar-name {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 4px;
 }
 
-.trust-item {
-    font-size: 0.72rem;
-    color: #94a3b8;
-    display: flex;
-    align-items: center;
-    gap: 4px;
+.lp-pillar-sub {
+  font-size: 0.8rem;
+  color: var(--lp-text-muted);
+  line-height: 1.4;
 }
 
+/* PRIVACY SECTION */
+.lp-privacy-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.95));
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 20px;
+  padding: 36px 30px;
+}
 
-/* ========================================================== */
-/* BANKS TICKER STRIP                                         */
-/* ========================================================== */
-.banks-strip-container {
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 18px;
-    padding: 16px 20px;
+.lp-privacy-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin: 24px 0 16px 0;
+}
+
+.lp-privacy-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* BETA 100 USERS INVITATION SECTION (HERO CONVERSION) */
+.lp-beta-card {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(99, 102, 241, 0.15), rgba(15, 23, 42, 0.98));
+  border: 2px solid rgba(56, 189, 248, 0.5);
+  border-radius: 24px;
+  padding: 44px 32px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(14, 165, 233, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.lp-beta-counter-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(90deg, #f59e0b, #eab308);
+  color: #000;
+  font-weight: 900;
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(234, 179, 8, 0.4);
+}
+
+.lp-beta-title {
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.2;
+  margin-bottom: 14px;
+}
+
+.lp-beta-desc {
+  font-size: 1rem;
+  color: var(--lp-text-body);
+  max-width: 620px;
+  margin: 0 auto 24px auto;
+  line-height: 1.6;
+}
+
+.lp-beta-perks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 440px;
+  margin: 0 auto 30px auto;
+  text-align: left;
+  font-size: 0.92rem;
+  color: #e2e8f0;
+}
+
+.lp-beta-perks span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* INTERACTIVE AUTH MODAL / EMBEDDED FORM */
+.lp-auth-card-anchor {
+  scroll-margin-top: 40px;
+}
+
+.lp-auth-panel {
+  background: #0f172a;
+  border: 1.5px solid rgba(56, 189, 248, 0.4);
+  border-radius: 20px;
+  padding: 30px 24px;
+  max-width: 480px;
+  margin: 0 auto;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
+  text-align: left;
+}
+
+.lp-tabs-bar {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 20px;
+  gap: 4px;
+}
+
+.lp-tab-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--lp-text-muted);
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.lp-tab-btn.active {
+  background: var(--lp-accent);
+  color: #04101e;
+  font-weight: 800;
+  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.4);
+}
+
+.lp-input-group {
+  margin-bottom: 14px;
+}
+
+.lp-input-group label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--lp-text-body);
+  margin-bottom: 5px;
+}
+
+.lp-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: border-color 0.2s;
+}
+
+.lp-input:focus {
+  outline: none;
+  border-color: var(--lp-accent);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+}
+
+.lp-submit-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  border: none;
+  border-radius: 10px;
+  color: #04101e;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.35);
+  margin-top: 10px;
+  transition: all 0.2s ease;
+}
+
+.lp-submit-btn:hover {
+  background: linear-gradient(135deg, #0ea5e9, #7dd3fc);
+  transform: translateY(-1px);
+}
+
+/* FAQ ACCORDION */
+.lp-faq-container {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.lp-faq-item {
+  background: var(--lp-card-bg);
+  border: 1px solid var(--lp-card-border);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  padding: 16px 20px;
+  transition: all 0.2s ease;
+}
+
+.lp-faq-question {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lp-faq-answer {
+  font-size: 0.88rem;
+  color: var(--lp-text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* FINAL HOOK CTA */
+.lp-final-cta {
+  text-align: center;
+  padding: 50px 20px 20px 20px;
+}
+
+.lp-final-headline {
+  font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 14px;
+}
+
+/* RESPONSIVE MOBILE TWEAKS */
+@media (max-width: 640px) {
+  .landing-page-root {
+    padding: 14px 12px 60px 12px;
+  }
+  .lp-section {
     margin-bottom: 48px;
-    text-align: center;
-}
-
-.banks-strip-label {
-    font-size: 0.7rem;
-    font-weight: 800;
-    letter-spacing: 1.2px;
-    color: #94a3b8;
-    margin-bottom: 12px;
-    text-transform: uppercase;
-}
-
-.banks-badges-wrapper {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-}
-
-.bank-badge {
-    background: rgba(30, 41, 59, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #e2e8f0;
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 6px 12px;
-    border-radius: 20px;
-    white-space: nowrap;
-    transition: all 0.2s;
-}
-
-.bank-badge:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-1px);
-}
-
-
-/* ========================================================== */
-/* 3 PILLARS SHOWCASE                                         */
-/* ========================================================== */
-.landing-showcase-section {
-    margin-bottom: 54px;
-}
-
-.section-heading {
-    text-align: center;
-    margin-bottom: 32px;
-}
-
-.section-tag {
-    font-size: 0.72rem;
-    font-weight: 900;
-    letter-spacing: 1.5px;
-    color: var(--accent-primary, #ef4444);
-    text-transform: uppercase;
-    display: block;
-    margin-bottom: 6px;
-}
-
-.section-title {
-    font-size: 1.75rem;
-    font-weight: 800;
-    color: #fff;
-    margin: 0 0 8px 0;
-    line-height: 1.2;
-}
-
-.section-subtitle {
-    font-size: 0.9rem;
-    color: #94a3b8;
-    max-width: 620px;
-    margin: 0 auto;
-    line-height: 1.5;
-}
-
-.pillars-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-}
-
-.pillar-card {
-    background: rgba(15, 23, 42, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 20px;
-    padding: 26px 22px;
-    display: flex;
+  }
+  .lp-problem-card,
+  .lp-couple-card,
+  .lp-safetospend-card,
+  .lp-privacy-card,
+  .lp-beta-card {
+    padding: 24px 16px;
+    border-radius: 16px;
+  }
+  .lp-safe-widget-mock {
     flex-direction: column;
-    position: relative;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
-    transition: transform 0.25s ease, border-color 0.25s ease;
-}
-
-.pillar-card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.pillar-card.highlight-pillar {
-    border-color: rgba(245, 158, 11, 0.4);
-    background: linear-gradient(165deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);
-    box-shadow: 0 12px 35px rgba(245, 158, 11, 0.12);
-}
-
-.pillar-badge-popular {
-    position: absolute;
-    top: -12px;
-    right: 20px;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: #000;
-    font-size: 0.64rem;
-    font-weight: 900;
-    padding: 3px 8px;
-    border-radius: 6px;
-    letter-spacing: 0.5px;
-}
-
-.pillar-icon-box {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    border: 1px solid;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
-    margin-bottom: 16px;
-}
-
-.pillar-title {
-    font-size: 1.15rem;
-    font-weight: 800;
-    color: #fff;
-    margin: 0 0 10px 0;
-}
-
-.pillar-desc {
-    font-size: 0.82rem;
-    color: #94a3b8;
-    line-height: 1.55;
-    margin-bottom: 18px;
-    flex-grow: 1;
-}
-
-.pillar-checklist {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    padding-top: 14px;
-}
-
-.pillar-checklist li {
-    font-size: 0.76rem;
-    color: #cbd5e1;
-    line-height: 1.35;
-}
-
-
-/* ========================================================== */
-/* TESTIMONIALS & REAL FEEDBACK                               */
-/* ========================================================== */
-.testimonials-section {
-    margin-bottom: 54px;
-}
-
-.testimonials-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-}
-
-.testimonial-card {
-    background: rgba(15, 23, 42, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 20px;
-    padding: 24px 20px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-    transition: transform 0.25s ease, border-color 0.25s ease;
-    position: relative;
-}
-
-.testimonial-card:hover {
-    transform: translateY(-3px);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.testimonial-card.highlight-testimonial {
-    border-color: rgba(245, 158, 11, 0.35);
-    background: linear-gradient(165deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.9) 100%);
-}
-
-.testimonial-rating {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 14px;
-}
-
-.stars {
-    color: #fbbf24;
-    font-size: 0.95rem;
-    letter-spacing: 2px;
-}
-
-.outcome-tag {
-    font-size: 0.7rem;
-    font-weight: 800;
-    padding: 3px 8px;
-    border-radius: 6px;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-}
-
-.outcome-time {
-    background: rgba(56, 189, 248, 0.15);
-    color: #38bdf8;
-    border: 1px solid rgba(56, 189, 248, 0.3);
-}
-
-.outcome-money {
-    background: rgba(245, 158, 11, 0.2);
-    color: #fef08a;
-    border: 1px solid rgba(245, 158, 11, 0.4);
-}
-
-.outcome-budget {
-    background: rgba(52, 211, 153, 0.15);
-    color: #34d399;
-    border: 1px solid rgba(52, 211, 153, 0.3);
-}
-
-.outcome-couple {
-    background: rgba(244, 63, 94, 0.15);
-    color: #fda4af;
-    border: 1px solid rgba(244, 63, 94, 0.35);
-}
-
-.testimonial-text {
-    font-size: 0.82rem;
-    color: #cbd5e1;
-    line-height: 1.55;
-    margin: 0 0 18px 0;
-    font-style: italic;
-    flex-grow: 1;
-}
-
-.testimonial-author {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    padding-top: 14px;
-}
-
-.author-avatar {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    color: #fff;
-    font-weight: 800;
-    font-size: 0.8rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    flex-shrink: 0;
-}
-
-.author-name {
-    font-size: 0.84rem;
-    color: #fff;
-    display: block;
-}
-
-.author-role {
-    font-size: 0.72rem;
-    color: #94a3b8;
-    display: block;
-}
-
-
-/* ========================================================== */
-/* HOW IT WORKS 3-STEP                                        */
-/* ========================================================== */
-.how-it-works-section {
-    margin-bottom: 50px;
-}
-
-.steps-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 18px;
-}
-
-.step-card {
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 18px;
-    padding: 22px 18px;
-    text-align: center;
-}
-
-.step-number {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.8), rgba(245, 158, 11, 0.8));
-    color: #fff;
-    font-weight: 900;
-    font-size: 1.1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 12px auto;
-    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
-}
-
-.step-card h4 {
-    font-size: 0.98rem;
-    font-weight: 800;
-    color: #fff;
-    margin: 0 0 6px 0;
-}
-
-.step-card p {
-    font-size: 0.78rem;
-    color: #94a3b8;
-    line-height: 1.45;
-    margin: 0;
-}
-
-
-/* ========================================================== */
-/* BOTTOM CTA BANNER                                          */
-/* ========================================================== */
-.bottom-cta-banner {
-    background: radial-gradient(circle at center, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    border-radius: 22px;
-    padding: 36px 24px;
-    text-align: center;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(239, 68, 68, 0.15);
-}
-
-.cta-pill {
-    display: inline-block;
-    background: rgba(245, 158, 11, 0.2);
-    border: 1px solid rgba(245, 158, 11, 0.4);
-    color: #fef08a;
-    font-size: 0.72rem;
-    font-weight: 800;
-    padding: 4px 12px;
-    border-radius: 20px;
-    margin-bottom: 12px;
-}
-
-.cta-title {
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: #fff;
-    margin: 0 0 8px 0;
-}
-
-.cta-subtitle {
-    font-size: 0.88rem;
-    color: #cbd5e1;
-    max-width: 560px;
-    margin: 0 auto 20px auto;
-    line-height: 1.45;
-}
-
-.cta-main-btn {
-    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-    color: #fff;
-    border: none;
-    padding: 14px 28px;
-    border-radius: 14px;
-    font-size: 0.95rem;
-    font-weight: 800;
-    cursor: pointer;
-    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.25s ease;
-}
-
-.cta-main-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 30px rgba(245, 158, 11, 0.55);
-}
-
-
-/* ========================================================== */
-/* RESPONSIVE BREAKPOINTS                                     */
-/* ========================================================== */
-@media (max-width: 860px) {
-    .auth-landing-wrapper {
-        margin: 10px auto 30px auto;
-        padding: 0 10px;
-    }
-
-    .auth-grid-card {
-        grid-template-columns: 1fr;
-        border-radius: 20px;
-    }
-
-    .auth-hero-pane {
-        display: none;
-    }
-
-    .mobile-brand-bar {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 16px;
-        padding-bottom: 14px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .mobile-logo-mini {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-    }
-
-    .auth-form-pane {
-        padding: 20px 16px;
-    }
-
-    .pillars-grid, .steps-grid, .testimonials-grid {
-        grid-template-columns: 1fr;
-        gap: 14px;
-    }
-
-    .section-title {
-        font-size: 1.35rem;
-    }
-
-    .cta-title {
-        font-size: 1.25rem;
-    }
-}
-
-/* Password Requirements Live Box */
-.pwd-requirements-box {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 12px;
-    margin-top: 6px;
-    padding: 6px 10px;
-    background: rgba(0, 0, 0, 0.28);
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.pwd-req-item {
-    font-size: 0.7rem;
-    color: #94a3b8;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    transition: all 0.2s ease;
-}
-
-.pwd-req-item .req-icon {
-    font-size: 0.75rem;
-    font-weight: 800;
-}
-
-.pwd-req-item.valid {
-    color: #34d399;
-    font-weight: 700;
-}
-
-.pwd-req-item.valid .req-icon {
-    color: #34d399;
+    align-items: flex-start;
+  }
+  .lp-btn-primary {
+    width: 100%;
+    padding: 15px 20px;
+    font-size: 1rem;
+  }
 }
 </style>
 
-<script>
-function switchAuthTab(mode) {
-    const btnLogin = document.getElementById('tabBtnLogin');
-    const btnRegister = document.getElementById('tabBtnRegister');
-    const paneLogin = document.getElementById('authPaneLogin');
-    const paneRegister = document.getElementById('authPaneRegister');
+<div class="landing-page-root">
+    <div class="lp-ambient-orb lp-orb-top"></div>
 
-    if (mode === 'register') {
-        btnLogin.classList.remove('active');
+    <!-- ========================================================== -->
+    <!-- 1. HERO SECTION                                            -->
+    <!-- ========================================================== -->
+    <section class="lp-section lp-hero-section">
+        <div class="lp-hero-badge">
+            <span>🧪 BETA PRIVATA</span>
+            <span>&bull;</span>
+            <span>PRIMI 100 UTENTI</span>
+        </div>
+
+        <h1 class="lp-hero-headline">
+            Sai davvero dove finiscono i soldi di casa?
+        </h1>
+
+        <p class="lp-hero-subheadline">
+            FiscMoney trasforma il tuo estratto conto in una fotografia chiara delle tue finanze.
+        </p>
+
+        <p class="lp-hero-highlights">
+            Spese, cash flow, mutuo, risparmio e <strong>gestione dei soldi in coppia</strong>.<br>
+            Senza collegare il tuo conto bancario.
+        </p>
+
+        <div class="lp-cta-group">
+            <a href="#joinBetaAnchor" onclick="openAuthModal('register')" class="lp-btn-primary">
+                <span>🟦 Entra nella Beta di FiscMoney</span>
+                <span>➔</span>
+            </a>
+
+            <div class="lp-hero-trust-subtext">
+                <span class="lp-hero-trust-item">
+                    <span>🔒</span> Non chiediamo mai le credenziali della tua banca
+                </span>
+                <span class="lp-hero-trust-item">
+                    <span>✨</span> Accesso Gratuito
+                </span>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 2. IL VERO PROBLEMA                                        -->
+    <!-- ========================================================== -->
+    <section class="lp-section">
+        <div class="lp-problem-card">
+            <div class="lp-problem-lead">
+                Il tuo conto corrente ti dice <span>quanti</span> soldi hai.<br>
+                Non cosa sta succedendo ai tuoi soldi.
+            </div>
+
+            <p style="color: var(--lp-text-muted); font-size: 0.95rem; margin: 0 auto; max-width: 600px;">
+                Ogni mese arrivano stipendio, addebiti e decine di movimenti sparsi:
+            </p>
+
+            <div class="lp-expenses-pills">
+                <span class="lp-expense-tag">💼 Stipendio</span>
+                <span class="lp-expense-tag">🏠 Mutuo Casa</span>
+                <span class="lp-expense-tag">⚡ Bollette Luce & Gas</span>
+                <span class="lp-expense-tag">🛒 Spesa Supermercato</span>
+                <span class="lp-expense-tag">📦 Amazon</span>
+                <span class="lp-expense-tag">🍕 Cene & Ristoranti</span>
+                <span class="lp-expense-tag">🚗 Assicurazione & Bollo</span>
+                <span class="lp-expense-tag">📺 Abbonamenti Streaming</span>
+                <span class="lp-expense-tag">🚨 Spese Impreviste</span>
+            </div>
+
+            <div class="lp-punchline">
+                “Ma come ho fatto a spendere così tanto?”
+            </div>
+            <p style="color: var(--lp-text-body); font-size: 0.92rem; margin-top: 6px;">
+                FiscMoney nasce per rispondere esattamente a questa domanda.
+            </p>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 3. COME FUNZIONA IN 3 PASSI                                -->
+    <!-- ========================================================== -->
+    <section class="lp-section" style="text-align: center;">
+        <div style="font-size: 0.8rem; font-weight: 800; color: var(--lp-accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
+            SEMPLICE & VELOCE
+        </div>
+        <h2 style="font-size: clamp(1.4rem, 3.2vw, 2rem); font-weight: 900; color: #fff; margin-bottom: 6px;">
+            Carica il tuo estratto conto. Il resto lo fa FiscMoney.
+        </h2>
+        <p style="color: var(--lp-text-muted); font-size: 0.92rem; max-width: 580px; margin: 0 auto;">
+            Compatibilità immediata con i formati Excel e CSV delle banche italiane.
+        </p>
+
+        <div class="lp-steps-grid">
+            <div class="lp-step-card">
+                <div class="lp-step-num">1</div>
+                <div class="lp-step-title">Importa</div>
+                <p class="lp-step-desc">Trascina il CSV o XLSX scaricato dal tuo home banking. Non ci colleghiamo mai al tuo conto.</p>
+            </div>
+
+            <div class="lp-step-card">
+                <div class="lp-step-num">2</div>
+                <div class="lp-step-title">FiscMoney organizza</div>
+                <p class="lp-step-desc">Le transazioni vengono catalogate, memorizzate con auto-apprendimento e riconciliate.</p>
+            </div>
+
+            <div class="lp-step-card">
+                <div class="lp-step-num">3</div>
+                <div class="lp-step-title">Capisci</div>
+                <p class="lp-step-desc">Scopri dove finiscono i soldi, monitora l'andamento nel tempo e vedi cosa puoi permetterti oggi.</p>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 4. IL VERO DIFFERENZIATORE: I SOLDI DI COPPIA              -->
+    <!-- ========================================================== -->
+    <section class="lp-section">
+        <div class="lp-couple-card">
+            <div class="lp-feature-header">
+                <div class="lp-feature-kicker">💑 IL VERO DIFFERENZIATORE</div>
+                <div class="lp-feature-title">I soldi di coppia diventano finalmente semplici.</div>
+                <p style="color: var(--lp-text-body); font-size: 0.92rem; margin-top: 6px;">
+                    FiscMoney confronta automaticamente le spese condivise di casa e calcola chi ha anticipato cosa in tempo reale.
+                </p>
+            </div>
+
+            <!-- Realistic Couple Refund Simulation Widget -->
+            <div class="lp-couple-widget-mock">
+                <div style="font-size: 0.78rem; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+                    Bilancio Condiviso Nucleo
+                </div>
+                <div class="lp-couple-amount-lead">
+                    € 1.259,52
+                </div>
+                <div class="lp-couple-claim-subtext">
+                    Leopoldo deve rimborsare a Macera
+                </div>
+                <div>
+                    <span class="lp-couple-pill-summary">
+                        <span>⚖️</span> Quota 50/50 Riconciliata &bull; Nessuna spesa persa
+                    </span>
+                </div>
+            </div>
+
+            <div class="lp-feature-footer-quote">
+                “Basta fogli Excel. Basta calcoli a fine mese. Basta 'quanto ti devo?'”
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 5. SAFE-TO-SPEND: QUANTO PUOI DAVVERO SPENDERE             -->
+    <!-- ========================================================== -->
+    <section class="lp-section">
+        <div class="lp-safetospend-card">
+            <div class="lp-feature-header">
+                <div class="lp-feature-kicker lp-safe-kicker">🎯 FEATURE PROTAGONISTA</div>
+                <div class="lp-feature-title">Non guardare solo quanto hai. Scopri quanto puoi spendere.</div>
+                <p style="color: var(--lp-text-body); font-size: 0.92rem; margin-top: 6px;">
+                    Puoi avere € 2.000 sul conto e non poterli realmente toccare perché ti aspettano mutuo, bollette e scadenze già programmate.
+                </p>
+            </div>
+
+            <div class="lp-safe-widget-mock">
+                <div class="lp-safe-widget-left">
+                    <div style="font-size: 0.75rem; font-weight: 800; color: #86efac; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Safe-to-Spend Libero Oggi
+                    </div>
+                    <div class="lp-safe-amount">
+                        € 584,20
+                    </div>
+                    <div style="font-size: 0.78rem; color: #a7f3d0; font-weight: 600;">
+                        ✓ Già al netto di mutuo, bollette e target di risparmio
+                    </div>
+                </div>
+
+                <div class="lp-safe-math-strip">
+                    <span class="lp-safe-math-tag">🏠 Mutuo protetto</span>
+                    <span class="lp-safe-math-tag">⚡ Utenze accantonate</span>
+                    <span class="lp-safe-math-tag">🎯 Risparmio 20%</span>
+                </div>
+            </div>
+
+            <p style="text-align: center; color: #cbd5e1; font-size: 0.95rem; margin: 0;">
+                FiscMoney considera entrate, impegni e rate previste per rispondere a un'unica domanda chiave: <strong>“Quanto posso spendere oggi a cuor leggero?”</strong>
+            </p>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 6. VISIONE COMPLETA DELLE TUE FINANZE                      -->
+    <!-- ========================================================== -->
+    <section class="lp-section" style="text-align: center;">
+        <div style="font-size: 0.8rem; font-weight: 800; color: var(--lp-accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
+            PIATTAFORMA INTEGRATA
+        </div>
+        <h2 style="font-size: clamp(1.4rem, 3.2vw, 2rem); font-weight: 900; color: #fff; margin-bottom: 6px;">
+            Non solo spese. Una visione completa delle tue finanze.
+        </h2>
+        <p style="color: var(--lp-text-muted); font-size: 0.92rem; max-width: 580px; margin: 0 auto;">
+            Un solo posto per gestire tutta la vita economica e fiscale della casa.
+        </p>
+
+        <div class="lp-four-pillars-grid">
+            <div class="lp-pillar-box">
+                <span class="lp-pillar-icon">🏠</span>
+                <div class="lp-pillar-name">Casa & Mutuo</div>
+                <div class="lp-pillar-sub">Piano ammortamento, tasso, interessi deducibili e spese di manutenzione.</div>
+            </div>
+
+            <div class="lp-pillar-box">
+                <span class="lp-pillar-icon">💰</span>
+                <div class="lp-pillar-name">Cash Flow</div>
+                <div class="lp-pillar-sub">Entrate, uscite fisse e andamento del risparmio netto mese dopo mese.</div>
+            </div>
+
+            <div class="lp-pillar-box">
+                <span class="lp-pillar-icon">👨‍👩‍👧‍👦</span>
+                <div class="lp-pillar-name">Famiglia</div>
+                <div class="lp-pillar-sub">Più membri, conti separati, spese condivise e patrimonio aggregato.</div>
+            </div>
+
+            <div class="lp-pillar-box">
+                <span class="lp-pillar-icon">🧾</span>
+                <div class="lp-pillar-name">Fisco & 730</div>
+                <div class="lp-pillar-sub">Spese sanitarie, detrazioni IRPEF 19% e monitoraggio cedolini stipendio.</div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 7. PRIVACY & SICUREZZA BANCHE                              -->
+    <!-- ========================================================== -->
+    <section class="lp-section">
+        <div class="lp-privacy-card">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <span style="font-size: 1.5rem;">🔐</span>
+                <h3 style="font-size: 1.35rem; font-weight: 800; color: #fff; margin: 0;">I tuoi soldi restano tuoi.</h3>
+            </div>
+            <p style="color: var(--lp-text-body); font-size: 0.95rem; margin: 0 0 16px 0; line-height: 1.5;">
+                FiscMoney non ha bisogno delle tue credenziali bancarie. Tu scarichi l'estratto conto dal tuo home banking abituale e decidi liberamente cosa caricare.
+            </p>
+
+            <div class="lp-privacy-list">
+                <div class="lp-privacy-item">
+                    <span style="color: #f87171;">✕</span> Nessuna password bancaria
+                </div>
+                <div class="lp-privacy-item">
+                    <span style="color: #f87171;">✕</span> Nessun accesso al tuo conto
+                </div>
+                <div class="lp-privacy-item">
+                    <span style="color: #34d399;">✓</span> Sei tu a controllare i dati
+                </div>
+                <div class="lp-privacy-item">
+                    <span style="color: #34d399;">✓</span> Cancellazione in ogni momento
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <span style="font-size: 0.8rem; color: var(--lp-text-muted);">Crittografia AES e conformità GDPR italiana.</span>
+                <a href="/privacy" target="_blank" style="color: var(--lp-accent); font-size: 0.82rem; text-decoration: underline; font-weight: 700;">Scopri come proteggiamo i tuoi dati →</a>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 8. BETA PRIVATA: PRIMI 100 UTENTI                          -->
+    <!-- ========================================================== -->
+    <section class="lp-section lp-auth-card-anchor" id="joinBetaAnchor">
+        <div class="lp-beta-card">
+            <div class="lp-beta-counter-badge">
+                <span>🧪 POSTI LIMITATI: PRIMI 100 UTENTI</span>
+            </div>
+
+            <h2 class="lp-beta-title">
+                Stiamo costruendo FiscMoney insieme ai primi 100 utenti.
+            </h2>
+
+            <p class="lp-beta-desc">
+                FiscMoney è appena nato. Prima di aprirlo a tutti vogliamo provarlo con un piccolo gruppo di persone reali, capire cosa funziona al meglio e quali funzioni servono davvero.
+            </p>
+
+            <div class="lp-beta-perks">
+                <span>✓ Utilizzi FiscMoney gratuitamente</span>
+                <span>✓ Tutte le funzionalità attive (Coppia, 730, Safe-to-Spend)</span>
+                <span>✓ Canale diretto per feedback e suggerimenti</span>
+                <span>✓ Contribuisci a decidere cosa costruire dopo</span>
+            </div>
+
+            <!-- Interactive Auth Card (Login & Register Integrated) -->
+            <div class="lp-auth-panel" id="authBox">
+                <div class="lp-tabs-bar">
+                    <button type="button" id="tabBtnRegister" class="lp-tab-btn active" onclick="switchAuthTab('register')">
+                        <span>✨</span> Entra nella Beta
+                    </button>
+                    <button type="button" id="tabBtnLogin" class="lp-tab-btn" onclick="switchAuthTab('login')">
+                        <span>🔑</span> Ho già un Account
+                    </button>
+                </div>
+
+                <!-- REGISTER TAB -->
+                <div id="authPaneRegister">
+                    <form method="POST" action="/register">
+                        <div class="lp-input-group">
+                            <label for="regFullName">Nome e Cognome</label>
+                            <input type="text" id="regFullName" name="full_name" class="lp-input" placeholder="Es. Mario Rossi" required autocomplete="name">
+                        </div>
+
+                        <div class="lp-input-group">
+                            <label for="regEmail">Indirizzo Email</label>
+                            <input type="email" id="regEmail" name="email" class="lp-input" placeholder="nome@esempio.it" required autocomplete="email">
+                        </div>
+
+                        <div class="lp-input-group">
+                            <label for="regPassword">Password di Sicurezza (min. 8 car.)</label>
+                            <input type="password" id="regPassword" name="password" minlength="8" class="lp-input" placeholder="••••••••" required autocomplete="new-password">
+                        </div>
+
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; font-size: 0.76rem; color: #cbd5e1; line-height: 1.35;">
+                                <input type="checkbox" name="privacy_consent" value="1" required style="margin-top: 2px; accent-color: var(--lp-accent); width: 16px; height: 16px; flex-shrink: 0;">
+                                <span>Accetto l'<a href="/privacy" target="_blank" style="color: #38bdf8; text-decoration: underline; font-weight: 600;">Informativa Privacy</a>. Dati privati, protetti e mai ceduti a terzi.</span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="lp-submit-btn">
+                            <span>Entra nella Beta Gratuita</span>
+                            <span>➔</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- LOGIN TAB -->
+                <div id="authPaneLogin" style="display: none;">
+                    <form method="POST" action="/login">
+                        <div class="lp-input-group">
+                            <label for="loginEmail">Indirizzo Email</label>
+                            <input type="email" id="loginEmail" name="email" class="lp-input" placeholder="nome@esempio.it" required autocomplete="email">
+                        </div>
+
+                        <div class="lp-input-group">
+                            <label for="loginPassword">Password</label>
+                            <input type="password" id="loginPassword" name="password" class="lp-input" placeholder="••••••••" required autocomplete="current-password">
+                        </div>
+
+                        <button type="submit" class="lp-submit-btn">
+                            <span>Accedi al tuo Workspace</span>
+                            <span>➔</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 9. FAQ ESSENZIALI                                          -->
+    <!-- ========================================================== -->
+    <section class="lp-section">
+        <h3 style="text-align: center; font-size: 1.4rem; font-weight: 800; color: #fff; margin-bottom: 22px;">
+            Domande Frequenti (FAQ)
+        </h3>
+
+        <div class="lp-faq-container">
+            <div class="lp-faq-item">
+                <div class="lp-faq-question"><span>❓</span> FiscMoney si collega direttamente al mio conto corrente?</div>
+                <p class="lp-faq-answer">No. Non è necessario e non ti chiederemo mai le credenziali bancarie. Scarichi il file CSV o Excel dal tuo home banking e lo importi con un drag & drop in pochi secondi.</p>
+            </div>
+
+            <div class="lp-faq-item">
+                <div class="lp-faq-question"><span>🏛️</span> Quali banche sono supportate?</div>
+                <p class="lp-faq-answer">FiscMoney supporta i formati di oltre 15 banche italiane ed europee, tra cui BPER Banca, Poste Italiane (BancoPosta e Postepay), Intesa Sanpaolo, UniCredit, BCC, Revolut, BBVA, Fineco, Illimity e qualsiasi estratto conto standard in formato CSV o Excel.</p>
+            </div>
+
+            <div class="lp-faq-item">
+                <div class="lp-faq-question"><span>💶</span> Quanto costa?</div>
+                <p class="lp-faq-answer">Durante la fase di Beta Privata per i primi 100 utenti, FiscMoney è completamente gratuito con accesso illimitato a tutte le funzionalità avanzate.</p>
+            </div>
+
+            <div class="lp-faq-item">
+                <div class="lp-faq-question"><span>🔒</span> I miei dati vengono venduti o condivisi?</div>
+                <p class="lp-faq-answer">Assolutamente no. Il nostro modello è basato sulla massima riservatezza: i tuoi dati finanziari rimangono crittografati sul tuo database e puoi esportarli o cancellarli integralmente in qualsiasi momento.</p>
+            </div>
+
+            <div class="lp-faq-item">
+                <div class="lp-faq-question"><span>👫</span> Posso usare FiscMoney insieme al mio partner?</div>
+                <p class="lp-faq-answer">Certamente. FiscMoney supporta workspace familiari con tracciamento delle spese condivise 50/50, gestione dei conti personali e calcolo automatico dei rimborsi di coppia senza fogli Excel.</p>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 10. CHIUSURA EMOTIVA & ULTIMA CTA                          -->
+    <!-- ========================================================== -->
+    <section class="lp-section lp-final-cta">
+        <div class="lp-final-headline">
+            La prossima volta che ti chiedi “dove sono finiti i miei soldi?”, prova a scoprirlo davvero.
+        </div>
+        <p style="color: var(--lp-text-muted); font-size: 0.95rem; margin-bottom: 24px;">
+            Entra ora nella beta privata di FiscMoney e costruisci con noi il tuo nuovo modo di gestire il budget.
+        </p>
+
+        <a href="#joinBetaAnchor" onclick="openAuthModal('register')" class="lp-btn-primary">
+            <span>🟦 Prova FiscMoney gratuitamente</span>
+            <span>➔</span>
+        </a>
+        <div style="font-size: 0.78rem; color: var(--lp-text-muted); margin-top: 12px;">
+            Primi 100 utenti &bull; Beta privata &bull; Nessuna carta richiesta
+        </div>
+    </section>
+
+</div>
+
+<script>
+function switchAuthTab(tab) {
+    const btnRegister = document.getElementById('tabBtnRegister');
+    const btnLogin = document.getElementById('tabBtnLogin');
+    const paneRegister = document.getElementById('authPaneRegister');
+    const paneLogin = document.getElementById('authPaneLogin');
+
+    if (tab === 'register') {
         btnRegister.classList.add('active');
-        paneLogin.classList.remove('active');
-        paneRegister.classList.add('active');
-        window.location.hash = 'register';
+        btnLogin.classList.remove('active');
+        paneRegister.style.display = 'block';
+        paneLogin.style.display = 'none';
         const nameInput = document.getElementById('regFullName');
         if (nameInput) nameInput.focus();
     } else {
-        btnRegister.classList.remove('active');
         btnLogin.classList.add('active');
-        paneRegister.classList.remove('active');
-        paneLogin.classList.add('active');
-        history.replaceState(null, null, ' ');
+        btnRegister.classList.remove('active');
+        paneLogin.style.display = 'block';
+        paneRegister.style.display = 'none';
         const emailInput = document.getElementById('loginEmail');
         if (emailInput) emailInput.focus();
     }
 }
 
-function scrollToAuthAndRegister() {
-    switchAuthTab('register');
-    const box = document.getElementById('authBox');
-    if (box) {
-        box.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-}
-
-// Live Password Complexity Checker
-document.addEventListener('DOMContentLoaded', function() {
-    if (window.location.hash === '#register' || window.location.search.includes('register')) {
-        switchAuthTab('register');
-    }
-
-    const regPwdInput = document.getElementById('regPassword');
-    if (regPwdInput) {
-        regPwdInput.addEventListener('input', function() {
-            const val = this.value;
-            const hasLength = val.length >= 8;
-            const hasNumber = /\d/.test(val);
-            const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':",.<>/?\\|`~]/.test(val);
-
-            updateReqItem('reqLength', hasLength);
-            updateReqItem('reqNumber', hasNumber);
-            updateReqItem('reqSpecial', hasSpecial);
-        });
-    }
-});
-
-function updateReqItem(id, isValid) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const icon = el.querySelector('.req-icon');
-    if (isValid) {
-        el.classList.add('valid');
-        if (icon) icon.innerText = '✓';
-    } else {
-        el.classList.remove('valid');
-        if (icon) icon.innerText = '○';
+function openAuthModal(tab) {
+    switchAuthTab(tab);
+    const target = document.getElementById('joinBetaAnchor');
+    if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 }
 </script>
