@@ -1300,7 +1300,7 @@
                 <!-- Transactions Count & Volume Pills -->
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; text-align: center;">
                     <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 8px;">
-                        <span style="color: var(--text-muted); font-size: 0.7rem; display: block;">Movimenti Letti</span>
+                        <span style="color: var(--text-muted); font-size: 0.7rem; display: block;">Movimenti Contabilizzati</span>
                         <strong style="color: #fff; font-size: 1.05rem;" id="step1Count">0</strong>
                     </div>
                     <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; padding: 10px 8px;">
@@ -1311,6 +1311,12 @@
                         <span style="color: #fca5a5; font-size: 0.7rem; display: block;">💳 Spese Rilevate</span>
                         <strong style="color: #f87171; font-size: 1rem;" id="step1Expenses">-€ 0,00</strong>
                     </div>
+                </div>
+
+                <!-- Unconfirmed / Pending Skipped Banner -->
+                <div id="step1PendingNotice" style="display: none; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 0.74rem; color: #93c5fd; align-items: center; gap: 8px;">
+                    <span>🛡️</span>
+                    <span><strong>Filtro Anti-Duplicazione Attivo:</strong> <span id="step1PendingCount">0</span> movimenti provvisori (non ancora contabilizzati dalla banca) sono stati esclusi. Verranno acquisiti al prossimo estratto conto quando saranno definitivi.</span>
                 </div>
             </div>
 
@@ -3263,6 +3269,17 @@ function openConfirmImportModal(data, fileName) {
     document.getElementById('step1Count').innerText = `${data.total_transactions} transazioni`;
     document.getElementById('step1Income').innerText = formatEurJs(data.total_income, true);
     document.getElementById('step1Expenses').innerText = formatEurJs(-data.total_expenses);
+
+    const pendingNotice = document.getElementById('step1PendingNotice');
+    const pendingCountEl = document.getElementById('step1PendingCount');
+    if (pendingNotice && pendingCountEl) {
+        if (data.pending_skipped_count && data.pending_skipped_count > 0) {
+            pendingCountEl.innerText = data.pending_skipped_count;
+            pendingNotice.style.display = 'flex';
+        } else {
+            pendingNotice.style.display = 'none';
+        }
+    }
 
     // 2. Populate Step 2 (Profile Selection Cards)
     setupProfileCards(meta, fileName, isCard);

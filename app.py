@@ -2815,6 +2815,7 @@ def preview_import():
         "matching_account_id": matching_acc["id"] if matching_acc else None,
         "matching_account_name": matching_acc["name"] if matching_acc else None,
         "total_transactions": len(parsed_txs),
+        "pending_skipped_count": result.get("pending_skipped_count", 0),
         "total_income": round(income, 2),
         "total_expenses": round(expenses, 2),
         "category_breakdown": cat_list,
@@ -2941,13 +2942,21 @@ def confirm_import():
         except Exception:
             pass
 
-    # 3. Insert Transactions with Deduplication
+    # 3. Insert Transactions with Enhanced Deduplication & Consolidation
     existing_hashes = set(row[0] for row in conn.execute(
         "SELECT import_hash FROM transactions WHERE workspace_id = ? AND import_hash IS NOT NULL", 
         (ws_id,)
     ).fetchall())
     
+    # Load recent transactions for this account to perform smart consolidation check (±4 days)
+    recent_account_txs = conn.execute(
+        "SELECT id, date, amount, description, raw_description, import_hash FROM transactions WHERE workspace_id = ? AND account_id = ?",
+        (ws_id, account_id)
+    ).fetchall()
+    account_tx_cache = [dict(r) for r in recent_account_txs]
+
     new_count = 0
+    updated_count = 0
     skipped_count = 0
     total_delta = 0.0
     
@@ -2957,6 +2966,57 @@ def confirm_import():
             skipped_count += 1
             continue
             
+        # Smart Consolidation Check:
+        # Se sul conto esiste già un movimento con lo STESSO importo (es. -40.48 €)
+        # e data a distanza di non più di 4 giorni, con esercente compatibile,
+        # significa che il vecchio movimento era provvisorio/in sospeso e ora si è consolidato!
+        consolidated_match = None
+        tx_dt_str = tx['date']
+        tx_amt = tx['amount']
+        tx_clean_desc = (tx['description'] or '').lower().strip()
+        
+        try:
+            tx_dt = datetime.strptime(tx_dt_str[:10], "%Y-%m-%d")
+        except Exception:
+            tx_dt = None
+
+        if tx_dt:
+            for ex in account_tx_cache:
+                if abs(ex['amount'] - tx_amt) < 0.001:
+                    try:
+                        ex_dt = datetime.strptime(ex['date'][:10], "%Y-%m-%d")
+                        days_diff = abs((tx_dt - ex_dt).days)
+                        if days_diff <= 4:
+                            ex_desc = (ex['description'] or '').lower().strip()
+                            # Confronto similarità tra parole chiave descrizione
+                            w_tx = set(re.findall(r'[a-zA-Z]{3,}', tx_clean_desc))
+                            w_ex = set(re.findall(r'[a-zA-Z]{3,}', ex_desc))
+                            common_words = w_tx.intersection(w_ex)
+                            # Se hanno parole chiave significative in comune o entrambe iniziano con la stessa radice
+                            if common_words or (len(tx_clean_desc) >= 4 and len(ex_desc) >= 4 and (tx_clean_desc[:4] == ex_desc[:4])):
+                                consolidated_match = ex
+                                break
+                    except Exception:
+                        pass
+
+        if consolidated_match:
+            # Aggiorna il movimento provvisorio precedente con i dati ufficiali definitivi
+            cursor.execute('''
+                UPDATE transactions SET
+                    date = ?, description = ?, raw_description = ?,
+                    import_hash = ?
+                WHERE id = ?
+            ''', (
+                tx['date'], tx['description'], tx['raw_description'],
+                tx['import_hash'], consolidated_match['id']
+            ))
+            existing_hashes.add(h)
+            consolidated_match['import_hash'] = h
+            consolidated_match['date'] = tx['date']
+            consolidated_match['description'] = tx['description']
+            updated_count += 1
+            continue
+
         cursor.execute('''
             INSERT INTO transactions (
                 workspace_id, profile_id, account_id, date, amount, category, 
@@ -2968,6 +3028,14 @@ def confirm_import():
             tx['tags'], tx['import_hash']
         ))
         existing_hashes.add(h)
+        account_tx_cache.append({
+            'id': cursor.lastrowid,
+            'date': tx['date'],
+            'amount': tx['amount'],
+            'description': tx['description'],
+            'raw_description': tx['raw_description'],
+            'import_hash': h
+        })
         new_count += 1
         total_delta += tx['amount']
         
@@ -2983,10 +3051,17 @@ def confirm_import():
     # Clear cache
     del IMPORT_CACHE[import_token]
     
-    flash(f"✅ Importazione completata su '{target_account['name']}': {new_count} nuovi movimenti registrati ({skipped_count} duplicati ignorati).", "success")
+    msg = f"✅ Importazione completata su '{target_account['name']}': {new_count} nuovi movimenti registrati"
+    if updated_count > 0:
+        msg += f", {updated_count} movimenti provvisori consolidati"
+    if skipped_count > 0:
+        msg += f" ({skipped_count} duplicati ignorati)"
+    msg += "."
+    flash(msg, "success")
     return jsonify({
         "success": True,
         "imported_count": new_count,
+        "updated_count": updated_count,
         "skipped_count": skipped_count,
         "redirect_url": url_for("transactions")
     })

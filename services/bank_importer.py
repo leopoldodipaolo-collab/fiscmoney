@@ -1168,6 +1168,7 @@ def find_header_row(rows):
     AMOUNT_KW = ["importo", "amount", "totale", "valuta importo", "valore"]
     IN_KW = ["entrate", "accrediti", "avere", "in", "accredito", "income", "credit"]
     OUT_KW = ["uscite", "addebiti", "dare", "out", "addebito", "expense", "debit"]
+    STATUS_KW = ["stato", "status", "stato movimento", "stato operazione"]
     
     best_row_idx = -1
     best_score = 0
@@ -1178,7 +1179,7 @@ def find_header_row(rows):
         if not row_str_list:
             continue
             
-        mapping = {"date": None, "desc": None, "amount": None, "in": None, "out": None}
+        mapping = {"date": None, "desc": None, "amount": None, "in": None, "out": None, "status": None}
         score = 0
         
         for c_idx, cell in enumerate(row_str_list):
@@ -1198,6 +1199,9 @@ def find_header_row(rows):
                 score += 2
             elif any(cell == k or f" {k}" in cell or f"{k} " in cell for k in OUT_KW) and mapping["out"] is None:
                 mapping["out"] = c_idx
+                score += 2
+            elif any(k in cell for k in STATUS_KW) and mapping["status"] is None:
+                mapping["status"] = c_idx
                 score += 2
                 
         # Must have at least Date + Desc + (Amount OR (In and Out))
@@ -1433,11 +1437,25 @@ def parse_bank_file(file_content, filename, workspace_id, account_id=None, custo
 
     # D. Extract and Normalize Data Rows
     parsed_transactions = []
+    pending_skipped_count = 0
     data_rows = raw_rows[header_idx + 1:]
+    
+    # Parole chiave per movimenti bancari provvisori / non ancora contabilizzati
+    UNCONFIRMED_STATUS_KW = [
+        "non contabilizzato", "in elaborazione", "in corso", "in sospeso", 
+        "autorizzato", "prenotato", "pending", "unsettled", "da contabilizzare"
+    ]
     
     for row in data_rows:
         if not row:
             continue
+            
+        # Check Status column if present (es. BPER, Intesa, etc.)
+        if mapping.get("status") is not None and mapping["status"] < len(row):
+            st_val = str(row[mapping["status"]]).strip().lower()
+            if any(kw in st_val for kw in UNCONFIRMED_STATUS_KW):
+                pending_skipped_count += 1
+                continue
             
         # Date
         date_raw = row[mapping["date"]] if mapping["date"] < len(row) else None
@@ -1494,5 +1512,6 @@ def parse_bank_file(file_content, filename, workspace_id, account_id=None, custo
         "account_meta": account_meta,
         "transactions": parsed_transactions,
         "total_parsed": len(parsed_transactions),
+        "pending_skipped_count": pending_skipped_count,
         "header_row": header_idx
     }
