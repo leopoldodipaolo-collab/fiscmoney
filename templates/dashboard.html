@@ -95,7 +95,7 @@
     <div class="family-member-breakdown-grid" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
         {% for m in member_balances %}
         <div class="family-member-card" style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-            <div class="family-member-card-left" style="display: flex; align-items: center; gap: 10px; min-width: 120px;">
+            <div class="family-member-card-left" style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto;">
                 <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
                     {% if m.is_primary %}👤{% elif 'Figli' in m.role_title %}👶{% else %}👩{% endif %}
                 </div>
@@ -1209,11 +1209,11 @@
                     <div class="deadline-item-main-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         
                         <!-- Left: Info & Badges -->
-                        <div class="deadline-item-left" style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 240px; overflow: hidden;">
+                        <div class="deadline-item-left" style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; overflow: hidden;">
                             <span class="deadline-item-icon" style="font-size: 1.1rem; flex-shrink: 0;">{% if dl.is_paid %}🟢{% elif dl.is_partial %}🟡{% elif dl.is_past %}⚪{% else %}⏳{% endif %}</span>
                             <div class="deadline-item-meta" style="overflow: hidden;">
                                 <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                    <strong class="deadline-item-title" style="font-size: 0.92rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;">
+                                    <strong class="deadline-item-title" style="font-size: 0.92rem; color: #fff; overflow-wrap: anywhere; word-break: break-word;">
                                         🏷️ {{ dl.display_title }}
                                     </strong>
                                     <span class="badge-tag" style="background: rgba(255,255,255,0.05); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.08); font-size: 0.62rem; padding: 1px 5px;">
@@ -1223,13 +1223,13 @@
                                         {{ dl.scope_badge }}
                                     </span>
                                 </div>
-                                <div class="deadline-item-submeta" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 8px;">
+                                <div class="deadline-item-submeta" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                     <span>📅 {{ dl.due_date_str }}</span>
                                     <span>•</span>
                                     <span>🔄 {{ dl.recurrence }}</span>
                                     {% if dl.raw_detail %}
                                     <span>•</span>
-                                    <span style="color: #64748b; font-size: 0.66rem; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ dl.name }}">{{ dl.raw_detail }}</span>
+                                    <span style="color: #64748b; font-size: 0.66rem; overflow-wrap: anywhere; word-break: break-word;" title="{{ dl.name }}">{{ dl.raw_detail }}</span>
                                     {% endif %}
                                     {% if dl.is_past %}
                                     <span>•</span>
@@ -3311,6 +3311,34 @@ if (document.readyState === 'loading') {
 
 /* Smartphone Responsiveness (< 768px & < 480px) */
 @media (max-width: 768px) {
+    /* Global Container Overflow Guards */
+    .hero-greeting-card,
+    .financial-summary-card,
+    .deadlines-radar-card,
+    .accounts-hero-card {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+
+    .radar-split-container {
+        grid-template-columns: 100% !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+
+    .radar-calendar-panel,
+    .radar-details-panel {
+        min-width: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+
     /* 0. Financial Summary Card */
     .financial-summary-card {
         padding: 14px 12px !important;
@@ -3344,21 +3372,37 @@ if (document.readyState === 'loading') {
     .family-member-breakdown-grid {
         grid-template-columns: 1fr !important;
         gap: 8px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
     .family-member-card {
-        padding: 9px 10px !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
         gap: 8px !important;
+        padding: 10px 12px !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
     }
     .family-member-card-left {
         min-width: 0 !important;
-        flex: 1 1 auto !important;
+        width: 100% !important;
     }
     .family-member-card-right {
-        margin-left: auto !important;
-        flex-shrink: 0 !important;
+        width: 100% !important;
+        margin-left: 0 !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        border-top: 1px dashed rgba(255,255,255,0.08) !important;
+        padding-top: 6px !important;
+    }
+    .family-member-card-amounts {
+        text-align: left !important;
     }
     .family-member-card-amounts .privacy-mask {
-        font-size: 0.88rem !important;
+        font-size: 0.92rem !important;
     }
 
     /* 2. Radar Scadenze Future Card Container */

@@ -36,6 +36,34 @@
   border: 2.5px solid #f59e0b !important;
   animation: goldenGlowPulse 2s infinite ease-in-out !important;
 }
+
+/* Smartphone Responsive Optimization for Accounts Hero Card */
+@media (max-width: 768px) {
+  .accounts-hero-card {
+    padding: 14px 12px !important;
+    border-radius: 12px !important;
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+  .accounts-hero-card > div:first-child {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  .accounts-hero-card .asset-bar-widget {
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .accounts-hero-card .privacy-mask {
+    font-size: 1.5rem !important;
+  }
+  .accounts-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+}
 </style>
 
 <!-- Header & Action Buttons -->
