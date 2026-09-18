@@ -4521,6 +4521,36 @@ body.hide-micro-expenses .tx-item.is-micro-tx {
   }
 }
 
+/* Global Mobile Overflow Guard & Accounts Grid Responsiveness */
+@media (max-width: 768px) {
+  .accounts-hero-card {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+  .accounts-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .accounts-grid > div,
+  .accounts-grid > a {
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .accounts-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+}
+
 
 
 
