@@ -46,6 +46,28 @@
   background: radial-gradient(circle, #38bdf8 0%, #6366f1 70%, transparent);
 }
 
+/* Watermark Logo behind Hero */
+.lp-hero-watermark-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(520px, 90vw);
+  height: min(520px, 90vw);
+  border-radius: 50%;
+  object-fit: cover;
+  opacity: 0.045;
+  filter: blur(1px) grayscale(20%);
+  pointer-events: none;
+  z-index: 0;
+  animation: heroLogoFloat 8s ease-in-out infinite alternate;
+}
+
+@keyframes heroLogoFloat {
+  0% { transform: translate(-50%, -50%) scale(0.98); }
+  100% { transform: translate(-50%, -52%) scale(1.03); }
+}
+
 /* Common Section Container with Breathable Space */
 .lp-section {
   position: relative;
@@ -687,16 +709,20 @@
     <!-- ========================================================== -->
     <!-- 1. HERO SECTION                                            -->
     <!-- ========================================================== -->
-    <section class="lp-section lp-hero-section">
-        <div class="lp-hero-badge">
-            <span>🧪 BETA PRIVATA</span>
-            <span>&bull;</span>
-            <span>PRIMI 100 UTENTI</span>
-        </div>
+    <section class="lp-section lp-hero-section" style="position: relative; overflow: visible;">
+        <!-- Large Subtle Watermark Logo Floating in Background -->
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="" class="lp-hero-watermark-logo" aria-hidden="true">
 
-        <h1 class="lp-hero-headline">
-            Sai davvero dove finiscono i soldi di casa?
-        </h1>
+        <div style="position: relative; z-index: 2;">
+            <div class="lp-hero-badge">
+                <span>🧪 BETA PRIVATA</span>
+                <span>&bull;</span>
+                <span>PRIMI 100 UTENTI</span>
+            </div>
+
+            <h1 class="lp-hero-headline">
+                Sai davvero dove finiscono i soldi di casa?
+            </h1>
 
         <p class="lp-hero-subheadline">
             FiscMoney trasforma il tuo estratto conto in una fotografia chiara delle tue finanze.
@@ -721,6 +747,7 @@
                     <span>✨</span> Accesso Gratuito
                 </span>
             </div>
+        </div>
         </div>
     </section>
 
