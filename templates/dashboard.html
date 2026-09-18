@@ -92,10 +92,10 @@
 
     <!-- Nucleo Breakdown Mini-Cards (Visible in Full Family View) -->
     {% if active_filter == 'all' and member_balances|length > 1 and (is_admin or current_mode != 'ADMIN_ONLY') %}
-    <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
+    <div class="family-member-breakdown-grid" style="margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
         {% for m in member_balances %}
-        <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 10px; min-width: 120px;">
+        <div class="family-member-card" style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <div class="family-member-card-left" style="display: flex; align-items: center; gap: 10px; min-width: 120px;">
                 <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">
                     {% if m.is_primary %}👤{% elif 'Figli' in m.role_title %}👶{% else %}👩{% endif %}
                 </div>
@@ -112,8 +112,8 @@
                 </div>
             </div>
             
-            <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
-                <div style="text-align: right;">
+            <div class="family-member-card-right" style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
+                <div class="family-member-card-amounts" style="text-align: right;">
                     <div class="privacy-mask" style="font-weight: 800; font-size: 0.95rem; color: #fff;" title="Liquidità Conti Correnti">{{ m.total_balance|eur }}</div>
                     {% if m.total_invested and m.total_invested > 0 %}
                     <div style="font-size: 0.68rem; color: #34d399; font-weight: 700; margin-top: 1px;">
@@ -121,13 +121,13 @@
                     </div>
                     {% endif %}
                     {% if is_admin and not m.is_primary and not m.linked_user_id %}
-                    <button type="button" onclick="openInviteModal({{ m.id }}, '{{ m.name }}', '{{ m.invited_email or '' }}')" class="btn btn-sm" style="font-size: 0.65rem; padding: 2px 6px; margin-top: 2px; background: rgba(37, 211, 102, 0.15); border: 1px solid rgba(37, 211, 102, 0.4); color: #25d366; font-weight: 700; border-radius: 4px;">
+                    <button type="button" onclick="openInviteModal({{ m.id }}, '{{ m.name }}', '{{ m.invited_email or '' }}')" class="btn btn-sm family-invite-btn" style="font-size: 0.65rem; padding: 2px 6px; margin-top: 2px; background: rgba(37, 211, 102, 0.15); border: 1px solid rgba(37, 211, 102, 0.4); color: #25d366; font-weight: 700; border-radius: 4px;">
                         📲 Invita WhatsApp
                     </button>
                     {% endif %}
                 </div>
                 {% if is_admin and not m.is_primary %}
-                <button type="button" onclick="openDeleteProfileModal({{ m.id }}, '{{ m.name }}')" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; font-size: 0.85rem; border-radius: 6px; padding: 5px 8px; cursor: pointer; line-height: 1; display: inline-flex; align-items: center;" title="Elimina profilo {{ m.name }}">
+                <button type="button" onclick="openDeleteProfileModal({{ m.id }}, '{{ m.name }}')" class="family-delete-btn" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; font-size: 0.85rem; border-radius: 6px; padding: 5px 8px; cursor: pointer; line-height: 1; display: inline-flex; align-items: center;" title="Elimina profilo {{ m.name }}">
                     🗑️
                 </button>
                 {% endif %}
@@ -467,7 +467,7 @@
 {% endif %}
 
 <!-- Financial Summary Card (Live Dynamic Metrics) -->
-<div class="card" style="margin-bottom: 16px;">
+<div class="card financial-summary-card" style="margin-bottom: 16px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
         <div>
             {% if active_filter == 'all' %}
@@ -1002,13 +1002,13 @@
 <div class="card deadlines-radar-card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.90)); border: 1.5px solid rgba(234, 179, 8, 0.35); margin-bottom: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.45); border-radius: 16px; padding: 18px 20px;">
     
     <!-- Top Header: Title & Controls -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.35); display: flex; align-items: center; justify-content: center; font-size: 1.45rem;">
+    <div class="radar-top-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px;">
+        <div class="radar-title-group" style="display: flex; align-items: center; gap: 12px;">
+            <div class="radar-header-icon" style="width: 42px; height: 42px; border-radius: 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.35); display: flex; align-items: center; justify-content: center; font-size: 1.45rem;">
                 🗓️
             </div>
             <div>
-                <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h3 class="radar-title-text" style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                     Radar Scadenze Future & Spese Famiglia
                     <span class="badge-tag" style="background: rgba(234, 179, 8, 0.18); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.4); font-size: 0.68rem; font-weight: 800;">
                         12 MESI
@@ -1017,13 +1017,13 @@
                         {{ deadlines_radar.active_deadlines_count }} DA SALDARE
                     </span>
                 </h3>
-                <p style="color: var(--text-muted); font-size: 0.76rem; margin: 2px 0 0 0;">
+                <p class="radar-sub-text" style="color: var(--text-muted); font-size: 0.76rem; margin: 2px 0 0 0;">
                     Pianificazione impegni importanti (Condominio, Bollo, TARI, Assicurazioni) con monitoraggio quote di coppia
                 </p>
             </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <div class="radar-header-actions" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <button type="button" onclick="openAddDeadlineModal()" class="btn btn-primary btn-sm" style="font-size: 0.76rem; font-weight: 800; padding: 6px 14px; background: linear-gradient(135deg, #eab308, #ca8a04); border: none; color: #000; border-radius: 8px; box-shadow: 0 2px 8px rgba(234, 179, 8, 0.3);">
                 ➕ Nuova Scadenza
             </button>
@@ -1034,7 +1034,7 @@
     </div>
 
     <!-- Executive KPI Bar -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 16px;">
+    <div class="radar-kpi-bar" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 16px;">
         <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 8px 12px;">
             <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">🎯 Totale Previsto</span>
             <div class="privacy-mask" style="font-size: 1.1rem; font-weight: 900; color: #fff; margin-top: 2px;">
@@ -1062,7 +1062,7 @@
     <div class="radar-split-container" style="display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: start;">
         
         <!-- LEFT COLUMN: MATRICE CALENDARIO ANNO IN CORSO E PROSSIMO -->
-        <div style="background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px;">
+        <div class="radar-calendar-panel" style="background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
                 <span style="font-size: 0.78rem; font-weight: 800; color: #facc15; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
                     📅 Matrice Scadenze & Impegni
@@ -1093,7 +1093,7 @@
                     </div>
 
                     <!-- 12-Month Matrix Grid (3 cols x 4 rows) -->
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                    <div class="radar-matrix-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
                         {% for tm in cy.months %}
                         <div onclick="filterDeadlinesByMonth('{{ tm.year_month }}', this)"
                              class="radar-month-row {% if tm.is_current %}is-current{% endif %} {% if tm.items_count > 0 %}has-items{% endif %}"
@@ -1141,15 +1141,15 @@
         </div>
 
         <!-- RIGHT COLUMN: DETTAGLIO SCADENZE & BARRE DI COPERTURA -->
-        <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+        <div class="radar-details-panel">
+            <div class="radar-details-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
                 <span id="deadlinesListHeaderTitle" style="font-size: 0.78rem; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">
                     📋 Tutte le Scadenze Programmate
                 </span>
                 
                 <!-- Scope Quick Filter & Mortgage Toggle -->
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <div style="display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.3); padding: 2px 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div class="radar-scope-bar" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <div class="radar-scope-buttons" style="display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.3); padding: 2px 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
                         <button type="button" onclick="filterDeadlinesByScope('ALL', this)" class="btn-radar-scope active" id="scopeBtnAll" style="font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; border: none; background: #eab308; color: #000; font-weight: 800; cursor: pointer;">
                             Tutte
                         </button>
@@ -1206,14 +1206,14 @@
                      style="background: rgba(255,255,255,0.02); border: 1px solid {% if dl.is_past %}rgba(100, 116, 139, 0.25){% elif dl.is_paid %}rgba(16, 185, 129, 0.3){% elif dl.is_partial %}rgba(234, 179, 8, 0.35){% else %}rgba(239, 68, 68, 0.35){% endif %}; border-radius: 10px; padding: 10px 14px; transition: all 0.2s; {% if dl.is_past %}opacity: 0.65; background: rgba(0,0,0,0.2);{% endif %}">
                     
                     <!-- Primary Compact Row -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div class="deadline-item-main-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         
                         <!-- Left: Info & Badges -->
-                        <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 240px; overflow: hidden;">
-                            <span style="font-size: 1.1rem; flex-shrink: 0;">{% if dl.is_paid %}🟢{% elif dl.is_partial %}🟡{% elif dl.is_past %}⚪{% else %}⏳{% endif %}</span>
-                            <div style="overflow: hidden;">
+                        <div class="deadline-item-left" style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 240px; overflow: hidden;">
+                            <span class="deadline-item-icon" style="font-size: 1.1rem; flex-shrink: 0;">{% if dl.is_paid %}🟢{% elif dl.is_partial %}🟡{% elif dl.is_past %}⚪{% else %}⏳{% endif %}</span>
+                            <div class="deadline-item-meta" style="overflow: hidden;">
                                 <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                    <strong style="font-size: 0.92rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;">
+                                    <strong class="deadline-item-title" style="font-size: 0.92rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;">
                                         🏷️ {{ dl.display_title }}
                                     </strong>
                                     <span class="badge-tag" style="background: rgba(255,255,255,0.05); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.08); font-size: 0.62rem; padding: 1px 5px;">
@@ -1223,7 +1223,7 @@
                                         {{ dl.scope_badge }}
                                     </span>
                                 </div>
-                                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 8px;">
+                                <div class="deadline-item-submeta" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 8px;">
                                     <span>📅 {{ dl.due_date_str }}</span>
                                     <span>•</span>
                                     <span>🔄 {{ dl.recurrence }}</span>
@@ -1240,8 +1240,8 @@
                         </div>
 
                         <!-- Right: Amount & Quick Actions -->
-                        <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
-                            <div style="text-align: right;">
+                        <div class="deadline-item-right" style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+                            <div class="deadline-item-amount-box" style="text-align: right;">
                                 <div class="privacy-mask" style="font-size: 1.05rem; font-weight: 900; color: #fff;">
                                     {{ dl.expected_amount|eur }}
                                 </div>
@@ -1259,20 +1259,20 @@
                             <!-- Fast Toggle Paid Button -->
                             <form method="POST" action="/deadlines/toggle-paid/{{ dl.id }}" style="margin: 0;">
                                 <input type="hidden" name="redirect_to" value="dashboard">
-                                <button type="submit" class="btn btn-sm" style="font-size: 0.68rem; padding: 4px 8px; border-radius: 6px; background: {% if dl.is_paid %}rgba(255,255,255,0.06){% else %}rgba(16, 185, 129, 0.18){% endif %}; color: {% if dl.is_paid %}#94a3b8{% else %}#34d399{% endif %}; border: 1px solid {% if dl.is_paid %}rgba(255,255,255,0.1){% else %}rgba(16, 185, 129, 0.4){% endif %}; cursor: pointer;" title="{% if dl.is_paid %}Segna come da saldare{% else %}Segna interamente come pagata{% endif %}">
+                                <button type="submit" class="btn btn-sm deadline-salda-btn" style="font-size: 0.68rem; padding: 4px 8px; border-radius: 6px; background: {% if dl.is_paid %}rgba(255,255,255,0.06){% else %}rgba(16, 185, 129, 0.18){% endif %}; color: {% if dl.is_paid %}#94a3b8{% else %}#34d399{% endif %}; border: 1px solid {% if dl.is_paid %}rgba(255,255,255,0.1){% else %}rgba(16, 185, 129, 0.4){% endif %}; cursor: pointer;" title="{% if dl.is_paid %}Segna come da saldare{% else %}Segna interamente come pagata{% endif %}">
                                     {% if dl.is_paid %}✓ Saldato{% else %}Salda{% endif %}
                                 </button>
                             </form>
 
                             <!-- Accordion Toggle Button for Details -->
-                            <button type="button" onclick="toggleDeadlineDetails({{ dl.id }})" id="btnDlToggle_{{ dl.id }}" style="background: none; border: none; color: #94a3b8; font-size: 0.8rem; cursor: pointer; padding: 2px 4px; transition: transform 0.2s;" title="Dettagli e quote">
+                            <button type="button" onclick="toggleDeadlineDetails({{ dl.id }})" id="btnDlToggle_{{ dl.id }}" class="deadline-toggle-btn" style="background: none; border: none; color: #94a3b8; font-size: 0.8rem; cursor: pointer; padding: 2px 4px; transition: transform 0.2s;" title="Dettagli e quote">
                                 ▾
                             </button>
 
                             <!-- Delete Form -->
                             <form method="POST" action="/deadlines/delete/{{ dl.id }}" onsubmit="return confirm('Vuoi davvero rimuovere questa scadenza?');" style="margin: 0;">
                                 <input type="hidden" name="redirect_to" value="dashboard">
-                                <button type="submit" class="btn btn-sm" style="background: transparent; border: none; color: #64748b; font-size: 0.78rem; cursor: pointer; padding: 2px;" title="Elimina Scadenza">
+                                <button type="submit" class="btn btn-sm deadline-delete-btn" style="background: transparent; border: none; color: #64748b; font-size: 0.78rem; cursor: pointer; padding: 2px;" title="Elimina Scadenza">
                                     🗑️
                                 </button>
                             </form>
@@ -3305,7 +3305,226 @@ if (document.readyState === 'loading') {
 @media (max-width: 992px) {
     .radar-split-container {
         grid-template-columns: 1fr !important;
-        gap: 16px !important;
+        gap: 14px !important;
+    }
+}
+
+/* Smartphone Responsiveness (< 768px & < 480px) */
+@media (max-width: 768px) {
+    /* 0. Financial Summary Card */
+    .financial-summary-card {
+        padding: 14px 12px !important;
+        border-radius: 12px !important;
+    }
+    .financial-summary-card > div:first-child {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+    .financial-summary-card > div:first-child > div:last-child {
+        width: 100% !important;
+        justify-content: space-between !important;
+    }
+    .financial-summary-card h3 {
+        font-size: 1.05rem !important;
+        line-height: 1.3 !important;
+    }
+    .financial-summary-card > div:nth-child(2) {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+    }
+    .financial-summary-card > div:nth-child(2) > div {
+        padding: 10px 10px !important;
+    }
+    .financial-summary-card .privacy-mask {
+        font-size: 1.15rem !important;
+    }
+
+    /* 1. Nucleo Breakdown Mini-Cards */
+    .family-member-breakdown-grid {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+    .family-member-card {
+        padding: 9px 10px !important;
+        gap: 8px !important;
+    }
+    .family-member-card-left {
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+    }
+    .family-member-card-right {
+        margin-left: auto !important;
+        flex-shrink: 0 !important;
+    }
+    .family-member-card-amounts .privacy-mask {
+        font-size: 0.88rem !important;
+    }
+
+    /* 2. Radar Scadenze Future Card Container */
+    .deadlines-radar-card {
+        padding: 14px 12px !important;
+        border-radius: 12px !important;
+    }
+    .radar-top-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        padding-bottom: 10px !important;
+    }
+    .radar-title-group {
+        gap: 10px !important;
+    }
+    .radar-header-icon {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 1.25rem !important;
+        border-radius: 10px !important;
+    }
+    .radar-title-text {
+        font-size: 0.98rem !important;
+        line-height: 1.3 !important;
+    }
+    .radar-sub-text {
+        font-size: 0.72rem !important;
+    }
+    .radar-header-actions {
+        display: flex !important;
+        width: 100% !important;
+        gap: 8px !important;
+    }
+    .radar-header-actions .btn {
+        flex: 1 !important;
+        justify-content: center !important;
+        text-align: center !important;
+        padding: 7px 10px !important;
+        font-size: 0.75rem !important;
+    }
+
+    /* KPI Bar on Mobile */
+    .radar-kpi-bar {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+        margin-bottom: 12px !important;
+    }
+    .radar-kpi-bar > div:last-child {
+        grid-column: span 2 !important;
+    }
+    .radar-kpi-bar > div {
+        padding: 8px 10px !important;
+    }
+    .radar-kpi-bar .privacy-mask {
+        font-size: 0.95rem !important;
+    }
+
+    /* Calendar Left Panel */
+    .radar-calendar-panel {
+        padding: 10px 8px !important;
+        border-radius: 10px !important;
+    }
+    .radar-matrix-grid {
+        gap: 4px !important;
+    }
+    .radar-month-row {
+        padding: 5px 3px !important;
+        min-height: 48px !important;
+    }
+    .radar-month-row span {
+        font-size: 0.68rem !important;
+    }
+    .radar-month-row .fc-pill-amt {
+        font-size: 0.54rem !important;
+    }
+
+    /* Scope Filter & Mortgage Toggle Bar */
+    .radar-details-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+    .radar-scope-bar {
+        width: 100% !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+    .radar-scope-buttons {
+        flex: 1 1 auto !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        padding: 3px 4px !important;
+    }
+    .radar-scope-buttons button {
+        flex: 1 !important;
+        text-align: center !important;
+        padding: 5px 4px !important;
+        font-size: 0.66rem !important;
+    }
+    #btnToggleMortgage {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 6px 10px !important;
+        font-size: 0.72rem !important;
+    }
+
+    /* Deadline Item Cards */
+    .deadline-item-card {
+        padding: 10px 10px !important;
+        border-radius: 8px !important;
+    }
+    .deadline-item-main-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+    .deadline-item-left {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+    .deadline-item-title {
+        max-width: 100% !important;
+        font-size: 0.88rem !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+    }
+    .deadline-item-right {
+        width: 100% !important;
+        justify-content: space-between !important;
+        border-top: 1px dashed rgba(255,255,255,0.06) !important;
+        padding-top: 8px !important;
+        margin-top: 2px !important;
+    }
+    .deadline-item-amount-box {
+        text-align: left !important;
+    }
+    .deadline-item-amount-box .privacy-mask {
+        font-size: 0.98rem !important;
+    }
+    .deadline-salda-btn {
+        padding: 5px 12px !important;
+        font-size: 0.72rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .family-member-card {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 6px !important;
+    }
+    .family-member-card-left {
+        width: 100% !important;
+    }
+    .family-member-card-right {
+        width: 100% !important;
+        justify-content: space-between !important;
+        margin-left: 0 !important;
+        border-top: 1px dashed rgba(255,255,255,0.06) !important;
+        padding-top: 6px !important;
+    }
+    .family-member-card-amounts {
+        text-align: left !important;
     }
 }
 </style>
