@@ -9,7 +9,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from database import (
     init_db, get_db_connection, DB_PATH, log_admin_action, get_active_announcement,
     create_workspace_invitation, get_invitation_by_token, accept_invitation,
-    get_workspace_personalization, save_workspace_personalization
+    get_workspace_personalization, save_workspace_personalization,
+    get_workspace_custom_tags, add_workspace_custom_tag, delete_workspace_custom_tag
 )
 from services.bank_importer import (
     MACRO_CATEGORIES,
@@ -163,7 +164,8 @@ def inject_formatters():
     
     ws_id = session.get('workspace_id')
     ws_pers = get_workspace_personalization(ws_id) if ws_id else None
-    dyn_smart_tags = build_dynamic_smart_tags(ws_pers)
+    ws_custom_tags = get_workspace_custom_tags(ws_id) if ws_id else None
+    dyn_smart_tags = build_dynamic_smart_tags(ws_pers, ws_custom_tags)
     
     user_sub_plan = session.get('subscription_plan', 'FREE')
     user_sub_status = session.get('subscription_status', 'ACTIVE')
@@ -2533,6 +2535,53 @@ def bulk_update_transactions():
         "updated_count": updated_count,
         "rules_count": len(patterns_learned)
     })
+
+@app.route("/api/tags/add", methods=["POST"])
+@login_required
+def api_add_custom_tag():
+    ws_id = session.get('workspace_id')
+    if not ws_id:
+        return jsonify({"success": False, "error": "Sessione non valida"}), 401
+    data = request.get_json(silent=True) or {}
+    category = (data.get("category") or "").strip()
+    code = (data.get("code") or "").strip()
+    label = (data.get("label") or "").strip()
+    icon = (data.get("icon") or "🏷️").strip()
+    subcat = (data.get("subcat") or "").strip()
+    
+    if not category or not code or not label:
+        return jsonify({"success": False, "error": "Categoria, codice tag e nome sono obbligatori"}), 400
+        
+    ok = add_workspace_custom_tag(ws_id, category, code, label, icon, subcat)
+    if ok:
+        return jsonify({
+            "success": True,
+            "tag": {
+                "code": code if code.startswith("#") else f"#{code}",
+                "label": label,
+                "icon": icon,
+                "subcat": subcat,
+                "is_custom": True
+            }
+        })
+    return jsonify({"success": False, "error": "Errore nel salvataggio del tag"}), 500
+
+@app.route("/api/tags/delete", methods=["POST"])
+@login_required
+def api_delete_custom_tag():
+    ws_id = session.get('workspace_id')
+    if not ws_id:
+        return jsonify({"success": False, "error": "Sessione non valida"}), 401
+    data = request.get_json(silent=True) or {}
+    category = (data.get("category") or "").strip()
+    code = (data.get("code") or "").strip()
+    
+    if not category or not code:
+        return jsonify({"success": False, "error": "Categoria e codice tag obbligatori"}), 400
+        
+    ok = delete_workspace_custom_tag(ws_id, category, code)
+    return jsonify({"success": ok})
+
 
 @app.route("/api/transactions/batch-categorize-merchant", methods=["POST"])
 @login_required

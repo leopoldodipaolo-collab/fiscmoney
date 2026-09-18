@@ -244,6 +244,23 @@ def init_db():
         )
     ''')
     
+    # 7.1.1. Workspace Persistent Custom Tags per Category
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS workspace_custom_tags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            workspace_id INTEGER NOT NULL,
+            category TEXT NOT NULL,
+            code TEXT NOT NULL,
+            label TEXT NOT NULL,
+            icon TEXT DEFAULT '🏷️',
+            subcat TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(workspace_id, category, code),
+            FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
+        )
+    ''')
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_custom_tags_ws ON workspace_custom_tags(workspace_id, category)")
+    
     # 7.2. Paystubs Table (Cedolini)
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS paystubs (
@@ -923,6 +940,91 @@ def save_workspace_personalization(workspace_id, data):
     conn.close()
     return get_workspace_personalization(workspace_id)
 
+def get_workspace_custom_tags(workspace_id):
+    """Returns a dict of list of custom tags grouped by category: { 'Category Name': [ {code, label, icon, subcat}, ... ] }"""
+    if not workspace_id:
+        return {}
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        rows = cursor.execute('''
+            SELECT category, code, label, icon, subcat 
+            FROM workspace_custom_tags 
+            WHERE workspace_id = ?
+            ORDER BY id ASC
+        ''', (workspace_id,)).fetchall()
+        result = {}
+        for r in rows:
+            cat = r["category"]
+            if cat not in result:
+                result[cat] = []
+            result[cat].append({
+                "code": r["code"],
+                "label": r["label"],
+                "icon": r["icon"] or "🏷️",
+                "subcat": r["subcat"] or "",
+                "is_custom": True
+            })
+        return result
+    except Exception as e:
+        print(f"Error fetching workspace_custom_tags: {e}")
+        return {}
+    finally:
+        conn.close()
+
+def add_workspace_custom_tag(workspace_id, category, code, label, icon="🏷️", subcat=""):
+    """Inserts or updates a persistent custom tag for a workspace and category."""
+    if not workspace_id or not category or not code:
+        return False
+    clean_code = code.strip()
+    if not clean_code.startswith("#"):
+        clean_code = f"#{clean_code}"
+    clean_label = (label or clean_code).strip()
+    clean_icon = (icon or "🏷️").strip()
+    clean_subcat = (subcat or "").strip()
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            INSERT INTO workspace_custom_tags (workspace_id, category, code, label, icon, subcat)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(workspace_id, category, code) DO UPDATE SET
+                label = excluded.label,
+                icon = excluded.icon,
+                subcat = excluded.subcat
+        ''', (workspace_id, category.strip(), clean_code, clean_label, clean_icon, clean_subcat))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error adding workspace_custom_tag: {e}")
+        return False
+    finally:
+        conn.close()
+
+def delete_workspace_custom_tag(workspace_id, category, code):
+    """Deletes a custom tag from persistent storage."""
+    if not workspace_id or not category or not code:
+        return False
+    clean_code = code.strip()
+    if not clean_code.startswith("#"):
+        clean_code = f"#{clean_code}"
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            DELETE FROM workspace_custom_tags
+            WHERE workspace_id = ? AND category = ? AND code = ?
+        ''', (workspace_id, category.strip(), clean_code))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error deleting workspace_custom_tag: {e}")
+        return False
+    finally:
+        conn.close()
+
 if __name__ == "__main__":
     init_db()
     print("Database FiscMoney inizializzato con successo!")
+

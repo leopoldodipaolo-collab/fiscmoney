@@ -54,7 +54,7 @@ MACRO_CATEGORIES = {
     "Salute & Benessere": {
         "icon": "🩺",
         "color": "#ef4444", # Vivid Crimson Red
-        "subcategories": ["Farmacia & Medicinali", "Visite Mediche & Esami", "Dentista & Ottico", "Palestra & Sport", "Igiene & Cura Personale"]
+        "subcategories": ["Farmacia & Medicinali", "Visite Mediche & Esami", "Dentista & Odontoiatria", "Ottico & Vista", "Palestra & Fitness", "Sport & Corsi", "Cura Personale & Bellezza", "Igiene & Cura Personale"]
     },
     "Lavoro & Entrate": {
         "icon": "💼",
@@ -106,6 +106,7 @@ CATEGORY_SMART_TAGS = {
         {"code": "#parcheggio", "label": "Parcheggio", "icon": "🅿️", "subcat": "Parcheggi & Garage"},
         {"code": "#assicurazione", "label": "Assicurazione", "icon": "🛡️", "subcat": "Assicurazione"},
         {"code": "#bollo", "label": "Bollo Auto", "icon": "📋", "subcat": "Bollo"},
+        {"code": "#revisione", "label": "Revisione Veicolo", "icon": "🔍", "subcat": "Tagliando & Manutenzione"},
         {"code": "#tagliando_meccanico", "label": "Tagliando & Meccanico", "icon": "🔧", "subcat": "Tagliando & Manutenzione"},
         {"code": "#mezzi_taxi", "label": "Mezzi & Taxi", "icon": "🚆", "subcat": "Mezzi Pubblici & Taxi"},
         {"code": "#cambio_gomme", "label": "Cambio Gomme", "icon": "⚙️", "subcat": "Cambio Gomme"}
@@ -113,12 +114,18 @@ CATEGORY_SMART_TAGS = {
     "Ristoranti & Bar": [
         {"code": "#ristorante", "label": "Ristorante", "icon": "🍽️", "subcat": "Ristoranti"},
         {"code": "#pizzeria", "label": "Pizzeria", "icon": "🍕", "subcat": "Pizzerie"},
+        {"code": "#pasticceria", "label": "Pasticceria", "icon": "🥐", "subcat": "Bar & Colazioni"},
         {"code": "#bar_caffetteria", "label": "Bar & Caffetteria", "icon": "☕", "subcat": "Bar & Colazioni"},
+        {"code": "#aperitivo", "label": "Aperitivo", "icon": "🍹", "subcat": "Bar & Colazioni"},
+        {"code": "#pub", "label": "Pub & Birreria", "icon": "🍺", "subcat": "Bar & Colazioni"},
+        {"code": "#chiavetta_lavoro", "label": "Chiavetta (Lavoro)", "icon": "☕", "subcat": "Pranzi Lavoro"},
         {"code": "#pranzo_lavoro", "label": "Pranzo Lavoro", "icon": "🥪", "subcat": "Pranzi Lavoro"},
         {"code": "#delivery_asporto", "label": "Fast Food & Delivery", "icon": "🛵", "subcat": "Fast Food & Asporto"}
     ],
     "Shopping & Abbigliamento": [
         {"code": "#abbigliamento", "label": "Abbigliamento & Scarpe", "icon": "👗", "subcat": "Abbigliamento & Scarpe"},
+        {"code": "#libri", "label": "Libri & Cultura", "icon": "📚", "subcat": "Infanzia, Giochi & Scuola"},
+        {"code": "#giochi", "label": "Giochi & Giocattoli", "icon": "🎲", "subcat": "Infanzia, Giochi & Scuola"},
         {"code": "#figlio", "label": "Bimbi, Scuola & Figli", "icon": "👶", "subcat": "Infanzia, Giochi & Scuola"},
         {"code": "#elettronica", "label": "Elettronica & Gadget", "icon": "📱", "subcat": "Elettronica & Gadget"},
         {"code": "#cura_persona", "label": "Articoli Persona", "icon": "🧴", "subcat": "Articoli Persona"},
@@ -143,8 +150,12 @@ CATEGORY_SMART_TAGS = {
         {"code": "#detraibile_730", "label": "730 Detraibile", "icon": "🩺", "subcat": "Farmacia & Medicinali", "is_fiscal": True, "is_default": True},
         {"code": "#farmacia", "label": "Farmacia", "icon": "💊", "subcat": "Farmacia & Medicinali"},
         {"code": "#visite_esami", "label": "Visite & Esami", "icon": "🩺", "subcat": "Visite Mediche & Esami", "is_fiscal": True},
-        {"code": "#dentista_ottico", "label": "Dentista & Ottico", "icon": "🦷", "subcat": "Dentista & Ottico", "is_fiscal": True},
-        {"code": "#palestra_sport", "label": "Palestra & Sport", "icon": "🏋️", "subcat": "Palestra & Sport"},
+        {"code": "#dentista", "label": "Dentista", "icon": "🦷", "subcat": "Dentista & Odontoiatria", "is_fiscal": True},
+        {"code": "#ottico", "label": "Ottico (Occhiali/Lenti)", "icon": "👓", "subcat": "Ottico & Vista", "is_fiscal": True},
+        {"code": "#palestra", "label": "Palestra & Fitness", "icon": "🏋️", "subcat": "Palestra & Fitness"},
+        {"code": "#sport", "label": "Sport & Attività", "icon": "⚽", "subcat": "Sport & Corsi"},
+        {"code": "#parrucchiere", "label": "Parrucchiere & Barbiere", "icon": "💇", "subcat": "Cura Personale & Bellezza"},
+        {"code": "#estetista", "label": "Estetista & Trattamenti", "icon": "💅", "subcat": "Cura Personale & Bellezza"},
         {"code": "#igiene", "label": "Igiene & Cura", "icon": "✨", "subcat": "Igiene & Cura Personale"}
     ],
     "Lavoro & Entrate": [
@@ -174,8 +185,12 @@ RULES_PATTERNS = [
     # --- Salute & Benessere (730 Detraibile di default) ---
     (r"\b(farmacia|farmacie|parafarmacia|farma|farmac|apoteca|redcare)\b", "Salute & Benessere", "Farmacia & Medicinali", "#detraibile_730 #farmacia"),
     (r"\b(synlab|santagostino|policlinico|ospedale|asl|ticket sanitar|studio medico|dott|dottoressa|laboratorio analisi|analisiclinich|cdi)\b", "Salute & Benessere", "Visite Mediche & Esami", "#detraibile_730 #visite_esami"),
-    (r"\b(dentalpro|dentista|odontoiatr|ottica|salmoiraghi|grandvision|fisioterap|osteopat)\b", "Salute & Benessere", "Dentista & Ottico", "#detraibile_730 #dentista_ottico"),
-    (r"\b(virgin active|fitprime|gym|palestra|mcfit|fitactive|anytime fitness|piscina|fitness)\b", "Salute & Benessere", "Palestra & Sport", "#palestra_sport"),
+    (r"\b(dentalpro|dentista|odontoiatr|studio dentistico|fisioterap|osteopat)\b", "Salute & Benessere", "Dentista & Odontoiatria", "#detraibile_730 #dentista"),
+    (r"\b(ottica|ottico|salmoiraghi|grandvision|visionottica|occhiali|lenti)\b", "Salute & Benessere", "Ottico & Vista", "#detraibile_730 #ottico"),
+    (r"\b(virgin active|fitprime|gym|palestra|mcfit|fitactive|anytime fitness|fitness|crossfit)\b", "Salute & Benessere", "Palestra & Fitness", "#palestra"),
+    (r"\b(piscina|nuoto|padel|tennis|calcetto|campo sportivo|decathlon club)\b", "Salute & Benessere", "Sport & Corsi", "#sport"),
+    (r"\b(parrucchier|barber|barbiere|hair\s*styl|taglio capelli|salone)\b", "Salute & Benessere", "Cura Personale & Bellezza", "#parrucchiere"),
+    (r"\b(estetic|centro estetico|solarium|nail|unghie|depilaz|massagg)\b", "Salute & Benessere", "Cura Personale & Bellezza", "#estetista"),
 
     # --- Spesa & Alimentari ---
     (r"\b(esselunga|conad|coop|ipercoop|lidl|eurospin|carrefour|despar|pam|md spa|penny market|il gigante|tigros|famila|bennet|crai|naturasi|supermerc|iperal|iper |tigre |todis|in's|sole365)\b", "Spesa & Alimentari", "Supermercato", "#supermercato"),
@@ -213,9 +228,15 @@ RULES_PATTERNS = [
     (r"\b(pizzeria|pizza|pizze)\b", "Ristoranti & Bar", "Pizzerie", "#pizzeria"),
     (r"\b(ristorante|trattoria|osteria|sushi|poke)\b", "Ristoranti & Bar", "Ristoranti", "#ristorante"),
     (r"\b(mc donald|mcdonald|burger king|kfc|just eat|glovo|deliveroo|ubereats)\b", "Ristoranti & Bar", "Fast Food & Asporto", "#delivery #fastfood"),
-    (r"\b(bar |caffe|pasticceria|gelateria|pub |birreria|aperitivo|bistrot|autogrill)\b", "Ristoranti & Bar", "Bar & Colazioni", "#bar_caffetteria"),
+    (r"\b(pasticceria|panificio dolce|croissant|cornetteria)\b", "Ristoranti & Bar", "Bar & Colazioni", "#pasticceria"),
+    (r"\b(aperitivo|happy hour|spritz|cocktail|lounge)\b", "Ristoranti & Bar", "Bar & Colazioni", "#aperitivo"),
+    (r"\b(pub|birreria|brewery|irish pub)\b", "Ristoranti & Bar", "Bar & Colazioni", "#pub"),
+    (r"\b(chiavetta|distributore caffe|break point|vending|ristomat)\b", "Ristoranti & Bar", "Pranzi Lavoro", "#chiavetta_lavoro"),
+    (r"\b(bar |caffe|gelateria|bistrot|autogrill)\b", "Ristoranti & Bar", "Bar & Colazioni", "#bar_caffetteria"),
 
     # --- Shopping & Abbigliamento ---
+    (r"\b(libreria|feltrinelli|mondadori|ibs|libraccio|kindle|giunti|fumetteria|manga)\b", "Shopping & Abbigliamento", "Infanzia, Giochi & Scuola", "#libri"),
+    (r"\b(giochi|giocattoli|toys center|lego|gamestop|playstation store|boardgame|giochi da tavolo)\b", "Shopping & Abbigliamento", "Infanzia, Giochi & Scuola", "#giochi"),
     (r"\b(zara|h&m|ovs|intimissimi|calzedonia|decathlon|zalando|asos|stradivarius|pull&bear|bershka|mango|geox|foot locker|tezenis|uniqlo|snipes)\b", "Shopping & Abbigliamento", "Abbigliamento & Scarpe", "#abbigliamento"),
     (r"\b(mediaworld|unieuro|euronics|apple store|expert|comet|trony)\b", "Shopping & Abbigliamento", "Elettronica & Gadget", "#elettronica"),
     (r"\b(sephora|kiko|douglas|bottega verde)\b", "Shopping & Abbigliamento", "Articoli Persona", "#cura_persona"),
@@ -738,62 +759,77 @@ def save_or_update_category_rule(workspace_id, pattern, category, sub_category="
     conn.close()
     return rule_id
 
-def build_dynamic_smart_tags(personalization_data=None):
+def build_dynamic_smart_tags(personalization_data=None, custom_tags_dict=None):
     """
-    Enriches CATEGORY_SMART_TAGS with custom personalized tags (e.g. #luciano, #luna, #mutuo).
+    Enriches CATEGORY_SMART_TAGS with custom personalized tags (e.g. #luciano, #luna, #mutuo)
+    and persistent user-created tags from workspace_custom_tags.
     Returns a cloned and enhanced dictionary.
     """
     tags_dict = copy.deepcopy(CATEGORY_SMART_TAGS)
-    if not personalization_data:
-        return tags_dict
+    
+    if personalization_data:
+        children_str = personalization_data.get("children_names") or ""
+        if children_str:
+            kids = [k.strip() for k in children_str.replace(";", ",").split(",") if k.strip()]
+            for kid in kids:
+                k_slug = kid.lower().replace(" ", "_").replace("#", "")
+                kid_tag = {
+                    "code": f"#{k_slug}",
+                    "label": f"👶 {kid}",
+                    "icon": "👶",
+                    "subcat": "Abbigliamento Figli",
+                    "is_personalized": True
+                }
+                kid_asilo_tag = {
+                    "code": f"#asilo_{k_slug}",
+                    "label": f"🎒 Asilo {kid}",
+                    "icon": "🎒",
+                    "subcat": "Asilo & Scuola",
+                    "is_personalized": True
+                }
+                for cat_key in ["Shopping & Abbigliamento", "Salute & Benessere"]:
+                    if cat_key in tags_dict:
+                        if not any(t.get("code") == f"#{k_slug}" for t in tags_dict[cat_key]):
+                            tags_dict[cat_key].insert(0, kid_tag)
 
-    children_str = personalization_data.get("children_names") or ""
-    if children_str:
-        kids = [k.strip() for k in children_str.replace(";", ",").split(",") if k.strip()]
-        for kid in kids:
-            k_slug = kid.lower().replace(" ", "_").replace("#", "")
-            kid_tag = {
-                "code": f"#{k_slug}",
-                "label": f"👶 {kid}",
-                "icon": "👶",
-                "subcat": "Abbigliamento Figli",
-                "is_personalized": True
-            }
-            kid_asilo_tag = {
-                "code": f"#asilo_{k_slug}",
-                "label": f"🎒 Asilo {kid}",
-                "icon": "🎒",
-                "subcat": "Asilo & Scuola",
-                "is_personalized": True
-            }
-            for cat_key in ["Shopping & Abbigliamento", "Salute & Benessere"]:
-                if cat_key in tags_dict:
-                    if not any(t.get("code") == f"#{k_slug}" for t in tags_dict[cat_key]):
-                        tags_dict[cat_key].insert(0, kid_tag)
+        pets_str = personalization_data.get("pets_names") or ""
+        if pets_str:
+            pets = [p.strip() for p in pets_str.replace(";", ",").split(",") if p.strip()]
+            for pet in pets:
+                p_slug = pet.lower().replace(" ", "_").replace("#", "")
+                pet_tag = {
+                    "code": f"#{p_slug}",
+                    "label": f"🐾 {pet}",
+                    "icon": "🐾",
+                    "subcat": "Animali & Pet",
+                    "is_personalized": True
+                }
+                if "Salute & Benessere" in tags_dict:
+                    if not any(t.get("code") == f"#{p_slug}" for t in tags_dict["Salute & Benessere"]):
+                        tags_dict["Salute & Benessere"].insert(0, pet_tag)
 
-    pets_str = personalization_data.get("pets_names") or ""
-    if pets_str:
-        pets = [p.strip() for p in pets_str.replace(";", ",").split(",") if p.strip()]
-        for pet in pets:
-            p_slug = pet.lower().replace(" ", "_").replace("#", "")
-            pet_tag = {
-                "code": f"#{p_slug}",
-                "label": f"🐾 {pet}",
-                "icon": "🐾",
-                "subcat": "Animali & Pet",
-                "is_personalized": True
-            }
-            if "Salute & Benessere" in tags_dict:
-                if not any(t.get("code") == f"#{p_slug}" for t in tags_dict["Salute & Benessere"]):
-                    tags_dict["Salute & Benessere"].insert(0, pet_tag)
+        housing = personalization_data.get("housing_type") or "MUTUO"
+        bank = personalization_data.get("mortgage_bank") or ""
+        if housing == "MUTUO" and "Casa & Immobili" in tags_dict:
+            m_label = f"Mutuo {bank}".strip() if bank else "Mutuo"
+            mutuo_tag = {"code": "#mutuo", "label": f"🏠 {m_label}", "icon": "🏠", "subcat": "Mutuo", "is_personalized": True}
+            if not any(t.get("code") == "#mutuo" for t in tags_dict["Casa & Immobili"]):
+                tags_dict["Casa & Immobili"].insert(0, mutuo_tag)
 
-    housing = personalization_data.get("housing_type") or "MUTUO"
-    bank = personalization_data.get("mortgage_bank") or ""
-    if housing == "MUTUO" and "Casa & Immobili" in tags_dict:
-        m_label = f"Mutuo {bank}".strip() if bank else "Mutuo"
-        mutuo_tag = {"code": "#mutuo", "label": f"🏠 {m_label}", "icon": "🏠", "subcat": "Mutuo", "is_personalized": True}
-        if not any(t.get("code") == "#mutuo" for t in tags_dict["Casa & Immobili"]):
-            tags_dict["Casa & Immobili"].insert(0, mutuo_tag)
+    # Incorporate user-defined persistent custom tags
+    if custom_tags_dict and isinstance(custom_tags_dict, dict):
+        for cat_name, ctags in custom_tags_dict.items():
+            if cat_name not in tags_dict:
+                tags_dict[cat_name] = []
+            for ct in ctags:
+                if not any(t.get("code") == ct.get("code") for t in tags_dict[cat_name]):
+                    tags_dict[cat_name].append({
+                        "code": ct.get("code"),
+                        "label": ct.get("label") or ct.get("code"),
+                        "icon": ct.get("icon") or "🏷️",
+                        "subcat": ct.get("subcat") or "",
+                        "is_custom": True
+                    })
 
     return tags_dict
 

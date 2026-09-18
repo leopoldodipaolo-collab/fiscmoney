@@ -1823,7 +1823,20 @@
                         <option value="⚡">⚡</option>
                         <option value="🛡️">🛡️</option>
                     </select>
-                    <input type="text" id="customTagNameInput" class="form-control" placeholder="es. Regalo Matrimonio, Vacanza Sicilia..." style="flex: 1; font-size: 0.85rem; padding: 10px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.15);" autofocus required>
+                    <input type="text" id="customTagNameInput" class="form-control" placeholder="es. Revisione, Libri, Estetista..." style="flex: 1; font-size: 0.85rem; padding: 10px 12px; background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.15);" autofocus required>
+                </div>
+            </div>
+
+            <!-- Opzione Salvataggio Permanente per la Categoria -->
+            <div style="margin-bottom: 14px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 9px 12px; display: flex; align-items: flex-start; gap: 8px;">
+                <input type="checkbox" id="customTagPersistentCheck" checked style="width: 16px; height: 16px; margin-top: 2px; accent-color: #38bdf8; cursor: pointer;">
+                <div>
+                    <label for="customTagPersistentCheck" style="font-size: 0.78rem; font-weight: 700; color: #7dd3fc; cursor: pointer; display: block; margin: 0;">
+                        💾 Salva questo tag perennemente nella categoria
+                    </label>
+                    <span style="font-size: 0.68rem; color: #94a3b8; display: block; margin-top: 1px;" id="customTagCategoryHint">
+                        Sarà sempre visibile e cliccabile tra i tag intelligenti di questa categoria.
+                    </span>
                 </div>
             </div>
 
@@ -1833,12 +1846,18 @@
                     💡 Suggerimenti Rapidi:
                 </span>
                 <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                    <span class="custom-tag-suggestion" onclick="fillCustomTag('🎁', 'Regalo Evento')">🎁 Regalo Evento</span>
-                    <span class="custom-tag-suggestion" onclick="fillCustomTag('🏖️', 'Vacanza Estiva')">🏖️ Vacanza Estiva</span>
-                    <span class="custom-tag-suggestion" onclick="fillCustomTag('🛠️', 'Fai da Te / Brico')">🛠️ Fai da Te</span>
-                    <span class="custom-tag-suggestion" onclick="fillCustomTag('🐶', 'Veterinario & Animali')">🐶 Animali / Vet</span>
-                    <span class="custom-tag-suggestion" onclick="fillCustomTag('👶', 'Bambini & Scuola')">👶 Scuola & Figli</span>
-                    <span class="custom-tag-suggestion" onclick="fillCustomTag('💻', 'Elettronica & Tech')">💻 Tech / Elettronica</span>
+                    <span class="custom-tag-suggestion" onclick="fillCustomTag('🔍', 'Revisione')">🔍 Revisione</span>
+                    <span class="custom-tag-suggestion" onclick="fillCustomTag('📚', 'Libri')">📚 Libri</span>
+                    <span class="custom-tag-suggestion" onclick="fillCustomTag('🎲', 'Giochi')">🎲 Giochi</span>
+                    <span class="custom-tag-suggestion" onclick="fillCustomTag('💇', 'Parrucchiere')">💇 Parrucchiere</span>
+                    <span class="custom-tag-suggestion" onclick="fillCustomTag('💅', 'Estetista')">💅 Estetista</span>
+                    <span class="custom-tag-suggestion" onclick="fillCustomTag('🥐', 'Pasticceria')">🥐 Pasticceria</span>
+                    <span class="custom-tag-suggestion" onclick="fillCustomTag('🍹', 'Aperitivo')">🍹 Aperitivo</span>
+                    <span class="custom-tag-suggestion" onclick="fillCustomTag('🍺', 'Pub')">🍺 Pub</span>
+                    <span class="custom-tag-suggestion" onclick="fillCustomTag('☕', 'Chiavetta Lavoro')">☕ Chiavetta</span>
+                    <span class="custom-tag-suggestion" onclick="fillCustomTag('🎁', 'Regalo Evento')">🎁 Regalo</span>
+                    <span class="custom-tag-suggestion" onclick="fillCustomTag('🏖️', 'Vacanza Estiva')">🏖️ Vacanza</span>
+                    <span class="custom-tag-suggestion" onclick="fillCustomTag('🛠️', 'Fai da Te')">🛠️ Fai da Te</span>
                 </div>
             </div>
 
@@ -2633,7 +2652,8 @@ function renderTraySmartTags(category) {
         pill.style.color = isSelected ? (isFiscal ? '#6ee7b7' : '#7dd3fc') : '#cbd5e1';
         pill.style.fontWeight = isSelected ? '700' : '500';
 
-        pill.innerHTML = `${isSelected ? '✓ ' : ''}${st.label}`;
+        const iconPrefix = st.icon ? `${st.icon} ` : '';
+        pill.innerHTML = `${isSelected ? '✓ ' : ''}${iconPrefix}${st.label}`;
         pill.onclick = () => toggleTrayTag(st.code, st.default_subcat);
         container.appendChild(pill);
     });
@@ -3652,15 +3672,23 @@ function toggleSmartTagChip(idx, tagCode, defaultSubcat) {
 }
 
 let customTagTargetIdx = null;
+let currentCustomTagCategory = null;
 
 function promptCustomTag(idx) {
     customTagTargetIdx = idx;
+    currentCustomTagCategory = (categoryOverrides && categoryOverrides[idx]) || 
+                               (currentImportData && currentImportData.sample_transactions && currentImportData.sample_transactions[idx] && currentImportData.sample_transactions[idx].category) || 
+                               'Altro';
     if (currentImportData && currentImportData.sample_transactions && currentImportData.sample_transactions[idx]) {
         const tx = currentImportData.sample_transactions[idx];
         const descEl = document.getElementById('customTagTxDesc');
         if (descEl) {
             descEl.innerText = `${tx.date} • ${tx.description} (${formatEurJs(tx.amount, true)})`;
         }
+    }
+    const catHint = document.getElementById('customTagCategoryHint');
+    if (catHint) {
+        catHint.innerText = currentCustomTagCategory ? `Sarà sempre visibile nei tag di "${currentCustomTagCategory}".` : 'Sarà sempre visibile tra i tag intelligenti della categoria.';
     }
     const input = document.getElementById('customTagNameInput');
     if (input) input.value = '';
@@ -3674,6 +3702,7 @@ function promptCustomTag(idx) {
 function closeCustomTagModal() {
     document.getElementById('customTagModal').classList.remove('open');
     customTagTargetIdx = null;
+    currentCustomTagCategory = null;
 }
 
 function fillCustomTag(icon, label) {
@@ -3686,20 +3715,53 @@ function fillCustomTag(icon, label) {
     }
 }
 
-function applyCustomTagFromModal() {
+async function applyCustomTagFromModal() {
     if (customTagTargetIdx === null) return;
     const input = document.getElementById('customTagNameInput');
     const label = input ? input.value.trim() : '';
     if (!label) return;
 
+    const iconSelect = document.getElementById('customTagIconSelect');
+    const selectedIcon = iconSelect ? iconSelect.value : '🏷️';
+    const isPersistent = document.getElementById('customTagPersistentCheck') ? document.getElementById('customTagPersistentCheck').checked : true;
+
     const cleanTag = '#' + label.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 24);
     
+    // Se l'utente vuole salvarlo in modo perenne e abbiamo la categoria attiva, salviamo via API e aggiorniamo CATEGORY_SMART_TAGS_OBJ
+    if (isPersistent && currentCustomTagCategory && typeof CATEGORY_SMART_TAGS_OBJ !== 'undefined') {
+        if (!CATEGORY_SMART_TAGS_OBJ[currentCustomTagCategory]) {
+            CATEGORY_SMART_TAGS_OBJ[currentCustomTagCategory] = [];
+        }
+        const exists = CATEGORY_SMART_TAGS_OBJ[currentCustomTagCategory].some(st => st.code === cleanTag);
+        if (!exists) {
+            CATEGORY_SMART_TAGS_OBJ[currentCustomTagCategory].push({
+                code: cleanTag,
+                label: label,
+                icon: selectedIcon,
+                subcat: '',
+                is_custom: true
+            });
+        }
+        // Invio asincrono al backend per memorizzarlo nel database del workspace
+        fetch('/api/tags/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                category: currentCustomTagCategory,
+                code: cleanTag,
+                label: label,
+                icon: selectedIcon,
+                subcat: ''
+            })
+        }).catch(err => console.error('Errore nel salvataggio del tag perenne:', err));
+    }
+
     if (customTagTargetIdx === 'editModal') {
         if (!editModalActiveTags.includes(cleanTag)) {
             editModalActiveTags.push(cleanTag);
             document.getElementById('editTags').value = editModalActiveTags.join(' ');
-            renderEditModalSmartTags();
         }
+        renderEditModalSmartTags();
         closeCustomTagModal();
         return;
     }
@@ -3707,8 +3769,8 @@ function applyCustomTagFromModal() {
     if (customTagTargetIdx === 'trayModal') {
         if (!trayActiveTags.includes(cleanTag)) {
             trayActiveTags.push(cleanTag);
-            renderTraySmartTags();
         }
+        renderTraySmartTags();
         closeCustomTagModal();
         return;
     }
@@ -3736,9 +3798,14 @@ let currentEditTxDesc = "";
 
 function promptCustomTagForEditModal() {
     customTagTargetIdx = 'editModal';
+    currentCustomTagCategory = document.getElementById('editCategory') ? document.getElementById('editCategory').value : 'Altro';
     const descEl = document.getElementById('customTagTxDesc');
     if (descEl) {
         descEl.innerText = currentEditTxDesc ? `Movimento: "${currentEditTxDesc}"` : 'Aggiunta tag';
+    }
+    const catHint = document.getElementById('customTagCategoryHint');
+    if (catHint) {
+        catHint.innerText = currentCustomTagCategory ? `Sarà sempre visibile nei tag di "${currentCustomTagCategory}".` : 'Sarà sempre visibile tra i tag intelligenti della categoria.';
     }
     const input = document.getElementById('customTagNameInput');
     if (input) input.value = '';
@@ -3751,9 +3818,14 @@ function promptCustomTagForEditModal() {
 
 function promptCustomTagForTray() {
     customTagTargetIdx = 'trayModal';
+    currentCustomTagCategory = activeTrayCategory || 'Altro';
     const descEl = document.getElementById('customTagTxDesc');
     if (descEl) {
         descEl.innerText = activeTrayTxDesc ? `Movimento: "${activeTrayTxDesc}"` : 'Aggiunta tag';
+    }
+    const catHint = document.getElementById('customTagCategoryHint');
+    if (catHint) {
+        catHint.innerText = currentCustomTagCategory ? `Sarà sempre visibile nei tag di "${currentCustomTagCategory}".` : 'Sarà sempre visibile tra i tag intelligenti della categoria.';
     }
     const input = document.getElementById('customTagNameInput');
     if (input) input.value = '';
@@ -3906,7 +3978,8 @@ function renderEditModalSmartTags(category) {
         pill.style.color = isSelected ? (isFiscal ? '#6ee7b7' : '#7dd3fc') : '#cbd5e1';
         pill.style.fontWeight = isSelected ? '700' : '500';
         
-        pill.innerHTML = `${isSelected ? '✓ ' : ''}${st.label}`;
+        const iconPrefix = st.icon ? `${st.icon} ` : '';
+        pill.innerHTML = `${isSelected ? '✓ ' : ''}${iconPrefix}${st.label}`;
         pill.onclick = () => toggleEditModalTag(st.code, st.default_subcat);
         container.appendChild(pill);
     });
@@ -4793,10 +4866,15 @@ function updateGroupClassifyPreview() {
 
 function promptCustomTagForGroupModal() {
     customTagTargetIdx = 'groupModal';
+    currentCustomTagCategory = document.getElementById('groupCategorySelect') ? document.getElementById('groupCategorySelect').value : 'Altro';
     const pattern = document.getElementById('groupClassifyPattern') ? document.getElementById('groupClassifyPattern').innerText : '';
     const descEl = document.getElementById('customTagTxDesc');
     if (descEl) {
         descEl.innerText = pattern ? `Gruppo: "${pattern}"` : 'Aggiunta tag personalizzato';
+    }
+    const catHint = document.getElementById('customTagCategoryHint');
+    if (catHint) {
+        catHint.innerText = currentCustomTagCategory ? `Sarà sempre visibile nei tag di "${currentCustomTagCategory}".` : 'Sarà sempre visibile tra i tag intelligenti della categoria.';
     }
     const input = document.getElementById('customTagNameInput');
     if (input) input.value = '';
