@@ -46,26 +46,106 @@
   background: radial-gradient(circle, #38bdf8 0%, #6366f1 70%, transparent);
 }
 
-/* Watermark Logo behind Hero */
-.lp-hero-watermark-logo {
+/* Super Wow Neon Holographic Emblem & Radial Glow */
+.lp-hero-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Glowing Cosmic Halo behind Hero */
+.lp-hero-cosmic-halo {
   position: absolute;
-  top: 50%;
+  top: 45%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: min(520px, 90vw);
-  height: min(520px, 90vw);
+  width: min(580px, 92vw);
+  height: min(580px, 92vw);
   border-radius: 50%;
-  object-fit: cover;
-  opacity: 0.045;
-  filter: blur(1px) grayscale(20%);
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.28) 0%, rgba(99, 102, 241, 0.18) 45%, rgba(234, 179, 8, 0.08) 70%, transparent 85%);
+  filter: blur(50px);
   pointer-events: none;
   z-index: 0;
-  animation: heroLogoFloat 8s ease-in-out infinite alternate;
+  animation: cosmicPulse 6s ease-in-out infinite alternate;
+}
+
+@keyframes cosmicPulse {
+  0% { transform: translate(-50%, -50%) scale(0.92); opacity: 0.7; }
+  100% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
+}
+
+/* Concentric Neon Rings */
+.lp-hero-neon-ring {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(460px, 86vw);
+  height: min(460px, 86vw);
+  border-radius: 50%;
+  border: 1px dashed rgba(56, 189, 248, 0.25);
+  box-shadow: 0 0 40px rgba(56, 189, 248, 0.15), inset 0 0 30px rgba(56, 189, 248, 0.1);
+  pointer-events: none;
+  z-index: 0;
+  animation: slowSpin 40s linear infinite;
+}
+
+@keyframes slowSpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Holographic Floating Watermark Logo */
+.lp-hero-watermark-logo {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, 84vw);
+  height: min(420px, 84vw);
+  border-radius: 50%;
+  object-fit: cover;
+  opacity: 0.28;
+  filter: drop-shadow(0 0 45px rgba(56, 189, 248, 0.85)) drop-shadow(0 0 90px rgba(99, 102, 241, 0.45)) saturate(160%);
+  pointer-events: none;
+  z-index: 0;
+  animation: heroLogoFloat 6s ease-in-out infinite alternate;
 }
 
 @keyframes heroLogoFloat {
-  0% { transform: translate(-50%, -50%) scale(0.98); }
-  100% { transform: translate(-50%, -52%) scale(1.03); }
+  0% { transform: translate(-50%, -50%) scale(0.95) rotate(-3deg); }
+  100% { transform: translate(-50%, -52%) scale(1.05) rotate(3deg); }
+}
+
+/* Visible Crisp Logo Emblem above the Badge */
+.lp-hero-emblem-badge {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  padding: 3px;
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9, #f59e0b, #ec4899);
+  box-shadow: 0 0 30px rgba(56, 189, 248, 0.6), 0 0 60px rgba(14, 165, 233, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px auto;
+  position: relative;
+  z-index: 2;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lp-hero-emblem-badge:hover {
+  transform: scale(1.08) rotate(5deg);
+}
+
+.lp-hero-emblem-badge img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #0b0f19;
 }
 
 /* Common Section Container with Breathable Space */
@@ -709,11 +789,22 @@
     <!-- ========================================================== -->
     <!-- 1. HERO SECTION                                            -->
     <!-- ========================================================== -->
-    <section class="lp-section lp-hero-section" style="position: relative; overflow: visible;">
-        <!-- Large Subtle Watermark Logo Floating in Background -->
+    <section class="lp-section lp-hero-section lp-hero-stage" style="position: relative; overflow: visible;">
+        <!-- Glowing Cosmic Halo behind Hero -->
+        <div class="lp-hero-cosmic-halo"></div>
+
+        <!-- Concentric Neon Orbital Ring -->
+        <div class="lp-hero-neon-ring"></div>
+
+        <!-- Holographic Watermark Logo Floating in Background -->
         <img src="{{ url_for('static', filename='images/logo.png') }}" alt="" class="lp-hero-watermark-logo" aria-hidden="true">
 
-        <div style="position: relative; z-index: 2;">
+        <div style="position: relative; z-index: 2; width: 100%;">
+            <!-- Crisp Illuminated 3D Logo Emblem -->
+            <div class="lp-hero-emblem-badge" title="FiscMoney">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FiscMoney Logo">
+            </div>
+
             <div class="lp-hero-badge">
                 <span>🧪 BETA PRIVATA</span>
                 <span>&bull;</span>
