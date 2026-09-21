@@ -1022,6 +1022,9 @@
                         <h3 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
                             Radar Spese & Tag: Categorie ➔ Dettaglio
                         </h3>
+                        <span id="tagRadarActiveProfileBadge" class="badge-tag" style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 0.68rem; padding: 3px 8px; font-weight: 800; border-radius: 6px;">
+                            👤 {% if active_filter and active_filter != 'all' %}{% for p in profiles %}{% if p.id|string == active_filter %}{{ p.name }}{% endif %}{% endfor %}{% else %}Tutto il Nucleo{% endif %}
+                        </span>
                         <span class="badge-tag" style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c084fc; font-size: 0.68rem; padding: 3px 8px; font-weight: 800; border-radius: 6px;">
                             DOUBLE DONUT
                         </span>
@@ -1047,8 +1050,24 @@
                 </div>
             </div>
 
-            <!-- Timeframe Filter Toolbar & Collapse Toggle -->
+            <!-- Timeframe & Profile Filter Toolbar & Collapse Toggle -->
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                
+                <!-- Profile Scope Selector (Tutti / Singolo Membro) -->
+                {% if profiles and profiles|length > 1 %}
+                <div onclick="event.stopPropagation()" style="display: inline-flex; align-items: center; gap: 4px; background: rgba(59, 130, 246, 0.12); border: 1.5px solid rgba(59, 130, 246, 0.35); border-radius: 10px; padding: 3px 6px;">
+                    <span style="font-size: 0.72rem; margin-right: 2px;">👤</span>
+                    <button type="button" onclick="switchTagRadarProfile('all', this)" class="btn btn-sm tag-radar-profile-btn {% if not active_filter or active_filter == 'all' %}active{% endif %}" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; font-weight: 700; {% if not active_filter or active_filter == 'all' %}background: #2563eb; color: #fff;{% else %}background: transparent; color: #94a3b8; border: none;{% endif %}">
+                        👥 Tutto il Nucleo
+                    </button>
+                    {% for p in profiles %}
+                    <button type="button" onclick="switchTagRadarProfile('{{ p.id }}', this)" class="btn btn-sm tag-radar-profile-btn {% if active_filter == p.id|string %}active{% endif %}" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; font-weight: 700; {% if active_filter == p.id|string %}background: #2563eb; color: #fff;{% else %}background: transparent; color: #94a3b8; border: none;{% endif %}">
+                        {{ p.name.split(' ')[0] }}
+                    </button>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
                 <!-- Preset Pills -->
                 <div onclick="event.stopPropagation()" style="display: inline-flex; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 3px; gap: 4px; flex-wrap: wrap;">
                     <button type="button" onclick="switchTagRadarPreset('THIS_MONTH', this)" class="btn btn-sm tag-radar-preset-btn {% if tag_drilldown_data.preset == 'THIS_MONTH' %}active{% endif %}" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; {% if tag_drilldown_data.preset == 'THIS_MONTH' %}background: rgba(139, 92, 246, 0.3); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4);{% else %}background: transparent; color: #94a3b8; border: none;{% endif %}">Questo Mese</button>
@@ -2996,6 +3015,7 @@ let tagTimelineChart = null;
 let activeRadarCatName = null;
 let activeRadarTagCode = null;
 let currentTagPreset = '{{ tag_drilldown_data.preset if tag_drilldown_data else "THIS_MONTH" }}';
+let currentTagProfile = '{{ active_filter if active_filter else "all" }}';
 
 function formatEuro(val) {
     if (val === null || val === undefined) return '€ 0,00';
@@ -3372,7 +3392,31 @@ function resetTimelineCockpit() {
     }
 }
 
-// 7. Preset Switching & Custom Date Filters
+// 7. Profile Switching
+async function switchTagRadarProfile(profileVal, btn) {
+    currentTagProfile = profileVal;
+
+    document.querySelectorAll('.tag-radar-profile-btn').forEach(b => {
+        b.classList.remove('active');
+        b.style.background = 'transparent';
+        b.style.color = '#94a3b8';
+        b.style.border = 'none';
+    });
+    if (btn) {
+        btn.classList.add('active');
+        btn.style.background = '#2563eb';
+        btn.style.color = '#fff';
+    }
+
+    const badge = document.getElementById('tagRadarActiveProfileBadge');
+    if (badge && btn) {
+        badge.innerText = `👤 ${btn.innerText.trim()}`;
+    }
+
+    await reloadTagRadarData({ preset: currentTagPreset });
+}
+
+// 8. Preset Switching & Custom Date Filters
 async function switchTagRadarPreset(preset, btn) {
     currentTagPreset = preset;
     
@@ -3409,7 +3453,11 @@ async function applyTagRadarCustomRange() {
 
 async function reloadTagRadarData(params) {
     try {
-        const query = new URLSearchParams(params).toString();
+        const payload = Object.assign({}, params);
+        if (currentTagProfile && currentTagProfile !== 'all') {
+            payload.profile_id = currentTagProfile;
+        }
+        const query = new URLSearchParams(payload).toString();
         const res = await fetch(`/api/focus/tag-drilldown?${query}`);
         const result = await res.json();
         if (result.success && result.data) {
