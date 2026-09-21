@@ -39,6 +39,29 @@
   box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3) !important;
 }
 
+.tx-tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  padding: 1px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.2;
+}
+
+.tx-tag-pill:hover {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: #38bdf8;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
 .golden-triage-highlight {
   border: 2.5px solid #f59e0b !important;
   animation: goldenGlowPulse 2s infinite ease-in-out !important;
@@ -1178,11 +1201,22 @@
                         {% for tx in m.transactions %}
                         {% set is_tx_micro = (tx.amount|abs < 1.0) %}
                         <div class="folder-tx-row {% if is_tx_micro %}is-micro-tx{% endif %}" id="folderTxRow-{{ tx.id }}" data-amount="{{ tx.amount }}">
-                            <div style="display: flex; align-items: center; gap: 10px; flex: 1; overflow: hidden;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex: 1; overflow: hidden; min-width: 0;">
                                 <span style="color: var(--text-muted); font-size: 0.75rem; white-space: nowrap; font-variant-numeric: tabular-nums;">{{ tx.date }}</span>
-                                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                    <span style="color: #fff; font-size: 0.8rem;" title="{{ tx.description }}">{{ tx.description }}</span>
-                                    <small style="color: var(--text-muted); font-size: 0.68rem; margin-left: 6px;">{{ tx.account_name or 'Conto' }}</small>
+                                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1;">
+                                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        <span style="color: #fff; font-size: 0.8rem;" title="{{ tx.description }}">{{ tx.description }}</span>
+                                        <small style="color: var(--text-muted); font-size: 0.68rem; margin-left: 6px;">{{ tx.account_name or 'Conto' }}</small>
+                                    </div>
+                                    {% if tx.tags %}
+                                    <div class="tx-row-tags-wrapper" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; align-items: center;">
+                                        {% for t in tx.tags.split() %}
+                                            {% if t.startswith('#') %}
+                                            <span class="tx-tag-pill" onclick="event.stopPropagation(); filterByTagClick('{{ t }}');" title="Filtra movimenti per {{ t }}">{{ t }}</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
                                 </div>
                             </div>
 
@@ -1265,6 +1299,15 @@
                         <span>{{ tx.account_name or 'Conto' }}</span>
                         {% if tx.profile_name %}• <span class="tx-profile-name">{{ tx.profile_name }}</span>{% endif %}
                     </div>
+                    {% if tx.tags %}
+                    <div class="tx-row-tags-wrapper" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; align-items: center;">
+                        {% for t in tx.tags.split() %}
+                            {% if t.startswith('#') %}
+                            <span class="tx-tag-pill" onclick="event.stopPropagation(); filterByTagClick('{{ t }}');" title="Filtra movimenti per {{ t }}">{{ t }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
 
                 <!-- UNIFIED SMART CATEGORY & TAG BADGE + 1-TAP SHARED TOGGLE -->
@@ -3034,6 +3077,31 @@ function updateTxRowOptimistically(txId, category, subCategory, tagsStr) {
     container.innerHTML = '';
     container.appendChild(btn);
 
+    // Update tags pills under description optimistically if present
+    const updateTagsPills = (parentEl) => {
+        if (!parentEl) return;
+        let tagsWrap = parentEl.querySelector('.tx-row-tags-wrapper');
+        const validTags = (tagsStr || '').split(/\s+/).filter(t => t.startsWith('#'));
+        if (validTags.length > 0) {
+            if (!tagsWrap) {
+                tagsWrap = document.createElement('div');
+                tagsWrap.className = 'tx-row-tags-wrapper';
+                tagsWrap.style.cssText = 'display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; align-items: center;';
+                const descContainer = parentEl.querySelector('.tx-info') || parentEl.querySelector('div[style*="min-width: 0"]');
+                if (descContainer) descContainer.appendChild(tagsWrap);
+            }
+            if (tagsWrap) {
+                tagsWrap.innerHTML = validTags.map(t => `<span class="tx-tag-pill" onclick="event.stopPropagation(); filterByTagClick('${escapeHtml(t)}');" title="Filtra movimenti per ${escapeHtml(t)}">${escapeHtml(t)}</span>`).join('');
+            }
+        } else if (tagsWrap) {
+            tagsWrap.remove();
+        }
+    };
+
+    updateTagsPills(row);
+    const folderRow = document.getElementById(`folderTxRow-${txId}`);
+    if (folderRow) updateTagsPills(folderRow);
+
     if (row) {
         row.style.borderColor = 'rgba(16, 185, 129, 0.4)';
         row.style.background = 'rgba(16, 185, 129, 0.08)';
@@ -4478,6 +4546,17 @@ function clearLiveSearch() {
     }
     
     onLiveSearchInput('');
+}
+
+function filterByTagClick(tagStr) {
+    if (!tagStr) return;
+    const cleanTag = tagStr.trim();
+    const input = document.getElementById('liveTxSearchInput');
+    if (input) {
+        input.value = cleanTag;
+        onLiveSearchInput(cleanTag);
+        input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 }
 
 // --- MERCHANT TRIAGE PANEL CONTROLS ---
