@@ -42,7 +42,8 @@ from services.vertical_focus_engine import (
     toggle_focus_category,
     get_vertical_category_data,
     get_mortgage_deep_dive,
-    get_mortgage_profile
+    get_mortgage_profile,
+    get_category_tags_drilldown
 )
 from services.couple_split_engine import (
     get_couple_split_analytics,
@@ -1489,6 +1490,9 @@ def focus_hub():
     persona_key = session.get('assistant_persona') or (active_profile_row['assistant_persona'] if active_profile_row and 'assistant_persona' in active_profile_row.keys() and active_profile_row['assistant_persona'] else None) or (user['assistant_persona'] if user and 'assistant_persona' in user.keys() and user['assistant_persona'] else 'demetrio')
     persona = get_persona(persona_key)
     
+    # Tag Hierarchical Drilldown Data (Nested Donut Engine)
+    tag_drilldown_data = get_category_tags_drilldown(ws_id, preset=preset, from_ym=from_ym, to_ym=to_ym, profile_id=p_id_filter) if ws_id else None
+    
     conn.close()
     
     return render_template(
@@ -1504,6 +1508,7 @@ def focus_hub():
         categories_data=categories_data,
         mortgage_data=mortgage_data,
         couple_split_data=couple_split_data,
+        tag_drilldown_data=tag_drilldown_data,
         all_macro_categories=MACRO_CATEGORIES,
         preset=preset,
         from_ym=from_ym if from_ym else (available_months[-1]['ym'] if available_months else ''),
@@ -1511,6 +1516,22 @@ def focus_hub():
         available_months=available_months,
         persona=persona
     )
+
+@app.route("/api/focus/tag-drilldown")
+@login_required
+def api_focus_tag_drilldown():
+    ws_id = session.get('workspace_id')
+    if not ws_id:
+        return jsonify({"success": False, "error": "Workspace non trovato"}), 400
+    preset = request.args.get('preset', 'THIS_MONTH')
+    from_ym = request.args.get('from_ym')
+    to_ym = request.args.get('to_ym')
+    profile_id = request.args.get('profile_id', type=int)
+    try:
+        data = get_category_tags_drilldown(ws_id, preset=preset, from_ym=from_ym, to_ym=to_ym, profile_id=profile_id)
+        return jsonify({"success": True, "data": data})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/api/transactions/<int:tx_id>/toggle-shared", methods=["POST"])
 @login_required

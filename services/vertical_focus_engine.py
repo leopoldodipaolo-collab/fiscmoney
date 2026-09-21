@@ -786,3 +786,195 @@ def get_mortgage_deep_dive(workspace_id, profile_id=None):
         "eligible_interest": eligible_interest,
         "advisor_tips": advisor_tips
     }
+
+
+# ---------------------------------------------------------
+# 5. CATEGORY TO TAGS HIERARCHICAL DRILLDOWN ANALYTICS
+# ---------------------------------------------------------
+def get_category_tags_drilldown(workspace_id, preset='THIS_MONTH', from_ym=None, to_ym=None, profile_id=None):
+    """
+    Computes hierarchical category -> tags distribution for the selected timeframe.
+    Returns:
+      - categories: list of dicts with cat name, icon, color, spent, percent, and tags array
+      - total_spent: total expense in period
+      - top_tag: { code, label, icon, spent, percent }
+      - total_tags_count: number of distinct tags used
+      - preset_label: human readable timeframe label
+      - from_date, to_date, months_list
+    """
+    now = datetime.now()
+    if preset == 'THIS_MONTH':
+        start_d = date(now.year, now.month, 1)
+        end_d = date(now.year, now.month, 1) + relativedelta(months=1) - relativedelta(days=1)
+        preset_label = "Questo Mese"
+        from_date_str = start_d.strftime("%Y-%m-%d")
+        to_date_str = end_d.strftime("%Y-%m-%d")
+        months_list = [now.strftime("%Y-%m")]
+    else:
+        from_date_str, to_date_str, months_list, preset_label = resolve_timeframe(workspace_id, preset, from_ym, to_ym)
+
+    conn = get_db_connection()
+    query = """
+        SELECT id, date, amount, description, raw_description, category, sub_category, tags, is_shared
+        FROM transactions
+        WHERE workspace_id = ?
+          AND amount < 0
+          AND is_transfer = 0
+          AND date >= ? AND date <= ?
+    """
+    params = [workspace_id, from_date_str, to_date_str]
+    if profile_id:
+        query += " AND profile_id = ?"
+        params.append(profile_id)
+    query += " ORDER BY date DESC"
+
+    tx_rows = conn.execute(query, params).fetchall()
+    conn.close()
+
+    total_spent = sum(abs(r['amount']) for r in tx_rows)
+
+    # Build Map of Categories -> Tags
+    cats_dict = {}
+    global_tag_totals = {}
+    global_tag_counts = {}
+    global_tag_meta = {}
+
+    for r in tx_rows:
+        amt = abs(r['amount'])
+        cat_name = (r['category'] or 'Altro').strip()
+        # Clean potential composite name
+        if 'Da Assegnare' in cat_name:
+            cat_name = 'Altro'
+
+        if cat_name not in cats_dict:
+            cat_meta = MACRO_CATEGORIES.get(cat_name, {"icon": "📦", "color": "#64748b"})
+            cats_dict[cat_name] = {
+                "name": cat_name,
+                "icon": cat_meta.get("icon", "📦"),
+                "color": cat_meta.get("color", "#64748b"),
+                "spent": 0.0,
+                "tx_count": 0,
+                "tags": {}
+            }
+        
+        cats_dict[cat_name]["spent"] += amt
+        cats_dict[cat_name]["tx_count"] += 1
+
+        # Extract tags
+        raw_tags = r['tags'] or ''
+        tag_list = [t.strip() for t in raw_tags.replace(',', ' ').split() if t.strip().startswith('#')]
+        
+        # If no explicit hashtag, derive clean subcategory tag
+        if not tag_list:
+            if r['sub_category']:
+                tag_code = '#' + re.sub(r'[^a-zA-Z0-9_]', '_', r['sub_category'].lower()).strip('_')
+            else:
+                tag_code = '#generico'
+            tag_list = [tag_code]
+
+        # Divide or assign tag amounts (if multiple tags, each represents this transaction)
+        primary_tag = tag_list[0]
+        # Label formatting
+        tag_label = primary_tag.replace('#', '').replace('_', ' ').title()
+        
+        # Assign tag icon based on category or common names
+        tag_icon = "🏷️"
+        if "mutuo" in primary_tag: tag_icon = "🏠"
+        elif "carburante" in primary_tag: tag_icon = "⛽"
+        elif "ristorante" in primary_tag or "pizz" in primary_tag: tag_icon = "🍽️"
+        elif "supermercato" in primary_tag or "spesa" in primary_tag: tag_icon = "🛒"
+        elif "bollo" in primary_tag or "assicuraz" in primary_tag: tag_icon = "🚗"
+        elif "farmacia" in primary_tag or "medico" in primary_tag or "730" in primary_tag: tag_icon = "🩺"
+        elif "invest" in primary_tag or "pac" in primary_tag or "directa" in primary_tag: tag_icon = "📈"
+        elif "telepass" in primary_tag or "pedaggi" in primary_tag: tag_icon = "🛣️"
+        elif "luce" in primary_tag or "gas" in primary_tag or "utenze" in primary_tag: tag_icon = "💡"
+        elif "canoni" in primary_tag or "commiss" in primary_tag or "tari" in primary_tag or "imu" in primary_tag: tag_icon = "🏛️"
+        elif "hotel" in primary_tag or "viaggi" in primary_tag or "vacanz" in primary_tag: tag_icon = "✈️"
+        elif "stipendio" in primary_tag: tag_icon = "💼"
+
+        cat_tags = cats_dict[cat_name]["tags"]
+        if primary_tag not in cat_tags:
+            cat_tags[primary_tag] = {
+                "code": primary_tag,
+                "label": tag_label,
+                "icon": tag_icon,
+                "spent": 0.0,
+                "count": 0,
+                "tx_samples": []
+            }
+
+        cat_tags[primary_tag]["spent"] += amt
+        cat_tags[primary_tag]["count"] += 1
+        if len(cat_tags[primary_tag]["tx_samples"]) < 6:
+            cat_tags[primary_tag]["tx_samples"].append({
+                "id": r['id'],
+                "date": r['date'][:10],
+                "amount": amt,
+                "description": r['description'] or 'Movimento'
+            })
+
+        global_tag_totals[primary_tag] = global_tag_totals.get(primary_tag, 0.0) + amt
+        global_tag_counts[primary_tag] = global_tag_counts.get(primary_tag, 0) + 1
+        global_tag_meta[primary_tag] = {"code": primary_tag, "label": tag_label, "icon": tag_icon, "cat": cat_name}
+
+    # Format structured output sorted by spend
+    categories_list = []
+    for c_name, c_data in sorted(cats_dict.items(), key=lambda x: x[1]["spent"], reverse=True):
+        c_spent = round(c_data["spent"], 2)
+        c_pct = round((c_spent / total_spent * 100), 1) if total_spent > 0 else 0.0
+        
+        tags_sorted = []
+        for tg_code, tg_data in sorted(c_data["tags"].items(), key=lambda x: x[1]["spent"], reverse=True):
+            tg_spent = round(tg_data["spent"], 2)
+            tg_pct_in_cat = round((tg_spent / c_spent * 100), 1) if c_spent > 0 else 0.0
+            tg_pct_overall = round((tg_spent / total_spent * 100), 1) if total_spent > 0 else 0.0
+            tags_sorted.append({
+                "code": tg_code,
+                "label": tg_data["label"],
+                "icon": tg_data["icon"],
+                "spent": tg_spent,
+                "count": tg_data["count"],
+                "percent_in_cat": tg_pct_in_cat,
+                "percent_overall": tg_pct_overall,
+                "tx_samples": tg_data["tx_samples"]
+            })
+            
+        categories_list.append({
+            "name": c_name,
+            "icon": c_data["icon"],
+            "color": c_data["color"],
+            "spent": c_spent,
+            "tx_count": c_data["tx_count"],
+            "percent": c_pct,
+            "tags": tags_sorted
+        })
+
+    # Find top tag overall
+    top_tag = None
+    if global_tag_totals:
+        sorted_tags = sorted(global_tag_totals.items(), key=lambda x: x[1], reverse=True)
+        top_code, top_spent = sorted_tags[0]
+        meta = global_tag_meta.get(top_code, {"label": top_code, "icon": "🏷️", "cat": "Spesa"})
+        top_tag = {
+            "code": top_code,
+            "label": meta["label"],
+            "icon": meta["icon"],
+            "category": meta["cat"],
+            "spent": round(top_spent, 2),
+            "count": global_tag_counts.get(top_code, 0),
+            "percent": round((top_spent / total_spent * 100), 1) if total_spent > 0 else 0.0
+        }
+
+    return {
+        "categories": categories_list,
+        "total_spent": round(total_spent, 2),
+        "total_tags_count": len(global_tag_totals),
+        "tx_count": len(tx_rows),
+        "top_tag": top_tag,
+        "preset": preset,
+        "preset_label": preset_label,
+        "from_date": from_date_str,
+        "to_date": to_date_str,
+        "months_list": months_list
+    }
+
