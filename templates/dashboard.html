@@ -3386,7 +3386,15 @@ function switchDashboardTab(tabKey, btn) {
     } catch(e) {}
 
     // Special handlers when switching
-    if (tabKey === 'trend') {
+    if (tabKey === 'calendar') {
+        const curMonthEl = document.querySelector('.radar-month-row.is-current');
+        if (curMonthEl) {
+            const curYm = curMonthEl.getAttribute('data-ym');
+            if (curYm && typeof filterDeadlinesByMonth === 'function') {
+                filterDeadlinesByMonth(curYm, curMonthEl);
+            }
+        }
+    } else if (tabKey === 'trend') {
         if (typeof initDashboardTrendChart === 'function') {
             initDashboardTrendChart();
         }
