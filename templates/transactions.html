@@ -32,6 +32,159 @@
   }
 }
 
+/* ======================================================== */
+/* 🌟 ULTRA-PREMIUM WOW EXPENSE DISTRIBUTION & SMART TAGS    */
+/* ======================================================== */
+.distribution-showcase-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.85));
+  border: 1.5px solid rgba(56, 189, 248, 0.35);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  overflow: hidden;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.distribution-showcase-card:hover {
+  border-color: rgba(56, 189, 248, 0.6);
+  box-shadow: 0 12px 35px rgba(56, 189, 248, 0.15), 0 4px 15px rgba(0, 0, 0, 0.5);
+}
+
+.dist-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #7dd3fc;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.dist-segmented-control {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.4);
+  gap: 3px;
+}
+
+.dist-segmented-btn {
+  padding: 4px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 9px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  background: transparent;
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dist-segmented-btn.active {
+  background: linear-gradient(135deg, #38bdf8, #0284c7);
+  color: #041324;
+  font-weight: 800;
+  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.4);
+}
+
+.dist-progress-bar-wrap {
+  position: relative;
+  height: 10px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 1.5px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 12px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.dist-progress-bar-inner {
+  display: flex;
+  height: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+  gap: 2px;
+}
+
+.dist-progress-segment {
+  height: 100%;
+  transition: all 0.2s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+.dist-progress-segment:hover {
+  transform: scaleY(1.3);
+  filter: brightness(1.25);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+  z-index: 2;
+}
+
+.dist-hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.65);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  text-decoration: none;
+  color: #cbd5e1;
+}
+
+.dist-hero-chip:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.6) !important;
+  background: rgba(30, 41, 59, 0.95) !important;
+  box-shadow: 0 6px 16px rgba(56, 189, 248, 0.25) !important;
+}
+
+.dist-hero-chip.is-active {
+  border-color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.2) !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4) !important;
+}
+
+.dist-tag-trend-badge {
+  font-size: 0.62rem;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 1px 5px;
+  border-radius: 6px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  transition: all 0.15s ease;
+}
+
+.dist-hero-chip:hover .dist-tag-trend-badge {
+  background: #38bdf8;
+  color: #0f172a;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+}
+
 .tag-distribution-chip:hover {
   transform: translateY(-2px);
   border-color: #38bdf8 !important;
@@ -448,49 +601,57 @@
 <!-- ======================================================== -->
 <div id="workbenchSection" class="card" style="margin-bottom: 18px; background: linear-gradient(135deg, rgba(26, 36, 60, 0.85), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(59, 130, 246, 0.3); border-radius: var(--radius-lg); padding: 16px 20px;">
     
-    <!-- 2. Streamlined Ribbon: Categorie & Tag Intelligenti con Switcher e Matrice Espandibile -->
+    <!-- 2. Ultra-Premium Showcase: Ripartizione Spese & Tag Intelligenti (Effetto WOW) -->
     {% if total_expenses > 0 and (category_breakdown|length > 0 or (tag_breakdown is defined and tag_breakdown|length > 0)) %}
-    <div style="margin-bottom: 14px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">
-                    Ripartizione Spese
-                </span>
+    <div class="distribution-showcase-card">
+        <!-- Ambient subtle glow behind card -->
+        <div style="position: absolute; top: -30px; right: 20px; width: 180px; height: 90px; background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, transparent 70%); pointer-events: none; filter: blur(35px);"></div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px; position: relative; z-index: 1;">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <div class="dist-header-badge">
+                    <span>📊</span>
+                    <span>Ripartizione Spese</span>
+                </div>
                 
-                <!-- Pillola Toggle Categorie / Tag -->
-                <div style="display: inline-flex; background: rgba(0, 0, 0, 0.35); padding: 2px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08);">
-                    <button type="button" id="btnDistributionCat" onclick="switchDistributionMode('cat')" 
-                            style="padding: 2px 10px; font-size: 0.68rem; font-weight: 700; border-radius: 16px; border: none; cursor: pointer; transition: all 0.15s ease; background: #38bdf8; color: #0f172a;">
-                        📁 Categorie
+                <!-- Modern Segmented Control (Categorie vs Tag) -->
+                <div class="dist-segmented-control">
+                    <button type="button" id="btnDistributionCat" onclick="switchDistributionMode('cat')" class="dist-segmented-btn active">
+                        <span>📁 Categorie</span>
                     </button>
-                    <button type="button" id="btnDistributionTag" onclick="switchDistributionMode('tag')" 
-                            style="padding: 2px 10px; font-size: 0.68rem; font-weight: 700; border-radius: 16px; border: none; cursor: pointer; transition: all 0.15s ease; background: transparent; color: #94a3b8;">
-                        🏷️ Tag Intelligenti {% if tag_breakdown is defined and tag_breakdown|length > 0 %}<span style="opacity: 0.75; font-size: 0.62rem;">({{ tag_breakdown|length }})</span>{% endif %}
+                    <button type="button" id="btnDistributionTag" onclick="switchDistributionMode('tag')" class="dist-segmented-btn">
+                        <span>🏷️ Tag Intelligenti</span>
+                        {% if tag_breakdown is defined and tag_breakdown|length > 0 %}
+                        <span style="background: rgba(255,255,255,0.15); padding: 1px 6px; border-radius: 10px; font-size: 0.62rem; font-weight: 800;">{{ tag_breakdown|length }}</span>
+                        {% endif %}
                     </button>
                 </div>
-                <small id="distributionHintText" style="color: var(--text-muted); font-size: 0.68rem;">(Tocca una categoria per isolarla)</small>
+
+                <small id="distributionHintText" style="color: var(--text-muted); font-size: 0.72rem; font-weight: 500;">(Tocca una categoria per isolarla)</small>
             </div>
             
             {% if selected_category or (selected_tag is defined and selected_tag) %}
             <a href="/transactions?{% if selected_month %}month={{ selected_month }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}" 
-               style="font-size: 0.7rem; color: #f87171; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; background: rgba(239, 68, 68, 0.15); padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.3);">
-                Filtro attivo: {{ selected_category or selected_tag }} ✕
+               style="font-size: 0.72rem; color: #f87171; text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 5px; background: rgba(239, 68, 68, 0.15); padding: 4px 10px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.35); box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);">
+                Filtro attivo: {{ selected_category or selected_tag }} <span style="font-size: 0.85rem;">✕</span>
             </a>
             {% endif %}
         </div>
 
         <!-- ================= PANNELLO 1: CATEGORIE ================= -->
-        <div id="distributionCategoriesPanel">
-            <!-- Slim Multi-color Percentage Bar (Categorie) -->
-            <div style="display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: rgba(255,255,255,0.06); gap: 2px; margin-bottom: 8px;">
-                {% for cat in category_breakdown %}
-                {% if cat.spent > 0 %}
-                <div style="width: {{ cat.percent }}%; background: {{ cat.color }};" title="{{ cat.name }}: {{ cat.spent|eur }} ({{ cat.percent }}%)"></div>
-                {% endif %}
-                {% endfor %}
+        <div id="distributionCategoriesPanel" style="position: relative; z-index: 1;">
+            <!-- Modern Multi-color Percentage Bar (Categorie) -->
+            <div class="dist-progress-bar-wrap">
+                <div class="dist-progress-bar-inner">
+                    {% for cat in category_breakdown %}
+                    {% if cat.spent > 0 %}
+                    <div class="dist-progress-segment" style="width: {{ cat.percent }}%; background: {{ cat.color }};" title="{{ cat.name }}: {{ cat.spent|eur }} ({{ cat.percent }}%)"></div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
             </div>
 
-            <!-- Clean Category Chips (Top 4 + Collapsible Extra) -->
+            <!-- Category Chips (Top 4 + Collapsible Extra) -->
             {% set active_in_extra = false %}
             {% for cat in category_breakdown %}
                 {% if loop.index > 4 and selected_category == cat.name %}
@@ -498,34 +659,36 @@
                 {% endif %}
             {% endfor %}
             
-            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+            <div style="display: flex; flex-wrap: wrap; gap: 7px; align-items: center;">
                 {% for cat in category_breakdown %}
                 {% if cat.spent > 0 and loop.index <= 4 %}
                 {% set is_cat_active = (selected_category == cat.name) %}
                 <a href="/transactions?{% if selected_month %}month={{ selected_month }}&{% endif %}{% if is_cat_active %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% else %}category={{ cat.name|urlencode }}&{% if status_filter %}status={{ status_filter }}&{% endif %}{% endif %}"
-                   style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 12px; font-size: 0.72rem; transition: all 0.15s ease; border: 1px solid {% if is_cat_active %}#38bdf8{% else %}rgba(255,255,255,0.1){% endif %}; background: {% if is_cat_active %}rgba(56, 189, 248, 0.25){% else %}rgba(255,255,255,0.03){% endif %}; color: {% if is_cat_active %}#fff{% else %}#cbd5e1{% endif %}; font-weight: {% if is_cat_active %}700{% else %}500{% endif %};"
-                   title="Filtra {{ cat.name }}">
-                    <span>{{ cat.icon }} {{ cat.name }}</span>
-                    <strong style="color: {{ cat.color }};">{{ cat.spent|eur }}</strong>
-                    <span style="color: var(--text-muted); font-size: 0.65rem;">({{ cat.percent }}%)</span>
-                    {% if is_cat_active %}<span style="color: #38bdf8; font-weight: bold; margin-left: 2px;">✕</span>{% endif %}
+                   class="dist-hero-chip {% if is_cat_active %}is-active{% endif %}"
+                   title="Filtra per {{ cat.name }}">
+                    <span style="font-size: 0.95rem;">{{ cat.icon }}</span>
+                    <span style="font-weight: 700; color: {% if is_cat_active %}#fff{% else %}#e2e8f0{% endif %};">{{ cat.name }}</span>
+                    <strong style="color: {{ cat.color }}; font-weight: 900; font-size: 0.78rem;">{{ cat.spent|eur }}</strong>
+                    <span style="color: var(--text-muted); font-size: 0.68rem; font-weight: 600;">({{ cat.percent }}%)</span>
+                    {% if is_cat_active %}<span style="color: #38bdf8; font-weight: 900; margin-left: 2px;">✕</span>{% endif %}
                 </a>
                 {% endif %}
                 {% endfor %}
 
                 <!-- Extra Categories (Collapsed by Default) -->
                 {% if category_breakdown|length > 4 %}
-                <div id="extraCategoriesWrapper" style="display: {% if active_in_extra %}inline-flex{% else %}none{% endif %}; flex-wrap: wrap; gap: 6px;">
+                <div id="extraCategoriesWrapper" style="display: {% if active_in_extra %}inline-flex{% else %}none{% endif %}; flex-wrap: wrap; gap: 7px;">
                     {% for cat in category_breakdown %}
                     {% if cat.spent > 0 and loop.index > 4 %}
                     {% set is_cat_active = (selected_category == cat.name) %}
                     <a href="/transactions?{% if selected_month %}month={{ selected_month }}&{% endif %}{% if is_cat_active %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% else %}category={{ cat.name|urlencode }}&{% if status_filter %}status={{ status_filter }}&{% endif %}{% endif %}"
-                       style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 12px; font-size: 0.72rem; transition: all 0.15s ease; border: 1px solid {% if is_cat_active %}#38bdf8{% else %}rgba(255,255,255,0.1){% endif %}; background: {% if is_cat_active %}rgba(56, 189, 248, 0.25){% else %}rgba(255,255,255,0.03){% endif %}; color: {% if is_cat_active %}#fff{% else %}#cbd5e1{% endif %}; font-weight: {% if is_cat_active %}700{% else %}500{% endif %};"
-                       title="Filtra {{ cat.name }}">
-                        <span>{{ cat.icon }} {{ cat.name }}</span>
-                        <strong style="color: {{ cat.color }};">{{ cat.spent|eur }}</strong>
-                        <span style="color: var(--text-muted); font-size: 0.65rem;">({{ cat.percent }}%)</span>
-                        {% if is_cat_active %}<span style="color: #38bdf8; font-weight: bold; margin-left: 2px;">✕</span>{% endif %}
+                       class="dist-hero-chip {% if is_cat_active %}is-active{% endif %}"
+                       title="Filtra per {{ cat.name }}">
+                        <span style="font-size: 0.95rem;">{{ cat.icon }}</span>
+                        <span style="font-weight: 700; color: {% if is_cat_active %}#fff{% else %}#e2e8f0{% endif %};">{{ cat.name }}</span>
+                        <strong style="color: {{ cat.color }}; font-weight: 900; font-size: 0.78rem;">{{ cat.spent|eur }}</strong>
+                        <span style="color: var(--text-muted); font-size: 0.68rem; font-weight: 600;">({{ cat.percent }}%)</span>
+                        {% if is_cat_active %}<span style="color: #38bdf8; font-weight: 900; margin-left: 2px;">✕</span>{% endif %}
                     </a>
                     {% endif %}
                     {% endfor %}
@@ -535,7 +698,7 @@
                 <button type="button" 
                         id="btnToggleExtraCategories" 
                         onclick="toggleExtraCategoriesRibbon()" 
-                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: #94a3b8; border-radius: 12px; font-size: 0.7rem; padding: 3px 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
+                        style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); color: #cbd5e1; border-radius: 10px; font-size: 0.72rem; padding: 5px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-weight: 700; transition: all 0.15s ease;">
                     <span id="extraCatToggleText">{% if active_in_extra %}▴ Meno{% else %}+{{ category_breakdown|length - 4 }} altre ▾{% endif %}</span>
                 </button>
                 {% endif %}
@@ -543,50 +706,53 @@
         </div>
 
         <!-- ================= PANNELLO 2: TAG INTELLIGENTI & TREND ================= -->
-        <div id="distributionTagsPanel" style="display: none;">
+        <div id="distributionTagsPanel" style="display: none; position: relative; z-index: 1;">
             {% if tag_breakdown is defined and tag_breakdown|length > 0 %}
-            <!-- Slim Multi-color Percentage Bar (Tags) -->
-            <div style="display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: rgba(255,255,255,0.06); gap: 2px; margin-bottom: 8px;">
-                {% for tag in tag_breakdown %}
-                {% if tag.spent > 0 %}
-                <div style="width: {{ tag.percent }}%; background: {{ tag.color }}; cursor: pointer;" 
-                     onclick="openTagTrendModal('{{ tag.code }}')"
-                     title="{{ tag.icon }} {{ tag.label }} ({{ tag.code }}): {{ tag.spent|eur }} ({{ tag.percent }}%) - Clicca per vedere il trend"></div>
-                {% endif %}
-                {% endfor %}
+            <!-- Modern Multi-color Percentage Bar (Tags) -->
+            <div class="dist-progress-bar-wrap">
+                <div class="dist-progress-bar-inner">
+                    {% for tag in tag_breakdown %}
+                    {% if tag.spent > 0 %}
+                    <div class="dist-progress-segment" style="width: {{ tag.percent }}%; background: {{ tag.color }}; cursor: pointer;" 
+                         onclick="openTagTrendModal('{{ tag.code }}')"
+                         title="{{ tag.icon }} {{ tag.label }} ({{ tag.code }}): {{ tag.spent|eur }} ({{ tag.percent }}%) — Clicca per vedere il trend"></div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
             </div>
 
             <!-- Tag Chips (Top 5 + Matrice Espandibile con Pulsante Trend) -->
-            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+            <div style="display: flex; flex-wrap: wrap; gap: 7px; align-items: center;">
                 {% for tag in tag_breakdown %}
                 {% if loop.index <= 5 %}
-                <div class="tag-distribution-chip" 
+                <div class="dist-hero-chip" 
                      onclick="openTagTrendModal('{{ tag.code }}')"
-                     style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 14px; font-size: 0.72rem; cursor: pointer; transition: all 0.2s ease; border: 1px solid rgba(56, 189, 248, 0.25); background: rgba(15, 23, 42, 0.7); box-shadow: 0 2px 6px rgba(0,0,0,0.25);"
-                     title="Clicca per aprire il trend e lo storico di {{ tag.label }}">
-                    <span style="font-size: 0.85rem;">{{ tag.icon }}</span>
+                     title="Tocca per aprire il trend e lo storico di {{ tag.label }}">
+                    <span style="font-size: 0.95rem;">{{ tag.icon }}</span>
                     <span style="color: #fff; font-weight: 700;">{{ tag.label }}</span>
-                    <strong style="color: {{ tag.color }}; font-weight: 800;">{{ tag.spent|eur }}</strong>
-                    <span style="color: #94a3b8; font-size: 0.65rem;">({{ tag.percent }}%)</span>
-                    <span style="font-size: 0.65rem; color: #38bdf8; opacity: 0.8; margin-left: 2px;" title="Vedi Grafico Trend">📈</span>
+                    <strong style="color: {{ tag.color }}; font-weight: 900; font-size: 0.78rem;">{{ tag.spent|eur }}</strong>
+                    <span style="color: #94a3b8; font-size: 0.68rem; font-weight: 600;">({{ tag.percent }}%)</span>
+                    <span class="dist-tag-trend-badge" title="Vedi Grafico Trend">
+                        📈 Trend
+                    </span>
                 </div>
                 {% endif %}
                 {% endfor %}
 
                 <!-- Matrice Espandibile dei Tag Rimanenti -->
                 {% if tag_breakdown|length > 5 %}
-                <div id="extraTagsWrapper" style="display: none; flex-wrap: wrap; gap: 6px; width: 100%; margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08);">
+                <div id="extraTagsWrapper" style="display: none; flex-wrap: wrap; gap: 7px; width: 100%; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.1);">
                     {% for tag in tag_breakdown %}
                     {% if loop.index > 5 %}
-                    <div class="tag-distribution-chip" 
+                    <div class="dist-hero-chip" 
                          onclick="openTagTrendModal('{{ tag.code }}')"
-                         style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; cursor: pointer; transition: all 0.2s ease; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.03);"
-                         title="Clicca per aprire il trend di {{ tag.label }}">
-                        <span style="font-size: 0.8rem;">{{ tag.icon }}</span>
+                         style="background: rgba(15, 23, 42, 0.45); border-color: rgba(255, 255, 255, 0.08);"
+                         title="Tocca per aprire il trend di {{ tag.label }}">
+                        <span style="font-size: 0.9rem;">{{ tag.icon }}</span>
                         <span style="color: #cbd5e1; font-weight: 600;">{{ tag.label }}</span>
-                        <strong style="color: {{ tag.color }};">{{ tag.spent|eur }}</strong>
-                        <span style="color: #64748b; font-size: 0.64rem;">({{ tag.percent }}%)</span>
-                        <span style="font-size: 0.6rem; color: #38bdf8;">📈</span>
+                        <strong style="color: {{ tag.color }}; font-weight: 800; font-size: 0.76rem;">{{ tag.spent|eur }}</strong>
+                        <span style="color: #64748b; font-size: 0.66rem;">({{ tag.percent }}%)</span>
+                        <span class="dist-tag-trend-badge" style="font-size: 0.58rem; padding: 1px 4px;">📈 Trend</span>
                     </div>
                     {% endif %}
                     {% endfor %}
@@ -595,14 +761,14 @@
                 <button type="button" 
                         id="btnToggleExtraTags" 
                         onclick="toggleExtraTagsMatrix()" 
-                        style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #7dd3fc; border-radius: 12px; font-size: 0.7rem; padding: 3px 9px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 700;">
+                        style="background: rgba(56, 189, 248, 0.12); border: 1.5px solid rgba(56, 189, 248, 0.35); color: #7dd3fc; border-radius: 10px; font-size: 0.72rem; padding: 5px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-weight: 800; transition: all 0.2s ease;">
                     <span id="extraTagsToggleText">+{{ tag_breakdown|length - 5 }} altri tag ▾</span>
                 </button>
                 {% endif %}
             </div>
             {% else %}
-            <div style="padding: 10px 14px; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.1); font-size: 0.74rem; color: #94a3b8; font-style: italic;">
-                🏷️ Nessun tag associato alle spese di questo periodo. Assegna tag intelligenti ai tuoi movimenti per vedere qui la loro distribuzione e il loro trend!
+            <div style="padding: 12px 16px; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px dashed rgba(255,255,255,0.12); font-size: 0.78rem; color: #94a3b8; font-style: italic;">
+                🏷️ Nessun tag associato alle spese di questo periodo. Assegna tag intelligenti ai tuoi movimenti per visualizzare qui la loro distribuzione interattiva e il loro trend!
             </div>
             {% endif %}
         </div>
@@ -4630,12 +4796,14 @@ function switchDistributionMode(mode) {
         if (catPanel) catPanel.style.display = 'none';
         if (tagPanel) tagPanel.style.display = 'block';
         if (btnCat) {
+            btnCat.classList.remove('active');
             btnCat.style.background = 'transparent';
             btnCat.style.color = '#94a3b8';
         }
         if (btnTag) {
-            btnTag.style.background = '#38bdf8';
-            btnTag.style.color = '#0f172a';
+            btnTag.classList.add('active');
+            btnTag.style.background = '';
+            btnTag.style.color = '';
         }
         if (hintText) hintText.innerText = '(Tocca un tag per vedere il suo trend storico)';
         localStorage.setItem('fisc_distribution_mode', 'tag');
@@ -4643,10 +4811,12 @@ function switchDistributionMode(mode) {
         if (catPanel) catPanel.style.display = 'block';
         if (tagPanel) tagPanel.style.display = 'none';
         if (btnCat) {
-            btnCat.style.background = '#38bdf8';
-            btnCat.style.color = '#0f172a';
+            btnCat.classList.add('active');
+            btnCat.style.background = '';
+            btnCat.style.color = '';
         }
         if (btnTag) {
+            btnTag.classList.remove('active');
             btnTag.style.background = 'transparent';
             btnTag.style.color = '#94a3b8';
         }
