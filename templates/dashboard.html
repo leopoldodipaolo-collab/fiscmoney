@@ -148,6 +148,63 @@
     {% endif %}
 </div>
 
+<!-- ======================================================== -->
+<!-- 🔍 PROTAGONIST HERO OMNIBAR SEARCH COCKPIT CARD          -->
+<!-- ======================================================== -->
+<div class="card dashboard-hero-omnibar-card" onclick="openOmnibarModal()" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.38); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 25px rgba(56, 189, 248, 0.1); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; position: relative; overflow: hidden; cursor: pointer; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
+    <!-- Ambient top corner glow -->
+    <div style="position: absolute; top: -35px; right: -35px; width: 140px; height: 140px; background: radial-gradient(circle, rgba(56, 189, 248, 0.22) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0; box-shadow: 0 2px 10px rgba(56, 189, 248, 0.25);">
+                ⚡
+            </div>
+            <div>
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    Chiedi al tuo Hub Finanziario
+                    <span class="badge-tag" style="background: rgba(56, 189, 248, 0.18); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 0.65rem; font-weight: 800; text-transform: uppercase;">
+                        Risposte Istantanee
+                    </span>
+                </h3>
+                <p style="font-size: 0.76rem; color: var(--text-muted); margin: 2px 0 0 0;">
+                    Digita una parola per conoscere spesa annuale, media mensile e movimenti (es. <em>"quanto ho speso per l'asilo?"</em>)
+                </p>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="badge-tag" style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; font-size: 0.72rem; padding: 4px 10px;">
+                Tasto rapido: <kbd style="background: rgba(255,255,255,0.12); padding: 1px 5px; border-radius: 4px; font-weight: 800; color: #fff;">Ctrl K</kbd>
+            </span>
+        </div>
+    </div>
+
+    <!-- Wide Fake Input Row with Spotlight Glow -->
+    <div style="background: rgba(10, 15, 29, 0.85); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 11px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: all 0.2s ease;" onmouseover="this.style.borderColor='rgba(56, 189, 248, 0.7)';" onmouseout="this.style.borderColor='rgba(56, 189, 248, 0.35)';">
+        <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+            <span style="font-size: 1.15rem; color: #38bdf8; flex-shrink: 0;">🔍</span>
+            <span style="color: #94a3b8; font-size: 0.88rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                Cerca spesa, tag o commerciante (es. <strong style="color: #cbd5e1;">asilo</strong>, <strong style="color: #cbd5e1;">carburante</strong>, <strong style="color: #cbd5e1;">spesa</strong>, <strong style="color: #cbd5e1;">mutuo</strong>)...
+            </span>
+        </div>
+        <button type="button" class="btn btn-sm" style="background: linear-gradient(135deg, #0ea5e9, #2563eb); color: #fff; font-weight: 800; font-size: 0.75rem; padding: 6px 14px; border-radius: 8px; border: none; flex-shrink: 0; box-shadow: 0 2px 10px rgba(14, 165, 233, 0.35);">
+            Cerca Subito &rarr;
+        </button>
+    </div>
+
+    <!-- Quick Query Pills Row (Single-Touch Instant Answers) -->
+    <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap;" onclick="event.stopPropagation()">
+        <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">Domande Frequenti:</span>
+        <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('asilo')">🎒 Asilo</button>
+        <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('carburante')">⛽ Carburante</button>
+        <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('spesa')">🛒 Spesa</button>
+        <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('mutuo')">🏠 Mutuo</button>
+        <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('amazon')">📦 Amazon</button>
+        <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('bollette')">⚡ Bollette</button>
+        <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('farmacia')">💊 Farmacia</button>
+    </div>
+</div>
+
 <!-- UNIFIED ONBOARDING CHECKLIST HUB (Integrated Assistant Guidance) -->
 <style>
 @media (max-width: 640px) {
