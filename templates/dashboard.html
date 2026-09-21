@@ -466,6 +466,37 @@
 </div>
 {% endif %}
 
+
+<!-- ======================================================== -->
+<!-- DASHBOARD TABS NAVIGATION BAR (Sleek Segmented Controls) -->
+<!-- ======================================================== -->
+<div class="dashboard-tabs-bar" style="display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px;">
+    <button type="button" class="dash-tab-btn active" id="dashTabBtn_glance" onclick="switchDashboardTab('glance', this)">
+        <span class="tab-icon">📊</span>
+        <span class="tab-title">Sintesi Oggi</span>
+    </button>
+    <button type="button" class="dash-tab-btn" id="dashTabBtn_calendar" onclick="switchDashboardTab('calendar', this)">
+        <span class="tab-icon">📅</span>
+        <span class="tab-title">Calendario & Scadenze</span>
+        {% if deadlines_radar and deadlines_radar.active_deadlines_count > 0 %}
+        <span class="dash-tab-pill-badge">{{ deadlines_radar.active_deadlines_count }}</span>
+        {% endif %}
+    </button>
+    <button type="button" class="dash-tab-btn" id="dashTabBtn_trend" onclick="switchDashboardTab('trend', this)">
+        <span class="tab-icon">📈</span>
+        <span class="tab-title">Trend & Risparmio</span>
+    </button>
+    <button type="button" class="dash-tab-btn" id="dashTabBtn_investments" onclick="switchDashboardTab('investments', this)">
+        <span class="tab-icon">💼</span>
+        <span class="tab-title">Portafoglio & PAC</span>
+        {% if total_invested and total_invested > 0 %}
+        <span class="dash-tab-pill-badge badge-green">ETF</span>
+        {% endif %}
+    </button>
+</div>
+
+<!-- TAB 1: SINTESI OGGI (DEFAULT) -->
+<div id="dashTabContent_glance" class="dash-tab-content active" style="display: block;">
 <!-- Financial Summary Card (Live Dynamic Metrics) -->
 <div class="card financial-summary-card" style="margin-bottom: 16px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
@@ -726,139 +757,6 @@
 </div>
 {% endif %}
 
-<!-- ======================================================== -->
-<!-- 📈 WIDGET: PORTAFOGLIO INVESTIMENTI & PAC ETF (DIRECTA)   -->
-<!-- ======================================================== -->
-<div id="investmentsCard" class="card" style="background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(16, 185, 129, 0.35); box-shadow: 0 10px 28px rgba(0,0,0,0.35); margin-bottom: 16px; position: relative; overflow: hidden;">
-    
-    <!-- Header: Title, Broker Badge & Action Buttons -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.35); display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
-                📈
-            </div>
-            <div>
-                <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
-                    Portafoglio ETF & Investimenti PAC
-                    <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">
-                        Directa & PAC
-                    </span>
-                </h3>
-                <span style="font-size: 0.74rem; color: var(--text-muted);">
-                    Accumulo capitale a lungo termine, Prezzo Medio di Carico (PMC) e quote possedute
-                </span>
-            </div>
-        </div>
-        
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <button type="button" onclick="openInvestmentModal()" class="btn btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 700; border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-                <span>➕ Registra Acquisto ETF</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- Smart Callout: Detected Unlinked Broker Deposit (es. Bonifico 1.000 € verso Directa) -->
-    {% if portfolio_summary and portfolio_summary.pending_broker_deposits and portfolio_summary.pending_broker_deposits|length > 0 %}
-    {% set p_dep = portfolio_summary.pending_broker_deposits[0] %}
-    <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 1.3rem;">⚡</span>
-            <div>
-                <strong style="color: #fbbf24; font-size: 0.85rem; display: block;">
-                    Versamento rilevato: € {{ "%.2f"|format(p_dep.amount) }} su {{ p_dep.detected_broker }} ({{ p_dep.date }})
-                </strong>
-                <span style="font-size: 0.73rem; color: #cbd5e1;">
-                    Hai inviato fondi a {{ p_dep.detected_broker }}. Vuoi registrare le quote acquistate di <strong>{{ p_dep.suggested_ticker }} ({{ p_dep.suggested_isin }})</strong>?
-                </span>
-            </div>
-        </div>
-        <button type="button" onclick="prefillInvestmentFromDeposit({{ p_dep.transaction_id }}, '{{ p_dep.suggested_isin }}', '{{ p_dep.suggested_ticker }}', '{{ p_dep.suggested_name }}', '{{ p_dep.detected_broker }}', '{{ p_dep.date }}', {{ p_dep.amount }})" class="btn btn-sm" style="background: #fbbf24; color: #000; font-weight: 800; font-size: 0.75rem; padding: 5px 12px; border-radius: 6px; border: none; cursor: pointer;">
-            ⚡ Assegna Quote ETF
-        </button>
-    </div>
-    {% endif %}
-
-    <!-- Global Highlights Bar -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 14px;">
-        <!-- Capitale Totale Investito -->
-        <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.25);">
-            <div style="font-size: 0.68rem; color: #34d399; font-weight: 700; text-transform: uppercase;">💰 Capitale Versato Totale</div>
-            <div class="privacy-mask" style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;" title="Passa sopra per sbirciare">
-                {{ portfolio_summary.total_capital_invested|eur if portfolio_summary else '€ 0,00' }}
-            </div>
-            <small style="color: var(--text-muted); font-size: 0.68rem;">{{ portfolio_summary.total_orders_count if portfolio_summary else 0 }} acquisti registrati</small>
-        </div>
-
-        <!-- Strumenti in Accumulo -->
-        <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
-            <div style="font-size: 0.68rem; color: #38bdf8; font-weight: 700; text-transform: uppercase;">📊 ETF / Strumenti PAC</div>
-            <div style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;">
-                {{ portfolio_summary.instruments_count if portfolio_summary else 0 }} Titoli
-            </div>
-            <small style="color: var(--text-muted); font-size: 0.68rem;">{{ 'Vanguard All-World' if portfolio_summary.instruments_count > 0 else 'In attesa di primo acquisto' }}</small>
-        </div>
-
-        <!-- Commissioni Broker -->
-        <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
-            <div style="font-size: 0.68rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">🛡️ Commissioni Eseguite</div>
-            <div style="font-size: 1.25rem; font-weight: 800; color: #cbd5e1; margin-top: 2px;">
-                {{ portfolio_summary.total_fees_paid|eur if portfolio_summary else '€ 0,00' }}
-            </div>
-            <small style="color: #34d399; font-size: 0.68rem;">PAC Gratuito / Zero commissioni Directa</small>
-        </div>
-    </div>
-
-    <!-- Active Instruments List / Table -->
-    {% if portfolio_summary and portfolio_summary.instruments and portfolio_summary.instruments|length > 0 %}
-    <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px 14px;">
-        <div style="font-size: 0.75rem; font-weight: 800; color: #cbd5e1; text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <span>Dettaglio Strumenti in Accumulo</span>
-            <span style="font-size: 0.7rem; color: #38bdf8; font-weight: 600;">{{ portfolio_summary.instruments|length }} attivo/i</span>
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-            {% for inst in portfolio_summary.instruments %}
-            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                <div>
-                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <strong style="color: #fff; font-size: 0.95rem;">{{ inst.name }}</strong>
-                        <span class="badge-tag" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.68rem; font-weight: 700;">{{ inst.ticker }}</span>
-                        <span style="font-family: monospace; font-size: 0.72rem; color: var(--text-muted);">{{ inst.isin }}</span>
-                        <span class="badge-tag" style="background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 0.65rem;">Broker: {{ inst.broker }}</span>
-                    </div>
-                    <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 3px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                        <span>📦 <strong>{{ inst.total_shares }}</strong> quote accumulate</span>
-                        <span>•</span>
-                        <span>🎯 Prezzo Medio di Carico (PMC): <strong>€ {{ "%.2f"|format(inst.pmc) }}</strong></span>
-                        {% if inst.last_date %}
-                        <span>•</span>
-                        <span>📅 Ultimo acquisto: {{ inst.last_date }}</span>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <div style="text-align: right;">
-                    <div class="privacy-mask" style="font-size: 1.15rem; font-weight: 900; color: #34d399;" title="Passa sopra per sbirciare">
-                        {{ inst.total_invested|eur }}
-                    </div>
-                    <span style="font-size: 0.68rem; color: var(--text-muted);">Capitale Investito</span>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% else %}
-    <div style="text-align: center; padding: 18px 10px; background: rgba(0,0,0,0.15); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.1);">
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0 0 10px 0;">
-            Non hai ancora registrato nessun acquisto titoli o ETF nel tuo portafoglio.
-        </p>
-        <button type="button" onclick="openInvestmentModal()" class="btn btn-sm btn-secondary" style="font-size: 0.75rem;">
-            ➕ Registra il primo acquisto ETF (es. Vanguard FTSE All-World)
-        </button>
-    </div>
-    {% endif %}
-
-</div>
 
 <!-- Monthly Cash Flow & Safe-to-Spend Cockpit Card -->
 {% if cashflow %}
@@ -896,104 +794,124 @@
 </div>
 {% endif %}
 
-<!-- ======================================================== -->
-<!-- 📈 ANDAMENTO STORICO: ENTRATE, USCITE & TARGET RISPARMIO -->
-<!-- ======================================================== -->
-{% if trend_data and trend_data.months_list|length > 0 %}
-<div id="trend-history-card" class="card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1.5px solid rgba(59, 130, 246, 0.35); margin-bottom: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
-                📈
-            </div>
-            <div>
-                <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">
-                    Andamento Mensile: Entrate, Uscite & Target Risparmio
-                </h3>
-                <p style="color: var(--text-muted); font-size: 0.76rem; margin: 2px 0 0 0;">
-                    Monitoraggio storico delle entrate, spese complessive e quota di risparmio accantonata per mese
-                </p>
-            </div>
+<!-- Bank Institutions & Multi-Account Breakdown Card -->
+{% if bank_groups|length > 0 %}
+<div class="card" style="margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🏛️</span>
+            <h3 style="font-size: 1rem; font-weight: 700; color: #fff;">Istituti Bancari & Conti Collegati</h3>
         </div>
+        <a href="/transactions" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 4px 10px;">Vedi Movimenti →</a>
+    </div>
 
-        <!-- Dynamic In-Place Range Selector Buttons (No Page Reload / No Scroll Jump) -->
-        <div style="display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.35); padding: 3px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); flex-wrap: wrap;">
-            <button type="button" class="btn-trend-range {% if trend_data.months_count == 6 %}active{% endif %}" onclick="changeDashboardTrendRange(6, this)">
-                6 Mesi
-            </button>
-            <button type="button" class="btn-trend-range {% if trend_data.months_count == 12 %}active{% endif %}" onclick="changeDashboardTrendRange(12, this)">
-                12 Mesi
-            </button>
-            <button type="button" class="btn-trend-range {% if trend_data.months_count == 18 %}active{% endif %}" onclick="changeDashboardTrendRange(18, this)">
-                18 Mesi
-            </button>
-            <button type="button" class="btn-trend-range {% if trend_data.months_count == 24 %}active{% endif %}" onclick="changeDashboardTrendRange(24, this)">
-                24 Mesi (2 Anni)
-            </button>
+    <!-- Asset Allocation Progress Bar -->
+    <div style="margin-bottom: 14px; background: rgba(0,0,0,0.2); padding: 10px 12px; border-radius: var(--radius-md);">
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px;">
+            <span>Ripartizione Liquidità tra Istituti</span>
+            <span class="privacy-mask" style="color: #fff; font-weight: 600;" title="Passa sopra per sbirciare">{{ total_balance|eur }} Totali</span>
+        </div>
+        <div style="display: flex; height: 10px; border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.05); gap: 2px;">
+            {% for bg in bank_groups %}
+            <div style="width: {{ bg.percent }}%; background: {{ bg.color }}; transition: width 0.5s ease;" title="{{ bg.name }}: {{ bg.percent }}% ({{ bg.total_balance|eur }})"></div>
+            {% endfor %}
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px;">
+            {% for bg in bank_groups %}
+            <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: {{ bg.color }};"></span>
+                <span style="color: #fff; font-weight: 600;">{{ bg.name }}</span>
+                <span class="privacy-mask" style="color: var(--text-muted);" title="Passa sopra per sbirciare">{{ bg.percent }}% ({{ bg.total_balance|eur }})</span>
+            </div>
+            {% endfor %}
         </div>
     </div>
 
-    <!-- 4 Period Key Highlights -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px;">
-        <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; padding: 10px 12px;">
-            <span style="font-size: 0.68rem; color: #86efac; font-weight: 700; text-transform: uppercase;">💶 Entrate nel Periodo</span>
-            <div id="trendKpiIncome" class="privacy-mask" style="font-size: 1.15rem; font-weight: 800; color: var(--accent-success); margin-top: 2px;" title="Passa sopra per sbirciare">
-                {{ trend_data.total_period_income|eur }}
+    <!-- Grouped Bank Cards -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for bg in bank_groups %}
+        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-left: 4px solid {{ bg.color }}; border-radius: var(--radius-md); padding: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.2rem;">{{ bg.icon }}</span>
+                    <div>
+                        <strong style="color: #fff; font-size: 0.95rem;">{{ bg.name }}</strong>
+                        <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 6px;">{{ bg.accounts|length }} {{ 'conto/carta' if bg.accounts|length == 1 else 'conti/carte' }}</span>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="privacy-mask" style="font-weight: 800; font-size: 1.05rem; color: #fff;" title="Passa sopra per sbirciare">{{ bg.total_balance|eur }}</span>
+                </div>
             </div>
-        </div>
-        <div style="background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 10px 12px;">
-            <span style="font-size: 0.68rem; color: #fca5a5; font-weight: 700; text-transform: uppercase;">💳 Spese nel Periodo</span>
-            <div id="trendKpiExpenses" class="privacy-mask" style="font-size: 1.15rem; font-weight: 800; color: #f87171; margin-top: 2px;" title="Passa sopra per sbirciare">
-                {{ trend_data.total_period_expenses|eur }}
-            </div>
-        </div>
-        <div style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 10px 12px;">
-            <span style="font-size: 0.68rem; color: #7dd3fc; font-weight: 700; text-transform: uppercase;">📈 Risparmio Netto Totale</span>
-            <div id="trendKpiSavings" class="privacy-mask" style="font-size: 1.15rem; font-weight: 800; color: {% if trend_data.total_period_savings >= 0 %}#38bdf8{% else %}#f87171{% endif %}; margin-top: 2px;" title="Passa sopra per sbirciare">
-                {{ trend_data.total_period_savings|eur_sign }}
-            </div>
-        </div>
-        <div style="background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 10px 12px;">
-            <span style="font-size: 0.68rem; color: #fde047; font-weight: 700; text-transform: uppercase;">🎯 Tasso Medio Risparmio</span>
-            <div id="trendKpiAvgRate" class="privacy-mask" style="font-size: 1.15rem; font-weight: 800; color: #f59e0b; margin-top: 2px;" title="Passa sopra per sbirciare">
-                {{ "%.1f"|format(trend_data.avg_savings_rate) }}%
-                <small style="font-size: 0.65rem; color: var(--text-muted); font-weight: 500;">(Target: 20%)</small>
-            </div>
-        </div>
-    </div>
 
-    <!-- Interactive Multi-Month Chart Canvas (Full 320px Height) -->
-    <div style="position: relative; width: 100%; height: 320px; margin-bottom: 8px;">
-        <canvas id="dashboardTrendChart"></canvas>
-    </div>
+            <!-- Sub Accounts List -->
+            <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+                {% for acc in bg.accounts %}
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span>{% if acc.type == 'CARD' %}💳{% elif acc.type == 'SAVINGS' %}🐖{% else %}🏛️{% endif %}</span>
+                        <div>
+                            <div style="color: #fff; font-weight: 600;">{{ acc.name }}</div>
+                            <div style="color: var(--text-muted); font-size: 0.7rem;">
+                                {% if acc.iban %}IBAN: {{ acc.iban[:10] }}...{{ acc.iban[-4:] }}{% elif acc.account_number %}N. Conto: {{ acc.account_number }}{% elif acc.card_pan %}Carta: {{ acc.card_pan }}{% endif %}
+                                {% if acc.profile_name %} • <span style="color: var(--accent-primary);">{{ acc.profile_name }}</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="privacy-mask" style="color: var(--accent-success); font-weight: 700; font-size: 0.9rem;" title="Passa sopra per sbirciare">{{ acc.balance|eur }}</span>
+                        <div style="color: var(--text-muted); font-size: 0.65rem;">{{ acc.tx_count }} movimenti</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
 
-    <!-- Interactive Toggle Buttons Legend & Hint Footer -->
-    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; font-size: 0.75rem; color: var(--text-muted); flex-wrap: wrap; gap: 10px;">
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <button type="button" class="btn-chart-toggle active" id="dbToggle_0" onclick="toggleDashboardSeries(0, this)" title="Attiva / Disattiva le Entrate">
-                <span class="indicator" style="width: 10px; height: 10px; background: #10b981; border-radius: 2px; display: inline-block;"></span> 
-                <span>Entrate</span>
-            </button>
-            <button type="button" class="btn-chart-toggle active" id="dbToggle_1" onclick="toggleDashboardSeries(1, this)" title="Attiva / Disattiva le Uscite">
-                <span class="indicator" style="width: 10px; height: 10px; background: #f87171; border-radius: 2px; display: inline-block;"></span> 
-                <span>Uscite</span>
-            </button>
-            <button type="button" class="btn-chart-toggle active" id="dbToggle_2" onclick="toggleDashboardSeries(2, this)" title="Attiva / Disattiva il Risparmio Netto">
-                <span class="indicator" style="width: 14px; height: 3px; background: #38bdf8; display: inline-block; border-radius: 2px;"></span> 
-                <span>Risparmio Netto</span>
-            </button>
-            <button type="button" class="btn-chart-toggle active" id="dbToggle_3" onclick="toggleDashboardSeries(3, this)" title="Attiva / Disattiva il Target Risparmio (20%)">
-                <span class="indicator" style="width: 14px; height: 3px; border-top: 2px dashed #c084fc; display: inline-block;"></span> 
-                <span>Target Risparmio (20%)</span>
-            </button>
+        <!-- Directa SIM / Broker Account Card (Investimenti & PAC) -->
+        {% if total_invested and total_invested > 0 %}
+        <div style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.3); border-left: 4px solid #10b981; border-radius: var(--radius-md); padding: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.2rem;">📈</span>
+                    <div>
+                        <strong style="color: #fff; font-size: 0.95rem;">Directa SIM (Conto Titoli & PAC)</strong>
+                        <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.65rem; margin-left: 6px;">Investimenti</span>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <span class="privacy-mask" style="font-weight: 800; font-size: 1.05rem; color: #34d399;" title="Capitale Titoli">{{ total_invested|eur }}</span>
+                </div>
+            </div>
+
+            <!-- Sub Accounts / ETF List -->
+            <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid rgba(16, 185, 129, 0.15); padding-top: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span>🌍</span>
+                        <div>
+                            <div style="color: #fff; font-weight: 600;">Portafoglio Titoli & ETF Azionario Globale</div>
+                            <div style="color: var(--text-muted); font-size: 0.7rem;">
+                                VWCE (IE00BK5BQT80) • Directa Trading Account
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <a href="#investmentsCard" style="color: #34d399; font-size: 0.75rem; text-decoration: none; font-weight: 700;">Gestisci Quote →</a>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div style="font-size: 0.72rem;">
-            💡 <em>Clicca su una voce per nasconderla/mostrarla o su una barra per aprire il mese nel Cash Flow</em>
-        </div>
+        {% endif %}
     </div>
 </div>
 {% endif %}
 
+
+</div> <!-- /#dashTabContent_glance -->
+
+<!-- TAB 2: CALENDARIO & SCADENZE -->
+<div id="dashTabContent_calendar" class="dash-tab-content" style="display: none;">
 <!-- ======================================================== -->
 <!-- ======================================================== -->
 <!-- 🗓️ SCADENZARIO & RADAR USCITE FUTURE (FAMILY BUDGET)    -->
@@ -1363,6 +1281,251 @@
 </div>
 {% endif %}
 
+
+</div> <!-- /#dashTabContent_calendar -->
+
+<!-- TAB 3: TREND & RISPARMIO -->
+<div id="dashTabContent_trend" class="dash-tab-content" style="display: none;">
+
+<!-- ======================================================== -->
+<!-- 📈 ANDAMENTO STORICO: ENTRATE, USCITE & TARGET RISPARMIO -->
+<!-- ======================================================== -->
+{% if trend_data and trend_data.months_list|length > 0 %}
+<div id="trend-history-card" class="card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1.5px solid rgba(59, 130, 246, 0.35); margin-bottom: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                📈
+            </div>
+            <div>
+                <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">
+                    Andamento Mensile: Entrate, Uscite & Target Risparmio
+                </h3>
+                <p style="color: var(--text-muted); font-size: 0.76rem; margin: 2px 0 0 0;">
+                    Monitoraggio storico delle entrate, spese complessive e quota di risparmio accantonata per mese
+                </p>
+            </div>
+        </div>
+
+        <!-- Dynamic In-Place Range Selector Buttons (No Page Reload / No Scroll Jump) -->
+        <div style="display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.35); padding: 3px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); flex-wrap: wrap;">
+            <button type="button" class="btn-trend-range {% if trend_data.months_count == 6 %}active{% endif %}" onclick="changeDashboardTrendRange(6, this)">
+                6 Mesi
+            </button>
+            <button type="button" class="btn-trend-range {% if trend_data.months_count == 12 %}active{% endif %}" onclick="changeDashboardTrendRange(12, this)">
+                12 Mesi
+            </button>
+            <button type="button" class="btn-trend-range {% if trend_data.months_count == 18 %}active{% endif %}" onclick="changeDashboardTrendRange(18, this)">
+                18 Mesi
+            </button>
+            <button type="button" class="btn-trend-range {% if trend_data.months_count == 24 %}active{% endif %}" onclick="changeDashboardTrendRange(24, this)">
+                24 Mesi (2 Anni)
+            </button>
+        </div>
+    </div>
+
+    <!-- 4 Period Key Highlights -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px;">
+        <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; padding: 10px 12px;">
+            <span style="font-size: 0.68rem; color: #86efac; font-weight: 700; text-transform: uppercase;">💶 Entrate nel Periodo</span>
+            <div id="trendKpiIncome" class="privacy-mask" style="font-size: 1.15rem; font-weight: 800; color: var(--accent-success); margin-top: 2px;" title="Passa sopra per sbirciare">
+                {{ trend_data.total_period_income|eur }}
+            </div>
+        </div>
+        <div style="background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 10px 12px;">
+            <span style="font-size: 0.68rem; color: #fca5a5; font-weight: 700; text-transform: uppercase;">💳 Spese nel Periodo</span>
+            <div id="trendKpiExpenses" class="privacy-mask" style="font-size: 1.15rem; font-weight: 800; color: #f87171; margin-top: 2px;" title="Passa sopra per sbirciare">
+                {{ trend_data.total_period_expenses|eur }}
+            </div>
+        </div>
+        <div style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 10px 12px;">
+            <span style="font-size: 0.68rem; color: #7dd3fc; font-weight: 700; text-transform: uppercase;">📈 Risparmio Netto Totale</span>
+            <div id="trendKpiSavings" class="privacy-mask" style="font-size: 1.15rem; font-weight: 800; color: {% if trend_data.total_period_savings >= 0 %}#38bdf8{% else %}#f87171{% endif %}; margin-top: 2px;" title="Passa sopra per sbirciare">
+                {{ trend_data.total_period_savings|eur_sign }}
+            </div>
+        </div>
+        <div style="background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 10px 12px;">
+            <span style="font-size: 0.68rem; color: #fde047; font-weight: 700; text-transform: uppercase;">🎯 Tasso Medio Risparmio</span>
+            <div id="trendKpiAvgRate" class="privacy-mask" style="font-size: 1.15rem; font-weight: 800; color: #f59e0b; margin-top: 2px;" title="Passa sopra per sbirciare">
+                {{ "%.1f"|format(trend_data.avg_savings_rate) }}%
+                <small style="font-size: 0.65rem; color: var(--text-muted); font-weight: 500;">(Target: 20%)</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Multi-Month Chart Canvas (Full 320px Height) -->
+    <div style="position: relative; width: 100%; height: 320px; margin-bottom: 8px;">
+        <canvas id="dashboardTrendChart"></canvas>
+    </div>
+
+    <!-- Interactive Toggle Buttons Legend & Hint Footer -->
+    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; font-size: 0.75rem; color: var(--text-muted); flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn-chart-toggle active" id="dbToggle_0" onclick="toggleDashboardSeries(0, this)" title="Attiva / Disattiva le Entrate">
+                <span class="indicator" style="width: 10px; height: 10px; background: #10b981; border-radius: 2px; display: inline-block;"></span> 
+                <span>Entrate</span>
+            </button>
+            <button type="button" class="btn-chart-toggle active" id="dbToggle_1" onclick="toggleDashboardSeries(1, this)" title="Attiva / Disattiva le Uscite">
+                <span class="indicator" style="width: 10px; height: 10px; background: #f87171; border-radius: 2px; display: inline-block;"></span> 
+                <span>Uscite</span>
+            </button>
+            <button type="button" class="btn-chart-toggle active" id="dbToggle_2" onclick="toggleDashboardSeries(2, this)" title="Attiva / Disattiva il Risparmio Netto">
+                <span class="indicator" style="width: 14px; height: 3px; background: #38bdf8; display: inline-block; border-radius: 2px;"></span> 
+                <span>Risparmio Netto</span>
+            </button>
+            <button type="button" class="btn-chart-toggle active" id="dbToggle_3" onclick="toggleDashboardSeries(3, this)" title="Attiva / Disattiva il Target Risparmio (20%)">
+                <span class="indicator" style="width: 14px; height: 3px; border-top: 2px dashed #c084fc; display: inline-block;"></span> 
+                <span>Target Risparmio (20%)</span>
+            </button>
+        </div>
+        <div style="font-size: 0.72rem;">
+            💡 <em>Clicca su una voce per nasconderla/mostrarla o su una barra per aprire il mese nel Cash Flow</em>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+
+</div> <!-- /#dashTabContent_trend -->
+
+<!-- TAB 4: PORTAFOGLIO & PAC -->
+<div id="dashTabContent_investments" class="dash-tab-content" style="display: none;">
+<!-- ======================================================== -->
+<!-- 📈 WIDGET: PORTAFOGLIO INVESTIMENTI & PAC ETF (DIRECTA)   -->
+<!-- ======================================================== -->
+<div id="investmentsCard" class="card" style="background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(16, 185, 129, 0.35); box-shadow: 0 10px 28px rgba(0,0,0,0.35); margin-bottom: 16px; position: relative; overflow: hidden;">
+    
+    <!-- Header: Title, Broker Badge & Action Buttons -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.35); display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
+                📈
+            </div>
+            <div>
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    Portafoglio ETF & Investimenti PAC
+                    <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">
+                        Directa & PAC
+                    </span>
+                </h3>
+                <span style="font-size: 0.74rem; color: var(--text-muted);">
+                    Accumulo capitale a lungo termine, Prezzo Medio di Carico (PMC) e quote possedute
+                </span>
+            </div>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" onclick="openInvestmentModal()" class="btn btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 700; border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                <span>➕ Registra Acquisto ETF</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Smart Callout: Detected Unlinked Broker Deposit (es. Bonifico 1.000 € verso Directa) -->
+    {% if portfolio_summary and portfolio_summary.pending_broker_deposits and portfolio_summary.pending_broker_deposits|length > 0 %}
+    {% set p_dep = portfolio_summary.pending_broker_deposits[0] %}
+    <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.3rem;">⚡</span>
+            <div>
+                <strong style="color: #fbbf24; font-size: 0.85rem; display: block;">
+                    Versamento rilevato: € {{ "%.2f"|format(p_dep.amount) }} su {{ p_dep.detected_broker }} ({{ p_dep.date }})
+                </strong>
+                <span style="font-size: 0.73rem; color: #cbd5e1;">
+                    Hai inviato fondi a {{ p_dep.detected_broker }}. Vuoi registrare le quote acquistate di <strong>{{ p_dep.suggested_ticker }} ({{ p_dep.suggested_isin }})</strong>?
+                </span>
+            </div>
+        </div>
+        <button type="button" onclick="prefillInvestmentFromDeposit({{ p_dep.transaction_id }}, '{{ p_dep.suggested_isin }}', '{{ p_dep.suggested_ticker }}', '{{ p_dep.suggested_name }}', '{{ p_dep.detected_broker }}', '{{ p_dep.date }}', {{ p_dep.amount }})" class="btn btn-sm" style="background: #fbbf24; color: #000; font-weight: 800; font-size: 0.75rem; padding: 5px 12px; border-radius: 6px; border: none; cursor: pointer;">
+            ⚡ Assegna Quote ETF
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Global Highlights Bar -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 14px;">
+        <!-- Capitale Totale Investito -->
+        <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.25);">
+            <div style="font-size: 0.68rem; color: #34d399; font-weight: 700; text-transform: uppercase;">💰 Capitale Versato Totale</div>
+            <div class="privacy-mask" style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;" title="Passa sopra per sbirciare">
+                {{ portfolio_summary.total_capital_invested|eur if portfolio_summary else '€ 0,00' }}
+            </div>
+            <small style="color: var(--text-muted); font-size: 0.68rem;">{{ portfolio_summary.total_orders_count if portfolio_summary else 0 }} acquisti registrati</small>
+        </div>
+
+        <!-- Strumenti in Accumulo -->
+        <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: 0.68rem; color: #38bdf8; font-weight: 700; text-transform: uppercase;">📊 ETF / Strumenti PAC</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;">
+                {{ portfolio_summary.instruments_count if portfolio_summary else 0 }} Titoli
+            </div>
+            <small style="color: var(--text-muted); font-size: 0.68rem;">{{ 'Vanguard All-World' if portfolio_summary.instruments_count > 0 else 'In attesa di primo acquisto' }}</small>
+        </div>
+
+        <!-- Commissioni Broker -->
+        <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: 0.68rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">🛡️ Commissioni Eseguite</div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: #cbd5e1; margin-top: 2px;">
+                {{ portfolio_summary.total_fees_paid|eur if portfolio_summary else '€ 0,00' }}
+            </div>
+            <small style="color: #34d399; font-size: 0.68rem;">PAC Gratuito / Zero commissioni Directa</small>
+        </div>
+    </div>
+
+    <!-- Active Instruments List / Table -->
+    {% if portfolio_summary and portfolio_summary.instruments and portfolio_summary.instruments|length > 0 %}
+    <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px 14px;">
+        <div style="font-size: 0.75rem; font-weight: 800; color: #cbd5e1; text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <span>Dettaglio Strumenti in Accumulo</span>
+            <span style="font-size: 0.7rem; color: #38bdf8; font-weight: 600;">{{ portfolio_summary.instruments|length }} attivo/i</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            {% for inst in portfolio_summary.instruments %}
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <strong style="color: #fff; font-size: 0.95rem;">{{ inst.name }}</strong>
+                        <span class="badge-tag" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.68rem; font-weight: 700;">{{ inst.ticker }}</span>
+                        <span style="font-family: monospace; font-size: 0.72rem; color: var(--text-muted);">{{ inst.isin }}</span>
+                        <span class="badge-tag" style="background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 0.65rem;">Broker: {{ inst.broker }}</span>
+                    </div>
+                    <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 3px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <span>📦 <strong>{{ inst.total_shares }}</strong> quote accumulate</span>
+                        <span>•</span>
+                        <span>🎯 Prezzo Medio di Carico (PMC): <strong>€ {{ "%.2f"|format(inst.pmc) }}</strong></span>
+                        {% if inst.last_date %}
+                        <span>•</span>
+                        <span>📅 Ultimo acquisto: {{ inst.last_date }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div style="text-align: right;">
+                    <div class="privacy-mask" style="font-size: 1.15rem; font-weight: 900; color: #34d399;" title="Passa sopra per sbirciare">
+                        {{ inst.total_invested|eur }}
+                    </div>
+                    <span style="font-size: 0.68rem; color: var(--text-muted);">Capitale Investito</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 18px 10px; background: rgba(0,0,0,0.15); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.1);">
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0 0 10px 0;">
+            Non hai ancora registrato nessun acquisto titoli o ETF nel tuo portafoglio.
+        </p>
+        <button type="button" onclick="openInvestmentModal()" class="btn btn-sm btn-secondary" style="font-size: 0.75rem;">
+            ➕ Registra il primo acquisto ETF (es. Vanguard FTSE All-World)
+        </button>
+    </div>
+    {% endif %}
+
+</div>
+
+
+</div> <!-- /#dashTabContent_investments -->
 <!-- ======================================================== -->
 <!-- MODAL: AGGIUNGI NUOVA SCADENZA FUTURA                     -->
 <!-- ======================================================== -->
@@ -1533,119 +1696,6 @@
 </div>
 
 
-
-<!-- Bank Institutions & Multi-Account Breakdown Card -->
-{% if bank_groups|length > 0 %}
-<div class="card" style="margin-bottom: 16px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 1.2rem;">🏛️</span>
-            <h3 style="font-size: 1rem; font-weight: 700; color: #fff;">Istituti Bancari & Conti Collegati</h3>
-        </div>
-        <a href="/transactions" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 4px 10px;">Vedi Movimenti →</a>
-    </div>
-
-    <!-- Asset Allocation Progress Bar -->
-    <div style="margin-bottom: 14px; background: rgba(0,0,0,0.2); padding: 10px 12px; border-radius: var(--radius-md);">
-        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px;">
-            <span>Ripartizione Liquidità tra Istituti</span>
-            <span class="privacy-mask" style="color: #fff; font-weight: 600;" title="Passa sopra per sbirciare">{{ total_balance|eur }} Totali</span>
-        </div>
-        <div style="display: flex; height: 10px; border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.05); gap: 2px;">
-            {% for bg in bank_groups %}
-            <div style="width: {{ bg.percent }}%; background: {{ bg.color }}; transition: width 0.5s ease;" title="{{ bg.name }}: {{ bg.percent }}% ({{ bg.total_balance|eur }})"></div>
-            {% endfor %}
-        </div>
-        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px;">
-            {% for bg in bank_groups %}
-            <div style="display: flex; align-items: center; gap: 5px; font-size: 0.75rem;">
-                <span style="width: 8px; height: 8px; border-radius: 50%; background: {{ bg.color }};"></span>
-                <span style="color: #fff; font-weight: 600;">{{ bg.name }}</span>
-                <span class="privacy-mask" style="color: var(--text-muted);" title="Passa sopra per sbirciare">{{ bg.percent }}% ({{ bg.total_balance|eur }})</span>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-
-    <!-- Grouped Bank Cards -->
-    <div style="display: flex; flex-direction: column; gap: 10px;">
-        {% for bg in bank_groups %}
-        <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-left: 4px solid {{ bg.color }}; border-radius: var(--radius-md); padding: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 1.2rem;">{{ bg.icon }}</span>
-                    <div>
-                        <strong style="color: #fff; font-size: 0.95rem;">{{ bg.name }}</strong>
-                        <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 6px;">{{ bg.accounts|length }} {{ 'conto/carta' if bg.accounts|length == 1 else 'conti/carte' }}</span>
-                    </div>
-                </div>
-                <div style="text-align: right;">
-                    <span class="privacy-mask" style="font-weight: 800; font-size: 1.05rem; color: #fff;" title="Passa sopra per sbirciare">{{ bg.total_balance|eur }}</span>
-                </div>
-            </div>
-
-            <!-- Sub Accounts List -->
-            <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
-                {% for acc in bg.accounts %}
-                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span>{% if acc.type == 'CARD' %}💳{% elif acc.type == 'SAVINGS' %}🐖{% else %}🏛️{% endif %}</span>
-                        <div>
-                            <div style="color: #fff; font-weight: 600;">{{ acc.name }}</div>
-                            <div style="color: var(--text-muted); font-size: 0.7rem;">
-                                {% if acc.iban %}IBAN: {{ acc.iban[:10] }}...{{ acc.iban[-4:] }}{% elif acc.account_number %}N. Conto: {{ acc.account_number }}{% elif acc.card_pan %}Carta: {{ acc.card_pan }}{% endif %}
-                                {% if acc.profile_name %} • <span style="color: var(--accent-primary);">{{ acc.profile_name }}</span>{% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    <div style="text-align: right;">
-                        <span class="privacy-mask" style="color: var(--accent-success); font-weight: 700; font-size: 0.9rem;" title="Passa sopra per sbirciare">{{ acc.balance|eur }}</span>
-                        <div style="color: var(--text-muted); font-size: 0.65rem;">{{ acc.tx_count }} movimenti</div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endfor %}
-
-        <!-- Directa SIM / Broker Account Card (Investimenti & PAC) -->
-        {% if total_invested and total_invested > 0 %}
-        <div style="background: rgba(16, 185, 129, 0.03); border: 1px solid rgba(16, 185, 129, 0.3); border-left: 4px solid #10b981; border-radius: var(--radius-md); padding: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 1.2rem;">📈</span>
-                    <div>
-                        <strong style="color: #fff; font-size: 0.95rem;">Directa SIM (Conto Titoli & PAC)</strong>
-                        <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.65rem; margin-left: 6px;">Investimenti</span>
-                    </div>
-                </div>
-                <div style="text-align: right;">
-                    <span class="privacy-mask" style="font-weight: 800; font-size: 1.05rem; color: #34d399;" title="Capitale Titoli">{{ total_invested|eur }}</span>
-                </div>
-            </div>
-
-            <!-- Sub Accounts / ETF List -->
-            <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid rgba(16, 185, 129, 0.15); padding-top: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 6px; font-size: 0.8rem;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span>🌍</span>
-                        <div>
-                            <div style="color: #fff; font-weight: 600;">Portafoglio Titoli & ETF Azionario Globale</div>
-                            <div style="color: var(--text-muted); font-size: 0.7rem;">
-                                VWCE (IE00BK5BQT80) • Directa Trading Account
-                            </div>
-                        </div>
-                    </div>
-                    <div style="text-align: right;">
-                        <a href="#investmentsCard" style="color: #34d399; font-size: 0.75rem; text-decoration: none; font-weight: 700;">Gestisci Quote →</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-    </div>
-</div>
-{% endif %}
 
 
 
@@ -3196,13 +3246,83 @@ function syncDeadlineToCategory(val) {
     }
 }
 
+// ---------------------------------------------------------
+// 📑 DASHBOARD TABS NAVIGATION CONTROLLER
+// ---------------------------------------------------------
+function switchDashboardTab(tabKey, btn) {
+    const validTabs = ['glance', 'calendar', 'trend', 'investments'];
+    if (!validTabs.includes(tabKey)) tabKey = 'glance';
+
+    // Hide all tab contents
+    document.querySelectorAll('.dash-tab-content').forEach(function(content) {
+        content.style.display = 'none';
+        content.classList.remove('active');
+    });
+
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.dash-tab-btn').forEach(function(b) {
+        b.classList.remove('active');
+    });
+
+    // Show selected content
+    const targetContent = document.getElementById('dashTabContent_' + tabKey);
+    if (targetContent) {
+        targetContent.style.display = 'block';
+        targetContent.classList.add('active');
+    }
+
+    // Activate button
+    const targetBtn = btn || document.getElementById('dashTabBtn_' + tabKey);
+    if (targetBtn) {
+        targetBtn.classList.add('active');
+    }
+
+    // Remember user's choice
+    try {
+        localStorage.setItem('fisc_active_dash_tab', tabKey);
+    } catch(e) {}
+
+    // Special handlers when switching
+    if (tabKey === 'trend') {
+        if (typeof initDashboardTrendChart === 'function') {
+            initDashboardTrendChart();
+        }
+        if (window.dashboardTrendChartInst) {
+            setTimeout(function() {
+                window.dashboardTrendChartInst.resize();
+            }, 50);
+        }
+    }
+}
+
+function initDashboardTabsState() {
+    let savedTab = 'glance';
+    try {
+        savedTab = localStorage.getItem('fisc_active_dash_tab') || 'glance';
+    } catch(e) {}
+    
+    // Check if URL hash specifies a tab (e.g. #investmentsCard or #calendar)
+    const hash = window.location.hash;
+    if (hash.includes('invest') || hash.includes('pac') || hash.includes('directa')) {
+        savedTab = 'investments';
+    } else if (hash.includes('scadenz') || hash.includes('calendar') || hash.includes('radar')) {
+        savedTab = 'calendar';
+    } else if (hash.includes('trend')) {
+        savedTab = 'trend';
+    }
+
+    switchDashboardTab(savedTab);
+}
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
+        initDashboardTabsState();
         initDashboardTrendChart();
         initHeroGreeting();
         initAssistantMacroAdvisorState();
     });
 } else {
+    initDashboardTabsState();
     initDashboardTrendChart();
     initHeroGreeting();
     initAssistantMacroAdvisorState();
@@ -3210,6 +3330,85 @@ if (document.readyState === 'loading') {
 </script>
 
 <style>
+/* Dashboard Tabs Segmented Bar */
+.dashboard-tabs-bar {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 6px;
+    scrollbar-width: none; /* Firefox */
+}
+.dashboard-tabs-bar::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+.dash-tab-btn {
+    flex: 1 1 0;
+    min-width: 140px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    user-select: none;
+}
+.dash-tab-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+.dash-tab-btn.active {
+    color: #fff;
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(37, 99, 235, 0.3));
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.25);
+}
+.dash-tab-btn .tab-icon {
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+}
+.dash-tab-btn .tab-title {
+    font-size: 0.84rem;
+}
+.dash-tab-pill-badge {
+    background: rgba(234, 179, 8, 0.25);
+    color: #facc15;
+    border: 1px solid rgba(234, 179, 8, 0.5);
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 999px;
+    margin-left: 2px;
+}
+.dash-tab-pill-badge.badge-green {
+    background: rgba(16, 185, 129, 0.25);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.5);
+}
+.dash-tab-content {
+    animation: dashTabFadeIn 0.25s ease-out;
+}
+@keyframes dashTabFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Trend Range Filter Buttons */
 .btn-trend-range {
     background: transparent;

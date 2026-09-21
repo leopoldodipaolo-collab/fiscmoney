@@ -48,6 +48,13 @@
             {% endif %}
         </a>
         <div style="display: flex; align-items: center; gap: 8px;">
+            <!-- Global Super-Search (Omnibar) Trigger -->
+            <button id="omnibarTriggerBtn" type="button" onclick="openOmnibarModal()" class="omnibar-header-btn" title="Super-Search Globale [Scorciatoia: Ctrl + K]" aria-label="Cerca nel Nucleo">
+                <span style="font-size: 0.95rem;">🔍</span>
+                <span class="omnibar-btn-text" style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1;">Cerca...</span>
+                <kbd class="omnibar-kbd-hint">Ctrl K</kbd>
+            </button>
+
             <!-- Global Privacy Mode Toggle -->
             <button id="privacyModeToggleBtn" type="button" onclick="togglePrivacyMode()" class="privacy-toggle-btn" title="Modalità Privacy / Riservata (Nascondi/Mostra Importi) [Scorciatoia: Shift + P]" aria-label="Modalità Privacy">
                 <span class="privacy-icon-unmasked">👁️</span>
@@ -412,6 +419,50 @@
             </div>
         </div>
     </div>
+
+    <!-- ======================================================== -->
+    <!-- 🔍 GLOBAL SUPER-SEARCH (OMNIBAR) SPOTLIGHT MODAL         -->
+    <!-- ======================================================== -->
+    <div id="omnibarModal" class="omnibar-modal-backdrop" style="display: none;" onclick="handleOmnibarBackdropClick(event)">
+        <div class="omnibar-container" onclick="event.stopPropagation()">
+            <!-- Search Input Header -->
+            <div class="omnibar-input-row">
+                <span class="omnibar-search-icon">🔍</span>
+                <input type="text" 
+                       id="omnibarInput" 
+                       placeholder="Cerca per tag, commerciante o spesa (es. asilo, amazon, mutuo, spesa...)" 
+                       autocomplete="off"
+                       oninput="handleOmnibarInput(this.value)">
+                <span id="omnibarLoadingSpinner" class="omnibar-spinner" style="display: none;">⏳</span>
+                <button type="button" onclick="closeOmnibarModal()" class="omnibar-close-btn" title="Chiudi (Esc)">&times;</button>
+            </div>
+
+            <!-- Quick Suggestion Chips -->
+            <div class="omnibar-chips-row">
+                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">Rapidi:</span>
+                <button type="button" class="btn-omnibar-chip" onclick="setOmnibarSearch('asilo')">🎒 Asilo</button>
+                <button type="button" class="btn-omnibar-chip" onclick="setOmnibarSearch('spesa')">🛒 Spesa</button>
+                <button type="button" class="btn-omnibar-chip" onclick="setOmnibarSearch('mutuo')">🏠 Mutuo</button>
+                <button type="button" class="btn-omnibar-chip" onclick="setOmnibarSearch('amazon')">📦 Amazon</button>
+                <button type="button" class="btn-omnibar-chip" onclick="setOmnibarSearch('bollette')">⚡ Bollette</button>
+            </div>
+
+            <!-- Results View Area -->
+            <div id="omnibarResultsContainer" class="omnibar-results-area">
+                <div class="omnibar-empty-state">
+                    <span style="font-size: 2rem; display: block; margin-bottom: 6px;">💡</span>
+                    <p style="margin: 0; font-size: 0.88rem; color: #cbd5e1; font-weight: 600;">Digita una parola per ottenere una risposta finanziaria istantanea</p>
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">Esempio: digita "asilo" per vedere quanto hai speso quest'anno e la media mensile</small>
+                </div>
+            </div>
+            
+            <!-- Omnibar Footer -->
+            <div class="omnibar-footer">
+                <span>⚡ Premi <kbd>Esc</kbd> per chiudere &bull; Naviga con le frecce</span>
+                <span style="color: #38bdf8;">FiscMoney Intelligence</span>
+            </div>
+        </div>
+    </div>
     {% endif %}
 
     <!-- Global Interactive Chart Tooltip with Close 'X' button -->
@@ -647,8 +698,243 @@
             closeAssistantModal();
             closeCategoryGuideModal();
             closeHeaderProfileDropdown();
+            closeOmnibarModal();
+        }
+        // Global shortcut Ctrl+K or Cmd+K
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+            e.preventDefault();
+            const modal = document.getElementById('omnibarModal');
+            if (modal && modal.style.display === 'flex') {
+                closeOmnibarModal();
+            } else {
+                openOmnibarModal();
+            }
         }
     });
+
+    // ========================================================
+    // 🔍 GLOBAL SUPER-SEARCH (OMNIBAR) JS LOGIC
+    // ========================================================
+    let omnibarDebounceTimer = null;
+
+    function openOmnibarModal(initialQuery = '') {
+        closeHeaderProfileDropdown();
+        closeAssistantModal();
+        closeCategoryGuideModal();
+        const modal = document.getElementById('omnibarModal');
+        const input = document.getElementById('omnibarInput');
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            if (input) {
+                if (initialQuery) input.value = initialQuery;
+                setTimeout(() => { input.focus(); input.select(); }, 120);
+                if (input.value) handleOmnibarInput(input.value);
+            }
+        }
+    }
+
+    function closeOmnibarModal() {
+        const modal = document.getElementById('omnibarModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+
+    function handleOmnibarBackdropClick(event) {
+        if (event.target.id === 'omnibarModal') {
+            closeOmnibarModal();
+        }
+    }
+
+    function setOmnibarSearch(term) {
+        const input = document.getElementById('omnibarInput');
+        if (input) {
+            input.value = term;
+            input.focus();
+            handleOmnibarInput(term);
+        }
+    }
+
+    function handleOmnibarInput(val) {
+        clearTimeout(omnibarDebounceTimer);
+        const query = val.trim();
+        const spinner = document.getElementById('omnibarLoadingSpinner');
+        const container = document.getElementById('omnibarResultsContainer');
+
+        if (!query || query.length < 2) {
+            if (spinner) spinner.style.display = 'none';
+            if (container) {
+                container.innerHTML = `
+                    <div class="omnibar-empty-state">
+                        <span style="font-size: 2rem; display: block; margin-bottom: 6px;">💡</span>
+                        <p style="margin: 0; font-size: 0.88rem; color: #cbd5e1; font-weight: 600;">Digita una parola per ottenere una risposta finanziaria istantanea</p>
+                        <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">Esempio: digita "asilo" per vedere quanto hai speso quest'anno e la media mensile</small>
+                    </div>
+                `;
+            }
+            return;
+        }
+
+        if (spinner) spinner.style.display = 'inline-block';
+
+        omnibarDebounceTimer = setTimeout(() => {
+            fetch(`/api/search/omnibar?q=${encodeURIComponent(query)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (spinner) spinner.style.display = 'none';
+                    renderOmnibarResults(data);
+                })
+                .catch(err => {
+                    if (spinner) spinner.style.display = 'none';
+                    console.error('Omnibar fetch error:', err);
+                });
+        }, 220);
+    }
+
+    function renderOmnibarResults(data) {
+        const container = document.getElementById('omnibarResultsContainer');
+        if (!container) return;
+
+        if (!data || !data.has_results) {
+            container.innerHTML = `
+                <div class="omnibar-empty-state">
+                    <span style="font-size: 2rem; display: block; margin-bottom: 6px;">🍃</span>
+                    <p style="margin: 0; font-size: 0.88rem; color: #cbd5e1; font-weight: 600;">Nessun risultato trovato per "${data ? data.query : ''}"</p>
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">Verifica l'ortografia oppure prova un altro termine come una categoria o commerciante.</small>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+
+        // 1. TAG EXECUTIVE ANSWER CARD
+        if (data.tag_match) {
+            const tm = data.tag_match;
+            html += `
+                <div class="omnibar-hero-card">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 1.4rem;">🏷️</span>
+                            <div>
+                                <span class="badge-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">
+                                    Risposta Tag
+                                </span>
+                                <h4 style="margin: 2px 0 0 0; font-size: 1.15rem; color: #fff; font-weight: 800;">${tm.name}</h4>
+                            </div>
+                        </div>
+                        <a href="/transactions?tag=${encodeURIComponent(data.query)}" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 8px; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">
+                            Vedi tutte le ${tm.count} transazioni &rarr;
+                        </a>
+                    </div>
+
+                    <div class="omnibar-stats-grid">
+                        <div class="omnibar-stat-box">
+                            <span class="stat-label">Spesa Anno Corrente</span>
+                            <span class="stat-value">€ ${tm.spent_current_year.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
+                        <div class="omnibar-stat-box">
+                            <span class="stat-label">Media Mensile</span>
+                            <span class="stat-value" style="color: #38bdf8;">~€ ${tm.avg_monthly.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
+                        <div class="omnibar-stat-box">
+                            <span class="stat-label">Questo Mese</span>
+                            <span class="stat-value" style="color: #facc15;">€ ${tm.spent_current_month.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
+                        <div class="omnibar-stat-box">
+                            <span class="stat-label">Spesa Storica Totale</span>
+                            <span class="stat-value" style="color: #cbd5e1;">€ ${tm.total_spent.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        </div>
+                    </div>
+
+                    ${tm.advisor_tip ? `
+                    <div class="omnibar-advisor-note">
+                        <span>${tm.advisor_tip}</span>
+                    </div>` : ''}
+                </div>
+            `;
+        }
+
+        // 2. MERCHANT / BENEFICIARY STATS
+        if (data.merchant_match && (!data.tag_match || data.merchant_match.name.toLowerCase() !== data.tag_match.name.toLowerCase())) {
+            const mm = data.merchant_match;
+            html += `
+                <div class="omnibar-hero-card" style="border-color: rgba(245, 158, 11, 0.35); background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(15, 23, 42, 0.95));">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 1.4rem;">🛒</span>
+                            <div>
+                                <span class="badge-tag" style="background: rgba(245, 158, 11, 0.2); color: #facc15; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 0.72rem; font-weight: 800; text-transform: uppercase;">
+                                    Commerciante / Beneficiario
+                                </span>
+                                <h4 style="margin: 2px 0 0 0; font-size: 1.1rem; color: #fff; font-weight: 800;">${mm.name}</h4>
+                            </div>
+                        </div>
+                        <a href="/transactions?q=${encodeURIComponent(data.query)}" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 8px; border-color: rgba(245, 158, 11, 0.4); color: #facc15;">
+                            ${mm.count} movimenti &rarr;
+                        </a>
+                    </div>
+                    <div style="display: flex; gap: 16px; font-size: 0.82rem; color: #cbd5e1; flex-wrap: wrap; margin-top: 6px;">
+                        <span>Questo Mese: <strong style="color: #fff;">€ ${mm.spent_current_month.toLocaleString('it-IT', {minimumFractionDigits: 2})}</strong></span>
+                        <span>&bull;</span>
+                        <span>Anno Corrente: <strong style="color: #fff;">€ ${mm.spent_current_year.toLocaleString('it-IT', {minimumFractionDigits: 2})}</strong></span>
+                        <span>&bull;</span>
+                        <span>Totale Storico: <strong style="color: #fbbf24;">€ ${mm.total_spent.toLocaleString('it-IT', {minimumFractionDigits: 2})}</strong></span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 3. MATCHING TRANSACTIONS LIST
+        if (data.transactions && data.transactions.length > 0) {
+            html += `
+                <div style="margin-top: 14px;">
+                    <div style="font-size: 0.76rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <span>Ultime Transazioni Correlate (${data.transactions.length})</span>
+                        <a href="/transactions?q=${encodeURIComponent(data.query)}" style="color: #38bdf8; text-decoration: none; font-size: 0.72rem; font-weight: 700;">Vedi Tutte &rarr;</a>
+                    </div>
+                    <div class="omnibar-tx-list">
+            `;
+
+            data.transactions.forEach(tx => {
+                const isExpense = tx.amount < 0;
+                const formattedAmt = (isExpense ? '-€ ' : '+€ ') + Math.abs(tx.amount).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                const colorClass = isExpense ? 'color: #f87171;' : 'color: #34d399;';
+
+                html += `
+                    <div class="omnibar-tx-row" onclick="window.location.href='/transactions?q=${encodeURIComponent(tx.description)}'">
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="color: #fff; font-weight: 700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${tx.description}
+                            </div>
+                            <div style="color: var(--text-muted); font-size: 0.72rem; display: flex; align-items: center; gap: 6px; margin-top: 2px; flex-wrap: wrap;">
+                                <span>📅 ${tx.date}</span>
+                                <span>&bull;</span>
+                                <span style="color: #38bdf8;">${tx.category}</span>
+                                ${tx.profile_name ? `<span>&bull;</span> <span>👤 ${tx.profile_name}</span>` : ''}
+                                ${tx.tags ? `<span class="badge-tag" style="font-size: 0.62rem; padding: 1px 5px;">${tx.tags}</span>` : ''}
+                            </div>
+                        </div>
+                        <div style="text-align: right; margin-left: 12px; flex-shrink: 0;">
+                            <span class="privacy-mask" style="font-weight: 800; font-size: 0.95rem; ${colorClass}">
+                                ${formattedAmt}
+                            </span>
+                            <div style="font-size: 0.65rem; color: var(--text-muted);">${tx.account_name}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+    }
 
     function selectAssistantPersona(personaKey) {
         const nextUrl = encodeURIComponent(window.location.pathname + window.location.search);
@@ -935,6 +1221,241 @@
     @keyframes slideInToast {
         from { opacity: 0; transform: translateY(-20px) scale(0.95); }
         to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Omnibar Trigger Button in Header */
+    .omnibar-header-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        padding: 6px 12px;
+        border-radius: 10px;
+        color: #cbd5e1;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .omnibar-header-btn:hover {
+        background: rgba(56, 189, 248, 0.15);
+        border-color: rgba(56, 189, 248, 0.4);
+        color: #fff;
+    }
+    .omnibar-kbd-hint {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 5px;
+        padding: 1px 5px;
+        font-size: 0.65rem;
+        font-family: inherit;
+        color: var(--text-muted);
+        font-weight: 700;
+    }
+
+    /* Omnibar Modal Spotlight Backdrop */
+    .omnibar-modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(3, 7, 18, 0.82);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        z-index: 100000;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding-top: 10vh;
+        box-sizing: border-box;
+    }
+    .omnibar-container {
+        width: 92%;
+        max-width: 680px;
+        background: #0f172a;
+        border: 1.5px solid rgba(56, 189, 248, 0.4);
+        border-radius: 18px;
+        box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.95), 0 0 35px rgba(56, 189, 248, 0.15);
+        overflow: hidden;
+        animation: omnibarSlideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        flex-direction: column;
+    }
+    @keyframes omnibarSlideDown {
+        from { opacity: 0; transform: translateY(-16px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Search Input Row */
+    .omnibar-input-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(0, 0, 0, 0.3);
+    }
+    .omnibar-search-icon {
+        font-size: 1.25rem;
+        color: #38bdf8;
+    }
+    #omnibarInput {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: #fff;
+        font-size: 1.05rem;
+        font-weight: 600;
+    }
+    #omnibarInput::placeholder {
+        color: #64748b;
+        font-size: 0.95rem;
+    }
+    .omnibar-close-btn {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-size: 1.6rem;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0 4px;
+        transition: color 0.15s ease;
+    }
+    .omnibar-close-btn:hover {
+        color: #fff;
+    }
+
+    /* Quick Preset Chips */
+    .omnibar-chips-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.015);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .btn-omnibar-chip {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #cbd5e1;
+        padding: 3px 10px;
+        border-radius: 8px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+    }
+    .btn-omnibar-chip:hover {
+        background: rgba(56, 189, 248, 0.15);
+        border-color: rgba(56, 189, 248, 0.4);
+        color: #fff;
+    }
+
+    /* Results Area */
+    .omnibar-results-area {
+        padding: 16px 20px;
+        max-height: 60vh;
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+    .omnibar-empty-state {
+        text-align: center;
+        padding: 36px 16px;
+        color: var(--text-muted);
+    }
+    .omnibar-hero-card {
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(15, 23, 42, 0.95));
+        border: 1.5px solid rgba(56, 189, 248, 0.35);
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 14px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+    .omnibar-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 10px;
+        margin: 12px 0 6px 0;
+    }
+    .omnibar-stat-box {
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 10px;
+        padding: 8px 12px;
+    }
+    .omnibar-stat-box .stat-label {
+        font-size: 0.68rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-weight: 700;
+        display: block;
+    }
+    .omnibar-stat-box .stat-value {
+        font-size: 1.1rem;
+        font-weight: 900;
+        color: #fff;
+        margin-top: 2px;
+        display: block;
+    }
+    .omnibar-advisor-note {
+        margin-top: 10px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: rgba(56, 189, 248, 0.12);
+        border-left: 3px solid #38bdf8;
+        font-size: 0.76rem;
+        color: #bae6fd;
+        line-height: 1.4;
+    }
+    .omnibar-tx-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .omnibar-tx-row {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 10px;
+        padding: 10px 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.18s ease;
+    }
+    .omnibar-tx-row:hover {
+        background: rgba(56, 189, 248, 0.08);
+        border-color: rgba(56, 189, 248, 0.3);
+        transform: translateX(3px);
+    }
+    .omnibar-footer {
+        padding: 10px 20px;
+        background: rgba(0, 0, 0, 0.35);
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    @media (max-width: 640px) {
+        .omnibar-kbd-hint {
+            display: none !important;
+        }
+        .omnibar-modal-backdrop {
+            padding-top: 2vh !important;
+        }
+        .omnibar-container {
+            width: 96% !important;
+            max-height: 94vh !important;
+        }
+        .omnibar-stats-grid {
+            grid-template-columns: 1fr 1fr !important;
+        }
     }
     </style>
 </body>

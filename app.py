@@ -4828,7 +4828,176 @@ def admin_system_backup():
     )
 
 
+# ========================================================
+# 🔍 GLOBAL SUPER SEARCH (OMNIBAR) API
+# ========================================================
+@app.route("/api/search/omnibar", methods=["GET"])
+@login_required
+def api_search_omnibar():
+    """
+    Super-Search Omnibar: Risposta istantanea intelligente per tag, beneficiari e movimenti.
+    Esempio: "asilo" -> somma totale anno, media mensile, ultime transazioni, advisor tip.
+    """
+    raw_query = request.args.get('q', '').strip()
+    if not raw_query or len(raw_query) < 2:
+        return jsonify({"results": None, "query": raw_query})
+
+    user_id = session.get('user_id')
+    ws_id = get_active_workspace_id(user_id)
+    if not ws_id:
+        return jsonify({"results": None, "error": "Nessun workspace attivo"})
+
+    conn = get_db_connection()
+    ctx = get_workspace_privacy_context(conn, ws_id, user_id)
+    sharing_mode = ctx["sharing_mode"]
+    is_admin = ctx["is_admin"]
+    my_profile = ctx["my_profile"]
+
+    # Base filter for privacy
+    privacy_sql = ""
+    privacy_params = [ws_id]
+    if not is_admin and sharing_mode in ['ADMIN_ONLY', 'HYBRID'] and my_profile:
+        privacy_sql = " AND (t.profile_id = ? OR t.is_shared = 1 OR a.is_shared = 1)"
+        privacy_params.append(my_profile['id'])
+
+    q_lower = raw_query.lower()
+    q_like = f"%{q_lower}%"
+
+    current_year = datetime.now().strftime('%Y')
+    current_ym = datetime.now().strftime('%Y-%m')
+
+    # 1. TAG / CATEGORY TOPIC MATCH & STATS
+    tag_sql = f"""
+        SELECT 
+            COUNT(*) as count,
+            COALESCE(SUM(CASE WHEN t.amount < 0 THEN ABS(t.amount) ELSE 0 END), 0) as total_spent,
+            COALESCE(SUM(CASE WHEN t.amount > 0 THEN t.amount ELSE 0 END), 0) as total_income,
+            COALESCE(SUM(CASE WHEN t.date LIKE '{current_year}%' AND t.amount < 0 THEN ABS(t.amount) ELSE 0 END), 0) as spent_current_year,
+            COALESCE(SUM(CASE WHEN t.date LIKE '{current_ym}%' AND t.amount < 0 THEN ABS(t.amount) ELSE 0 END), 0) as spent_current_month,
+            MIN(t.date) as first_date,
+            MAX(t.date) as last_date
+        FROM transactions t
+        JOIN accounts a ON t.account_id = a.id
+        WHERE a.workspace_id = ? {privacy_sql}
+        AND (LOWER(t.tags) LIKE ? OR LOWER(t.category) LIKE ?)
+    """
+    tag_params = list(privacy_params) + [q_like, q_like]
+    tag_stat = conn.execute(tag_sql, tag_params).fetchone()
+
+    tag_result = None
+    if tag_stat and tag_stat['count'] > 0:
+        # Calculate distinct months to compute realistic monthly average
+        months_sql = f"""
+            SELECT COUNT(DISTINCT substr(t.date, 1, 7)) as distinct_months
+            FROM transactions t
+            JOIN accounts a ON t.account_id = a.id
+            WHERE a.workspace_id = ? {privacy_sql}
+            AND (LOWER(t.tags) LIKE ? OR LOWER(t.category) LIKE ?)
+            AND t.date LIKE '{current_year}%'
+            AND t.amount < 0
+        """
+        dm_row = conn.execute(months_sql, tag_params).fetchone()
+        distinct_months = dm_row['distinct_months'] if dm_row and dm_row['distinct_months'] > 0 else 1
+        avg_monthly = round(tag_stat['spent_current_year'] / distinct_months, 2) if distinct_months > 0 else round(tag_stat['spent_current_year'], 2)
+
+        # Advisor tip customized for high-value tags
+        advisor_tip = None
+        if "asilo" in q_lower or "scuola" in q_lower:
+            advisor_tip = "💡 Le spese per asilo nido e istruzione sono detraibili nel modello 730 fino ai massimali previsti dalla legge."
+        elif "mutuo" in q_lower:
+            advisor_tip = "💡 Gli interessi passivi del mutuo prima casa sono detraibili al 19% (fino a 4.000 €/anno) nel 730."
+        elif "medico" in q_lower or "farmacia" in q_lower or "salute" in q_lower:
+            advisor_tip = "💡 Le spese sanitarie e farmaceutiche oltre la franchigia di 129,11 € danno diritto alla detrazione 19% nel 730."
+        elif "bollo" in q_lower or "assicurazione" in q_lower:
+            advisor_tip = "💡 Questa spesa fissa ricorrente è tracciata anche nel tuo Radar Scadenze di coppia."
+
+        tag_result = {
+            "name": raw_query.capitalize(),
+            "count": tag_stat['count'],
+            "total_spent": round(tag_stat['total_spent'], 2),
+            "spent_current_year": round(tag_stat['spent_current_year'], 2),
+            "spent_current_month": round(tag_stat['spent_current_month'], 2),
+            "avg_monthly": avg_monthly,
+            "last_date": tag_stat['last_date'],
+            "advisor_tip": advisor_tip
+        }
+
+    # 2. MERCHANT / BENEFICIARY STATS
+    merchant_sql = f"""
+        SELECT 
+            COUNT(*) as count,
+            COALESCE(SUM(CASE WHEN t.amount < 0 THEN ABS(t.amount) ELSE 0 END), 0) as total_spent,
+            COALESCE(SUM(CASE WHEN t.date LIKE '{current_year}%' AND t.amount < 0 THEN ABS(t.amount) ELSE 0 END), 0) as spent_current_year,
+            COALESCE(SUM(CASE WHEN t.date LIKE '{current_ym}%' AND t.amount < 0 THEN ABS(t.amount) ELSE 0 END), 0) as spent_current_month,
+            MAX(t.date) as last_date
+        FROM transactions t
+        JOIN accounts a ON t.account_id = a.id
+        WHERE a.workspace_id = ? {privacy_sql}
+        AND (LOWER(t.description) LIKE ? OR LOWER(t.raw_description) LIKE ?)
+    """
+    merch_params = list(privacy_params) + [q_like, q_like]
+    merch_stat = conn.execute(merchant_sql, merch_params).fetchone()
+
+    merchant_result = None
+    if merch_stat and merch_stat['count'] > 0:
+        merchant_result = {
+            "name": raw_query.title(),
+            "count": merch_stat['count'],
+            "total_spent": round(merch_stat['total_spent'], 2),
+            "spent_current_year": round(merch_stat['spent_current_year'], 2),
+            "spent_current_month": round(merch_stat['spent_current_month'], 2),
+            "last_date": merch_stat['last_date']
+        }
+
+    # 3. RECENT MATCHING TRANSACTIONS (Top 8)
+    tx_sql = f"""
+        SELECT t.id, t.date, t.amount, t.description, t.category, t.tags, a.name as account_name, p.name as profile_name
+        FROM transactions t
+        JOIN accounts a ON t.account_id = a.id
+        LEFT JOIN profiles p ON t.profile_id = p.id
+        WHERE a.workspace_id = ? {privacy_sql}
+        AND (
+            LOWER(t.description) LIKE ? 
+            OR LOWER(t.raw_description) LIKE ? 
+            OR LOWER(t.tags) LIKE ?
+            OR LOWER(t.category) LIKE ?
+        )
+        ORDER BY t.date DESC, t.id DESC
+        LIMIT 8
+    """
+    tx_params = list(privacy_params) + [q_like, q_like, q_like, q_like]
+    tx_rows = conn.execute(tx_sql, tx_params).fetchall()
+    transactions_list = []
+    for r in tx_rows:
+        transactions_list.append({
+            "id": r["id"],
+            "date": r["date"],
+            "amount": round(r["amount"], 2),
+            "description": r["description"],
+            "category": r["category"] or "Senza Categoria",
+            "tags": r["tags"] or "",
+            "account_name": r["account_name"],
+            "profile_name": r["profile_name"] or ""
+        })
+
+    # Close connection
+    conn.close()
+
+    has_results = bool(tag_result or (merchant_result and merchant_result['count'] > 0) or len(transactions_list) > 0)
+
+    return jsonify({
+        "success": True,
+        "query": raw_query,
+        "has_results": has_results,
+        "tag_match": tag_result,
+        "merchant_match": merchant_result,
+        "transactions": transactions_list,
+        "total_tx_found": len(transactions_list)
+    })
+
+
 if __name__ == "__main__":
     print("Avvio del server FiscMoney su http://localhost:5020")
     app.run(host="0.0.0.0", port=5020, debug=True)
+
 
