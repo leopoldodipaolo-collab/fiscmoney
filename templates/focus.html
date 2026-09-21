@@ -197,7 +197,81 @@
         gap: 14px !important;
     }
     #tagRadarCard {
-        padding: 12px 10px 16px 10px !important;
+        padding: 14px 12px 16px 12px !important;
+    }
+    .tag-radar-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+    }
+    .tag-radar-toolbar {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+    .tag-radar-toolbar-row {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+    }
+    .tag-radar-toolbar-row::-webkit-scrollbar {
+        display: none;
+    }
+    .tag-radar-profile-group {
+        display: flex !important;
+        width: 100% !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+    }
+    .tag-radar-profile-group::-webkit-scrollbar {
+        display: none;
+    }
+    .tag-radar-presets-group {
+        display: flex !important;
+        width: 100% !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+    }
+    .tag-radar-presets-group::-webkit-scrollbar {
+        display: none;
+    }
+    .tag-radar-dates-group {
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 6px !important;
+    }
+    .tag-radar-dates-group select {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        font-size: 0.72rem !important;
+    }
+    .tag-radar-donut-box {
+        min-height: auto !important;
+        padding: 14px 10px !important;
+    }
+    .tag-radar-donut-wrapper {
+        height: 250px !important;
+        max-width: 270px !important;
+        margin: 0 auto !important;
+    }
+    #donutCenterAmount {
+        font-size: 1rem !important;
+    }
+    #tagRadarTagsListContainer,
+    #radarTagsListContainer {
+        max-height: 240px !important;
     }
     #tagTimelineCockpit {
         padding: 12px 10px !important;
@@ -214,6 +288,26 @@
     .tag-cockpit-kpis {
         width: 100% !important;
         justify-content: space-between !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #tagRadarCard {
+        padding: 12px 8px 14px 8px !important;
+        border-radius: 12px !important;
+    }
+    .tag-radar-title-text {
+        font-size: 1.05rem !important;
+    }
+    .tag-radar-preset-btn,
+    .tag-radar-profile-btn {
+        padding: 4px 8px !important;
+        font-size: 0.68rem !important;
+        white-space: nowrap !important;
+    }
+    .tag-radar-donut-wrapper {
+        height: 230px !important;
+        max-width: 240px !important;
     }
 }
 
@@ -1012,14 +1106,14 @@
         <div style="position: absolute; top: -60px; right: -60px; width: 220px; height: 220px; background: radial-gradient(circle, rgba(139, 92, 246, 0.18) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
 
         <!-- Header (Click to toggle collapse) -->
-        <div id="tagRadarHeader" onclick="toggleTagRadarCard()" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; cursor: pointer; user-select: none;">
+        <div id="tagRadarHeader" class="tag-radar-header" onclick="toggleTagRadarCard()" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; cursor: pointer; user-select: none;">
             <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="width: 46px; height: 46px; border-radius: 14px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(59, 130, 246, 0.2)); border: 1.5px solid rgba(139, 92, 246, 0.45); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);">
                     🏷️
                 </div>
                 <div>
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <h3 style="font-size: 1.2rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
+                        <h3 class="tag-radar-title-text" style="font-size: 1.2rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
                             Radar Spese & Tag: Categorie ➔ Dettaglio
                         </h3>
                         <span id="tagRadarActiveProfileBadge" class="badge-tag" style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 0.68rem; padding: 3px 8px; font-weight: 800; border-radius: 6px;">
@@ -1051,11 +1145,11 @@
             </div>
 
             <!-- Timeframe & Profile Filter Toolbar & Collapse Toggle -->
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <div class="tag-radar-toolbar" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 
                 <!-- Profile Scope Selector (Tutti / Singolo Membro) -->
                 {% if profiles and profiles|length > 1 %}
-                <div onclick="event.stopPropagation()" style="display: inline-flex; align-items: center; gap: 4px; background: rgba(59, 130, 246, 0.12); border: 1.5px solid rgba(59, 130, 246, 0.35); border-radius: 10px; padding: 3px 6px;">
+                <div class="tag-radar-profile-group" onclick="event.stopPropagation()" style="display: inline-flex; align-items: center; gap: 4px; background: rgba(59, 130, 246, 0.12); border: 1.5px solid rgba(59, 130, 246, 0.35); border-radius: 10px; padding: 3px 6px;">
                     <span style="font-size: 0.72rem; margin-right: 2px;">👤</span>
                     <button type="button" onclick="switchTagRadarProfile('all', this)" class="btn btn-sm tag-radar-profile-btn {% if not active_filter or active_filter == 'all' %}active{% endif %}" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; font-weight: 700; {% if not active_filter or active_filter == 'all' %}background: #2563eb; color: #fff;{% else %}background: transparent; color: #94a3b8; border: none;{% endif %}">
                         👥 Tutto il Nucleo
@@ -1068,35 +1162,37 @@
                 </div>
                 {% endif %}
 
-                <!-- Preset Pills -->
-                <div onclick="event.stopPropagation()" style="display: inline-flex; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 3px; gap: 4px; flex-wrap: wrap;">
-                    <button type="button" onclick="switchTagRadarPreset('THIS_MONTH', this)" class="btn btn-sm tag-radar-preset-btn {% if tag_drilldown_data.preset == 'THIS_MONTH' %}active{% endif %}" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; {% if tag_drilldown_data.preset == 'THIS_MONTH' %}background: rgba(139, 92, 246, 0.3); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4);{% else %}background: transparent; color: #94a3b8; border: none;{% endif %}">Questo Mese</button>
-                    <button type="button" onclick="switchTagRadarPreset('LAST_MONTH', this)" class="btn btn-sm tag-radar-preset-btn {% if tag_drilldown_data.preset == 'LAST_MONTH' %}active{% endif %}" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; {% if tag_drilldown_data.preset == 'LAST_MONTH' %}background: rgba(139, 92, 246, 0.3); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4);{% else %}background: transparent; color: #94a3b8; border: none;{% endif %}">Mese Scorso</button>
-                    <button type="button" onclick="switchTagRadarPreset('LAST_3_MONTHS', this)" class="btn btn-sm tag-radar-preset-btn {% if tag_drilldown_data.preset == 'LAST_3_MONTHS' %}active{% endif %}" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; {% if tag_drilldown_data.preset == 'LAST_3_MONTHS' %}background: rgba(139, 92, 246, 0.3); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4);{% else %}background: transparent; color: #94a3b8; border: none;{% endif %}">3 Mesi</button>
-                    <button type="button" onclick="switchTagRadarPreset('YEAR', this)" class="btn btn-sm tag-radar-preset-btn {% if tag_drilldown_data.preset == 'YEAR' %}active{% endif %}" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; {% if tag_drilldown_data.preset == 'YEAR' %}background: rgba(139, 92, 246, 0.3); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4);{% else %}background: transparent; color: #94a3b8; border: none;{% endif %}">Anno</button>
-                    <button type="button" onclick="switchTagRadarPreset('ALL', this)" class="btn btn-sm tag-radar-preset-btn {% if tag_drilldown_data.preset == 'ALL' %}active{% endif %}" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; {% if tag_drilldown_data.preset == 'ALL' %}background: rgba(139, 92, 246, 0.3); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4);{% else %}background: transparent; color: #94a3b8; border: none;{% endif %}">Tutto</button>
-                </div>
+                <div class="tag-radar-toolbar-row" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <!-- Preset Pills -->
+                    <div class="tag-radar-presets-group" onclick="event.stopPropagation()" style="display: inline-flex; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 3px; gap: 4px; flex-wrap: wrap;">
+                        <button type="button" onclick="switchTagRadarPreset('THIS_MONTH', this)" class="btn btn-sm tag-radar-preset-btn {% if tag_drilldown_data.preset == 'THIS_MONTH' %}active{% endif %}" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; {% if tag_drilldown_data.preset == 'THIS_MONTH' %}background: rgba(139, 92, 246, 0.3); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4);{% else %}background: transparent; color: #94a3b8; border: none;{% endif %}">Questo Mese</button>
+                        <button type="button" onclick="switchTagRadarPreset('LAST_MONTH', this)" class="btn btn-sm tag-radar-preset-btn {% if tag_drilldown_data.preset == 'LAST_MONTH' %}active{% endif %}" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; {% if tag_drilldown_data.preset == 'LAST_MONTH' %}background: rgba(139, 92, 246, 0.3); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4);{% else %}background: transparent; color: #94a3b8; border: none;{% endif %}">Mese Scorso</button>
+                        <button type="button" onclick="switchTagRadarPreset('LAST_3_MONTHS', this)" class="btn btn-sm tag-radar-preset-btn {% if tag_drilldown_data.preset == 'LAST_3_MONTHS' %}active{% endif %}" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; {% if tag_drilldown_data.preset == 'LAST_3_MONTHS' %}background: rgba(139, 92, 246, 0.3); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4);{% else %}background: transparent; color: #94a3b8; border: none;{% endif %}">3 Mesi</button>
+                        <button type="button" onclick="switchTagRadarPreset('YEAR', this)" class="btn btn-sm tag-radar-preset-btn {% if tag_drilldown_data.preset == 'YEAR' %}active{% endif %}" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; {% if tag_drilldown_data.preset == 'YEAR' %}background: rgba(139, 92, 246, 0.3); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4);{% else %}background: transparent; color: #94a3b8; border: none;{% endif %}">Anno</button>
+                        <button type="button" onclick="switchTagRadarPreset('ALL', this)" class="btn btn-sm tag-radar-preset-btn {% if tag_drilldown_data.preset == 'ALL' %}active{% endif %}" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700; {% if tag_drilldown_data.preset == 'ALL' %}background: rgba(139, 92, 246, 0.3); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4);{% else %}background: transparent; color: #94a3b8; border: none;{% endif %}">Tutto</button>
+                    </div>
 
-                <!-- Custom Month Range Form Inline -->
-                <div onclick="event.stopPropagation()" style="display: inline-flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 3px 6px;">
-                    <span style="font-size: 0.68rem; color: #94a3b8;">Da:</span>
-                    <select id="tagRadarFromYm" onchange="applyTagRadarCustomRange()" style="background: rgba(15,23,42,0.8); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; font-size: 0.72rem; padding: 2px 4px; outline: none;">
-                        {% for m in available_months|reverse %}
-                        <option value="{{ m.ym }}" {% if tag_drilldown_data.from_date and tag_drilldown_data.from_date[:7] == m.ym %}selected{% endif %}>{{ m.label }}</option>
-                        {% endfor %}
-                    </select>
-                    <span style="font-size: 0.68rem; color: #94a3b8;">A:</span>
-                    <select id="tagRadarToYm" onchange="applyTagRadarCustomRange()" style="background: rgba(15,23,42,0.8); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; font-size: 0.72rem; padding: 2px 4px; outline: none;">
-                        {% for m in available_months %}
-                        <option value="{{ m.ym }}" {% if tag_drilldown_data.to_date and tag_drilldown_data.to_date[:7] == m.ym %}selected{% endif %}>{{ m.label }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                    <!-- Custom Month Range Form Inline -->
+                    <div class="tag-radar-dates-group" onclick="event.stopPropagation()" style="display: inline-flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 3px 6px;">
+                        <span style="font-size: 0.68rem; color: #94a3b8;">Da:</span>
+                        <select id="tagRadarFromYm" onchange="applyTagRadarCustomRange()" style="background: rgba(15,23,42,0.8); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; font-size: 0.72rem; padding: 2px 4px; outline: none;">
+                            {% for m in available_months|reverse %}
+                            <option value="{{ m.ym }}" {% if tag_drilldown_data.from_date and tag_drilldown_data.from_date[:7] == m.ym %}selected{% endif %}>{{ m.label }}</option>
+                            {% endfor %}
+                        </select>
+                        <span style="font-size: 0.68rem; color: #94a3b8;">A:</span>
+                        <select id="tagRadarToYm" onchange="applyTagRadarCustomRange()" style="background: rgba(15,23,42,0.8); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; font-size: 0.72rem; padding: 2px 4px; outline: none;">
+                            {% for m in available_months %}
+                            <option value="{{ m.ym }}" {% if tag_drilldown_data.to_date and tag_drilldown_data.to_date[:7] == m.ym %}selected{% endif %}>{{ m.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                <!-- Collapse / Expand Toggle Button -->
-                <button type="button" onclick="event.stopPropagation(); toggleTagRadarCard();" id="tagRadarExpandBtn" class="btn btn-sm" style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c084fc; font-weight: 800; font-size: 0.75rem; padding: 6px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
-                    <span id="tagRadarExpandArrow">▾ Chiudi</span>
-                </button>
+                    <!-- Collapse / Expand Toggle Button -->
+                    <button type="button" onclick="event.stopPropagation(); toggleTagRadarCard();" id="tagRadarExpandBtn" class="btn btn-sm" style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c084fc; font-weight: 800; font-size: 0.75rem; padding: 6px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                        <span id="tagRadarExpandArrow">▾ Chiudi</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -1118,13 +1214,13 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: stretch;" class="tag-radar-grid">
                 
                 <!-- Left Column: Interactive Categories Donut Chart with Dynamic Center -->
-                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; min-height: 380px;">
+                <div class="tag-radar-donut-box" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; min-height: 380px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 8px;">
                         <span style="font-size: 0.78rem; font-weight: 800; color: #cbd5e1; text-transform: uppercase;">Macro-Categorie</span>
                         <button type="button" onclick="resetTagRadarFilter()" class="btn btn-sm" style="font-size: 0.68rem; padding: 2px 8px; border-radius: 6px; background: rgba(255,255,255,0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1);">Mostra Tutte</button>
                     </div>
 
-                    <div style="position: relative; width: 100%; max-width: 340px; height: 290px;">
+                    <div class="tag-radar-donut-wrapper" style="position: relative; width: 100%; max-width: 340px; height: 290px;">
                         <canvas id="tagNestedDonutCanvas"></canvas>
                         <!-- Center Dynamic Label -->
                         <div id="tagDonutCenterText" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; max-width: 140px;">
