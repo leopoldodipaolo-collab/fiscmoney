@@ -4,7 +4,7 @@ import uuid
 import functools
 import urllib.parse
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_file, Response
 from werkzeug.security import generate_password_hash, check_password_hash
 from database import (
     init_db, get_db_connection, DB_PATH, log_admin_action, get_active_announcement,
@@ -235,7 +235,46 @@ def index():
         if session.get('role') == 'SUPER_ADMIN' and not session.get('original_admin_id'):
             return redirect(url_for('admin_dashboard'))
         return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
+    return render_template("auth/login.html")
+
+@app.route("/robots.txt")
+def robots_txt():
+    content = """User-agent: *
+Allow: /
+Allow: /login
+Allow: /register
+Allow: /privacy
+Allow: /static/
+Disallow: /dashboard
+Disallow: /transactions
+Disallow: /cashflow
+Disallow: /focus
+Disallow: /paystubs
+Disallow: /tax-730
+Disallow: /settings
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: https://www.fiscmoney.it/sitemap.xml
+"""
+    return Response(content, mimetype="text/plain")
+
+@app.route("/sitemap.xml")
+def sitemap_xml():
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://www.fiscmoney.it/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://www.fiscmoney.it/privacy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+</urlset>"""
+    return Response(xml, mimetype="application/xml")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():

@@ -4,11 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{% block title %}FiscMoney - Gestione Finanziaria e Fiscale{% endblock %}</title>
+    <link rel="canonical" href="https://www.fiscmoney.it{% if request.path and request.path != '/login' %}{{ request.path }}{% else %}/{% endif %}">
+    <meta name="description" content="{% block meta_description %}FiscMoney — La piattaforma intelligente per il controllo delle finanze personali, gestione spese di coppia, scadenze, cash flow e investimenti.{% endblock %}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.9.2">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#0b0f19">
     <meta name="google-site-verification" content="urvrc0E5ZF8rvYKYvPumh9ScwXI2Pu_aszpXE70lAo" />
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="FiscMoney — Gestione Finanziaria e Fiscale Intelligente">
+    <meta property="og:description" content="Controlla dove finiscono i soldi di casa, monitora le scadenze e pianifica il futuro con FiscMoney.">
+    <meta property="og:url" content="https://www.fiscmoney.it/">
+    <meta property="og:image" content="https://www.fiscmoney.it/static/images/logo.png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Immediate Privacy Mode check to prevent UI flicker
