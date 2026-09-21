@@ -276,6 +276,12 @@ def login():
             if ws:
                 session['workspace_id'] = ws['id']
                 session['workspace_name'] = ws['name']
+                # Default profile to the logged-in user's profile
+                prof = conn.execute("SELECT id FROM profiles WHERE workspace_id = ? AND (linked_user_id = ? OR (is_primary = 1 AND ? = (SELECT user_id FROM workspace_members WHERE workspace_id = ? AND role = 'OWNER'))) ORDER BY is_primary DESC, id ASC LIMIT 1", (ws['id'], user['id'], user['id'], ws['id'])).fetchone()
+                if prof:
+                    session['profile_filter'] = str(prof['id'])
+                else:
+                    session.pop('profile_filter', None)
             
             conn.close()
             flash(f"Bentornato {user['full_name']}!", "success")
@@ -432,19 +438,21 @@ def get_workspace_privacy_context(conn, ws_id, user_id):
         visible_profiles = [my_profile]
         p_id_filter = my_profile['id']
     else:
-        visible_profiles = all_profiles
-        active_filter = session.get('profile_filter', 'all')
+        default_filter = str(my_profile['id']) if my_profile else 'all'
+        active_filter = session.get('profile_filter', default_filter)
         selected_profile = None
         if active_filter != 'all':
             try:
                 prof_id = int(active_filter)
                 selected_profile = conn.execute("SELECT * FROM profiles WHERE id = ? AND workspace_id = ?", (prof_id, ws_id)).fetchone()
                 if not selected_profile:
-                    active_filter = 'all'
-                    session['profile_filter'] = 'all'
+                    active_filter = default_filter
+                    session['profile_filter'] = active_filter
+                    if active_filter != 'all':
+                        selected_profile = my_profile
             except (ValueError, TypeError):
-                active_filter = 'all'
-                session['profile_filter'] = 'all'
+                active_filter = default_filter
+                session['profile_filter'] = active_filter
         p_id_filter = int(active_filter) if active_filter != 'all' else None
         
     return {

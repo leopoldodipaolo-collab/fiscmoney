@@ -3511,20 +3511,45 @@ if (document.readyState === 'loading') {
     }
     .hero-profile-pills-row {
         gap: 6px !important;
-        overflow-x: auto !important;
-        padding-bottom: 4px !important;
-        flex-wrap: nowrap !important;
-        -webkit-overflow-scrolling: touch !important;
+        flex-wrap: wrap !important;
+        overflow-x: visible !important;
+        padding-bottom: 2px !important;
     }
     .hero-profile-pills-row .pill-label {
-        display: none !important;
+        width: 100% !important;
+        display: block !important;
+        margin-bottom: 2px !important;
     }
-    .hero-profile-pills-row::-webkit-scrollbar {
-        height: 3px;
+    .hero-profile-pills-row .profile-pill,
+    .hero-profile-pills-row > div {
+        flex: 1 1 auto !important;
+        justify-content: center !important;
     }
-    .hero-profile-pills-row::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 3px;
+    
+    /* 2x2 Responsive Grid for 4 Tabs on Mobile */
+    .dashboard-tabs-bar {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+        overflow-x: visible !important;
+        padding: 6px !important;
+    }
+    .dash-tab-btn {
+        min-width: 0 !important;
+        width: 100% !important;
+        padding: 9px 8px !important;
+        font-size: 0.76rem !important;
+        gap: 6px !important;
+        border-radius: 8px !important;
+    }
+    .dash-tab-btn .tab-title {
+        font-size: 0.74rem !important;
+        white-space: normal !important;
+        line-height: 1.15 !important;
+        text-align: left !important;
+    }
+    .dash-tab-btn .tab-icon {
+        font-size: 1rem !important;
     }
     .assistant-header-row {
         gap: 10px !important;
