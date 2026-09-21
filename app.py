@@ -438,6 +438,7 @@ def get_workspace_privacy_context(conn, ws_id, user_id):
         visible_profiles = [my_profile]
         p_id_filter = my_profile['id']
     else:
+        visible_profiles = all_profiles
         default_filter = str(my_profile['id']) if my_profile else 'all'
         active_filter = session.get('profile_filter', default_filter)
         selected_profile = None
