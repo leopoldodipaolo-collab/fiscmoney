@@ -527,28 +527,74 @@
 <!-- ======================================================== -->
 <!-- DASHBOARD TABS NAVIGATION BAR (Sleek Segmented Controls) -->
 <!-- ======================================================== -->
-<div class="dashboard-tabs-bar" style="display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px;">
+<div class="dashboard-tabs-section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+    <div style="display: flex; align-items: center; gap: 6px;">
+        <span style="font-size: 0.72rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.8px;">
+            🧭 SEZIONI DASHBOARD
+        </span>
+        <span style="font-size: 0.72rem; color: var(--text-muted);">&bull;</span>
+        <span style="font-size: 0.72rem; color: #cbd5e1; font-weight: 600;">
+            Tocca una vista per esplorare:
+        </span>
+    </div>
+    <span style="font-size: 0.68rem; color: var(--text-muted);">
+        4 Aree Tematiche
+    </span>
+</div>
+
+<div class="dashboard-tabs-bar">
+    <!-- TAB 1: SINTESI OGGI -->
     <button type="button" class="dash-tab-btn active" id="dashTabBtn_glance" onclick="switchDashboardTab('glance', this)">
         <span class="tab-icon">📊</span>
-        <span class="tab-title">Sintesi Oggi</span>
+        <div class="tab-text-group">
+            <span class="tab-title">
+                Sintesi Oggi
+                <span class="tab-active-dot"></span>
+            </span>
+            <span class="tab-subtitle">Conti &amp; Saldi</span>
+        </div>
     </button>
+
+    <!-- TAB 2: CALENDARIO & SCADENZE -->
     <button type="button" class="dash-tab-btn" id="dashTabBtn_calendar" onclick="switchDashboardTab('calendar', this)">
         <span class="tab-icon">📅</span>
-        <span class="tab-title">Calendario & Scadenze</span>
-        {% if deadlines_radar and deadlines_radar.active_deadlines_count > 0 %}
-        <span class="dash-tab-pill-badge">{{ deadlines_radar.active_deadlines_count }}</span>
-        {% endif %}
+        <div class="tab-text-group">
+            <span class="tab-title">
+                Calendario
+                <span class="tab-active-dot"></span>
+                {% if deadlines_radar and deadlines_radar.active_deadlines_count > 0 %}
+                <span class="dash-tab-pill-badge">{{ deadlines_radar.active_deadlines_count }}</span>
+                {% endif %}
+            </span>
+            <span class="tab-subtitle">Scadenze &amp; Fissi</span>
+        </div>
     </button>
+
+    <!-- TAB 3: TREND & RISPARMIO -->
     <button type="button" class="dash-tab-btn" id="dashTabBtn_trend" onclick="switchDashboardTab('trend', this)">
         <span class="tab-icon">📈</span>
-        <span class="tab-title">Trend & Risparmio</span>
+        <div class="tab-text-group">
+            <span class="tab-title">
+                Trend 6 Mesi
+                <span class="tab-active-dot"></span>
+            </span>
+            <span class="tab-subtitle">Grafici &amp; Risparmio</span>
+        </div>
     </button>
+
+    <!-- TAB 4: PORTAFOGLIO & PAC -->
     <button type="button" class="dash-tab-btn" id="dashTabBtn_investments" onclick="switchDashboardTab('investments', this)">
         <span class="tab-icon">💼</span>
-        <span class="tab-title">Portafoglio & PAC</span>
-        {% if total_invested and total_invested > 0 %}
-        <span class="dash-tab-pill-badge badge-green">ETF</span>
-        {% endif %}
+        <div class="tab-text-group">
+            <span class="tab-title">
+                Portafoglio
+                <span class="tab-active-dot"></span>
+                {% if total_invested and total_invested > 0 %}
+                <span class="dash-tab-pill-badge badge-green">ETF</span>
+                {% endif %}
+            </span>
+            <span class="tab-subtitle">Investimenti &amp; PAC</span>
+        </div>
     </button>
 </div>
 
@@ -3406,46 +3452,83 @@ if (document.readyState === 'loading') {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 10px 16px;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 10px;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
     color: #94a3b8;
-    font-size: 0.85rem;
-    font-weight: 700;
     cursor: pointer;
     transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     white-space: nowrap;
     user-select: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 .dash-tab-btn:hover {
     color: #fff;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(56, 189, 248, 0.3);
+    transform: translateY(-1px);
 }
 .dash-tab-btn.active {
     color: #fff;
-    background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(37, 99, 235, 0.3));
-    border: 1px solid rgba(56, 189, 248, 0.45);
-    box-shadow: 0 4px 15px rgba(14, 165, 233, 0.25);
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(37, 99, 235, 0.32));
+    border: 1.5px solid #38bdf8;
+    box-shadow: 0 6px 20px rgba(14, 165, 233, 0.35), 0 0 12px rgba(56, 189, 248, 0.25);
 }
 .dash-tab-btn .tab-icon {
-    font-size: 1.1rem;
+    font-size: 1.3rem;
     display: inline-flex;
     align-items: center;
+    flex-shrink: 0;
+}
+.dash-tab-btn .tab-text-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    min-width: 0;
 }
 .dash-tab-btn .tab-title {
-    font-size: 0.84rem;
+    font-size: 0.86rem;
+    font-weight: 800;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.dash-tab-btn.active .tab-title {
+    color: #38bdf8;
+}
+.dash-tab-btn .tab-subtitle {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-top: 1px;
+}
+.dash-tab-btn.active .tab-subtitle {
+    color: #cbd5e1;
+}
+.tab-active-dot {
+    display: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 6px #34d399;
+}
+.dash-tab-btn.active .tab-active-dot {
+    display: inline-block;
 }
 .dash-tab-pill-badge {
     background: rgba(234, 179, 8, 0.25);
     color: #facc15;
     border: 1px solid rgba(234, 179, 8, 0.5);
-    font-size: 0.68rem;
+    font-size: 0.65rem;
     font-weight: 800;
-    padding: 2px 7px;
+    padding: 1px 6px;
     border-radius: 999px;
-    margin-left: 2px;
+    margin-left: 3px;
 }
 .dash-tab-pill-badge.badge-green {
     background: rgba(16, 185, 129, 0.25);
@@ -3530,26 +3613,30 @@ if (document.readyState === 'loading') {
     .dashboard-tabs-bar {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
-        gap: 6px !important;
+        gap: 8px !important;
         overflow-x: visible !important;
-        padding: 6px !important;
+        padding: 8px !important;
     }
     .dash-tab-btn {
         min-width: 0 !important;
         width: 100% !important;
-        padding: 9px 8px !important;
-        font-size: 0.76rem !important;
-        gap: 6px !important;
-        border-radius: 8px !important;
+        padding: 10px 8px !important;
+        gap: 8px !important;
+        border-radius: 10px !important;
+        justify-content: flex-start !important;
     }
     .dash-tab-btn .tab-title {
-        font-size: 0.74rem !important;
+        font-size: 0.78rem !important;
         white-space: normal !important;
         line-height: 1.15 !important;
         text-align: left !important;
     }
+    .dash-tab-btn .tab-subtitle {
+        font-size: 0.62rem !important;
+        display: block !important;
+    }
     .dash-tab-btn .tab-icon {
-        font-size: 1rem !important;
+        font-size: 1.2rem !important;
     }
     .assistant-header-row {
         gap: 10px !important;
