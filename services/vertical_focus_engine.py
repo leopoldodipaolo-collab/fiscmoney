@@ -901,12 +901,19 @@ def get_category_tags_drilldown(workspace_id, preset='THIS_MONTH', from_ym=None,
                 "icon": tag_icon,
                 "spent": 0.0,
                 "count": 0,
+                "monthly_trend": {},
                 "tx_samples": []
             }
 
         cat_tags[primary_tag]["spent"] += amt
         cat_tags[primary_tag]["count"] += 1
-        if len(cat_tags[primary_tag]["tx_samples"]) < 6:
+        
+        # Monthly timeline tracking
+        tx_ym = (r['date'] or '')[:7]
+        if tx_ym:
+            cat_tags[primary_tag]["monthly_trend"][tx_ym] = round(cat_tags[primary_tag]["monthly_trend"].get(tx_ym, 0.0) + amt, 2)
+
+        if len(cat_tags[primary_tag]["tx_samples"]) < 25:
             cat_tags[primary_tag]["tx_samples"].append({
                 "id": r['id'],
                 "date": r['date'][:10],
@@ -920,15 +927,32 @@ def get_category_tags_drilldown(workspace_id, preset='THIS_MONTH', from_ym=None,
 
     # Format structured output sorted by spend
     categories_list = []
+    # Build complete timeline axis for all months in months_list
+    chart_months = sorted(list(set(months_list))) if months_list else []
+    if not chart_months and tx_rows:
+        all_yms = set((r['date'] or '')[:7] for r in tx_rows if r['date'])
+        chart_months = sorted(list(all_yms))
+
     for c_name, c_data in sorted(cats_dict.items(), key=lambda x: x[1]["spent"], reverse=True):
         c_spent = round(c_data["spent"], 2)
         c_pct = round((c_spent / total_spent * 100), 1) if total_spent > 0 else 0.0
         
+        # Aggregate category monthly trend
+        cat_monthly_trend = {ym: 0.0 for ym in chart_months}
+
         tags_sorted = []
         for tg_code, tg_data in sorted(c_data["tags"].items(), key=lambda x: x[1]["spent"], reverse=True):
             tg_spent = round(tg_data["spent"], 2)
             tg_pct_in_cat = round((tg_spent / c_spent * 100), 1) if c_spent > 0 else 0.0
             tg_pct_overall = round((tg_spent / total_spent * 100), 1) if total_spent > 0 else 0.0
+            
+            # Format trend aligned with chart_months
+            tag_trend_series = []
+            for ym in chart_months:
+                val = tg_data["monthly_trend"].get(ym, 0.0)
+                tag_trend_series.append({"ym": ym, "amount": round(val, 2)})
+                cat_monthly_trend[ym] = round(cat_monthly_trend[ym] + val, 2)
+
             tags_sorted.append({
                 "code": tg_code,
                 "label": tg_data["label"],
@@ -937,9 +961,12 @@ def get_category_tags_drilldown(workspace_id, preset='THIS_MONTH', from_ym=None,
                 "count": tg_data["count"],
                 "percent_in_cat": tg_pct_in_cat,
                 "percent_overall": tg_pct_overall,
+                "trend_series": tag_trend_series,
                 "tx_samples": tg_data["tx_samples"]
             })
             
+        cat_trend_series = [{"ym": ym, "amount": cat_monthly_trend[ym]} for ym in chart_months]
+
         categories_list.append({
             "name": c_name,
             "icon": c_data["icon"],
@@ -947,6 +974,7 @@ def get_category_tags_drilldown(workspace_id, preset='THIS_MONTH', from_ym=None,
             "spent": c_spent,
             "tx_count": c_data["tx_count"],
             "percent": c_pct,
+            "trend_series": cat_trend_series,
             "tags": tags_sorted
         })
 
@@ -956,6 +984,18 @@ def get_category_tags_drilldown(workspace_id, preset='THIS_MONTH', from_ym=None,
         sorted_tags = sorted(global_tag_totals.items(), key=lambda x: x[1], reverse=True)
         top_code, top_spent = sorted_tags[0]
         meta = global_tag_meta.get(top_code, {"label": top_code, "icon": "🏷️", "cat": "Spesa"})
+        
+        # Extract top tag trend
+        top_tag_trend = []
+        found_tg = None
+        for c in categories_list:
+            for t in c["tags"]:
+                if t["code"] == top_code:
+                    found_tg = t
+                    break
+            if found_tg:
+                break
+
         top_tag = {
             "code": top_code,
             "label": meta["label"],
@@ -963,7 +1003,9 @@ def get_category_tags_drilldown(workspace_id, preset='THIS_MONTH', from_ym=None,
             "category": meta["cat"],
             "spent": round(top_spent, 2),
             "count": global_tag_counts.get(top_code, 0),
-            "percent": round((top_spent / total_spent * 100), 1) if total_spent > 0 else 0.0
+            "percent": round((top_spent / total_spent * 100), 1) if total_spent > 0 else 0.0,
+            "trend_series": found_tg["trend_series"] if found_tg else [],
+            "tx_samples": found_tg["tx_samples"] if found_tg else []
         }
 
     return {
@@ -976,6 +1018,6 @@ def get_category_tags_drilldown(workspace_id, preset='THIS_MONTH', from_ym=None,
         "preset_label": preset_label,
         "from_date": from_date_str,
         "to_date": to_date_str,
-        "months_list": months_list
+        "months_list": chart_months
     }
 
