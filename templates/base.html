@@ -793,16 +793,23 @@
         }, 220);
     }
 
+    function formatOmnibarEur(val) {
+        const num = parseFloat(val);
+        if (isNaN(num)) return '0,00';
+        return num.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
     function renderOmnibarResults(data) {
         const container = document.getElementById('omnibarResultsContainer');
         if (!container) return;
 
         if (!data || !data.has_results) {
+            const queryLabel = data && data.query ? data.query : '';
             container.innerHTML = `
                 <div class="omnibar-empty-state">
                     <span style="font-size: 2rem; display: block; margin-bottom: 6px;">🍃</span>
-                    <p style="margin: 0; font-size: 0.88rem; color: #cbd5e1; font-weight: 600;">Nessun risultato trovato per "${data ? data.query : ''}"</p>
-                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">Verifica l'ortografia oppure prova un altro termine come una categoria o commerciante.</small>
+                    <p style="margin: 0; font-size: 0.88rem; color: #cbd5e1; font-weight: 600;">Nessun risultato trovato per "${queryLabel}"</p>
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">Verifica l'ortografia oppure prova un termine come carburante, spesa, bollette o amazon.</small>
                 </div>
             `;
             return;
@@ -820,32 +827,32 @@
                             <span style="font-size: 1.4rem;">🏷️</span>
                             <div>
                                 <span class="badge-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">
-                                    Risposta Tag
+                                    Risposta Finanziaria Rapida
                                 </span>
                                 <h4 style="margin: 2px 0 0 0; font-size: 1.15rem; color: #fff; font-weight: 800;">${tm.name}</h4>
                             </div>
                         </div>
                         <a href="/transactions?tag=${encodeURIComponent(data.query)}" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 8px; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">
-                            Vedi tutte le ${tm.count} transazioni &rarr;
+                            Vedi tutte le ${tm.count || 0} transazioni &rarr;
                         </a>
                     </div>
 
                     <div class="omnibar-stats-grid">
                         <div class="omnibar-stat-box">
                             <span class="stat-label">Spesa Anno Corrente</span>
-                            <span class="stat-value">€ ${tm.spent_current_year.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="stat-value">€ ${formatOmnibarEur(tm.spent_current_year)}</span>
                         </div>
                         <div class="omnibar-stat-box">
                             <span class="stat-label">Media Mensile</span>
-                            <span class="stat-value" style="color: #38bdf8;">~€ ${tm.avg_monthly.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="stat-value" style="color: #38bdf8;">~€ ${formatOmnibarEur(tm.avg_monthly)}</span>
                         </div>
                         <div class="omnibar-stat-box">
                             <span class="stat-label">Questo Mese</span>
-                            <span class="stat-value" style="color: #facc15;">€ ${tm.spent_current_month.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="stat-value" style="color: #facc15;">€ ${formatOmnibarEur(tm.spent_current_month)}</span>
                         </div>
                         <div class="omnibar-stat-box">
                             <span class="stat-label">Spesa Storica Totale</span>
-                            <span class="stat-value" style="color: #cbd5e1;">€ ${tm.total_spent.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="stat-value" style="color: #cbd5e1;">€ ${formatOmnibarEur(tm.total_spent)}</span>
                         </div>
                     </div>
 
@@ -873,15 +880,15 @@
                             </div>
                         </div>
                         <a href="/transactions?q=${encodeURIComponent(data.query)}" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 8px; border-color: rgba(245, 158, 11, 0.4); color: #facc15;">
-                            ${mm.count} movimenti &rarr;
+                            ${mm.count || 0} movimenti &rarr;
                         </a>
                     </div>
                     <div style="display: flex; gap: 16px; font-size: 0.82rem; color: #cbd5e1; flex-wrap: wrap; margin-top: 6px;">
-                        <span>Questo Mese: <strong style="color: #fff;">€ ${mm.spent_current_month.toLocaleString('it-IT', {minimumFractionDigits: 2})}</strong></span>
+                        <span>Questo Mese: <strong style="color: #fff;">€ ${formatOmnibarEur(mm.spent_current_month)}</strong></span>
                         <span>&bull;</span>
-                        <span>Anno Corrente: <strong style="color: #fff;">€ ${mm.spent_current_year.toLocaleString('it-IT', {minimumFractionDigits: 2})}</strong></span>
+                        <span>Anno Corrente: <strong style="color: #fff;">€ ${formatOmnibarEur(mm.spent_current_year)}</strong></span>
                         <span>&bull;</span>
-                        <span>Totale Storico: <strong style="color: #fbbf24;">€ ${mm.total_spent.toLocaleString('it-IT', {minimumFractionDigits: 2})}</strong></span>
+                        <span>Totale Storico: <strong style="color: #fbbf24;">€ ${formatOmnibarEur(mm.total_spent)}</strong></span>
                     </div>
                 </div>
             `;
@@ -899,8 +906,9 @@
             `;
 
             data.transactions.forEach(tx => {
-                const isExpense = tx.amount < 0;
-                const formattedAmt = (isExpense ? '-€ ' : '+€ ') + Math.abs(tx.amount).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                const amt = parseFloat(tx.amount) || 0;
+                const isExpense = amt < 0;
+                const formattedAmt = (isExpense ? '-€ ' : '+€ ') + formatOmnibarEur(Math.abs(amt));
                 const colorClass = isExpense ? 'color: #f87171;' : 'color: #34d399;';
 
                 html += `

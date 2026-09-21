@@ -4843,11 +4843,18 @@ def api_search_omnibar():
         return jsonify({"results": None, "query": raw_query})
 
     user_id = session.get('user_id')
-    ws_id = get_active_workspace_id(user_id)
-    if not ws_id:
-        return jsonify({"results": None, "error": "Nessun workspace attivo"})
-
+    ws_id = session.get('workspace_id')
     conn = get_db_connection()
+    if not ws_id:
+        mem = conn.execute("SELECT workspace_id FROM workspace_members WHERE user_id = ? ORDER BY workspace_id ASC LIMIT 1", (user_id,)).fetchone()
+        if mem:
+            ws_id = mem['workspace_id']
+            session['workspace_id'] = ws_id
+            
+    if not ws_id:
+        conn.close()
+        return jsonify({"results": None, "has_results": False, "query": raw_query, "error": "Nessun workspace attivo"})
+
     ctx = get_workspace_privacy_context(conn, ws_id, user_id)
     sharing_mode = ctx["sharing_mode"]
     is_admin = ctx["is_admin"]
@@ -4860,8 +4867,10 @@ def api_search_omnibar():
         privacy_sql = " AND (t.profile_id = ? OR t.is_shared = 1 OR a.is_shared = 1)"
         privacy_params.append(my_profile['id'])
 
-    q_lower = raw_query.lower()
+    q_clean = raw_query.strip().lstrip('#')
+    q_lower = q_clean.lower()
     q_like = f"%{q_lower}%"
+    q_tag_like = f"%#{q_lower}%"
 
     current_year = datetime.now().strftime('%Y')
     current_ym = datetime.now().strftime('%Y-%m')
@@ -4879,9 +4888,9 @@ def api_search_omnibar():
         FROM transactions t
         JOIN accounts a ON t.account_id = a.id
         WHERE a.workspace_id = ? {privacy_sql}
-        AND (LOWER(t.tags) LIKE ? OR LOWER(t.category) LIKE ?)
+        AND (LOWER(t.tags) LIKE ? OR LOWER(t.tags) LIKE ? OR LOWER(t.category) LIKE ?)
     """
-    tag_params = list(privacy_params) + [q_like, q_like]
+    tag_params = list(privacy_params) + [q_like, q_tag_like, q_like]
     tag_stat = conn.execute(tag_sql, tag_params).fetchone()
 
     tag_result = None
@@ -4892,7 +4901,7 @@ def api_search_omnibar():
             FROM transactions t
             JOIN accounts a ON t.account_id = a.id
             WHERE a.workspace_id = ? {privacy_sql}
-            AND (LOWER(t.tags) LIKE ? OR LOWER(t.category) LIKE ?)
+            AND (LOWER(t.tags) LIKE ? OR LOWER(t.tags) LIKE ? OR LOWER(t.category) LIKE ?)
             AND t.date LIKE '{current_year}%'
             AND t.amount < 0
         """
