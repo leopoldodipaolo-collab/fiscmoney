@@ -32,6 +32,13 @@
   }
 }
 
+.tag-distribution-chip:hover {
+  transform: translateY(-2px);
+  border-color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.15) !important;
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3) !important;
+}
+
 .golden-triage-highlight {
   border: 2.5px solid #f59e0b !important;
   animation: goldenGlowPulse 2s infinite ease-in-out !important;
@@ -418,61 +425,59 @@
 <!-- ======================================================== -->
 <div id="workbenchSection" class="card" style="margin-bottom: 18px; background: linear-gradient(135deg, rgba(26, 36, 60, 0.85), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(59, 130, 246, 0.3); border-radius: var(--radius-lg); padding: 16px 20px;">
     
-    <!-- 2. Streamlined Category Ribbon (Multi-color bar + Top 4 Categories + Expand Toggle) -->
-    {% if total_expenses > 0 and category_breakdown|length > 0 %}
+    <!-- 2. Streamlined Ribbon: Categorie & Tag Intelligenti con Switcher e Matrice Espandibile -->
+    {% if total_expenses > 0 and (category_breakdown|length > 0 or (tag_breakdown is defined and tag_breakdown|length > 0)) %}
     <div style="margin-bottom: 14px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-            <div style="display: flex; align-items: center; gap: 6px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">
                     Ripartizione Spese
                 </span>
-                <small style="color: var(--text-muted); font-size: 0.68rem;">(Tocca una categoria per isolarla)</small>
+                
+                <!-- Pillola Toggle Categorie / Tag -->
+                <div style="display: inline-flex; background: rgba(0, 0, 0, 0.35); padding: 2px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08);">
+                    <button type="button" id="btnDistributionCat" onclick="switchDistributionMode('cat')" 
+                            style="padding: 2px 10px; font-size: 0.68rem; font-weight: 700; border-radius: 16px; border: none; cursor: pointer; transition: all 0.15s ease; background: #38bdf8; color: #0f172a;">
+                        📁 Categorie
+                    </button>
+                    <button type="button" id="btnDistributionTag" onclick="switchDistributionMode('tag')" 
+                            style="padding: 2px 10px; font-size: 0.68rem; font-weight: 700; border-radius: 16px; border: none; cursor: pointer; transition: all 0.15s ease; background: transparent; color: #94a3b8;">
+                        🏷️ Tag Intelligenti {% if tag_breakdown is defined and tag_breakdown|length > 0 %}<span style="opacity: 0.75; font-size: 0.62rem;">({{ tag_breakdown|length }})</span>{% endif %}
+                    </button>
+                </div>
+                <small id="distributionHintText" style="color: var(--text-muted); font-size: 0.68rem;">(Tocca una categoria per isolarla)</small>
             </div>
-            {% if selected_category %}
+            
+            {% if selected_category or (selected_tag is defined and selected_tag) %}
             <a href="/transactions?{% if selected_month %}month={{ selected_month }}&{% endif %}{% if status_filter %}status={{ status_filter }}&{% endif %}" 
                style="font-size: 0.7rem; color: #f87171; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; background: rgba(239, 68, 68, 0.15); padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.3);">
-                Filtro attivo: {{ selected_category }} ✕
+                Filtro attivo: {{ selected_category or selected_tag }} ✕
             </a>
             {% endif %}
         </div>
 
-        <!-- Slim Multi-color Percentage Bar -->
-        <div style="display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: rgba(255,255,255,0.06); gap: 2px; margin-bottom: 8px;">
-            {% for cat in category_breakdown %}
-            {% if cat.spent > 0 %}
-            <div style="width: {{ cat.percent }}%; background: {{ cat.color }};" title="{{ cat.name }}: {{ cat.spent|eur }} ({{ cat.percent }}%)"></div>
-            {% endif %}
-            {% endfor %}
-        </div>
-
-        <!-- Clean Category Chips (Top 4 + Collapsible Extra) -->
-        {% set active_in_extra = false %}
-        {% for cat in category_breakdown %}
-            {% if loop.index > 4 and selected_category == cat.name %}
-                {% set active_in_extra = true %}
-            {% endif %}
-        {% endfor %}
-        
-        <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
-            {% for cat in category_breakdown %}
-            {% if cat.spent > 0 and loop.index <= 4 %}
-            {% set is_cat_active = (selected_category == cat.name) %}
-            <a href="/transactions?{% if selected_month %}month={{ selected_month }}&{% endif %}{% if is_cat_active %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% else %}category={{ cat.name|urlencode }}&{% if status_filter %}status={{ status_filter }}&{% endif %}{% endif %}"
-               style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 12px; font-size: 0.72rem; transition: all 0.15s ease; border: 1px solid {% if is_cat_active %}#38bdf8{% else %}rgba(255,255,255,0.1){% endif %}; background: {% if is_cat_active %}rgba(56, 189, 248, 0.25){% else %}rgba(255,255,255,0.03){% endif %}; color: {% if is_cat_active %}#fff{% else %}#cbd5e1{% endif %}; font-weight: {% if is_cat_active %}700{% else %}500{% endif %};"
-               title="Filtra {{ cat.name }}">
-                <span>{{ cat.icon }} {{ cat.name }}</span>
-                <strong style="color: {{ cat.color }};">{{ cat.spent|eur }}</strong>
-                <span style="color: var(--text-muted); font-size: 0.65rem;">({{ cat.percent }}%)</span>
-                {% if is_cat_active %}<span style="color: #38bdf8; font-weight: bold; margin-left: 2px;">✕</span>{% endif %}
-            </a>
-            {% endif %}
-            {% endfor %}
-
-            <!-- Extra Categories (Collapsed by Default) -->
-            {% if category_breakdown|length > 4 %}
-            <div id="extraCategoriesWrapper" style="display: {% if active_in_extra %}inline-flex{% else %}none{% endif %}; flex-wrap: wrap; gap: 6px;">
+        <!-- ================= PANNELLO 1: CATEGORIE ================= -->
+        <div id="distributionCategoriesPanel">
+            <!-- Slim Multi-color Percentage Bar (Categorie) -->
+            <div style="display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: rgba(255,255,255,0.06); gap: 2px; margin-bottom: 8px;">
                 {% for cat in category_breakdown %}
-                {% if cat.spent > 0 and loop.index > 4 %}
+                {% if cat.spent > 0 %}
+                <div style="width: {{ cat.percent }}%; background: {{ cat.color }};" title="{{ cat.name }}: {{ cat.spent|eur }} ({{ cat.percent }}%)"></div>
+                {% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- Clean Category Chips (Top 4 + Collapsible Extra) -->
+            {% set active_in_extra = false %}
+            {% for cat in category_breakdown %}
+                {% if loop.index > 4 and selected_category == cat.name %}
+                    {% set active_in_extra = true %}
+                {% endif %}
+            {% endfor %}
+            
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+                {% for cat in category_breakdown %}
+                {% if cat.spent > 0 and loop.index <= 4 %}
                 {% set is_cat_active = (selected_category == cat.name) %}
                 <a href="/transactions?{% if selected_month %}month={{ selected_month }}&{% endif %}{% if is_cat_active %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% else %}category={{ cat.name|urlencode }}&{% if status_filter %}status={{ status_filter }}&{% endif %}{% endif %}"
                    style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 12px; font-size: 0.72rem; transition: all 0.15s ease; border: 1px solid {% if is_cat_active %}#38bdf8{% else %}rgba(255,255,255,0.1){% endif %}; background: {% if is_cat_active %}rgba(56, 189, 248, 0.25){% else %}rgba(255,255,255,0.03){% endif %}; color: {% if is_cat_active %}#fff{% else %}#cbd5e1{% endif %}; font-weight: {% if is_cat_active %}700{% else %}500{% endif %};"
@@ -484,15 +489,98 @@
                 </a>
                 {% endif %}
                 {% endfor %}
+
+                <!-- Extra Categories (Collapsed by Default) -->
+                {% if category_breakdown|length > 4 %}
+                <div id="extraCategoriesWrapper" style="display: {% if active_in_extra %}inline-flex{% else %}none{% endif %}; flex-wrap: wrap; gap: 6px;">
+                    {% for cat in category_breakdown %}
+                    {% if cat.spent > 0 and loop.index > 4 %}
+                    {% set is_cat_active = (selected_category == cat.name) %}
+                    <a href="/transactions?{% if selected_month %}month={{ selected_month }}&{% endif %}{% if is_cat_active %}{% if status_filter %}status={{ status_filter }}&{% endif %}{% else %}category={{ cat.name|urlencode }}&{% if status_filter %}status={{ status_filter }}&{% endif %}{% endif %}"
+                       style="text-decoration: none; display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 12px; font-size: 0.72rem; transition: all 0.15s ease; border: 1px solid {% if is_cat_active %}#38bdf8{% else %}rgba(255,255,255,0.1){% endif %}; background: {% if is_cat_active %}rgba(56, 189, 248, 0.25){% else %}rgba(255,255,255,0.03){% endif %}; color: {% if is_cat_active %}#fff{% else %}#cbd5e1{% endif %}; font-weight: {% if is_cat_active %}700{% else %}500{% endif %};"
+                       title="Filtra {{ cat.name }}">
+                        <span>{{ cat.icon }} {{ cat.name }}</span>
+                        <strong style="color: {{ cat.color }};">{{ cat.spent|eur }}</strong>
+                        <span style="color: var(--text-muted); font-size: 0.65rem;">({{ cat.percent }}%)</span>
+                        {% if is_cat_active %}<span style="color: #38bdf8; font-weight: bold; margin-left: 2px;">✕</span>{% endif %}
+                    </a>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+
+                <!-- Toggle Button for Extra Categories -->
+                <button type="button" 
+                        id="btnToggleExtraCategories" 
+                        onclick="toggleExtraCategoriesRibbon()" 
+                        style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: #94a3b8; border-radius: 12px; font-size: 0.7rem; padding: 3px 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
+                    <span id="extraCatToggleText">{% if active_in_extra %}▴ Meno{% else %}+{{ category_breakdown|length - 4 }} altre ▾{% endif %}</span>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ================= PANNELLO 2: TAG INTELLIGENTI & TREND ================= -->
+        <div id="distributionTagsPanel" style="display: none;">
+            {% if tag_breakdown is defined and tag_breakdown|length > 0 %}
+            <!-- Slim Multi-color Percentage Bar (Tags) -->
+            <div style="display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: rgba(255,255,255,0.06); gap: 2px; margin-bottom: 8px;">
+                {% for tag in tag_breakdown %}
+                {% if tag.spent > 0 %}
+                <div style="width: {{ tag.percent }}%; background: {{ tag.color }}; cursor: pointer;" 
+                     onclick="openTagTrendModal('{{ tag.code }}')"
+                     title="{{ tag.icon }} {{ tag.label }} ({{ tag.code }}): {{ tag.spent|eur }} ({{ tag.percent }}%) - Clicca per vedere il trend"></div>
+                {% endif %}
+                {% endfor %}
             </div>
 
-            <!-- Toggle Button for Extra Categories -->
-            <button type="button" 
-                    id="btnToggleExtraCategories" 
-                    onclick="toggleExtraCategoriesRibbon()" 
-                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: #94a3b8; border-radius: 12px; font-size: 0.7rem; padding: 3px 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">
-                <span id="extraCatToggleText">{% if active_in_extra %}▴ Meno{% else %}+{{ category_breakdown|length - 4 }} altre ▾{% endif %}</span>
-            </button>
+            <!-- Tag Chips (Top 5 + Matrice Espandibile con Pulsante Trend) -->
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+                {% for tag in tag_breakdown %}
+                {% if loop.index <= 5 %}
+                <div class="tag-distribution-chip" 
+                     onclick="openTagTrendModal('{{ tag.code }}')"
+                     style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 14px; font-size: 0.72rem; cursor: pointer; transition: all 0.2s ease; border: 1px solid rgba(56, 189, 248, 0.25); background: rgba(15, 23, 42, 0.7); box-shadow: 0 2px 6px rgba(0,0,0,0.25);"
+                     title="Clicca per aprire il trend e lo storico di {{ tag.label }}">
+                    <span style="font-size: 0.85rem;">{{ tag.icon }}</span>
+                    <span style="color: #fff; font-weight: 700;">{{ tag.label }}</span>
+                    <strong style="color: {{ tag.color }}; font-weight: 800;">{{ tag.spent|eur }}</strong>
+                    <span style="color: #94a3b8; font-size: 0.65rem;">({{ tag.percent }}%)</span>
+                    <span style="font-size: 0.65rem; color: #38bdf8; opacity: 0.8; margin-left: 2px;" title="Vedi Grafico Trend">📈</span>
+                </div>
+                {% endif %}
+                {% endfor %}
+
+                <!-- Matrice Espandibile dei Tag Rimanenti -->
+                {% if tag_breakdown|length > 5 %}
+                <div id="extraTagsWrapper" style="display: none; flex-wrap: wrap; gap: 6px; width: 100%; margin-top: 6px; padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08);">
+                    {% for tag in tag_breakdown %}
+                    {% if loop.index > 5 %}
+                    <div class="tag-distribution-chip" 
+                         onclick="openTagTrendModal('{{ tag.code }}')"
+                         style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; cursor: pointer; transition: all 0.2s ease; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.03);"
+                         title="Clicca per aprire il trend di {{ tag.label }}">
+                        <span style="font-size: 0.8rem;">{{ tag.icon }}</span>
+                        <span style="color: #cbd5e1; font-weight: 600;">{{ tag.label }}</span>
+                        <strong style="color: {{ tag.color }};">{{ tag.spent|eur }}</strong>
+                        <span style="color: #64748b; font-size: 0.64rem;">({{ tag.percent }}%)</span>
+                        <span style="font-size: 0.6rem; color: #38bdf8;">📈</span>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+
+                <button type="button" 
+                        id="btnToggleExtraTags" 
+                        onclick="toggleExtraTagsMatrix()" 
+                        style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); color: #7dd3fc; border-radius: 12px; font-size: 0.7rem; padding: 3px 9px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 700;">
+                    <span id="extraTagsToggleText">+{{ tag_breakdown|length - 5 }} altri tag ▾</span>
+                </button>
+                {% endif %}
+            </div>
+            {% else %}
+            <div style="padding: 10px 14px; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.1); font-size: 0.74rem; color: #94a3b8; font-style: italic;">
+                🏷️ Nessun tag associato alle spese di questo periodo. Assegna tag intelligenti ai tuoi movimenti per vedere qui la loro distribuzione e il loro trend!
+            </div>
             {% endif %}
         </div>
     </div>
@@ -1834,6 +1922,91 @@
 </div>
 
 <!-- ======================================================== -->
+<!-- MODAL: TREND STORICO & DETTAGLIO TAG INTELLIGENTE        -->
+<!-- ======================================================== -->
+<div id="tagTrendModal" class="modal-overlay" style="z-index: 100015;">
+    <div class="modal-card" style="max-width: 680px; width: 94%; padding: 22px 24px; background: #0b1329; border: 1.5px solid rgba(56, 189, 248, 0.45); box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9); border-radius: var(--radius-lg); position: relative; z-index: 100016; max-height: 90vh; overflow-y: auto;">
+        
+        <!-- Modal Header -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div id="tagTrendIconBadge" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(56, 189, 248, 0.15); border: 1.5px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);">
+                    🏷️
+                </div>
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <h3 id="tagTrendTitle" style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">#tag</h3>
+                        <span id="tagTrendCategoryBadge" style="font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; background: rgba(255,255,255,0.06); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1);">Categoria</span>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 0.72rem; margin: 3px 0 0 0;">Analisi andamento mensile e dettaglio movimenti storici</p>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeTagTrendModal()" style="font-size: 1.4rem; line-height: 1; background: none; border: none; color: #94a3b8; cursor: pointer;">&times;</button>
+        </div>
+
+        <!-- Range Selector Buttons -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+            <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">
+                📊 Andamento Spese
+            </span>
+            <div style="display: flex; background: rgba(0,0,0,0.4); padding: 2px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); gap: 4px;">
+                <button type="button" id="btnTagTrend6" onclick="changeTagTrendRange(6)" style="background: #38bdf8; color: #0f172a; border: none; border-radius: 6px; padding: 3px 10px; font-size: 0.7rem; font-weight: 700; cursor: pointer; transition: all 0.15s ease;">
+                    Ultimi 6 Mesi
+                </button>
+                <button type="button" id="btnTagTrend12" onclick="changeTagTrendRange(12)" style="background: transparent; color: #94a3b8; border: none; border-radius: 6px; padding: 3px 10px; font-size: 0.7rem; font-weight: 700; cursor: pointer; transition: all 0.15s ease;">
+                    Ultimi 12 Mesi
+                </button>
+            </div>
+        </div>
+
+        <!-- 3 KPI Cards -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px;">
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 10px 14px;">
+                <span style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 2px;">Totale Speso</span>
+                <span id="tagTrendKpiTotal" style="font-size: 1.15rem; font-weight: 800; color: #38bdf8;">€ 0,00</span>
+            </div>
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 10px 14px;">
+                <span style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 2px;">Transazioni</span>
+                <span id="tagTrendKpiCount" style="font-size: 1.15rem; font-weight: 800; color: #fff;">0</span>
+            </div>
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 10px 14px;">
+                <span style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 2px;">Media Mensile</span>
+                <span id="tagTrendKpiMonthly" style="font-size: 1.15rem; font-weight: 800; color: #fbbf24;">€ 0,00</span>
+            </div>
+        </div>
+
+        <!-- Chart Canvas Container -->
+        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 12px; padding: 14px; margin-bottom: 16px; position: relative; height: 190px;">
+            <div id="tagTrendChartLoading" style="display: none; position: absolute; inset: 0; background: rgba(11, 19, 41, 0.85); display: flex; align-items: center; justify-content: center; font-size: 0.82rem; color: #38bdf8; font-weight: 700;">
+                ⏳ Caricamento trend...
+            </div>
+            <canvas id="tagTrendChartCanvas" style="max-height: 160px; width: 100%;"></canvas>
+        </div>
+
+        <!-- Recent Transactions for this Tag -->
+        <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">
+                    📝 Ultimi Movimenti con questo Tag
+                </span>
+                <button type="button" id="btnFilterTableWithTag" onclick="isolateCurrentTagInTable()" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 0.68rem; padding: 2px 8px; border-radius: 8px; cursor: pointer; font-weight: 700;">
+                    🔍 Cerca nella tabella
+                </button>
+            </div>
+            
+            <div id="tagTrendTxList" style="max-height: 180px; overflow-y: auto; background: rgba(0,0,0,0.25); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); padding: 4px 8px;">
+                <!-- Popolato via JS -->
+            </div>
+        </div>
+
+        <!-- Modal Footer Buttons -->
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="closeTagTrendModal()" style="padding: 7px 18px; font-size: 0.78rem;">Chiudi</button>
+        </div>
+    </div>
+</div>
+
+<!-- ======================================================== -->
 <!-- MODAL: AGGIUNGI TAG PERSONALIZZATO (DESIGN PROFESSIONALE) -->
 <!-- ======================================================== -->
 <div id="customTagModal" class="modal-overlay" style="z-index: 100010;">
@@ -2362,6 +2535,14 @@ function escapeHtml(str) {
     if (!str) return '';
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
+// Restore Distribution Mode Preference (Categorie vs Tag)
+document.addEventListener('DOMContentLoaded', () => {
+    const savedDistMode = localStorage.getItem('fisc_distribution_mode');
+    if (savedDistMode === 'tag') {
+        switchDistributionMode('tag');
+    }
+});
 
 // --- BULK SELECTION & ACTIONS LOGIC ---
 let selectedTxIds = new Set();
@@ -4077,7 +4258,7 @@ function closeEditTxModal() {
 
 // Close modals when clicking outside
 window.addEventListener('click', (e) => {
-    ['newAccountModal', 'editTxModal', 'confirmImportModal', 'smartCategoryTrayModal', 'speedTriageGameModal', 'customTagModal', 'bulkModal', 'groupClassifyModal'].forEach(id => {
+    ['newAccountModal', 'editTxModal', 'confirmImportModal', 'smartCategoryTrayModal', 'speedTriageGameModal', 'customTagModal', 'bulkModal', 'groupClassifyModal', 'tagTrendModal'].forEach(id => {
         const modal = document.getElementById(id);
         if (modal && e.target === modal) {
             modal.classList.remove('open');
@@ -4355,6 +4536,267 @@ function toggleAccountsCollapse() {
         if (icon) icon.innerText = '🔽';
         if (text) text.innerText = 'Mostra Conti & Carte ({{ accounts|length }})';
         localStorage.setItem('fisc_accounts_collapsed', '1');
+    }
+}
+
+// --- SMART SPENSE DISTRIBUTION & TAG TREND CONTROLS ---
+function switchDistributionMode(mode) {
+    const catPanel = document.getElementById('distributionCategoriesPanel');
+    const tagPanel = document.getElementById('distributionTagsPanel');
+    const btnCat = document.getElementById('btnDistributionCat');
+    const btnTag = document.getElementById('btnDistributionTag');
+    const hintText = document.getElementById('distributionHintText');
+    
+    if (mode === 'tag') {
+        if (catPanel) catPanel.style.display = 'none';
+        if (tagPanel) tagPanel.style.display = 'block';
+        if (btnCat) {
+            btnCat.style.background = 'transparent';
+            btnCat.style.color = '#94a3b8';
+        }
+        if (btnTag) {
+            btnTag.style.background = '#38bdf8';
+            btnTag.style.color = '#0f172a';
+        }
+        if (hintText) hintText.innerText = '(Tocca un tag per vedere il suo trend storico)';
+        localStorage.setItem('fisc_distribution_mode', 'tag');
+    } else {
+        if (catPanel) catPanel.style.display = 'block';
+        if (tagPanel) tagPanel.style.display = 'none';
+        if (btnCat) {
+            btnCat.style.background = '#38bdf8';
+            btnCat.style.color = '#0f172a';
+        }
+        if (btnTag) {
+            btnTag.style.background = 'transparent';
+            btnTag.style.color = '#94a3b8';
+        }
+        if (hintText) hintText.innerText = '(Tocca una categoria per isolarla)';
+        localStorage.setItem('fisc_distribution_mode', 'cat');
+    }
+}
+
+function toggleExtraTagsMatrix() {
+    const wrapper = document.getElementById('extraTagsWrapper');
+    const toggleBtn = document.getElementById('btnToggleExtraTags');
+    const toggleText = document.getElementById('extraTagsToggleText');
+    if (!wrapper) return;
+    
+    const isHidden = (wrapper.style.display === 'none' || !wrapper.style.display);
+    if (isHidden) {
+        wrapper.style.display = 'flex';
+        if (toggleText) toggleText.innerText = '▴ Meno tag';
+        if (toggleBtn) toggleBtn.style.background = 'rgba(255,255,255,0.08)';
+    } else {
+        wrapper.style.display = 'none';
+        const count = wrapper.querySelectorAll('.tag-distribution-chip').length;
+        if (toggleText) toggleText.innerText = `+${count} altri tag ▾`;
+        if (toggleBtn) toggleBtn.style.background = 'rgba(56, 189, 248, 0.1)';
+    }
+}
+
+let currentActiveTagTrend = null;
+let currentActiveTagRange = 6;
+let tagTrendChartInstance = null;
+
+async function openTagTrendModal(tagCode) {
+    if (!tagCode) return;
+    currentActiveTagTrend = tagCode;
+    currentActiveTagRange = 6;
+    
+    const modal = document.getElementById('tagTrendModal');
+    if (modal) modal.classList.add('open');
+    
+    document.getElementById('tagTrendTitle').innerText = tagCode;
+    document.getElementById('tagTrendCategoryBadge').innerText = 'Caricamento...';
+    document.getElementById('tagTrendKpiTotal').innerText = '...';
+    document.getElementById('tagTrendKpiCount').innerText = '...';
+    document.getElementById('tagTrendKpiMonthly').innerText = '...';
+    document.getElementById('tagTrendTxList').innerHTML = '<div style="text-align:center; padding: 14px; color:#94a3b8; font-size:0.75rem;">⏳ Caricamento dati in corso...</div>';
+    
+    // Update range buttons
+    document.getElementById('btnTagTrend6').style.background = '#38bdf8';
+    document.getElementById('btnTagTrend6').style.color = '#0f172a';
+    document.getElementById('btnTagTrend12').style.background = 'transparent';
+    document.getElementById('btnTagTrend12').style.color = '#94a3b8';
+    
+    await fetchAndRenderTagTrend(tagCode, 6);
+}
+
+function closeTagTrendModal() {
+    const modal = document.getElementById('tagTrendModal');
+    if (modal) modal.classList.remove('open');
+    if (tagTrendChartInstance) {
+        tagTrendChartInstance.destroy();
+        tagTrendChartInstance = null;
+    }
+}
+
+async function changeTagTrendRange(range) {
+    if (!currentActiveTagTrend) return;
+    currentActiveTagRange = range;
+    
+    const btn6 = document.getElementById('btnTagTrend6');
+    const btn12 = document.getElementById('btnTagTrend12');
+    if (range === 12) {
+        btn12.style.background = '#38bdf8';
+        btn12.style.color = '#0f172a';
+        btn6.style.background = 'transparent';
+        btn6.style.color = '#94a3b8';
+    } else {
+        btn6.style.background = '#38bdf8';
+        btn6.style.color = '#0f172a';
+        btn12.style.background = 'transparent';
+        btn12.style.color = '#94a3b8';
+    }
+    
+    await fetchAndRenderTagTrend(currentActiveTagTrend, range);
+}
+
+async function fetchAndRenderTagTrend(tagCode, range = 6) {
+    const loadingEl = document.getElementById('tagTrendChartLoading');
+    if (loadingEl) loadingEl.style.display = 'flex';
+    
+    try {
+        const cleanParam = encodeURIComponent(tagCode);
+        const resp = await fetch(`/api/tags/trend?tag=${cleanParam}&range=${range}`);
+        const res = await resp.json();
+        
+        if (loadingEl) loadingEl.style.display = 'none';
+        
+        if (!res.success) {
+            alert('Impossibile caricare il trend per ' + tagCode);
+            return;
+        }
+        
+        // Header
+        const iconBadge = document.getElementById('tagTrendIconBadge');
+        if (iconBadge) iconBadge.innerText = res.icon || '🏷️';
+        document.getElementById('tagTrendTitle').innerText = `${res.icon || ''} ${res.label} (${res.tag})`.trim();
+        document.getElementById('tagTrendCategoryBadge').innerText = res.category || 'Generale';
+        
+        // Format EUR helper
+        const fmtEur = (v) => '€ ' + Number(v || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        
+        // KPIs
+        document.getElementById('tagTrendKpiTotal').innerText = fmtEur(res.kpis.total_spent);
+        document.getElementById('tagTrendKpiCount').innerText = `${res.kpis.tx_count} spese`;
+        document.getElementById('tagTrendKpiMonthly').innerText = fmtEur(res.kpis.avg_monthly);
+        
+        // Render Chart.js
+        renderTagTrendChart(res.chart.labels, res.chart.series);
+        
+        // Render Recent Transactions
+        const txContainer = document.getElementById('tagTrendTxList');
+        if (txContainer) {
+            if (!res.recent_txs || res.recent_txs.length === 0) {
+                txContainer.innerHTML = '<div style="text-align:center; padding: 12px; color: #94a3b8; font-size: 0.75rem; font-style: italic;">Nessuna transazione trovata con questo tag.</div>';
+            } else {
+                let html = '';
+                res.recent_txs.forEach(t => {
+                    const amtStr = fmtEur(Math.abs(t.amount));
+                    html += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.74rem;">
+                            <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                                <span style="color: var(--text-muted); font-size: 0.68rem; white-space: nowrap;">${t.date}</span>
+                                <strong style="color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;" title="${escapeHtml(t.description)}">${escapeHtml(t.description)}</strong>
+                                <span style="background: rgba(255,255,255,0.05); color: #94a3b8; padding: 1px 5px; border-radius: 4px; font-size: 0.62rem; white-space: nowrap;">${escapeHtml(t.account_name)}</span>
+                            </div>
+                            <span style="font-weight: 800; color: #f87171; white-space: nowrap;">-${amtStr}</span>
+                        </div>
+                    `;
+                });
+                txContainer.innerHTML = html;
+            }
+        }
+    } catch(err) {
+        console.error("Errore fetch tag trend:", err);
+        if (loadingEl) loadingEl.style.display = 'none';
+    }
+}
+
+function renderTagTrendChart(labels, dataSeries) {
+    const canvas = document.getElementById('tagTrendChartCanvas');
+    if (!canvas) return;
+    
+    if (tagTrendChartInstance) {
+        tagTrendChartInstance.destroy();
+    }
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Gradient fill
+    const gradient = ctx.createLinearGradient(0, 0, 0, 160);
+    gradient.addColorStop(0, 'rgba(56, 189, 248, 0.45)');
+    gradient.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+    
+    tagTrendChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Spesa Mensile',
+                data: dataSeries,
+                borderColor: '#38bdf8',
+                borderWidth: 2.5,
+                backgroundColor: gradient,
+                fill: true,
+                tension: 0.35,
+                pointBackgroundColor: '#0f172a',
+                pointBorderColor: '#38bdf8',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#fff',
+                    bodyColor: '#38bdf8',
+                    borderColor: 'rgba(56, 189, 248, 0.4)',
+                    borderWidth: 1,
+                    padding: 8,
+                    callbacks: {
+                        label: function(ctx) {
+                            return ' Spesa: € ' + Number(ctx.parsed.y || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: '#94a3b8', font: { size: 10, weight: '600' } }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: {
+                        color: '#94a3b8',
+                        font: { size: 9 },
+                        callback: function(v) { return '€ ' + v; }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function isolateCurrentTagInTable() {
+    if (!currentActiveTagTrend) return;
+    const tag = currentActiveTagTrend;
+    closeTagTrendModal();
+    const searchInput = document.getElementById('liveTxSearchInput');
+    if (searchInput) {
+        searchInput.value = tag;
+        onLiveSearchInput(tag);
+        const sec = document.getElementById('txTableSection');
+        if (sec) sec.scrollIntoView({ behavior: 'smooth' });
     }
 }
 

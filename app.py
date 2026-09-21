@@ -2297,6 +2297,76 @@ def transactions():
             "tx_count": cnt
         })
     category_breakdown.sort(key=lambda x: x["spent"], reverse=True)
+
+    # Detailed Tag Breakdown with percentages, colors and icons
+    tag_totals = {}
+    tag_counts = {}
+    tag_categories = {}
+    tag_meta_map = {}
+    
+    # Pre-populate meta map from CATEGORY_SMART_TAGS
+    for cat_name, st_list in CATEGORY_SMART_TAGS.items():
+        cat_color = MACRO_CATEGORIES.get(cat_name, {}).get("color", "#38bdf8")
+        for st in st_list:
+            t_code = st.get("code")
+            if t_code:
+                tag_meta_map[t_code] = {
+                    "label": st.get("label", t_code.lstrip("#")),
+                    "icon": st.get("icon", "🏷️"),
+                    "category": cat_name,
+                    "color": cat_color
+                }
+                
+    # Also enrich from workspace custom tags if available
+    ws_custom_dict = get_workspace_custom_tags(ws_id) if ws_id else {}
+    for cat_name, ctags in ws_custom_dict.items():
+        cat_color = MACRO_CATEGORIES.get(cat_name, {}).get("color", "#38bdf8")
+        for ct in ctags:
+            t_code = ct.get("code")
+            if t_code:
+                tag_meta_map[t_code] = {
+                    "label": ct.get("label", t_code.lstrip("#")),
+                    "icon": ct.get("icon", "🏷️"),
+                    "category": cat_name,
+                    "color": cat_color
+                }
+
+    PALETTE = ["#38bdf8", "#ec4899", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#f97316", "#a855f7", "#e11d48", "#14b8a6"]
+
+    for tx in tx_list:
+        amt = tx['amount']
+        if amt < 0:
+            spent_amt = abs(amt)
+            raw_tags = (tx['tags'] or '').strip()
+            if raw_tags:
+                tokens = [t.strip() for t in raw_tags.split() if t.strip().startswith("#")]
+                for t in tokens:
+                    tag_totals[t] = tag_totals.get(t, 0.0) + spent_amt
+                    tag_counts[t] = tag_counts.get(t, 0) + 1
+                    if t not in tag_categories and tx['category']:
+                        tag_categories[t] = tx['category']
+
+    tag_breakdown = []
+    pal_idx = 0
+    for t_code, t_spent in tag_totals.items():
+        meta = tag_meta_map.get(t_code, {})
+        clean_name = meta.get("label") or t_code.lstrip("#").replace("_", " ").title()
+        t_icon = meta.get("icon", "🏷️")
+        t_cat = meta.get("category") or tag_categories.get(t_code, "Altro")
+        t_color = meta.get("color") or PALETTE[pal_idx % len(PALETTE)]
+        pal_idx += 1
+        pct = round((t_spent / total_expenses * 100), 1) if total_expenses > 0 else 0.0
+        tag_breakdown.append({
+            "code": t_code,
+            "label": clean_name,
+            "icon": t_icon,
+            "category": t_cat,
+            "color": t_color,
+            "spent": t_spent,
+            "percent": pct,
+            "tx_count": tag_counts.get(t_code, 1)
+        })
+    tag_breakdown.sort(key=lambda x: x["spent"], reverse=True)
             
     # Filter accounts by active member if selected
     if active_filter != 'all':
@@ -2386,6 +2456,7 @@ def transactions():
         selected_month_info=selected_month_info,
         available_months=available_months,
         category_breakdown=category_breakdown,
+        tag_breakdown=tag_breakdown,
         selected_account_id=selected_account_id,
         selected_category=selected_category,
         search_query=search_query,
@@ -2590,6 +2661,137 @@ def api_delete_custom_tag():
         
     ok = delete_workspace_custom_tag(ws_id, category, code)
     return jsonify({"success": ok})
+
+@app.route("/api/tags/trend", methods=["GET"])
+@login_required
+def api_tag_trend():
+    ws_id = session.get('workspace_id')
+    if not ws_id:
+        return jsonify({"success": False, "error": "Sessione non valida"}), 401
+        
+    tag_param = (request.args.get("tag") or "").strip()
+    if not tag_param:
+        return jsonify({"success": False, "error": "Parametro tag mancante"}), 400
+        
+    clean_tag = tag_param if tag_param.startswith("#") else f"#{tag_param}"
+    
+    # Months range (default 6, or 12)
+    try:
+        months_range = int(request.args.get("range", 6))
+        if months_range not in [6, 12]:
+            months_range = 6
+    except (ValueError, TypeError):
+        months_range = 6
+        
+    # Active profile filter
+    active_filter = session.get("active_profile_filter", "all")
+    p_id_filter = int(active_filter) if active_filter != "all" else None
+    
+    # Build list of last N months
+    today = datetime.now()
+    months_keys = []
+    month_labels = []
+    months_it = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"]
+    for i in range(months_range - 1, -1, -1):
+        target_year = today.year
+        target_month = today.month - i
+        while target_month <= 0:
+            target_month += 12
+            target_year -= 1
+        m_key = f"{target_year:04d}-{target_month:02d}"
+        months_keys.append(m_key)
+        month_labels.append(f"{months_it[target_month - 1]} {str(target_year)[2:]}")
+        
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    query = '''
+        SELECT t.id, t.date, t.amount, t.description, t.raw_description, t.category, t.tags, a.name as account_name
+        FROM transactions t
+        LEFT JOIN accounts a ON t.account_id = a.id
+        WHERE t.workspace_id = ?
+          AND t.amount < 0
+          AND (t.tags = ? OR t.tags LIKE ? OR t.tags LIKE ? OR t.tags LIKE ?)
+    '''
+    params = [ws_id, clean_tag, f"{clean_tag} %", f"% {clean_tag} %", f"% {clean_tag}"]
+    
+    if p_id_filter:
+        query += " AND t.profile_id = ?"
+        params.append(p_id_filter)
+        
+    query += " ORDER BY t.date DESC"
+    
+    rows = cursor.execute(query, params).fetchall()
+    conn.close()
+    
+    monthly_series = {m: 0.0 for m in months_keys}
+    total_spent = 0.0
+    recent_txs = []
+    
+    # Find tag icon and label
+    tag_icon = "🏷️"
+    tag_label = clean_tag.lstrip("#").replace("_", " ").title()
+    tag_cat = "Altro"
+    
+    for cat_name, st_list in CATEGORY_SMART_TAGS.items():
+        for st in st_list:
+            if st.get("code") == clean_tag:
+                tag_icon = st.get("icon", "🏷️")
+                tag_label = st.get("label", tag_label)
+                tag_cat = cat_name
+                break
+                
+    ws_custom_dict = get_workspace_custom_tags(ws_id) if ws_id else {}
+    for cat_name, ctags in ws_custom_dict.items():
+        for ct in ctags:
+            if ct.get("code") == clean_tag:
+                tag_icon = ct.get("icon", "🏷️")
+                tag_label = ct.get("label", tag_label)
+                tag_cat = cat_name
+                break
+                
+    for r in rows:
+        t_date = str(r["date"])[:7]
+        amt = abs(float(r["amount"] or 0))
+        total_spent += amt
+        if t_date in monthly_series:
+            monthly_series[t_date] += amt
+            
+        if len(recent_txs) < 25:
+            recent_txs.append({
+                "id": r["id"],
+                "date": str(r["date"])[:10],
+                "amount": float(r["amount"]),
+                "description": r["description"] or r["raw_description"] or "Movimento",
+                "category": r["category"] or tag_cat,
+                "account_name": r["account_name"] or "Conto"
+            })
+            
+    chart_series = [round(monthly_series[m], 2) for m in months_keys]
+    avg_monthly = round(total_spent / max(1, len(months_keys)), 2)
+    tx_count = len(rows)
+    avg_per_tx = round(total_spent / max(1, tx_count), 2)
+    
+    return jsonify({
+        "success": True,
+        "tag": clean_tag,
+        "label": tag_label,
+        "icon": tag_icon,
+        "category": tag_cat,
+        "months_range": months_range,
+        "kpis": {
+            "total_spent": round(total_spent, 2),
+            "tx_count": tx_count,
+            "avg_monthly": avg_monthly,
+            "avg_per_tx": avg_per_tx
+        },
+        "chart": {
+            "labels": month_labels,
+            "series": chart_series
+        },
+        "recent_txs": recent_txs
+    })
+
 
 
 @app.route("/api/transactions/batch-categorize-merchant", methods=["POST"])
