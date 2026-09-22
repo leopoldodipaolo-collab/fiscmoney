@@ -18,16 +18,8 @@
         </p>
     </div>
 
-    <!-- Year Selector & Actions -->
+    <!-- Actions -->
     <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-        <label style="color: var(--text-muted); font-size: 0.85rem;">Anno:</label>
-        <select onchange="window.location.href='/paystubs?profile_id={{ active_profile.id }}&year=' + this.value" 
-                style="background: #1e293b; color: #fff; border: 1px solid #334155; border-radius: 8px; padding: 6px 12px; font-weight: 700; cursor: pointer;">
-            {% for y in available_years %}
-            <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
-            {% endfor %}
-        </select>
-
         <button onclick="openPdfUploadModal()" class="btn-primary" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; padding: 7px 14px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; border-radius: 8px; cursor: pointer; font-weight: 700;">
             <span>🤖</span>
             <span>Importa PDF Cedolino</span>
@@ -440,27 +432,42 @@ if (dz) {
         <div>
             <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 1.4rem;">📈</span>
-                <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">Trend & Analisi Dinamica Stipendio {{ current_year }}</h2>
+                <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;" id="analyticsHeaderTitle">Trend & Analisi Dinamica Stipendio</h2>
                 <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.72rem; font-weight: 700;">
                     Live Calculator
                 </span>
             </div>
-            <p style="color: var(--text-muted); font-size: 0.8rem; margin: 4px 0 0 0;">
-                Seleziona i mesi da analizzare ed escludi/includi i premi per scoprire la tua vera media ricorrente.
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin: 4px 0 0 0;" id="analyticsHeaderSubtitle">
+                Seleziona il periodo (12, 18, 24 mesi o anno) per analizzare la progressione e la tua vera media ricorrente.
             </p>
         </div>
 
-        <!-- Range Presets & Toggle View -->
+        <!-- Range Presets, Year Selector & Toggle View -->
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <!-- Year Selector inside card -->
+            <div style="display: flex; align-items: center; gap: 5px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 2px 8px;">
+                <label style="color: var(--text-muted); font-size: 0.75rem; font-weight: 700;">Anno:</label>
+                <select id="trendYearSelect" onchange="handleYearChange(this.value)" 
+                        style="background: transparent; color: #38bdf8; border: none; font-size: 0.8rem; font-weight: 800; cursor: pointer; outline: none; padding: 3px 2px;">
+                    {% for y in available_years %}
+                    <option value="{{ y }}" {% if y == current_year %}selected{% endif %} style="background: #1e293b; color: #fff;">{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Horizon Presets (Anno, 12M, 18M, 24M) -->
             <div style="display: inline-flex; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 3px; gap: 2px;">
-                <button type="button" class="trend-filter-btn active" id="btnPresetAll" onclick="setPresetRange('all')">
-                    Tutto l'Anno
+                <button type="button" class="trend-filter-btn active" id="btnPresetYear" onclick="setHorizonPreset('year')">
+                    Anno {{ current_year }}
                 </button>
-                <button type="button" class="trend-filter-btn" id="btnPresetLast3" onclick="setPresetRange('last3')">
-                    Ultimi 3 Mesi
+                <button type="button" class="trend-filter-btn" id="btnPreset12M" onclick="setHorizonPreset('12m')">
+                    12 Mesi
                 </button>
-                <button type="button" class="trend-filter-btn" id="btnPresetLast6" onclick="setPresetRange('last6')">
-                    Ultimi 6 Mesi
+                <button type="button" class="trend-filter-btn" id="btnPreset18M" onclick="setHorizonPreset('18m')">
+                    18 Mesi
+                </button>
+                <button type="button" class="trend-filter-btn" id="btnPreset24M" onclick="setHorizonPreset('24m')">
+                    24 Mesi
                 </button>
             </div>
 
@@ -754,16 +761,19 @@ if (dz) {
 
 <script>
 const RAW_PAYSTUBS = {{ summary.paystubs|tojson if summary.paystubs else '[]' }};
+const ALL_HISTORY_PAYSTUBS = {{ summary.all_history|tojson if summary.all_history else '[]' }};
+const CURRENT_PAGE_YEAR = {{ current_year }};
+const ACTIVE_PROFILE_ID = {{ active_profile.id }};
+
 const MONTH_NAMES = ["", "Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic", "13ª", "14ª", "Premio"];
 const FULL_MONTH_NAMES = ["", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre", "13ª Mensilità", "14ª Mensilità", "Premio"];
 
 // State
-let selectedMonths = new Set();
+let currentHorizon = 'year'; // 'year', '12m', '18m', '24m'
+let activePaystubsPool = [];
+let selectedItemKeys = new Set();
 let currentViewMode = 'net_vs_base';
 let salaryChartInstance = null;
-
-// Sort paystubs chronologically ASC for chart visualization
-const chronologicalPaystubs = [...RAW_PAYSTUBS].sort((a, b) => a.month - b.month);
 
 // Helper EUR formatter
 function formatEur(num) {
@@ -773,14 +783,140 @@ function formatEur(num) {
     return (num < 0 ? "-" : "") + formatted + " €";
 }
 
+function handleYearChange(year) {
+    window.location.href = `/paystubs?profile_id=${ACTIVE_PROFILE_ID}&year=${year}`;
+}
+
 function initAnalytics() {
-    if (!chronologicalPaystubs || chronologicalPaystubs.length === 0) return;
+    setHorizonPreset('year');
+}
 
-    // Default select all available months
-    selectedMonths = new Set(chronologicalPaystubs.map(p => p.month));
+function setHorizonPreset(preset) {
+    currentHorizon = preset;
+    clearPresetButtons();
 
+    const titleEl = document.getElementById('analyticsHeaderTitle');
+    const subtitleEl = document.getElementById('analyticsHeaderSubtitle');
+
+    if (preset === 'year') {
+        setButtonActive('btnPresetYear');
+        activePaystubsPool = [...RAW_PAYSTUBS].sort((a, b) => a.month - b.month);
+        if (titleEl) titleEl.innerText = `Trend & Analisi Dinamica Stipendio ${CURRENT_PAGE_YEAR}`;
+        if (subtitleEl) subtitleEl.innerText = `Mesi del ${CURRENT_PAGE_YEAR} (con 13ª mensilità sommata sopra Dicembre).`;
+    } else {
+        // Multi-year rolling horizon from ALL_HISTORY_PAYSTUBS
+        let sortedAll = [...ALL_HISTORY_PAYSTUBS].sort((a, b) => {
+            if (a.year !== b.year) return a.year - b.year;
+            return a.month - b.month;
+        });
+
+        let monthsCount = 12;
+        if (preset === '12m') {
+            setButtonActive('btnPreset12M');
+            monthsCount = 12;
+        } else if (preset === '18m') {
+            setButtonActive('btnPreset18M');
+            monthsCount = 18;
+        } else if (preset === '24m') {
+            setButtonActive('btnPreset24M');
+            monthsCount = 24;
+        }
+
+        // Distinct calendar months to consider
+        // Note: 13th month is merged with month 12 of its year
+        activePaystubsPool = sortedAll;
+        if (titleEl) titleEl.innerText = `Trend Retributivo Rolling (Ultimi ${monthsCount} Mesi)`;
+        if (subtitleEl) subtitleEl.innerText = `Visualizzazione multi-anno degli ultimi ${monthsCount} mesi lavorativi (13ª mensilità cumulata su Dicembre).`;
+    }
+
+    // Generate month slots (combining month 13 into month 12)
+    rebuildSelectionSlots(preset);
     renderMonthChips();
     updateAnalytics();
+}
+
+// Builds list of displayable slot items: month 13 is merged into month 12!
+function getAggregatedSlots(paystubsList, preset) {
+    // Map key: `${p.year}-${p.month === 13 ? 12 : p.month}`
+    const slotsMap = new Map();
+
+    paystubsList.forEach(p => {
+        const is13th = (p.month === 13);
+        const effectiveMonth = is13th ? 12 : p.month;
+        const key = `${p.year}-${effectiveMonth}`;
+
+        if (!slotsMap.has(key)) {
+            slotsMap.set(key, {
+                key: key,
+                year: p.year,
+                month: effectiveMonth,
+                has13thAttached: false,
+                regularPaystub: null,
+                thirteenthPaystub: null,
+                // Aggregated values
+                net_amount: 0,
+                base_net: 0,
+                bonuses_net: 0,
+                thirteenth_net: 0,
+                gross_amount: 0,
+                taxes: 0,
+                ticket_count: 0,
+                ticket_val: 0
+            });
+        }
+
+        const slot = slotsMap.get(key);
+        const net = parseFloat(p.net_amount || 0);
+        const gross = parseFloat(p.gross_amount || 0);
+        const bonuses = parseFloat(p.bonuses || 0) + parseFloat(p.overtime_amount || 0);
+        const inps = parseFloat(p.inps_tax || 0);
+        const irpef = parseFloat(p.irpef_net || p.irpef_tax || 0);
+        const localTaxes = parseFloat(p.regional_tax || 0) + parseFloat(p.municipal_tax || 0);
+        const taxes = inps + irpef + localTaxes;
+        const taxRate = gross > 0 ? (taxes / gross) : 0.35;
+        const netVar = Math.round(bonuses * (1 - taxRate) * 100) / 100;
+        const netBase = Math.max(0, Math.round((net - netVar) * 100) / 100);
+
+        const tCount = parseFloat(p.ticket_count || 0);
+        const tUnit = parseFloat(p.ticket_unit_value || 8.0);
+        const tVal = parseFloat(p.ticket_total_value || (tCount * tUnit));
+
+        if (is13th) {
+            slot.has13thAttached = true;
+            slot.thirteenthPaystub = p;
+            slot.thirteenth_net += net;
+        } else {
+            slot.regularPaystub = p;
+            slot.base_net += netBase;
+            slot.bonuses_net += netVar;
+        }
+
+        slot.net_amount += net;
+        slot.gross_amount += gross;
+        slot.taxes += taxes;
+        slot.ticket_count += tCount;
+        slot.ticket_val += tVal;
+    });
+
+    let slots = Array.from(slotsMap.values()).sort((a, b) => {
+        if (a.year !== b.year) return a.year - b.year;
+        return a.month - b.month;
+    });
+
+    if (preset === '12m') {
+        slots = slots.slice(-12);
+    } else if (preset === '18m') {
+        slots = slots.slice(-18);
+    } else if (preset === '24m') {
+        slots = slots.slice(-24);
+    }
+
+    return slots;
+}
+
+function rebuildSelectionSlots(preset) {
+    const slots = getAggregatedSlots(activePaystubsPool, preset);
+    selectedItemKeys = new Set(slots.map(s => s.key));
 }
 
 function renderMonthChips() {
@@ -788,59 +924,51 @@ function renderMonthChips() {
     if (!container) return;
     container.innerHTML = '';
 
-    chronologicalPaystubs.forEach(p => {
+    const slots = getAggregatedSlots(activePaystubsPool, currentHorizon);
+    if (slots.length === 0) {
+        container.innerHTML = '<span style="color: var(--text-muted); font-size: 0.8rem;">Nessun dato disponibile per il periodo selezionato.</span>';
+        return;
+    }
+
+    slots.forEach(s => {
+        const isMultiYear = currentHorizon !== 'year';
+        const labelText = isMultiYear
+            ? `${MONTH_NAMES[s.month]} '${String(s.year).slice(-2)}${s.has13thAttached ? ' + 13ª' : ''}`
+            : `${FULL_MONTH_NAMES[s.month] || 'Mese ' + s.month}${s.has13thAttached ? ' (+ 13ª)' : ''}`;
+
         const chip = document.createElement('div');
-        chip.className = 'month-chip' + (selectedMonths.has(p.month) ? ' active' : '');
-        chip.dataset.month = p.month;
+        chip.className = 'month-chip' + (selectedItemKeys.has(s.key) ? ' active' : '');
+        chip.dataset.key = s.key;
         chip.innerHTML = `
-            <span>${selectedMonths.has(p.month) ? '✓' : '○'}</span>
-            <span>${FULL_MONTH_NAMES[p.month] || 'Mese ' + p.month}</span>
+            <span>${selectedItemKeys.has(s.key) ? '✓' : '○'}</span>
+            <span>${labelText}</span>
         `;
-        chip.onclick = () => toggleMonth(p.month);
+        chip.onclick = () => toggleSlot(s.key);
         container.appendChild(chip);
     });
 }
 
-function toggleMonth(month) {
-    if (selectedMonths.has(month)) {
-        if (selectedMonths.size > 1) {
-            selectedMonths.delete(month);
+function toggleSlot(key) {
+    if (selectedItemKeys.has(key)) {
+        if (selectedItemKeys.size > 1) {
+            selectedItemKeys.delete(key);
         }
     } else {
-        selectedMonths.add(month);
+        selectedItemKeys.add(key);
     }
-    clearPresetButtons();
     renderMonthChips();
     updateAnalytics();
 }
 
 function selectAllMonths() {
-    selectedMonths = new Set(chronologicalPaystubs.map(p => p.month));
-    setButtonActive('btnPresetAll');
-    renderMonthChips();
-    updateAnalytics();
-}
-
-function setPresetRange(range) {
-    clearPresetButtons();
-    if (range === 'all') {
-        selectedMonths = new Set(chronologicalPaystubs.map(p => p.month));
-        setButtonActive('btnPresetAll');
-    } else if (range === 'last3') {
-        const last3 = chronologicalPaystubs.slice(-3).map(p => p.month);
-        selectedMonths = new Set(last3);
-        setButtonActive('btnPresetLast3');
-    } else if (range === 'last6') {
-        const last6 = chronologicalPaystubs.slice(-6).map(p => p.month);
-        selectedMonths = new Set(last6);
-        setButtonActive('btnPresetLast6');
-    }
+    const slots = getAggregatedSlots(activePaystubsPool, currentHorizon);
+    selectedItemKeys = new Set(slots.map(s => s.key));
     renderMonthChips();
     updateAnalytics();
 }
 
 function clearPresetButtons() {
-    ['btnPresetAll', 'btnPresetLast3', 'btnPresetLast6'].forEach(id => {
+    ['btnPresetYear', 'btnPreset12M', 'btnPreset18M', 'btnPreset24M'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.remove('active');
     });
@@ -857,12 +985,15 @@ function changeViewMode(mode) {
 }
 
 function updateAnalytics() {
-    const filtered = chronologicalPaystubs.filter(p => selectedMonths.has(p.month));
-    if (filtered.length === 0) return;
+    const allSlots = getAggregatedSlots(activePaystubsPool, currentHorizon);
+    const filteredSlots = allSlots.filter(s => selectedItemKeys.has(s.key));
+
+    if (filteredSlots.length === 0) return;
 
     let totNet = 0;
     let totBaseNet = 0;
-    let totPremiGross = 0;
+    let tot13thNet = 0;
+    let totBonusesNet = 0;
     let totTickets = 0;
     let totTicketVal = 0;
     let totGross = 0;
@@ -872,64 +1003,64 @@ function updateAnalytics() {
     const dataNet = [];
     const dataBaseNet = [];
     const dataPremiNet = [];
+    const data13thNet = [];
     const dataTaxes = [];
     const dataAverageLine = [];
 
-    filtered.forEach(p => {
-        const net = parseFloat(p.net_amount || 0);
-        const gross = parseFloat(p.gross_amount || 0);
-        const bonuses = parseFloat(p.bonuses || 0) + parseFloat(p.overtime_amount || 0);
-        const inps = parseFloat(p.inps_tax || 0);
-        const irpef = parseFloat(p.irpef_net || p.irpef_tax || 0);
-        const localTaxes = parseFloat(p.regional_tax || 0) + parseFloat(p.municipal_tax || 0);
-        const taxes = inps + irpef + localTaxes;
+    const isMultiYear = (currentHorizon !== 'year');
 
-        const taxRate = gross > 0 ? (taxes / gross) : 0.35;
-        const netVariable = Math.round(bonuses * (1 - taxRate) * 100) / 100;
-        const netBase = Math.max(0, Math.round((net - netVariable) * 100) / 100);
+    filteredSlots.forEach(s => {
+        totNet += s.net_amount;
+        totBaseNet += s.base_net;
+        tot13thNet += s.thirteenth_net;
+        totBonusesNet += s.bonuses_net;
+        totTickets += s.ticket_count;
+        totTicketVal += s.ticket_val;
+        totGross += s.gross_amount;
+        totTaxes += s.taxes;
 
-        const tCount = parseFloat(p.ticket_count || 0);
-        const tUnit = parseFloat(p.ticket_unit_value || 8.0);
-        const tVal = parseFloat(p.ticket_total_value || (tCount * tUnit));
+        // Label: "Dic" or "Dic '25" or with +13ª indication in tooltip
+        const mLabel = MONTH_NAMES[s.month] || ('M' + s.month);
+        const fullLabel = isMultiYear ? `${mLabel} '${String(s.year).slice(-2)}` : mLabel;
+        labels.push(fullLabel);
 
-        totNet += net;
-        totBaseNet += netBase;
-        totPremiGross += bonuses;
-        totTickets += tCount;
-        totTicketVal += tVal;
-        totGross += gross;
-        totTaxes += taxes;
-
-        labels.push(MONTH_NAMES[p.month] || 'M' + p.month);
-        dataNet.push(net);
-        dataBaseNet.push(netBase);
-        dataPremiNet.push(netVariable);
-        dataTaxes.push(taxes);
+        dataNet.push(s.net_amount);
+        dataBaseNet.push(s.base_net);
+        dataPremiNet.push(s.bonuses_net);
+        data13thNet.push(s.thirteenth_net);
+        dataTaxes.push(s.taxes);
     });
 
-    const count = filtered.length;
+    const count = filteredSlots.length;
     const avgNet = totNet / count;
+    // Base net average (excluding 13th and one-off bonuses for standard recurrence)
     const avgBaseNet = totBaseNet / count;
 
     for (let i = 0; i < count; i++) {
         dataAverageLine.push(Math.round(avgNet * 100) / 100);
     }
 
-    // Update KPI Card UI
+    // Update KPI Cards UI
     const kpiNetEl = document.getElementById('kpiAvgNet');
     if (kpiNetEl) kpiNetEl.innerText = formatEur(avgNet);
     
     const kpiNetSubEl = document.getElementById('kpiNetSub');
-    if (kpiNetSubEl) kpiNetSubEl.innerText = `Media su ${count} mes${count === 1 ? 'e' : 'i'} selezionat${count === 1 ? 'o' : 'i'}`;
+    if (kpiNetSubEl) kpiNetSubEl.innerText = `Media su ${count} period${count === 1 ? 'o' : 'i'} (incl. 13ª)`;
     
     const kpiBaseEl = document.getElementById('kpiAvgBaseNet');
     if (kpiBaseEl) kpiBaseEl.innerText = formatEur(avgBaseNet);
 
     const kpiPremiEl = document.getElementById('kpiTotPremi');
-    if (kpiPremiEl) kpiPremiEl.innerText = formatEur(totPremiGross);
+    if (kpiPremiEl) kpiPremiEl.innerText = formatEur(totBonusesNet + tot13thNet);
 
     const kpiPremiSubEl = document.getElementById('kpiPremiSub');
-    if (kpiPremiSubEl) kpiPremiSubEl.innerText = totPremiGross > 0 ? `${count} mes${count === 1 ? 'e' : 'i'} (lordi)` : 'Nessun bonus nel periodo';
+    if (kpiPremiSubEl) {
+        if (tot13thNet > 0) {
+            kpiPremiSubEl.innerText = `13ª: ${formatEur(tot13thNet)} + Premi: ${formatEur(totBonusesNet)}`;
+        } else {
+            kpiPremiSubEl.innerText = totBonusesNet > 0 ? `${formatEur(totBonusesNet)} incassati` : 'Nessun extra nel periodo';
+        }
+    }
 
     const kpiTicketsEl = document.getElementById('kpiTotTickets');
     if (kpiTicketsEl) kpiTicketsEl.innerText = formatEur(totTicketVal);
@@ -937,10 +1068,10 @@ function updateAnalytics() {
     const kpiTicketSubEl = document.getElementById('kpiTicketSub');
     if (kpiTicketSubEl) kpiTicketSubEl.innerText = `${Math.round(totTickets)} ticket esentasse`;
 
-    renderChart(labels, dataNet, dataBaseNet, dataPremiNet, dataTaxes, dataAverageLine, avgNet);
+    renderChart(labels, dataNet, dataBaseNet, dataPremiNet, data13thNet, dataTaxes, dataAverageLine, avgNet);
 }
 
-function renderChart(labels, dataNet, dataBaseNet, dataPremiNet, dataTaxes, dataAverageLine, avgNet) {
+function renderChart(labels, dataNet, dataBaseNet, dataPremiNet, data13thNet, dataTaxes, dataAverageLine, avgNet) {
     const ctx = document.getElementById('salaryAnalyticsChart');
     if (!ctx) return;
 
@@ -958,7 +1089,7 @@ function renderChart(labels, dataNet, dataBaseNet, dataPremiNet, dataTaxes, data
                 backgroundColor: 'rgba(56, 189, 248, 0.85)',
                 borderColor: '#38bdf8',
                 borderWidth: 1,
-                borderRadius: 6,
+                borderRadius: { topLeft: 0, topRight: 0, bottomLeft: 4, bottomRight: 4 },
                 stack: 'stack1'
             },
             {
@@ -967,11 +1098,19 @@ function renderChart(labels, dataNet, dataBaseNet, dataPremiNet, dataTaxes, data
                 backgroundColor: 'rgba(251, 191, 36, 0.85)',
                 borderColor: '#fbbf24',
                 borderWidth: 1,
-                borderRadius: 6,
                 stack: 'stack1'
             },
             {
-                label: 'Media Periodo',
+                label: '13ª Mensilità (Sopra Dicembre)',
+                data: data13thNet,
+                backgroundColor: 'rgba(168, 85, 247, 0.85)',
+                borderColor: '#c084fc',
+                borderWidth: 1,
+                borderRadius: { topLeft: 6, topRight: 6, bottomLeft: 0, bottomRight: 0 },
+                stack: 'stack1'
+            },
+            {
+                label: 'Media Netta Periodo',
                 data: dataAverageLine,
                 type: 'line',
                 borderColor: '#10b981',
@@ -984,12 +1123,12 @@ function renderChart(labels, dataNet, dataBaseNet, dataPremiNet, dataTaxes, data
     } else if (currentViewMode === 'stacked_full') {
         datasets = [
             {
-                label: 'Netto in Tasca',
+                label: 'Netto in Tasca (con 13ª)',
                 data: dataNet,
                 backgroundColor: 'rgba(16, 185, 129, 0.85)',
                 borderColor: '#10b981',
                 borderWidth: 1,
-                borderRadius: 6,
+                borderRadius: 4,
                 stack: 'stack0'
             },
             {
@@ -998,7 +1137,7 @@ function renderChart(labels, dataNet, dataBaseNet, dataPremiNet, dataTaxes, data
                 backgroundColor: 'rgba(239, 68, 68, 0.75)',
                 borderColor: '#ef4444',
                 borderWidth: 1,
-                borderRadius: 6,
+                borderRadius: 4,
                 stack: 'stack0'
             }
         ];
@@ -1006,7 +1145,7 @@ function renderChart(labels, dataNet, dataBaseNet, dataPremiNet, dataTaxes, data
         // net_only
         datasets = [
             {
-                label: 'Netto Busta',
+                label: 'Netto Totale Busta',
                 data: dataNet,
                 backgroundColor: 'rgba(16, 185, 129, 0.85)',
                 borderColor: '#10b981',
@@ -1047,7 +1186,11 @@ function renderChart(labels, dataNet, dataBaseNet, dataPremiNet, dataTaxes, data
                         color: '#94a3b8',
                         font: { size: 11, weight: '600' },
                         boxWidth: 12,
-                        padding: 12
+                        padding: 10,
+                        filter: function(item) {
+                            // Don't show 13th in legend if all values are 0 in selected scope
+                            return true;
+                        }
                     }
                 },
                 tooltip: {
@@ -1059,6 +1202,7 @@ function renderChart(labels, dataNet, dataBaseNet, dataPremiNet, dataTaxes, data
                     padding: 10,
                     callbacks: {
                         label: function(context) {
+                            if (context.raw === 0) return null; // hide zero values in tooltip
                             return context.dataset.label + ': ' + formatEur(context.raw);
                         }
                     }
@@ -1066,10 +1210,12 @@ function renderChart(labels, dataNet, dataBaseNet, dataPremiNet, dataTaxes, data
             },
             scales: {
                 x: {
+                    stacked: (currentViewMode !== 'net_only'),
                     grid: { color: 'rgba(51, 65, 85, 0.3)' },
                     ticks: { color: '#94a3b8', font: { size: 11, weight: '700' } }
                 },
                 y: {
+                    stacked: (currentViewMode !== 'net_only'),
                     grid: { color: 'rgba(51, 65, 85, 0.3)' },
                     ticks: {
                         color: '#94a3b8',

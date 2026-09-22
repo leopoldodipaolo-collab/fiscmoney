@@ -579,6 +579,18 @@ def get_profile_paystubs_summary(workspace_id, profile_id, year=None):
     '''
     cursor.execute(query, (workspace_id, profile_id, year))
     paystubs = [dict(row) for row in cursor.fetchall()]
+
+    # Fetch all historical paystubs for this profile to allow rolling 12, 18, 24-month multi-year trend analytics
+    query_all = '''
+        SELECT p.*, a.bank_name, a.name as account_name
+        FROM paystubs p
+        LEFT JOIN transactions t ON p.matched_tx_id = t.id
+        LEFT JOIN accounts a ON t.account_id = a.id
+        WHERE p.workspace_id = ? AND p.profile_id = ?
+        ORDER BY p.year ASC, p.month ASC
+    '''
+    cursor.execute(query_all, (workspace_id, profile_id))
+    all_history = [dict(row) for row in cursor.fetchall()]
     conn.close()
 
     total_gross = sum(p['gross_amount'] for p in paystubs)
@@ -671,6 +683,7 @@ def get_profile_paystubs_summary(workspace_id, profile_id, year=None):
         'chart_net': chart_net,
         'chart_taxes': chart_taxes,
         'paystubs': paystubs,
+        'all_history': all_history,
         'pension_analytics': {
             'total_employee': round(total_pension_employee, 2),
             'total_company': round(total_pension_company, 2),
