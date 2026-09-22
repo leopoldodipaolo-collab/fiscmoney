@@ -96,6 +96,53 @@
 
     </div>
 
+    <!-- Interactive Trend & Analisi Fiscale 730 Multi-Anno Card -->
+    {% if declarations %}
+    <div class="card" id="tax730AnalyticsCard" style="margin-bottom: 25px; background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.7)); border: 1px solid #334155; border-radius: 18px; padding: 22px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);">
+        
+        <!-- Header & View Mode Switcher -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(51, 65, 85, 0.6); padding-bottom: 14px;">
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.4rem;">📊</span>
+                    <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">Trend & Analisi Fiscale Modello 730</h2>
+                    <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.72rem; font-weight: 700;">
+                        Storico Multi-Anno
+                    </span>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.8rem; margin: 4px 0 0 0;" id="chartSubtitle">
+                    Confronto storico dei rimborsi estivi, detrazioni Quadro E, progressione del reddito e pressione IRPEF.
+                </p>
+            </div>
+
+            <!-- View Mode Switcher -->
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <div style="display: inline-flex; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 3px; gap: 2px;">
+                    <button type="button" class="tax-chart-btn active" id="btnModeRefunds" onclick="switchTaxChartMode('refunds')">
+                        💚 Rimborsi vs Debiti
+                    </button>
+                    <button type="button" class="tax-chart-btn" id="btnModeIncomeTax" onclick="switchTaxChartMode('income_tax')">
+                        ⚖️ Reddito vs IRPEF
+                    </button>
+                    <button type="button" class="tax-chart-btn" id="btnModeDeductions" onclick="switchTaxChartMode('deductions')">
+                        🏷️ Detrazioni Quadro E
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dynamic Summary Bar within Chart -->
+        <div id="chartDynamicStats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 16px;">
+            <!-- Populated via JavaScript based on active mode -->
+        </div>
+
+        <!-- Canvas Container -->
+        <div style="position: relative; height: 300px; width: 100%; background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(51, 65, 85, 0.6); border-radius: 12px; padding: 12px;">
+            <canvas id="tax730Chart"></canvas>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Declarations Timeline & List -->
     {% if declarations %}
     <div style="display: flex; flex-direction: column; gap: 20px;">
@@ -255,6 +302,28 @@
     </div>
 </div>
 
+<style>
+.tax-chart-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.tax-chart-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+}
+.tax-chart-btn.active {
+    background: #059669;
+    color: #fff;
+}
+</style>
+
 <script>
 function openUploadModal() {
     document.getElementById('uploadModal').style.display = 'flex';
@@ -274,5 +343,351 @@ function updateFileList(input) {
         listDiv.innerHTML = "";
     }
 }
+
+// ========================================================
+// 📊 MULTI-YEAR 730 TAX ANALYTICS CHART
+// ========================================================
+const RAW_DECLARATIONS = {{ declarations|tojson if declarations else '[]' }};
+let taxChartInstance = null;
+let currentTaxChartMode = 'refunds';
+
+// Sort declarations chronologically ASC (by tax_year / declaration_year)
+const chronologicalDeclarations = [...RAW_DECLARATIONS].sort((a, b) => {
+    return (a.tax_year || a.declaration_year - 1) - (b.tax_year || b.declaration_year - 1);
+});
+
+function formatEur(num) {
+    if (num === null || num === undefined || isNaN(num)) return "0,00 €";
+    const abs = Math.abs(num);
+    const formatted = abs.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return (num < 0 ? "-" : "") + formatted + " €";
+}
+
+function switchTaxChartMode(mode) {
+    currentTaxChartMode = mode;
+    ['btnModeRefunds', 'btnModeIncomeTax', 'btnModeDeductions'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
+    });
+
+    if (mode === 'refunds') {
+        const el = document.getElementById('btnModeRefunds');
+        if (el) el.classList.add('active');
+    } else if (mode === 'income_tax') {
+        const el = document.getElementById('btnModeIncomeTax');
+        if (el) el.classList.add('active');
+    } else if (mode === 'deductions') {
+        const el = document.getElementById('btnModeDeductions');
+        if (el) el.classList.add('active');
+    }
+
+    renderTaxChart();
+}
+
+function renderTaxChart() {
+    const ctx = document.getElementById('tax730Chart');
+    if (!ctx || chronologicalDeclarations.length === 0) return;
+
+    if (taxChartInstance) {
+        taxChartInstance.destroy();
+    }
+
+    const labels = chronologicalDeclarations.map(d => `730/${d.declaration_year} (Redd. ${d.tax_year})`);
+    const statsContainer = document.getElementById('chartDynamicStats');
+    let datasets = [];
+    let chartType = 'bar';
+
+    if (currentTaxChartMode === 'refunds') {
+        // Mode 1: Rimborsi vs Debiti (Conguaglio estivo)
+        const refundsData = [];
+        const debitsData = [];
+        const bgColors = [];
+        const borderColors = [];
+        const values = [];
+
+        let totalRefundSum = 0;
+        let totalDebitSum = 0;
+
+        chronologicalDeclarations.forEach(d => {
+            const isRef = d.is_refund;
+            const amt = parseFloat(d.final_refund_or_debit || 0);
+            if (isRef && amt > 0) {
+                values.push(amt);
+                bgColors.push('rgba(16, 185, 129, 0.85)');
+                borderColors.push('#10b981');
+                totalRefundSum += amt;
+            } else if (!isRef && amt > 0) {
+                values.push(-amt);
+                bgColors.push('rgba(239, 68, 68, 0.85)');
+                borderColors.push('#ef4444');
+                totalDebitSum += amt;
+            } else {
+                values.push(0);
+                bgColors.push('rgba(148, 163, 184, 0.5)');
+                borderColors.push('#94a3b8');
+            }
+        });
+
+        datasets = [{
+            label: 'Esito Liquidazione Conguaglio (€)',
+            data: values,
+            backgroundColor: bgColors,
+            borderColor: borderColors,
+            borderWidth: 1.5,
+            borderRadius: 6
+        }];
+
+        if (statsContainer) {
+            statsContainer.innerHTML = `
+                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 10px 14px;">
+                    <span style="font-size: 0.72rem; color: #34d399; text-transform: uppercase; font-weight: 800;">Totale Rimborsi Incassati</span>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: #10b981; margin-top: 2px;">+${formatEur(totalRefundSum)}</div>
+                </div>
+                <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 10px 14px;">
+                    <span style="font-size: 0.72rem; color: #f87171; text-transform: uppercase; font-weight: 800;">Debiti Versati (F24/Trattenute)</span>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: #ef4444; margin-top: 2px;">-${formatEur(totalDebitSum)}</div>
+                </div>
+                <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 10px 14px;">
+                    <span style="font-size: 0.72rem; color: #38bdf8; text-transform: uppercase; font-weight: 800;">Saldo Netto Fiscale</span>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: #38bdf8; margin-top: 2px;">${formatEur(totalRefundSum - totalDebitSum)}</div>
+                </div>
+            `;
+        }
+
+    } else if (currentTaxChartMode === 'income_tax') {
+        // Mode 2: Reddito Complessivo vs IRPEF Netta con Aliquota Effettiva
+        const incomeData = [];
+        const netTaxData = [];
+        const effectiveRates = [];
+
+        chronologicalDeclarations.forEach(d => {
+            const inc = parseFloat(d.total_income || 0);
+            const tax = parseFloat(d.net_tax || 0);
+            const rate = inc > 0 ? Math.round((tax / inc * 100) * 10) / 10 : (parseFloat(d.effective_tax_rate) || 0);
+            incomeData.push(inc);
+            netTaxData.push(tax);
+            effectiveRates.push(rate);
+        });
+
+        datasets = [
+            {
+                label: 'Reddito Complessivo (Rigo 11)',
+                data: incomeData,
+                backgroundColor: 'rgba(56, 189, 248, 0.75)',
+                borderColor: '#38bdf8',
+                borderWidth: 1,
+                borderRadius: 6,
+                yAxisID: 'y'
+            },
+            {
+                label: 'Imposta Netta Dovuta (Rigo 50)',
+                data: netTaxData,
+                backgroundColor: 'rgba(251, 191, 36, 0.85)',
+                borderColor: '#fbbf24',
+                borderWidth: 1,
+                borderRadius: 6,
+                yAxisID: 'y'
+            },
+            {
+                label: 'Aliquota Reale Effettiva (%)',
+                data: effectiveRates,
+                type: 'line',
+                borderColor: '#c084fc',
+                backgroundColor: '#c084fc',
+                borderWidth: 2.5,
+                pointRadius: 4,
+                yAxisID: 'yRate'
+            }
+        ];
+
+        if (statsContainer) {
+            statsContainer.innerHTML = `
+                <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 10px 14px;">
+                    <span style="font-size: 0.72rem; color: #38bdf8; text-transform: uppercase; font-weight: 800;">Ultimo Reddito Dichiarato</span>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: #38bdf8; margin-top: 2px;">${formatEur(incomeData[incomeData.length - 1] || 0)}</div>
+                </div>
+                <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 10px; padding: 10px 14px;">
+                    <span style="font-size: 0.72rem; color: #fbbf24; text-transform: uppercase; font-weight: 800;">Ultima IRPEF Netta</span>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: #fbbf24; margin-top: 2px;">${formatEur(netTaxData[netTaxData.length - 1] || 0)}</div>
+                </div>
+                <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 10px; padding: 10px 14px;">
+                    <span style="font-size: 0.72rem; color: #c084fc; text-transform: uppercase; font-weight: 800;">Aliquota Effettiva Ultimo Anno</span>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: #c084fc; margin-top: 2px;">${effectiveRates[effectiveRates.length - 1] || 0}%</div>
+                </div>
+            `;
+        }
+
+    } else if (currentTaxChartMode === 'deductions') {
+        // Mode 3: Oneri e Detrazioni Quadro E Breakdown
+        const medData = [];
+        const pensionData = [];
+        const buildingData = [];
+        const otherData = [];
+
+        chronologicalDeclarations.forEach(d => {
+            let med = 0;
+            let pen = parseFloat(d.pension_fund_deduction || 0);
+            let bld = 0;
+            let other = 0;
+
+            if (d.details && d.details.expenses_breakdown) {
+                d.details.expenses_breakdown.forEach(exp => {
+                    const code = (exp.code || '').toUpperCase();
+                    const amt = parseFloat(exp.tax_benefit || exp.amount || 0);
+                    if (code.startsWith('E1') || code.startsWith('E2')) {
+                        med += amt;
+                    } else if (code.startsWith('E41') || code.startsWith('E51') || code.startsWith('E61')) {
+                        bld += amt;
+                    } else if (!code.startsWith('E27')) {
+                        other += amt;
+                    }
+                });
+            } else {
+                other = Math.max(0, parseFloat(d.total_deductions || 0) - pen);
+            }
+
+            medData.push(Math.round(med * 100) / 100);
+            pensionData.push(Math.round(pen * 100) / 100);
+            buildingData.push(Math.round(bld * 100) / 100);
+            otherData.push(Math.round(other * 100) / 100);
+        });
+
+        datasets = [
+            {
+                label: 'Fondo Pensione Deducibile (E27)',
+                data: pensionData,
+                backgroundColor: 'rgba(14, 165, 233, 0.85)',
+                borderColor: '#0ea5e9',
+                borderWidth: 1,
+                stack: 'stackE'
+            },
+            {
+                label: 'Spese Medico-Sanitarie (E1)',
+                data: medData,
+                backgroundColor: 'rgba(16, 185, 129, 0.85)',
+                borderColor: '#10b981',
+                borderWidth: 1,
+                stack: 'stackE'
+            },
+            {
+                label: 'Bonus Casa & Ristrutturazioni (E41)',
+                data: buildingData,
+                backgroundColor: 'rgba(245, 158, 11, 0.85)',
+                borderColor: '#f59e0b',
+                borderWidth: 1,
+                stack: 'stackE'
+            },
+            {
+                label: 'Altre Detrazioni / Lavoro (Rigo 48)',
+                data: otherData,
+                backgroundColor: 'rgba(168, 85, 247, 0.85)',
+                borderColor: '#a855f7',
+                borderWidth: 1,
+                stack: 'stackE'
+            }
+        ];
+
+        if (statsContainer) {
+            const totDedLast = (pensionData[pensionData.length - 1] || 0) + 
+                               (medData[medData.length - 1] || 0) + 
+                               (buildingData[buildingData.length - 1] || 0) + 
+                               (otherData[otherData.length - 1] || 0);
+
+            statsContainer.innerHTML = `
+                <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 10px; padding: 10px 14px;">
+                    <span style="font-size: 0.72rem; color: #38bdf8; text-transform: uppercase; font-weight: 800;">Fondo Pensione Ultimo 730</span>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: #38bdf8; margin-top: 2px;">${formatEur(pensionData[pensionData.length - 1] || 0)}</div>
+                </div>
+                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 10px 14px;">
+                    <span style="font-size: 0.72rem; color: #34d399; text-transform: uppercase; font-weight: 800;">Spese Sanitarie Registrate</span>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: #34d399; margin-top: 2px;">${formatEur(medData[medData.length - 1] || 0)}</div>
+                </div>
+                <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 10px; padding: 10px 14px;">
+                    <span style="font-size: 0.72rem; color: #c084fc; text-transform: uppercase; font-weight: 800;">Totale Oneri & Detrazioni</span>
+                    <div style="font-size: 1.25rem; font-weight: 800; color: #c084fc; margin-top: 2px;">${formatEur(totDedLast)}</div>
+                </div>
+            `;
+        }
+    }
+
+    const scalesConfig = {
+        x: {
+            stacked: (currentTaxChartMode === 'deductions'),
+            grid: { color: 'rgba(51, 65, 85, 0.3)' },
+            ticks: { color: '#94a3b8', font: { size: 11, weight: '700' } }
+        },
+        y: {
+            stacked: (currentTaxChartMode === 'deductions'),
+            grid: { color: 'rgba(51, 65, 85, 0.3)' },
+            ticks: {
+                color: '#94a3b8',
+                callback: function(val) { return val.toLocaleString('it-IT') + ' €'; }
+            }
+        }
+    };
+
+    if (currentTaxChartMode === 'income_tax') {
+        scalesConfig.yRate = {
+            type: 'linear',
+            position: 'right',
+            grid: { drawOnChartArea: false },
+            ticks: {
+                color: '#c084fc',
+                callback: function(val) { return val + '%'; }
+            }
+        };
+    }
+
+    taxChartInstance = new Chart(ctx, {
+        type: chartType,
+        data: {
+            labels: labels,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: '#94a3b8',
+                        font: { size: 11, weight: '600' },
+                        boxWidth: 12,
+                        padding: 12
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#fff',
+                    bodyColor: '#cbd5e1',
+                    borderColor: '#334155',
+                    borderWidth: 1,
+                    padding: 10,
+                    callbacks: {
+                        label: function(context) {
+                            if (context.dataset.yAxisID === 'yRate') {
+                                return context.dataset.label + ': ' + context.raw + '%';
+                            }
+                            return context.dataset.label + ': ' + formatEur(context.raw);
+                        }
+                    }
+                }
+            },
+            scales: scalesConfig
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (chronologicalDeclarations && chronologicalDeclarations.length > 0) {
+        renderTaxChart();
+    }
+});
 </script>
 {% endblock %}
