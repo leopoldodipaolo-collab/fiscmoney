@@ -10,6 +10,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.9.2">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <meta name="theme-color" content="#0b0f19">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FiscMoney">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/icon-192.png') }}">
+    <link rel="apple-touch-icon" sizes="192x192" href="{{ url_for('static', filename='images/icon-192.png') }}">
+    <link rel="apple-touch-icon" sizes="512x512" href="{{ url_for('static', filename='images/icon-512.png') }}">
     <meta name="google-site-verification" content="urvrc0E5ZF8rvYKYvPumh9ScwXI2Pu_aszpXE70lAo" />
     <!-- Open Graph / Social Sharing -->
     <meta property="og:type" content="website">
@@ -1540,6 +1547,568 @@
         border-color: rgba(56, 189, 248, 0.7) !important;
         box-shadow: 0 14px 38px rgba(0, 0, 0, 0.55), 0 0 35px rgba(56, 189, 248, 0.2) !important;
         transform: translateY(-2px);
+    }
+    </style>
+
+    <!-- ======================================================== -->
+    <!-- 📱 PWA FLOATING ACTION BUTTON (FAB) FOR QUICK EXPENSE     -->
+    <!-- ======================================================== -->
+    {% if session.get('user_id') and not request.path.startswith('/admin') %}
+    <div id="quickExpenseFabWrapper" class="quick-expense-fab-wrapper">
+        <button id="quickExpenseFab" type="button" onclick="openQuickExpenseModal()" class="quick-expense-fab-btn" title="Nuova Spesa Rapida [PWA]" aria-label="Nuova Spesa Rapida">
+            <span class="quick-expense-fab-icon">➕</span>
+            <span class="quick-expense-fab-label">Spesa</span>
+        </button>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- 📱 QUICK EXPENSE BOTTOM SHEET / MODAL                    -->
+    <!-- ======================================================== -->
+    <div id="quickExpenseModalBackdrop" class="quick-modal-backdrop" style="display: none;" onclick="closeQuickExpenseModal(event)">
+        <div class="quick-modal-container" onclick="event.stopPropagation()">
+            <!-- Drag Handle for Mobile Feel -->
+            <div class="quick-modal-drag-handle"></div>
+
+            <div class="quick-modal-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="quick-modal-header-icon">⚡</div>
+                    <div>
+                        <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">Nuova Spesa Rapida</h3>
+                        <span style="font-size: 0.72rem; color: #94a3b8;">Inserimento istantaneo mobile con auto-matching banca</span>
+                    </div>
+                </div>
+                <button type="button" onclick="closeQuickExpenseModal()" class="quick-modal-close-btn">&times;</button>
+            </div>
+
+            <form id="quickExpenseForm" onsubmit="submitQuickExpense(event)">
+                <!-- Amount Big Input Display -->
+                <div class="quick-amount-box">
+                    <span class="quick-currency-symbol">€</span>
+                    <input type="number" id="quickExpenseAmount" step="0.01" min="0.01" placeholder="0,00" required inputmode="decimal" autofocus class="quick-amount-input">
+                </div>
+
+                <!-- Who paid? Profile 1-Tap Switcher -->
+                <div class="quick-form-section">
+                    <label class="quick-field-label">Chi ha pagato?</label>
+                    <div id="quickProfileButtons" class="quick-pill-row">
+                        <!-- Loaded dynamically or fallback -->
+                        <button type="button" class="quick-chip-btn active" data-profile-id="">👥 Nucleo</button>
+                    </div>
+                </div>
+
+                <!-- Fast Description & Account Row -->
+                <div class="quick-form-grid">
+                    <div class="quick-field-col">
+                        <label class="quick-field-label" for="quickExpenseDesc">Descrizione / Negozio</label>
+                        <input type="text" id="quickExpenseDesc" placeholder="Es. Caffè, Spesa Conad, Eni..." required class="quick-text-input">
+                    </div>
+                    <div class="quick-field-col">
+                        <label class="quick-field-label" for="quickExpenseAccount">Conto o Carta</label>
+                        <select id="quickExpenseAccount" required class="quick-select-input">
+                            <option value="">Caricamento conti...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Quick Tags / Category 1-Tap Chips -->
+                <div class="quick-form-section" style="margin-top: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label class="quick-field-label" style="margin: 0;">Tag & Categoria Rapidi</label>
+                        <span style="font-size: 0.68rem; color: #38bdf8;">Tocca per applicare</span>
+                    </div>
+                    <div id="quickTagsChips" class="quick-tags-scroll">
+                        <!-- Injected via JS -->
+                        <button type="button" onclick="selectQuickTag('#alimentari', 'Alimentari e Spesa', this)" class="quick-tag-chip">🛒 #alimentari</button>
+                        <button type="button" onclick="selectQuickTag('#carburante', 'Trasporti e Auto', this)" class="quick-tag-chip">⛽ #carburante</button>
+                        <button type="button" onclick="selectQuickTag('#ristorante', 'Ristoranti e Bar', this)" class="quick-tag-chip">🍽️ #ristorante</button>
+                        <button type="button" onclick="selectQuickTag('#farmacia', 'Salute e Benessere', this)" class="quick-tag-chip">💊 #farmacia</button>
+                        <button type="button" onclick="selectQuickTag('#casa', 'Casa e Utenze', this)" class="quick-tag-chip">🏠 #casa</button>
+                        <button type="button" onclick="selectQuickTag('#svago', 'Tempo Libero e Svago', this)" class="quick-tag-chip">🍿 #svago</button>
+                    </div>
+                </div>
+
+                <!-- Hidden or Secondary Inputs (Date & Category) -->
+                <input type="hidden" id="quickExpenseCategory" value="Altro">
+                <input type="hidden" id="quickExpenseTag" value="">
+                <input type="hidden" id="quickExpenseProfileId" value="">
+
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 12px; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 0.72rem; color: #94a3b8;">Data:</span>
+                        <input type="date" id="quickExpenseDate" class="quick-date-input">
+                    </div>
+                    <div id="quickSelectedTagBadge" style="display: none; font-size: 0.72rem; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; border-radius: 6px; padding: 2px 8px; font-weight: 700;"></div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="quickExpenseSubmitBtn" class="quick-submit-btn">
+                    <span>⚡ Registra Spesa al Volo</span>
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Service Worker Registration & Quick Expense Script -->
+    <script>
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/static/sw.js')
+                .then((reg) => {
+                    console.log('FiscMoney PWA Service Worker pronto:', reg.scope);
+                })
+                .catch((err) => {
+                    console.warn('Service Worker registration skipped:', err);
+                });
+        });
+    }
+
+    // Quick Expense Modal Logic
+    let quickExpenseDataCache = null;
+
+    function openQuickExpenseModal() {
+        const modal = document.getElementById('quickExpenseModalBackdrop');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        const amountInput = document.getElementById('quickExpenseAmount');
+        if (amountInput) {
+            setTimeout(() => amountInput.focus(), 120);
+        }
+
+        const dateInput = document.getElementById('quickExpenseDate');
+        if (dateInput && !dateInput.value) {
+            const today = new Date().toISOString().split('T')[0];
+            dateInput.value = today;
+        }
+
+        // Fetch Accounts & Profiles if not cached
+        if (!quickExpenseDataCache) {
+            fetch('/api/quick-expense/data')
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        quickExpenseDataCache = res;
+                        renderQuickExpenseData(res);
+                    }
+                })
+                .catch(err => console.error('Error fetching quick expense data:', err));
+        } else {
+            renderQuickExpenseData(quickExpenseDataCache);
+        }
+    }
+
+    function closeQuickExpenseModal(e) {
+        if (e && e.target && e.target.id !== 'quickExpenseModalBackdrop' && !e.target.classList.contains('quick-modal-close-btn')) {
+            return;
+        }
+        const modal = document.getElementById('quickExpenseModalBackdrop');
+        if (modal) modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    function renderQuickExpenseData(data) {
+        // Render Accounts dropdown
+        const accSelect = document.getElementById('quickExpenseAccount');
+        if (accSelect && data.accounts) {
+            accSelect.innerHTML = '';
+            data.accounts.forEach((acc, idx) => {
+                const opt = document.createElement('option');
+                opt.value = acc.id;
+                opt.textContent = `${acc.bank_name || '💳'} ${acc.name} (Saldo: € ${acc.balance.toLocaleString('it-IT', {minimumFractionDigits: 2})})`;
+                if (idx === 0) opt.selected = true;
+                accSelect.appendChild(opt);
+            });
+        }
+
+        // Render Profiles switcher
+        const profWrap = document.getElementById('quickProfileButtons');
+        if (profWrap && data.profiles && data.profiles.length > 0) {
+            profWrap.innerHTML = '';
+            data.profiles.forEach((p, idx) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'quick-chip-btn' + (idx === 0 ? ' active' : '');
+                btn.dataset.profileId = p.id;
+                btn.textContent = (idx === 0 ? '👤 ' : '👩 ') + p.name.split(' ')[0];
+                btn.onclick = function() {
+                    profWrap.querySelectorAll('.quick-chip-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    document.getElementById('quickExpenseProfileId').value = p.id;
+                };
+                profWrap.appendChild(btn);
+            });
+            document.getElementById('quickExpenseProfileId').value = data.profiles[0].id;
+        }
+
+        if (data.today_str && document.getElementById('quickExpenseDate')) {
+            document.getElementById('quickExpenseDate').value = data.today_str;
+        }
+    }
+
+    function selectQuickTag(tag, category, btnElement) {
+        document.getElementById('quickExpenseTag').value = tag;
+        document.getElementById('quickExpenseCategory').value = category || 'Altro';
+
+        const descInput = document.getElementById('quickExpenseDesc');
+        if (descInput && !descInput.value) {
+            descInput.value = tag.replace('#', '').charAt(0).toUpperCase() + tag.slice(2);
+        }
+
+        // Update tag badge
+        const badge = document.getElementById('quickSelectedTagBadge');
+        if (badge) {
+            badge.style.display = 'inline-block';
+            badge.textContent = `${tag} (${category})`;
+        }
+
+        // Active state on chip
+        const parent = btnElement.parentElement;
+        if (parent) {
+            parent.querySelectorAll('.quick-tag-chip').forEach(c => c.classList.remove('active'));
+            btnElement.classList.add('active');
+        }
+    }
+
+    function submitQuickExpense(e) {
+        e.preventDefault();
+        const submitBtn = document.getElementById('quickExpenseSubmitBtn');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span>⏳ Registrazione...</span>';
+
+        const payload = {
+            amount: parseFloat(document.getElementById('quickExpenseAmount').value),
+            type: 'EXPENSE',
+            description: document.getElementById('quickExpenseDesc').value,
+            account_id: parseInt(document.getElementById('quickExpenseAccount').value),
+            profile_id: document.getElementById('quickExpenseProfileId').value || null,
+            category: document.getElementById('quickExpenseCategory').value || 'Altro',
+            tags: document.getElementById('quickExpenseTag').value || '',
+            date: document.getElementById('quickExpenseDate').value
+        };
+
+        fetch('/api/quick-expense/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(res => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            if (res.success) {
+                // Trigger Haptic feedback on smartphones if available
+                if (navigator.vibrate) {
+                    navigator.vibrate([40, 30, 40]);
+                }
+                // Close modal
+                closeQuickExpenseModal();
+                // Reset form
+                document.getElementById('quickExpenseForm').reset();
+                document.getElementById('quickSelectedTagBadge').style.display = 'none';
+
+                // Display Toast notification
+                showQuickToast(res.message || 'Spesa registrata con successo!');
+
+                // Reload or update view after a brief moment
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                alert('Errore: ' + (res.error || 'Impossibile salvare la spesa.'));
+            }
+        })
+        .catch(err => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            alert('Errore di connessione: ' + err);
+        });
+    }
+
+    function showQuickToast(msg) {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            document.body.appendChild(container);
+        }
+        const toast = document.createElement('div');
+        toast.className = 'fisc-toast';
+        toast.style.cssText = 'background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border: 1.5px solid #10b981; border-radius: 12px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); display: flex; align-items: center; gap: 10px; animation: slideInToast 0.3s ease; color: #fff; font-weight: 700; font-size: 0.85rem;';
+        toast.innerHTML = `<span>⚡</span> <span>${msg}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
+
+    // Auto-open quick expense if URL has ?action=quick_expense (PWA shortcut)
+    window.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('action') === 'quick_expense') {
+            setTimeout(openQuickExpenseModal, 400);
+        }
+    });
+    </script>
+
+    <style>
+    /* ======================================================== */
+    /* 📱 QUICK EXPENSE FAB & BOTTOM SHEET STYLES               */
+    /* ======================================================== */
+    .quick-expense-fab-wrapper {
+        position: fixed;
+        right: 20px;
+        bottom: 86px;
+        z-index: 9998;
+        display: flex;
+        align-items: center;
+    }
+    .quick-expense-fab-btn {
+        background: linear-gradient(135deg, #38bdf8, #2563eb);
+        color: #fff;
+        border: 1.5px solid rgba(255, 255, 255, 0.3);
+        border-radius: 30px;
+        padding: 10px 18px;
+        font-size: 0.85rem;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 10px 25px rgba(37, 99, 235, 0.45), 0 0 20px rgba(56, 189, 248, 0.3);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        -webkit-tap-highlight-color: transparent;
+    }
+    .quick-expense-fab-btn:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 14px 30px rgba(37, 99, 235, 0.6), 0 0 25px rgba(56, 189, 248, 0.5);
+    }
+    .quick-expense-fab-btn:active {
+        transform: scale(0.95);
+    }
+    .quick-expense-fab-icon {
+        font-size: 1.1rem;
+        line-height: 1;
+    }
+
+    /* Modal Backdrop & Container */
+    .quick-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(3, 7, 18, 0.82);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        z-index: 100000;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+    }
+    .quick-modal-container {
+        width: 100%;
+        max-width: 500px;
+        background: #0f172a;
+        border: 1.5px solid rgba(56, 189, 248, 0.35);
+        border-radius: 24px 24px 0 0;
+        padding: 18px 20px 24px 20px;
+        box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.9);
+        animation: quickSheetSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        max-height: 92vh;
+        overflow-y: auto;
+    }
+    @keyframes quickSheetSlideUp {
+        from { transform: translateY(100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+    @media (min-width: 640px) {
+        .quick-modal-backdrop {
+            align-items: center;
+            padding: 20px;
+        }
+        .quick-modal-container {
+            border-radius: 24px;
+        }
+    }
+    .quick-modal-drag-handle {
+        width: 42px;
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.2);
+        margin: 0 auto 12px auto;
+    }
+    .quick-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 14px;
+    }
+    .quick-modal-header-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        background: rgba(56, 189, 248, 0.15);
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+    }
+    .quick-modal-close-btn {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-size: 1.6rem;
+        cursor: pointer;
+        line-height: 1;
+    }
+
+    /* Big Amount Input Box */
+    .quick-amount-box {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(15, 23, 42, 0.95));
+        border: 2px solid rgba(56, 189, 248, 0.4);
+        border-radius: 16px;
+        padding: 12px 16px;
+        margin-bottom: 14px;
+    }
+    .quick-currency-symbol {
+        font-size: 1.8rem;
+        font-weight: 900;
+        color: #38bdf8;
+    }
+    .quick-amount-input {
+        background: transparent;
+        border: none;
+        outline: none;
+        color: #fff;
+        font-size: 2.2rem;
+        font-weight: 900;
+        width: 100%;
+        max-width: 220px;
+        text-align: left;
+    }
+    .quick-amount-input::placeholder {
+        color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Field Labels & Inputs */
+    .quick-field-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #94a3b8;
+        letter-spacing: 0.5px;
+        display: block;
+        margin-bottom: 5px;
+    }
+    .quick-pill-row {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 12px;
+        overflow-x: auto;
+    }
+    .quick-chip-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #cbd5e1;
+        padding: 6px 14px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .quick-chip-btn.active {
+        background: #2563eb;
+        border-color: #3b82f6;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    }
+    .quick-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    @media (max-width: 480px) {
+        .quick-form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    .quick-text-input,
+    .quick-select-input,
+    .quick-date-input {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        padding: 9px 12px;
+        font-size: 0.82rem;
+        color: #fff;
+        outline: none;
+        transition: border-color 0.2s ease;
+    }
+    .quick-text-input:focus,
+    .quick-select-input:focus,
+    .quick-date-input:focus {
+        border-color: #38bdf8;
+    }
+    .quick-tags-scroll {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+    }
+    .quick-tags-scroll::-webkit-scrollbar {
+        display: none;
+    }
+    .quick-tag-chip {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #cbd5e1;
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s ease;
+    }
+    .quick-tag-chip:hover {
+        background: rgba(56, 189, 248, 0.15);
+        border-color: rgba(56, 189, 248, 0.35);
+        color: #fff;
+    }
+    .quick-tag-chip.active {
+        background: rgba(56, 189, 248, 0.25);
+        border-color: #38bdf8;
+        color: #fff;
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+    }
+    .quick-submit-btn {
+        width: 100%;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 12px;
+        font-size: 0.95rem;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35);
+        transition: all 0.2s ease;
+    }
+    .quick-submit-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 25px rgba(16, 185, 129, 0.5);
+    }
+    .quick-submit-btn:active {
+        transform: scale(0.98);
     }
     </style>
 </body>

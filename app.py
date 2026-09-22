@@ -3055,6 +3055,158 @@ def api_personalization_apply_retro():
     
     updated = apply_all_workspace_rules(ws_id)
     return jsonify({"success": True, "updated_count": updated})
+
+
+# =========================================================
+# 📱 PWA QUICK EXPENSE API (MOBILE-FIRST FAST ENTRY)
+# =========================================================
+@app.route("/api/quick-expense/data", methods=["GET"])
+@login_required
+def api_quick_expense_data():
+    """Returns essential accounts, profiles and frequent tags for fast modal rendering."""
+    ws_id = session.get('workspace_id')
+    if not ws_id:
+        return jsonify({"success": False, "error": "Workspace non valido."}), 400
+
+    conn = get_db_connection()
+    accounts = conn.execute(
+        "SELECT id, profile_id, name, type, balance, bank_name FROM accounts WHERE workspace_id = ? ORDER BY balance DESC",
+        (ws_id,)
+    ).fetchall()
+
+    profiles = conn.execute(
+        "SELECT id, name, is_primary FROM profiles WHERE workspace_id = ? ORDER BY is_primary DESC, name ASC",
+        (ws_id,)
+    ).fetchall()
+
+    # Frequent recent tags for fast 1-tap chip selection
+    recent_tags_raw = conn.execute(
+        """SELECT tags, COUNT(*) as cnt FROM transactions 
+           WHERE workspace_id = ? AND tags IS NOT NULL AND tags != '' 
+           GROUP BY tags ORDER BY cnt DESC LIMIT 12""",
+        (ws_id,)
+    ).fetchall()
+
+    conn.close()
+
+    tag_pills = []
+    seen_tags = set()
+    for row in recent_tags_raw:
+        for t in (row['tags'] or '').split(','):
+            clean_t = t.strip()
+            if clean_t and clean_t.lower() not in seen_tags:
+                seen_tags.add(clean_t.lower())
+                tag_pills.append(clean_t)
+                if len(tag_pills) >= 10:
+                    break
+
+    default_tags = ["#alimentari", "#carburante", "#ristorante", "#farmacia", "#casa", "#utenze", "#svago"]
+    for dt in default_tags:
+        if dt.lower() not in seen_tags and len(tag_pills) < 10:
+            seen_tags.add(dt.lower())
+            tag_pills.append(dt)
+
+    return jsonify({
+        "success": True,
+        "accounts": [dict(a) for a in accounts],
+        "profiles": [dict(p) for p in profiles],
+        "frequent_tags": tag_pills,
+        "today_str": datetime.now().strftime("%Y-%m-%d")
+    })
+
+
+@app.route("/api/quick-expense/save", methods=["POST"])
+@login_required
+def api_quick_expense_save():
+    """Saves a fast manual expense with balance sync and auto-reconciliation compatibility."""
+    ws_id = session.get('workspace_id')
+    if not ws_id:
+        return jsonify({"success": False, "error": "Workspace non valido."}), 400
+
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
+    
+    # 1. Validate Amount
+    amount_raw = data.get("amount")
+    try:
+        if isinstance(amount_raw, str):
+            amount_clean = amount_raw.replace('€', '').replace(' ', '').replace(',', '.')
+            amount_val = float(amount_clean)
+        else:
+            amount_val = float(amount_raw)
+    except (ValueError, TypeError):
+        return jsonify({"success": False, "error": "Importo non valido."}), 400
+
+    if amount_val == 0:
+        return jsonify({"success": False, "error": "L'importo non può essere zero."}), 400
+
+    # Ensure expenses are recorded as negative values unless explicitly specified otherwise
+    tx_type = data.get("type", "EXPENSE")
+    if tx_type == "EXPENSE" and amount_val > 0:
+        amount_val = -amount_val
+    elif tx_type == "INCOME" and amount_val < 0:
+        amount_val = abs(amount_val)
+
+    # 2. Account & Profile
+    account_id = data.get("account_id")
+    profile_id = data.get("profile_id")
+    date_str = data.get("date") or datetime.now().strftime("%Y-%m-%d")
+    description = (data.get("description") or "Spesa Rapida PWA").strip()
+    category = data.get("category") or "Altro"
+    sub_category = data.get("sub_category") or ""
+    tags = data.get("tags") or ""
+
+    if not account_id:
+        return jsonify({"success": False, "error": "Seleziona il conto di pagamento."}), 400
+
+    conn = get_db_connection()
+    acc = conn.execute("SELECT * FROM accounts WHERE id = ? AND workspace_id = ?", (account_id, ws_id)).fetchone()
+    if not acc:
+        conn.close()
+        return jsonify({"success": False, "error": "Conto non trovato."}), 404
+
+    # If profile_id is not specified, inherit account's profile
+    if not profile_id:
+        profile_id = acc['profile_id']
+
+    # Normalize tags with '#' prefix
+    cleaned_tags = []
+    if tags:
+        for t in str(tags).split(','):
+            st = t.strip()
+            if st:
+                if not st.startswith('#'):
+                    st = '#' + st
+                cleaned_tags.append(st)
+    tags_str = ", ".join(cleaned_tags) if cleaned_tags else ""
+
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO transactions (
+            workspace_id, profile_id, account_id, date, amount, category,
+            sub_category, description, raw_description, is_transfer, tags, import_hash
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NULL)
+    ''', (
+        ws_id, profile_id, account_id, date_str, amount_val, category,
+        sub_category, description, f"PWA Quick Entry: {description}", tags_str
+    ))
+    new_tx_id = cursor.lastrowid
+
+    # Update account balance
+    cursor.execute("UPDATE accounts SET balance = balance + ? WHERE id = ?", (amount_val, account_id))
+
+    conn.commit()
+    conn.close()
+
+    formatted_amt = f"€ {abs(amount_val):,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+    sign_str = "-" if amount_val < 0 else "+"
+
+    return jsonify({
+        "success": True,
+        "transaction_id": new_tx_id,
+        "message": f"Registrata spesa di {sign_str}{formatted_amt} ({description}) su '{acc['name']}'!",
+        "new_balance": acc['balance'] + amount_val
+    })
+
 @app.route("/transactions/preview-import", methods=["POST"])
 @login_required
 def preview_import():
@@ -3442,7 +3594,15 @@ def import_transactions():
         (ws_id,)
     ).fetchall())
     
+    # Load recent transactions for this account to perform smart consolidation check (±4 days)
+    recent_account_txs = conn.execute(
+        "SELECT id, date, amount, description, raw_description, import_hash FROM transactions WHERE workspace_id = ? AND account_id = ?",
+        (ws_id, account_id)
+    ).fetchall()
+    account_tx_cache = [dict(r) for r in recent_account_txs]
+
     new_count = 0
+    updated_count = 0
     skipped_count = 0
     total_delta = 0.0
     cursor = conn.cursor()
@@ -3453,6 +3613,53 @@ def import_transactions():
             skipped_count += 1
             continue
             
+        # Smart Consolidation Check with manual/quick expenses
+        consolidated_match = None
+        tx_dt_str = tx['date']
+        tx_amt = tx['amount']
+        tx_clean_desc = (tx['description'] or '').lower().strip()
+        
+        try:
+            tx_dt = datetime.strptime(tx_dt_str[:10], "%Y-%m-%d")
+        except Exception:
+            tx_dt = None
+
+        if tx_dt:
+            for ex in account_tx_cache:
+                if abs(ex['amount'] - tx_amt) < 0.001:
+                    try:
+                        ex_dt = datetime.strptime(ex['date'][:10], "%Y-%m-%d")
+                        days_diff = abs((tx_dt - ex_dt).days)
+                        if days_diff <= 4:
+                            ex_desc = (ex['description'] or '').lower().strip()
+                            w_tx = set(re.findall(r'[a-zA-Z]{3,}', tx_clean_desc))
+                            w_ex = set(re.findall(r'[a-zA-Z]{3,}', ex_desc))
+                            common_words = w_tx.intersection(w_ex)
+                            # Match if descriptions share common merchant words, or if it was a manual quick expense on this account
+                            if common_words or 'quick' in ex_desc or (len(tx_clean_desc) >= 4 and len(ex_desc) >= 4 and (tx_clean_desc[:4] == ex_desc[:4])):
+                                consolidated_match = ex
+                                break
+                    except Exception:
+                        pass
+
+        if consolidated_match:
+            # Consolidate: update the tentative manual transaction with the bank hash and date without duplicating the amount
+            cursor.execute('''
+                UPDATE transactions SET
+                    date = ?, description = ?, raw_description = ?,
+                    import_hash = ?
+                WHERE id = ?
+            ''', (
+                tx['date'], tx['description'], tx['raw_description'],
+                tx['import_hash'], consolidated_match['id']
+            ))
+            existing_hashes.add(h)
+            consolidated_match['import_hash'] = h
+            consolidated_match['date'] = tx['date']
+            consolidated_match['description'] = tx['description']
+            updated_count += 1
+            continue
+
         cursor.execute('''
             INSERT INTO transactions (
                 workspace_id, profile_id, account_id, date, amount, category, 
@@ -3472,10 +3679,13 @@ def import_transactions():
     conn.commit()
     conn.close()
     
-    if new_count > 0:
-        flash(f"✅ Importazione completata! Aggiunti {new_count} nuovi movimenti su '{acc['name']}' ({skipped_count} duplicati già presenti ignorati).", "success")
-    else:
-        flash(f"ℹ️ Nessun nuovo movimento da importare: tutti i {skipped_count} movimenti erano già presenti.", "error")
+    msg = f"✅ Importazione completata su '{acc['name']}': {new_count} nuovi movimenti registrati"
+    if updated_count > 0:
+        msg += f", {updated_count} spese provvisorie consolidate"
+    if skipped_count > 0:
+        msg += f" ({skipped_count} duplicati ignorati)"
+    msg += "."
+    flash(msg, "success")
         
     return redirect(url_for('transactions'))
 

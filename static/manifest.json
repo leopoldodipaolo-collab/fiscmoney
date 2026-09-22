@@ -1,21 +1,49 @@
 {
-  "name": "FiscMoney - Gestione Finanziaria e Fiscale",
+  "name": "FiscMoney — Finanze & Fisco Familiare",
   "short_name": "FiscMoney",
+  "description": "La piattaforma intelligente per il controllo delle finanze personali e di coppia.",
   "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0b0f19",
   "theme_color": "#0b0f19",
   "orientation": "portrait-primary",
+  "categories": ["finance", "productivity"],
   "icons": [
     {
       "src": "/static/images/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/static/images/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nuova Spesa Rapida",
+      "short_name": "+ Spesa",
+      "description": "Registra al volo una nuova spesa sul conto o in contanti",
+      "url": "/dashboard?action=quick_expense",
+      "icons": [{ "src": "/static/images/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Radar Spese & Tag",
+      "short_name": "Radar",
+      "description": "Visualizza l'andamento e la ripartizione dei tag",
+      "url": "/focus",
+      "icons": [{ "src": "/static/images/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Tutti i Movimenti",
+      "short_name": "Movimenti",
+      "description": "Controlla l'elenco completo delle transazioni",
+      "url": "/transactions",
+      "icons": [{ "src": "/static/images/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
