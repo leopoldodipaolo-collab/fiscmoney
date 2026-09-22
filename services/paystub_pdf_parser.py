@@ -156,11 +156,11 @@ def parse_paystub_pdf(file_stream_or_path):
     # 1. Detect Period (Month, Year, Supplementary Months)
     # -------------------------------------------------------------
     # Check for supplementary keywords
-    if 'tredicesima' in raw_lower or '13esima' in raw_lower or '13ª' in raw_lower or '13 mens' in raw_lower:
+    if 'tredicesima' in raw_lower or '13esima' in raw_lower or '13ª' in raw_lower or '13 mens' in raw_lower or '13.a mens' in raw_lower or '13a mens' in raw_lower or '13^' in raw_lower:
         data['month'] = 13
         data['is_supplementary'] = True
         data['supplementary_name'] = '13ª Mensilità (Tredicesima)'
-    elif 'quattordicesima' in raw_lower or '14esima' in raw_lower or '14ª' in raw_lower or '14 mens' in raw_lower:
+    elif 'quattordicesima' in raw_lower or '14esima' in raw_lower or '14ª' in raw_lower or '14 mens' in raw_lower or '14.a mens' in raw_lower or '14a mens' in raw_lower or '14^' in raw_lower:
         data['month'] = 14
         data['is_supplementary'] = True
         data['supplementary_name'] = '14ª Mensilità (Quattordicesima)'
@@ -169,20 +169,32 @@ def parse_paystub_pdf(file_stream_or_path):
         data['is_supplementary'] = True
         data['supplementary_name'] = 'Mensilità Supplementare / Acconto'
 
+    # Check for competence year near supplementary keywords: e.g. "13A MENSILITA' 2025", "13^ 2025", "TREDICESIMA 2025"
+    if data['is_supplementary']:
+        supp_y_match = re.search(r'(?:13|14|tredicesima|quattordicesima)[^\n\r\d]{0,25}?(202[0-9])', raw_lower)
+        if supp_y_match:
+            data['year'] = int(supp_y_match.group(1))
 
-    # Check Zucchetti header period: e.g. "PERIODO AGOSTO 2026", "PERIODO LUGLIO 2026", "PERIODO 08/2026"
-    per_match = re.search(r'p\s*e\s*r\s*i\s*o\s*d\s*o\s+([a-zà-ú\s\.\_]+?)\s+(\d{4})', raw_lower)
-    if per_match:
-        m_txt = per_match.group(1).strip()
-        y_txt = per_match.group(2).strip()
-        data['year'] = int(y_txt)
-        if not data['month']:
-            for m_k, m_v in ITALIAN_MONTHS.items():
-                if m_k in m_txt:
-                    data['month'] = m_v
-                    break
+    # Check Zucchetti / standard header period: e.g. "PERIODO AGOSTO 2026", "PERIODO LUGLIO 2026", "PERIODO 12/2025", "PERIODO DICEMBRE 2025"
+    if not data['year']:
+        per_match = re.search(r'p\s*e\s*r\s*i\s*o\s*d\s*o\s+([a-zà-ú\s\.\_]+?)\s+(\d{4})', raw_lower)
+        if per_match:
+            m_txt = per_match.group(1).strip()
+            y_txt = per_match.group(2).strip()
+            data['year'] = int(y_txt)
+            if not data['month']:
+                for m_k, m_v in ITALIAN_MONTHS.items():
+                    if m_k in m_txt:
+                        data['month'] = m_v
+                        break
 
-    # Secondary check for month & year if not found
+    # Check "ANNO DI COMPETENZA: 2025" or "COMPETENZA: 12/2025" or "ANNO 2025"
+    if not data['year']:
+        comp_m = re.search(r'(?:competenza|anno)[^\d\n\r]{0,20}?(202[0-9])', raw_lower)
+        if comp_m:
+            data['year'] = int(comp_m.group(1))
+
+    # Secondary check for month if not found
     if not data['month']:
         for m_name, m_num in ITALIAN_MONTHS.items():
             if re.search(rf'\b{m_name}\b', raw_lower):
@@ -191,7 +203,7 @@ def parse_paystub_pdf(file_stream_or_path):
 
     # Secondary year search (look for payment date or standard 202X)
     if not data['year']:
-        # e.g. payment date 31/08/2026
+        # e.g. payment date 31/12/2025
         dt_m = re.search(r'\b\d{2}/\d{2}/(202[0-9])\b', text)
         if dt_m:
             data['year'] = int(dt_m.group(1))
