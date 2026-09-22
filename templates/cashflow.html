@@ -410,70 +410,88 @@
             </div>
         </div>
 
-        <!-- Potentiometer Accordion Grid (Default Closed / Sleek Progressive Disclosure) -->
-        <div id="categoriesBudgetContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 8px;">
+        <!-- Potentiometer Accordion Grid (Premium Fintech Visual Design) -->
+        <div id="categoriesBudgetContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 10px;">
             {% for cat in smart_budget.categories_budget %}
-            <div class="smart-cat-card" id="cardCat_{{ cat.name|replace(' ', '_') }}" style="background: rgba(0, 0, 0, 0.3); border: 1.5px solid {% if cat.is_deactivated %}rgba(255, 255, 255, 0.04){% elif cat.status_badge == 'danger' %}rgba(239, 68, 68, 0.4){% elif cat.is_custom %}rgba(56, 189, 248, 0.35){% else %}rgba(255, 255, 255, 0.08){% endif %}; border-radius: 10px; overflow: hidden; transition: all 0.2s ease; {% if cat.is_deactivated %}opacity: 0.45; filter: grayscale(0.6);{% endif %}">
+            <div class="smart-cat-card" id="cardCat_{{ cat.name|replace(' ', '_') }}" style="background: linear-gradient(135deg, rgba(20, 29, 47, 0.75), rgba(15, 23, 42, 0.85)); border: 1.5px solid {% if cat.is_deactivated %}rgba(255, 255, 255, 0.05){% elif cat.status_badge == 'danger' %}rgba(239, 68, 68, 0.45){% elif cat.is_custom %}rgba(56, 189, 248, 0.35){% else %}rgba(255, 255, 255, 0.09){% endif %}; border-radius: 12px; overflow: hidden; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 12px rgba(0,0,0,0.25); position: relative; {% if cat.is_deactivated %}opacity: 0.4; filter: grayscale(0.7);{% endif %}">
                 
+                <!-- Background Accent Glow for Critical/Warning/Active -->
+                <div id="glowCat_{{ cat.name|replace(' ', '_') }}" style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: {% if cat.is_deactivated %}transparent{% else %}{{ cat.status_color }}{% endif %}; transition: background 0.3s ease;"></div>
+
                 <!-- CLICKABLE COMPACT HEADER STRIP (Default Visible) -->
-                <div onclick="toggleCatAccordion('{{ cat.name }}')" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; cursor: pointer; user-select: none; transition: background 0.15s ease;" title="Clicca per regolare il budget" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
-                    <!-- Left: Icon, Category Name & Deactivated/Custom indicator -->
-                    <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                        <span style="font-size: 1.2rem; flex-shrink: 0;">{{ cat.icon }}</span>
+                <div onclick="toggleCatAccordion('{{ cat.name }}')" style="display: flex; justify-content: space-between; align-items: center; padding: 11px 14px 10px 14px; cursor: pointer; user-select: none; transition: background 0.15s ease;" title="Tocca per regolare il budget" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+                    
+                    <!-- Left: Category Icon with Soft Backdrop & Title -->
+                    <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                        <div style="width: 34px; height: 34px; border-radius: 9px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+                            {{ cat.icon }}
+                        </div>
                         <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            <strong style="color: #fff; font-size: 0.88rem;">{{ cat.name }}</strong>
-                            {% if cat.is_custom and not cat.is_deactivated %}
-                            <span class="badge-tag" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.58rem; padding: 0 4px; border-radius: 4px; margin-left: 3px;">Custom</span>
-                            {% endif %}
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <strong style="color: #fff; font-size: 0.88rem; letter-spacing: -0.2px;">{{ cat.name }}</strong>
+                                {% if cat.is_custom and not cat.is_deactivated %}
+                                <span class="badge-tag" style="background: rgba(56, 189, 248, 0.18); color: #38bdf8; font-size: 0.55rem; padding: 0 4px; border-radius: 4px; font-weight: 700;">Custom</span>
+                                {% endif %}
+                            </div>
+                            <div style="font-size: 0.68rem; color: #64748b; margin-top: 1px;">
+                                {% if cat.is_deactivated %}
+                                    <span>Nessuna spesa nel mese</span>
+                                {% else %}
+                                    <span id="subRem_{{ cat.name|replace(' ', '_') }}" style="color: {% if cat.remaining >= 0 %}#34d399{% else %}#f87171{% endif %}; font-weight: 600;">
+                                        {% if cat.remaining >= 0 %}Disponibili: {{ cat.remaining|eur }}{% else %}Sforato di {{ (-cat.remaining)|eur }}{% endif %}
+                                    </span>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Right: Quick Percent Badge, Spent / Budget & Chevron -->
-                    <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                        <!-- Consumo % Badge -->
-                        <span class="badge-tag" id="pctBadge_{{ cat.name|replace(' ', '_') }}" style="background: {% if cat.is_deactivated %}rgba(100, 116, 139, 0.2){% elif cat.status_badge == 'success' %}rgba(16, 185, 129, 0.15){% elif cat.status_badge == 'warning' %}rgba(245, 158, 11, 0.15){% else %}rgba(239, 68, 68, 0.15){% endif %}; color: {{ cat.status_color }}; border: 1px solid {{ cat.status_color }}; font-size: 0.68rem; font-weight: 800; padding: 1px 6px; border-radius: 5px;">
-                            {% if cat.is_deactivated %}
-                                0%
-                            {% else %}
-                                {{ cat.pct_spent }}%
-                            {% endif %}
-                        </span>
-
-                        <!-- Spent / Budget Display -->
-                        <div style="text-align: right; font-size: 0.78rem;">
-                            <strong id="spentDisp_{{ cat.name|replace(' ', '_') }}" style="color: {% if cat.status_badge == 'danger' %}#f87171{% else %}#fff{% endif %}; font-weight: 700;">{{ cat.spent|eur }}</strong>
-                            <span style="color: #64748b; font-size: 0.7rem;"> / </span>
-                            <span id="budgetValDisp_{{ cat.name|replace(' ', '_') }}" style="color: #38bdf8; font-weight: 700;">{{ cat.allocated_budget|eur }}</span>
+                    <!-- Right: Pill Percent Badge + Speso/Budget Values + Chevron -->
+                    <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                        <!-- Spent / Budget Display (Hierarchical: Spent is Big & Crisp) -->
+                        <div style="text-align: right;">
+                            <div style="font-size: 0.92rem; font-weight: 800; letter-spacing: -0.3px; color: {% if cat.is_deactivated %}#64748b{% elif cat.status_badge == 'danger' %}#f87171{% else %}#ffffff{% endif %};">
+                                <span id="spentDisp_{{ cat.name|replace(' ', '_') }}">{{ cat.spent|eur }}</span>
+                            </div>
+                            <div style="font-size: 0.68rem; color: #64748b; margin-top: -1px;">
+                                su <strong id="budgetValDisp_{{ cat.name|replace(' ', '_') }}" style="color: #38bdf8; font-weight: 700;">{{ cat.allocated_budget|eur }}</strong>
+                            </div>
                         </div>
 
-                        <!-- Dropdown Chevron -->
-                        <span id="chevronCat_{{ cat.name|replace(' ', '_') }}" style="font-size: 0.7rem; color: #94a3b8; transition: transform 0.2s ease; margin-left: 2px;">▼</span>
+                        <!-- Pill Percent Badge with High Contrast Glow -->
+                        <div id="pctBadge_{{ cat.name|replace(' ', '_') }}" style="min-width: 48px; text-align: center; padding: 3px 7px; border-radius: 7px; font-size: 0.72rem; font-weight: 900; background: {% if cat.is_deactivated %}rgba(100, 116, 139, 0.15){% elif cat.status_badge == 'danger' %}linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.35)){% elif cat.status_badge == 'warning' %}linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.35)){% else %}linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.35)){% endif %}; color: {{ cat.status_color }}; border: 1px solid {{ cat.status_color }}; box-shadow: 0 0 10px {% if cat.status_badge == 'danger' %}rgba(239, 68, 68, 0.2){% elif cat.status_badge == 'warning' %}rgba(245, 158, 11, 0.2){% else %}rgba(16, 185, 129, 0.2){% endif %};">
+                            {% if cat.is_deactivated %}0%{% else %}{{ cat.pct_spent }}%{% endif %}
+                        </div>
+
+                        <!-- Dropdown Chevron with background circle -->
+                        <div style="width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
+                            <span id="chevronCat_{{ cat.name|replace(' ', '_') }}" style="font-size: 0.65rem; color: #94a3b8; transition: transform 0.25s ease;">▼</span>
+                        </div>
                     </div>
                 </div>
 
+                <!-- Subtle Embedded Micro Progress Bar on the bottom edge of the strip -->
+                <div style="width: 100%; height: 3.5px; background: rgba(255,255,255,0.05); overflow: hidden;">
+                    <div id="progBar_{{ cat.name|replace(' ', '_') }}" style="width: {{ cat.pct_spent }}%; height: 100%; background: {{ cat.status_color }}; transition: width 0.3s ease, background-color 0.3s ease; box-shadow: 0 0 6px {{ cat.status_color }};"></div>
+                </div>
+
                 <!-- EXPANDABLE DRAWER (Default Hidden: Contains Full Potentiometer Controls) -->
-                <div id="drawerCat_{{ cat.name|replace(' ', '_') }}" style="display: none; padding: 10px 12px 12px 12px; border-top: 1px solid rgba(255,255,255,0.06); background: rgba(0, 0, 0, 0.2);">
+                <div id="drawerCat_{{ cat.name|replace(' ', '_') }}" style="display: none; padding: 12px 14px 14px 14px; border-top: 1px solid rgba(255,255,255,0.06); background: rgba(10, 16, 30, 0.45);">
                     
                     <!-- Internal Breakdown Sub-row (if ordinary / fixed exist) -->
                     {% if cat.fixed_deadlines_spent > 0 or cat.ordinary_spent > 0 %}
-                    <div style="display: flex; justify-content: space-between; font-size: 0.68rem; color: #64748b; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed rgba(255,255,255,0.05);">
-                        <span>🛒 Spese ordinarie: <strong style="color: #cbd5e1;">{{ cat.ordinary_spent|eur }}</strong></span>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #94a3b8; margin-bottom: 10px; padding: 6px 8px; background: rgba(0,0,0,0.25); border-radius: 6px; border: 1px solid rgba(255,255,255,0.04);">
+                        <span>🛒 Spese ordinarie: <strong style="color: #fff;">{{ cat.ordinary_spent|eur }}</strong></span>
                         {% if cat.fixed_deadlines_spent > 0 %}
                         <span>📌 Fisse / Scadenze: <strong style="color: #fbbf24;">{{ cat.fixed_deadlines_spent|eur }}</strong></span>
                         {% endif %}
                     </div>
                     {% endif %}
 
-                    <!-- Progress Bar in Drawer -->
-                    <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; margin-bottom: 10px;">
-                        <div id="progBar_{{ cat.name|replace(' ', '_') }}" style="width: {{ cat.pct_spent }}%; height: 100%; background: {{ cat.status_color }}; border-radius: 3px; transition: width 0.25s ease, background-color 0.25s ease;"></div>
-                    </div>
-
-                    <!-- Potentiometer Slider & Quick Steppers -->
-                    <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 8px 10px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                            <span style="font-size: 0.68rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Regola Budget Mensile:</span>
-                            <span id="sliderValBadge_{{ cat.name|replace(' ', '_') }}" style="font-size: 0.82rem; font-weight: 800; color: #38bdf8;">{{ cat.allocated_budget|eur }}</span>
+                    <!-- Potentiometer Slider Box -->
+                    <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">🎛️ Regola Budget Mensile:</span>
+                            <span id="sliderValBadge_{{ cat.name|replace(' ', '_') }}" style="font-size: 0.92rem; font-weight: 800; color: #38bdf8;">{{ cat.allocated_budget|eur }}</span>
                         </div>
 
                         <input type="range" 
@@ -484,28 +502,28 @@
                                max="{{ cat.slider_max }}" 
                                step="10" 
                                value="{{ cat.allocated_budget }}"
-                               style="width: 100%; accent-color: #38bdf8; cursor: pointer; height: 5px; margin-bottom: 6px;"
+                               style="width: 100%; accent-color: #38bdf8; cursor: pointer; height: 6px; margin-bottom: 8px;"
                                oninput="onCatSliderInput('{{ cat.name }}', this.value)"
                                onchange="onCatSliderCommit('{{ cat.name }}', this.value)">
 
                         <!-- Quick Ergonomic Touch Stepper Buttons -->
                         <div style="display: flex; justify-content: space-between; align-items: center; gap: 4px;">
                             <div style="display: flex; gap: 4px;">
-                                <button type="button" class="btn btn-sm" onclick="setCatToZero('{{ cat.name }}')" style="font-size: 0.62rem; padding: 3px 7px; background: rgba(239, 68, 68, 0.1); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 5px;" title="Disattiva / Azzera budget">Azzera</button>
-                                <button type="button" class="btn btn-sm" onclick="adjustCatBudget('{{ cat.name }}', -50)" style="font-size: 0.64rem; padding: 3px 7px; background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1); border-radius: 5px;">-50€</button>
-                                <button type="button" class="btn btn-sm" onclick="adjustCatBudget('{{ cat.name }}', -20)" style="font-size: 0.64rem; padding: 3px 7px; background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1); border-radius: 5px;">-20€</button>
+                                <button type="button" class="btn btn-sm" onclick="setCatToZero('{{ cat.name }}')" style="font-size: 0.65rem; padding: 4px 8px; background: rgba(239, 68, 68, 0.12); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 6px; font-weight: 700;" title="Disattiva / Azzera budget">Azzera</button>
+                                <button type="button" class="btn btn-sm" onclick="adjustCatBudget('{{ cat.name }}', -50)" style="font-size: 0.67rem; padding: 4px 8px; background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; font-weight: 600;">-50€</button>
+                                <button type="button" class="btn btn-sm" onclick="adjustCatBudget('{{ cat.name }}', -20)" style="font-size: 0.67rem; padding: 4px 8px; background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; font-weight: 600;">-20€</button>
                             </div>
                             <div style="display: flex; gap: 4px;">
-                                <button type="button" class="btn btn-sm" onclick="adjustCatBudget('{{ cat.name }}', 20)" style="font-size: 0.64rem; padding: 3px 7px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 5px;">+20€</button>
-                                <button type="button" class="btn btn-sm" onclick="adjustCatBudget('{{ cat.name }}', 50)" style="font-size: 0.64rem; padding: 3px 7px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 5px;">+50€</button>
+                                <button type="button" class="btn btn-sm" onclick="adjustCatBudget('{{ cat.name }}', 20)" style="font-size: 0.67rem; padding: 4px 8px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; font-weight: 700;">+20€</button>
+                                <button type="button" class="btn btn-sm" onclick="adjustCatBudget('{{ cat.name }}', 50)" style="font-size: 0.67rem; padding: 4px 8px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; font-weight: 700;">+50€</button>
                             </div>
                         </div>
                     </div>
 
                     <!-- Margin / Overrun Delta Footer -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; margin-top: 8px; padding: 0 2px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; margin-top: 10px; padding: 0 4px;">
                         <span style="color: #64748b;">Margine spendibile residuo:</span>
-                        <span id="remDisp_{{ cat.name|replace(' ', '_') }}" style="color: {% if cat.is_deactivated %}#64748b{% elif cat.remaining >= 0 %}#34d399{% else %}#f87171{% endif %}; font-weight: 700;">
+                        <span id="remDisp_{{ cat.name|replace(' ', '_') }}" style="color: {% if cat.is_deactivated %}#64748b{% elif cat.remaining >= 0 %}#34d399{% else %}#f87171{% endif %}; font-weight: 800;">
                             {% if cat.is_deactivated %}
                                 Nessuna spesa
                             {% elif cat.remaining >= 0 %}
@@ -2115,27 +2133,47 @@ function updateSmartBudgetUI(sim) {
         sim.categories_budget.forEach(cat => {
             const catId = getSafeCatId(cat.name);
             const isDeact = (cat.is_deactivated || (cat.allocated_budget === 0 && cat.spent === 0));
-            const badgeBg = isDeact ? 'rgba(100, 116, 139, 0.2)' : (cat.status_badge === 'success' ? 'rgba(16, 185, 129, 0.15)' : (cat.status_badge === 'warning' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)'));
+            const isDanger = cat.status_badge === 'danger';
+            const isWarning = cat.status_badge === 'warning';
             
+            const badgeBg = isDeact 
+                ? 'rgba(100, 116, 139, 0.15)' 
+                : (isDanger 
+                    ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.35))' 
+                    : (isWarning 
+                        ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.35))' 
+                        : 'linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.35))'));
+
             const cardEl = document.getElementById(`cardCat_${catId}`);
             if (cardEl) {
                 if (isDeact) {
-                    cardEl.style.opacity = '0.45';
-                    cardEl.style.filter = 'grayscale(0.6)';
-                    cardEl.style.borderColor = 'rgba(255, 255, 255, 0.04)';
+                    cardEl.style.opacity = '0.4';
+                    cardEl.style.filter = 'grayscale(0.7)';
+                    cardEl.style.borderColor = 'rgba(255, 255, 255, 0.05)';
                 } else {
                     cardEl.style.opacity = '1';
                     cardEl.style.filter = 'none';
-                    cardEl.style.borderColor = cat.is_custom ? 'rgba(56, 189, 248, 0.35)' : 'rgba(255, 255, 255, 0.08)';
+                    cardEl.style.borderColor = isDanger ? 'rgba(239, 68, 68, 0.45)' : (cat.is_custom ? 'rgba(56, 189, 248, 0.35)' : 'rgba(255, 255, 255, 0.09)');
                 }
             }
 
-            const badgeEl = document.getElementById(`badgeCat_${catId}`);
-            if (badgeEl) {
-                badgeEl.innerText = `${cat.status_icon} ${cat.status_text}`;
-                badgeEl.style.color = cat.status_color;
-                badgeEl.style.borderColor = cat.status_color;
-                badgeEl.style.background = badgeBg;
+            const glowEl = document.getElementById(`glowCat_${catId}`);
+            if (glowEl) {
+                glowEl.style.background = isDeact ? 'transparent' : cat.status_color;
+            }
+
+            const subRem = document.getElementById(`subRem_${catId}`);
+            if (subRem) {
+                if (isDeact) {
+                    subRem.innerText = 'Nessuna spesa nel mese';
+                    subRem.style.color = '#64748b';
+                } else if (cat.remaining >= 0) {
+                    subRem.innerText = `Disponibili: ${fmtEurJs(cat.remaining)}`;
+                    subRem.style.color = '#34d399';
+                } else {
+                    subRem.innerText = `Sforato di ${fmtEurJs(Math.abs(cat.remaining))}`;
+                    subRem.style.color = '#f87171';
+                }
             }
 
             const pctBadge = document.getElementById(`pctBadge_${catId}`);
@@ -2144,12 +2182,14 @@ function updateSmartBudgetUI(sim) {
                 pctBadge.style.color = cat.status_color;
                 pctBadge.style.borderColor = cat.status_color;
                 pctBadge.style.background = badgeBg;
+                pctBadge.style.boxShadow = `0 0 10px ${isDanger ? 'rgba(239,68,68,0.25)' : (isWarning ? 'rgba(245,158,11,0.25)' : 'rgba(16,185,129,0.25)')}`;
             }
 
             const progBar = document.getElementById(`progBar_${catId}`);
             if (progBar) {
                 progBar.style.width = `${cat.pct_spent}%`;
                 progBar.style.backgroundColor = cat.status_color;
+                progBar.style.boxShadow = `0 0 6px ${cat.status_color}`;
             }
 
             const remDisp = document.getElementById(`remDisp_${catId}`);
@@ -2158,7 +2198,7 @@ function updateSmartBudgetUI(sim) {
                     remDisp.innerText = 'Nessuna spesa';
                     remDisp.style.color = '#64748b';
                 } else if (cat.remaining >= 0) {
-                    remDisp.innerText = `${fmtEurJs(cat.remaining)} disp.`;
+                    remDisp.innerText = `${fmtEurJs(cat.remaining)} disponibile`;
                     remDisp.style.color = '#34d399';
                 } else {
                     remDisp.innerText = `+${fmtEurJs(Math.abs(cat.remaining))} sforato`;
@@ -2167,7 +2207,10 @@ function updateSmartBudgetUI(sim) {
             }
 
             const spentDisp = document.getElementById(`spentDisp_${catId}`);
-            if (spentDisp) spentDisp.innerText = fmtEurJs(cat.spent);
+            if (spentDisp) {
+                spentDisp.innerText = fmtEurJs(cat.spent);
+                spentDisp.style.color = isDeact ? '#64748b' : (isDanger ? '#f87171' : '#ffffff');
+            }
 
             const budgetDisp = document.getElementById(`budgetValDisp_${catId}`);
             if (budgetDisp) budgetDisp.innerText = fmtEurJs(cat.allocated_budget);
