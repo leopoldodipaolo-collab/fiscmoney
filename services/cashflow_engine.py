@@ -1790,17 +1790,42 @@ def get_monthly_forecast_and_considerations(cashflow_data, custom_salary=None, c
     }
 
 
-def calculate_smart_budget_copilot(workspace_id, profile_id=None, year_month=None, custom_salary=None, custom_target_savings=None, extra_simulation_expense=0.0):
+def get_saved_category_monthly_budgets(workspace_id, year_month, profile_id=None):
+    """Recupera i budget personalizzati per categoria salvati dall'utente per un dato mese."""
+    conn = get_db_connection()
+    q = "SELECT category, custom_budget FROM category_monthly_budgets WHERE workspace_id = ? AND year_month = ?"
+    params = [workspace_id, year_month]
+    if profile_id:
+        q += " AND (profile_id = ? OR profile_id IS NULL)"
+        params.append(profile_id)
+    rows = conn.execute(q, params).fetchall()
+    conn.close()
+    return {r['category']: float(r['custom_budget']) for r in rows}
+
+
+def save_category_monthly_budgets(workspace_id, year_month, budgets_map, profile_id=None):
+    """Salva o aggiorna i budget preventivati delle categorie per il mese specificato."""
+    conn = get_db_connection()
+    for cat_name, budget_amt in budgets_map.items():
+        conn.execute("""
+            INSERT INTO category_monthly_budgets (workspace_id, profile_id, year_month, category, custom_budget)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(workspace_id, year_month, category) DO UPDATE SET
+                custom_budget = excluded.custom_budget,
+                updated_at = CURRENT_TIMESTAMP
+        """, (workspace_id, profile_id, year_month, cat_name, float(budget_amt)))
+    conn.commit()
+    conn.close()
+
+
+def calculate_smart_budget_copilot(workspace_id, profile_id=None, year_month=None, custom_salary=None, custom_target_savings=None, extra_simulation_expense=0.0, custom_category_budgets=None):
     """
-    CO-PILOTA & SMART BUDGET MENSILE INTEGRATO
-    Unifica in un unico motore:
-    1. Entrate attese/effettive
-    2. Costi Fissi del mese (Mutuo, Utenze, Asilo...)
-    3. Scadenze Programmate (TARI, Bollo, Assicurazioni...)
-    4. Target di Risparmio da proteggere
-    5. Spesa Variabile Storica degli ultimi 3 mesi (calcolo pesi % e budget per categoria)
-    6. Monitoraggio spesa reale corrente con semafori (🟢/🟡/🔴) e progress bar
-    7. Simulatore interattivo 'What-If' (spese extra o variazione target di risparmio)
+    CO-PILOTA & SMART BUDGET MENSILE 2.0 (VISIONE COMPLESSIVA 100% & POTENZIOMETRI DINAMICI)
+    1. Spesa Totale Reale 100%: corrisponde esattamente alla ciambella e a tutte le uscite bancarie del mese.
+    2. Composizione interna per categoria: distingue la quota ordinaria dalla quota impegni fissi/scadenze.
+    3. Potenziometri interattivi per categoria con persistenza su DB (category_monthly_budgets).
+    4. Vasi comunicanti con il Risparmio Obiettivo:
+       Entrate - Somma(Budget Categorie) = Risparmio Netto del Mese.
     """
     now = datetime.now()
     if not year_month:
@@ -1815,7 +1840,6 @@ def calculate_smart_budget_copilot(workspace_id, profile_id=None, year_month=Non
     # 1. Recupera dati cash flow di base
     cf_data = get_monthly_cashflow_data(workspace_id, profile_id, year_month)
     
-    # Parametri base
     effective_income = float(custom_salary) if custom_salary is not None else float(cf_data.get('expected_month_income', 3000.00))
     if effective_income <= 0:
         effective_income = float(cf_data.get('actual_month_income', 3000.00)) or 3000.00
@@ -1823,24 +1847,15 @@ def calculate_smart_budget_copilot(workspace_id, profile_id=None, year_month=Non
     target_savings = float(custom_target_savings) if custom_target_savings is not None else 500.00
     extra_expense = max(0.0, float(extra_simulation_expense or 0.0))
 
-    # Costi Fissi
-    total_fixed = float(cf_data.get('total_fixed_expenses_expected', 0.0))
-    fixed_paid = float(cf_data.get('total_fixed_expenses_paid', 0.0))
-    fixed_pending = float(cf_data.get('total_fixed_expenses_pending', 0.0))
+    # Totale uscite reali sostenute nel mese (esattamente come la ciambella del consuntivo)
+    actual_month_expenses = float(cf_data.get('actual_month_expenses', 0.0))
 
-    # Scadenze Programmate
-    total_deadlines = float(cf_data.get('total_deadlines_expected', 0.0))
-    deadlines_paid = float(cf_data.get('total_deadlines_paid', 0.0))
-    deadlines_pending = float(cf_data.get('total_deadlines_pending', 0.0))
+    # Recupera i budget salvati su DB per questo mese
+    saved_budgets = get_saved_category_monthly_budgets(workspace_id, year_month, profile_id)
+    if custom_category_budgets and isinstance(custom_category_budgets, dict):
+        saved_budgets.update({k: float(v) for k, v in custom_category_budgets.items()})
 
-    # 2. Calcolo Budget Variabile Totale Disponibile
-    # Budget variabile = Entrate - Costi Fissi Totali - Scadenze Totali - Risparmio Obiettivo
-    # (Se c'è simulazione extra, sottraiamo anche la spesa extra)
-    total_committed = total_fixed + total_deadlines + target_savings
-    net_variable_budget = max(0.0, effective_income - total_committed - extra_expense)
-
-    # 3. Analisi storica ultimi 3 mesi per pesare le categorie variabili
-    # Identifichiamo i 3 mesi precedenti
+    # 2. Analisi storica ultimi 3 mesi su TUTTE le spese per categoria (esclusi solo trasferimenti)
     past_months = []
     cy, cm = y, m
     for _ in range(3):
@@ -1851,8 +1866,6 @@ def calculate_smart_budget_copilot(workspace_id, profile_id=None, year_month=Non
         past_months.append(f"{cy:04d}-{cm:02d}")
 
     conn = get_db_connection()
-    
-    # Query spese storiche per categoria nei 3 mesi precedenti escludendo trasferimenti e mutuo
     placeholders = ",".join(["?"] * len(past_months))
     hist_params = [workspace_id] + past_months
     hist_query = f"""
@@ -1871,111 +1884,150 @@ def calculate_smart_budget_copilot(workspace_id, profile_id=None, year_month=Non
     hist_rows = conn.execute(hist_query, hist_params).fetchall()
     conn.close()
 
-    # Filtra categorie che sono tipicamente fisse o finanziarie (es. Investimenti, Giroconti)
-    excluded_cats = ['Giroconto', 'Trasferimento', 'Investimenti & PAC', 'Entrate & Stipendio']
+    excluded_cats = ['Giroconto', 'Trasferimento', 'Entrate & Stipendio']
     hist_cat_averages = {}
-    total_hist_variable = 0.0
+    total_hist_spend = 0.0
     
     for r in hist_rows:
         cat_name = r['category'] or 'Altro'
         if cat_name in excluded_cats:
             continue
         avg_amt = round(float(r['total_cat_amt']) / max(1, len(past_months)), 2)
-        if avg_amt > 5.0: # Solo categorie con spesa rilevante
+        if avg_amt > 2.0:
             hist_cat_averages[cat_name] = avg_amt
-            total_hist_variable += avg_amt
+            total_hist_spend += avg_amt
 
-    # Categorie di fallback se il db ha pochi dati storici
-    default_fallback_weights = {
-        "Spesa & Alimentari": 0.35,
-        "Auto & Mobilità": 0.18,
-        "Ristoranti & Bar": 0.15,
-        "Shopping & Abbigliamento": 0.12,
-        "Salute & Benessere": 0.10,
-        "Viaggi & Tempo Libero": 0.05,
-        "Altro": 0.05
+    # Spesa reale corrente al 100% per categoria (dal consuntivo della ciambella)
+    current_cat_spent_map = {}
+    current_cat_txs_map = {}
+    for cat_item in cf_data.get('category_breakdown', []):
+        cname = cat_item['name']
+        current_cat_spent_map[cname] = float(cat_item['amount'])
+        current_cat_txs_map[cname] = cat_item.get('transactions', [])
+
+    # Elenco completo delle categorie
+    all_cats = set(hist_cat_averages.keys()).union(current_cat_spent_map.keys())
+    if not all_cats:
+        all_cats = {"Casa & Immobili", "Auto & Mobilità", "Spesa & Alimentari", "Ristoranti & Bar", "Shopping & Abbigliamento", "Bollette & Utenze", "Digitale, Tech & Tel", "Salute & Benessere"}
+
+    # Budget spendibile teorico totale prima del risparmio: entrate attese
+    # Se non ci sono budget salvati, allocazione proporzionale sui pesi storici in modo che la somma = Entrate - target_savings
+    ideal_total_budget = max(0.0, effective_income - target_savings)
+
+    default_weights = {
+        "Casa & Immobili": 0.35,
+        "Auto & Mobilità": 0.15,
+        "Spesa & Alimentari": 0.12,
+        "Shopping & Abbigliamento": 0.08,
+        "Bollette & Utenze": 0.08,
+        "Ristoranti & Bar": 0.06,
+        "Salute & Benessere": 0.05,
+        "Digitale, Tech & Tel": 0.04,
+        "Viaggi & Tempo Libero": 0.04,
+        "Tasse, Fisco & Banche": 0.02,
+        "Altro": 0.01
     }
 
-    # Spesa reale corrente del mese per categoria (dalle transazioni variabili estratte dal cash flow)
-    current_cat_spent = {}
-    for tx in cf_data.get('variable_transactions', []):
-        c = tx.get('category') or 'Altro'
-        current_cat_spent[c] = current_cat_spent.get(c, 0.0) + float(tx.get('amount', 0.0))
-
-    # Calcolo pesi percentuali e allocazione budget categoria
     categories_budget = []
-    # Raccogliamo tutte le categorie coinvolte (dallo storico o dalla spesa attuale o macro standard)
-    all_variable_cats = set(hist_cat_averages.keys()).union(current_cat_spent.keys())
-    if not all_variable_cats:
-        all_variable_cats = set(default_fallback_weights.keys())
+    total_allocated_budget = 0.0
 
-    for cat_name in all_variable_cats:
-        if cat_name in excluded_cats or 'investiment' in cat_name.lower():
+    for cat_name in all_cats:
+        if cat_name in excluded_cats:
             continue
 
         meta = MACRO_CATEGORIES.get(cat_name, {"icon": "🏷️", "color": "#94a3b8"})
-        
-        # Calcola peso percentuale
-        if total_hist_variable > 0 and cat_name in hist_cat_averages:
-            weight = hist_cat_averages[cat_name] / total_hist_variable
-            hist_avg = hist_cat_averages[cat_name]
+        spent_amt = round(current_cat_spent_map.get(cat_name, 0.0), 2)
+        cat_txs = current_cat_txs_map.get(cat_name, [])
+
+        # Dettaglio composizione interna (es. quante spese sono fisse/scadenze vs ordinarie)
+        # Cerchiamo transazioni con tag ricorrenti o legate a mutuo/bollo/utenze
+        fixed_and_deadlines_amt = 0.0
+        for t in cat_txs:
+            td = (t.get('description') or '') + ' ' + (t.get('raw_description') or '') + ' ' + (t.get('tags') or '')
+            t_low = td.lower()
+            if any(k in t_low for k in ['mutuo', 'bollo', 'tari', 'revisione', 'assicuraz', 'enel', 'iliad', 'telepass', 'canone']):
+                fixed_and_deadlines_amt += float(t.get('amount', 0.0))
+        fixed_and_deadlines_amt = round(fixed_and_deadlines_amt, 2)
+        ordinary_spent_amt = round(max(0.0, spent_amt - fixed_and_deadlines_amt), 2)
+
+        # Determina il budget preventivato per la categoria
+        if cat_name in saved_budgets:
+            cat_budget_amt = round(saved_budgets[cat_name], 2)
+            is_custom = True
         else:
-            weight = default_fallback_weights.get(cat_name, 0.05)
-            hist_avg = 0.0
+            is_custom = False
+            # Se la categoria ha impegni storici o attuali, calcoliamo un default sensato
+            if total_hist_spend > 0 and cat_name in hist_cat_averages:
+                weight = hist_cat_averages[cat_name] / total_hist_spend
+            else:
+                weight = default_weights.get(cat_name, 0.05)
 
-        cat_budget_amt = round(net_variable_budget * weight, 2)
-        spent_amt = round(current_cat_spent.get(cat_name, 0.0), 2)
+            # Il budget proposto copre la media storica scalata sul margine, oppure garantisce almeno la copertura degli impegni noti del mese
+            cat_budget_amt = round(max(spent_amt, ideal_total_budget * weight), 2)
+
+        total_allocated_budget += cat_budget_amt
         remaining_amt = round(cat_budget_amt - spent_amt, 2)
-
         pct_spent = round((spent_amt / cat_budget_amt * 100), 1) if cat_budget_amt > 0 else (100.0 if spent_amt > 0 else 0.0)
-        
+
         # Semaforo Traffic Light:
         # 🟢 Verde: <= 75%
         # 🟡 Giallo: 75% - 95%
         # 🔴 Rosso: > 95%
         if pct_spent <= 75.0:
-            status_color = "#10b981" # green
+            status_color = "#10b981"
             status_badge = "success"
             status_icon = "🟢"
             status_text = "In linea"
         elif pct_spent <= 95.0:
-            status_color = "#f59e0b" # amber
+            status_color = "#f59e0b"
             status_badge = "warning"
             status_icon = "🟡"
             status_text = "Attenzione"
         else:
-            status_color = "#ef4444" # red
+            status_color = "#ef4444"
             status_badge = "danger"
             status_icon = "🔴"
             status_text = "Sforato"
+
+        # Step suggerito per il potenziometro (slider)
+        max_slider = max(cat_budget_amt * 2.0, spent_amt * 1.5, 300.0)
+        # arrotonda a multiplo di 50
+        max_slider = float(int((max_slider + 49) / 50) * 50)
 
         categories_budget.append({
             "name": cat_name,
             "icon": meta.get("icon", "🏷️"),
             "color": meta.get("color", "#94a3b8"),
-            "weight_pct": round(weight * 100, 1),
-            "historical_avg": hist_avg,
+            "historical_avg": hist_cat_averages.get(cat_name, 0.0),
             "allocated_budget": cat_budget_amt,
+            "is_custom": is_custom,
             "spent": spent_amt,
+            "ordinary_spent": ordinary_spent_amt,
+            "fixed_deadlines_spent": fixed_and_deadlines_amt,
             "remaining": remaining_amt,
             "pct_spent": min(pct_spent, 100.0),
             "raw_pct_spent": pct_spent,
             "status_badge": status_badge,
             "status_color": status_color,
             "status_icon": status_icon,
-            "status_text": status_text
+            "status_text": status_text,
+            "slider_max": max_slider,
+            "tx_count": len(cat_txs)
         })
 
-    # Ordina le categorie per spesa o budget decrescente
+    # Ordina per spesa decrescente (le categorie più importanti in cima)
     categories_budget.sort(key=lambda x: (x['spent'], x['allocated_budget']), reverse=True)
 
-    # Totali spesa variabile corrente
-    total_variable_spent = round(sum(c['spent'] for c in categories_budget), 2)
-    remaining_variable_budget = round(max(0.0, net_variable_budget - total_variable_spent), 2)
-    daily_spendable_budget = round(remaining_variable_budget / max(1, days_remaining), 2) if days_remaining > 0 else 0.0
+    # Vasi Comunicanti: Risparmio Netto Pianificato
+    # Risparmio stimato = Entrate - Somma(Budget delle categorie) - Spese extra simulate
+    planned_savings = round(effective_income - total_allocated_budget - extra_expense, 2)
+    
+    # Residuo spendibile complessivo ancora da consumare
+    total_spent_all = round(sum(c['spent'] for c in categories_budget), 2)
+    remaining_total_budget = round(max(0.0, total_allocated_budget - total_spent_all), 2)
+    daily_spendable_budget = round(remaining_total_budget / max(1, days_remaining), 2) if days_remaining > 0 else 0.0
 
-    # Stato complessivo salute budget
-    overall_pct = round((total_variable_spent / net_variable_budget * 100), 1) if net_variable_budget > 0 else 100.0
+    overall_pct = round((total_spent_all / total_allocated_budget * 100), 1) if total_allocated_budget > 0 else 100.0
     if overall_pct <= 75.0:
         overall_status = "HEALTHY"
         overall_badge = "success"
@@ -1990,17 +2042,15 @@ def calculate_smart_budget_copilot(workspace_id, profile_id=None, year_month=Non
         overall_status = "CRITICAL"
         overall_badge = "danger"
         overall_icon = "🔴"
-        overall_headline = "Budget variabile quasi esaurito o sforato!"
+        overall_headline = "Budget complessivo quasi esaurito o sforato!"
 
-    # Stima Saldo a Fine Mese con target e simulazione
-    total_projected_spent = fixed_paid + fixed_pending + deadlines_paid + deadlines_pending + total_variable_spent + extra_expense
+    # Stima finale proiettata
     if days_remaining > 0 and current_day > 0:
-        # Se siamo a metà mese, proiettiamo il trend variabile rimanente
-        daily_var_burn = total_variable_spent / current_day
-        proj_remaining_var = daily_var_burn * days_remaining
-        projected_total_month_expense = round(total_projected_spent + proj_remaining_var, 2)
+        daily_burn = total_spent_all / current_day
+        proj_remaining = daily_burn * days_remaining
+        projected_total_month_expense = round(total_spent_all + proj_remaining + extra_expense, 2)
     else:
-        projected_total_month_expense = round(total_projected_spent, 2)
+        projected_total_month_expense = round(total_spent_all + extra_expense, 2)
 
     projected_savings_end = round(effective_income - projected_total_month_expense, 2)
     target_difference = round(projected_savings_end - target_savings, 2)
@@ -2014,14 +2064,11 @@ def calculate_smart_budget_copilot(workspace_id, profile_id=None, year_month=Non
         "effective_income": effective_income,
         "target_savings": target_savings,
         "extra_simulation_expense": extra_expense,
-        "total_fixed_costs": total_fixed,
-        "fixed_pending": fixed_pending,
-        "total_deadlines": total_deadlines,
-        "deadlines_pending": deadlines_pending,
-        "total_committed": total_committed,
-        "net_variable_budget": net_variable_budget,
-        "total_variable_spent": total_variable_spent,
-        "remaining_variable_budget": remaining_variable_budget,
+        "total_allocated_budget": total_allocated_budget,
+        "planned_savings": planned_savings,
+        "total_variable_spent": total_spent_all,
+        "actual_month_expenses": actual_month_expenses,
+        "remaining_variable_budget": remaining_total_budget,
         "daily_spendable_budget": daily_spendable_budget,
         "overall_pct": min(overall_pct, 100.0),
         "raw_overall_pct": overall_pct,

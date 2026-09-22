@@ -489,6 +489,23 @@ def init_db():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_investments_ws ON investments(workspace_id, isin)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_investments_date ON investments(workspace_id, date)")
 
+    # 14. Monthly Category Custom Budgets Table (Pianificazione Inizio Mese & Potenziometri)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS category_monthly_budgets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            workspace_id INTEGER NOT NULL,
+            profile_id INTEGER,
+            year_month TEXT NOT NULL, -- 'YYYY-MM'
+            category TEXT NOT NULL,
+            custom_budget REAL NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
+            FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE SET NULL,
+            UNIQUE(workspace_id, year_month, category)
+        )
+    ''')
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_cat_budgets_ws_ym ON category_monthly_budgets(workspace_id, year_month)")
+
     # Seed Default Super-Admin if none exists
     cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'SUPER_ADMIN'")
     if cursor.fetchone()[0] == 0:

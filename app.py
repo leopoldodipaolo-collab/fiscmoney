@@ -36,7 +36,8 @@ from services.cashflow_engine import (
     get_multi_month_trend_data,
     get_macro_advisor_insights,
     get_monthly_forecast_and_considerations,
-    calculate_smart_budget_copilot
+    calculate_smart_budget_copilot,
+    save_category_monthly_budgets
 )
 from services.vertical_focus_engine import (
     get_active_focus_categories,
@@ -1256,18 +1257,49 @@ def simulate_smart_budget():
     except (ValueError, TypeError):
         custom_target = None
 
+    category_budgets = data.get("category_budgets")
+
     sim_res = calculate_smart_budget_copilot(
         workspace_id=ws_id,
         profile_id=profile_id,
         year_month=req_month,
         custom_salary=custom_salary,
         custom_target_savings=custom_target,
-        extra_simulation_expense=extra_expense
+        extra_simulation_expense=extra_expense,
+        custom_category_budgets=category_budgets
     )
 
     return jsonify({
         "success": True,
         "simulation": sim_res
+    })
+
+@app.route("/api/budget/category-save", methods=["POST"])
+@login_required
+def save_category_budgets_endpoint():
+    ws_id = session.get('workspace_id')
+    if not ws_id:
+        return jsonify({"success": False, "error": "Sessione non valida"}), 401
+
+    data = request.get_json(silent=True) or {}
+    year_month = data.get("year_month")
+    budgets_map = data.get("budgets") or {}
+    profile_id = data.get("profile_id")
+
+    if not year_month:
+        return jsonify({"success": False, "error": "Mese non specificato"}), 400
+
+    saved_count = save_category_monthly_budgets(
+        workspace_id=ws_id,
+        year_month=year_month,
+        budgets_map=budgets_map,
+        profile_id=profile_id
+    )
+
+    return jsonify({
+        "success": True,
+        "saved_count": saved_count,
+        "message": f"Budget salvato con successo per {saved_count} categorie."
     })
 
 @app.route("/cashflow/settings/save", methods=["POST"])
