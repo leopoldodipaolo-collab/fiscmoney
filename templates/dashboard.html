@@ -453,13 +453,28 @@
 
     <!-- Live Executive KPI Pill Bar (Responsive Grid) -->
     <div class="assistant-kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 12px;">
-        <!-- Safe to spend -->
-        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 8px 10px;">
-            <div style="font-size: 0.68rem; color: var(--accent-success); font-weight: 700; text-transform: uppercase;">🎯 Safe-to-Spend Libero</div>
-            <div class="privacy-mask" style="font-size: 1.05rem; font-weight: 800; color: #fff; margin-top: 2px;" title="Passa sopra per sbirciare">
-                {% if cashflow %}{{ cashflow.monthly_safe_to_spend|eur }}{% else %}€ 0,00{% endif %}
+        <!-- Smart Budget Co-Pilota & Safe to spend -->
+        <a href="/cashflow" style="text-decoration: none; display: block; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 8px 10px; transition: transform 0.15s ease;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 0.68rem; color: var(--accent-success); font-weight: 700; text-transform: uppercase;">
+                    {% if smart_budget %}🧭 Smart Budget ({{ smart_budget.overall_icon }}){% else %}🎯 Safe-to-Spend Libero{% endif %}
+                </div>
+                {% if smart_budget %}
+                <span class="badge-tag" style="font-size: 0.58rem; padding: 1px 4px; background: rgba(16, 185, 129, 0.2); color: #34d399;">
+                    {{ smart_budget.daily_spendable_budget|eur }}/gg
+                </span>
+                {% endif %}
             </div>
-        </div>
+            <div class="privacy-mask" style="font-size: 1.05rem; font-weight: 800; color: #fff; margin-top: 2px;" title="Passa sopra per sbirciare">
+                {% if smart_budget %}
+                    {{ smart_budget.remaining_variable_budget|eur }}
+                {% elif cashflow %}
+                    {{ cashflow.monthly_safe_to_spend|eur }}
+                {% else %}
+                    € 0,00
+                {% endif %}
+            </div>
+        </a>
 
         <!-- Latest Salary & Tickets -->
         <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 8px; padding: 8px 10px;">

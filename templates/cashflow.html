@@ -223,6 +223,220 @@
 {% endif %}
 
 <!-- ======================================================== -->
+<!-- 🧭 CO-PILOTA & SMART BUDGET MENSILE (FUNZIONE UNIFICATA)   -->
+<!-- ======================================================== -->
+{% if smart_budget %}
+<div class="card smart-budget-copilot-card" id="smartBudgetSection" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(20, 30, 50, 0.95)); border: 1.5px solid rgba(56, 189, 248, 0.35); box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(56, 189, 248, 0.1); border-radius: 16px; margin-bottom: 18px; padding: 20px; overflow: hidden; position: relative;">
+    <!-- Top Ambient Glow -->
+    <div style="position: absolute; top: -30px; right: -30px; width: 140px; height: 140px; background: radial-gradient(circle, rgba(56, 189, 248, 0.25) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
+
+    <!-- Header Section -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 12px; min-width: 250px; flex: 1;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(99, 102, 241, 0.25)); border: 1.5px solid rgba(56, 189, 248, 0.5); display: flex; align-items: center; justify-content: center; font-size: 1.45rem; flex-shrink: 0; box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25);">
+                🧭
+            </div>
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">
+                        Co-Pilota & Smart Budget Mensile
+                    </h3>
+                    <span id="copilotHealthBadge" class="badge-tag" style="background: {% if smart_budget.overall_badge == 'success' %}rgba(16, 185, 129, 0.2){% elif smart_budget.overall_badge == 'warning' %}rgba(245, 158, 11, 0.2){% else %}rgba(239, 68, 68, 0.2){% endif %}; color: {% if smart_budget.overall_badge == 'success' %}#34d399{% elif smart_budget.overall_badge == 'warning' %}#fbbf24{% else %}#f87171{% endif %}; border: 1px solid currentColor; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 6px;">
+                        {{ smart_budget.overall_icon }} {{ smart_budget.overall_status }}
+                    </span>
+                </div>
+                <div id="copilotHeadline" style="font-size: 0.8rem; color: #94a3b8; margin-top: 3px;">
+                    {{ smart_budget.overall_headline }} (Target Risparmio protetto: <strong style="color: #38bdf8;">{{ smart_budget.target_savings|eur }}</strong>)
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn btn-sm btn-secondary" onclick="openCashflowSettingsModal()" style="font-size: 0.76rem; padding: 6px 12px; border-radius: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; display: inline-flex; align-items: center; gap: 5px;">
+                <span>⚙️</span> <span>Imposta Target</span>
+            </button>
+            <button type="button" onclick="toggleSimulatorCollapse()" class="btn btn-sm" style="background: linear-gradient(135deg, #0ea5e9, #6366f1); color: #fff; font-weight: 800; font-size: 0.76rem; padding: 6px 12px; border-radius: 8px; border: none; box-shadow: 0 2px 10px rgba(14, 165, 233, 0.35); display: inline-flex; align-items: center; gap: 6px;">
+                <span>🧪</span> <span id="simulatorToggleBtnText">Simula Spesa Extra</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 3 Big Visual Numbers Bar -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px;">
+        <!-- 1. Budget Variabile Totale -->
+        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px 14px;">
+            <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: #94a3b8; display: flex; align-items: center; gap: 5px;">
+                <span>🛒</span> Budget Variabile Mese
+            </div>
+            <div id="dispNetVariableBudget" class="privacy-mask" style="font-size: 1.45rem; font-weight: 900; color: #fff; margin-top: 4px;" title="Al netto di costi fissi e risparmio">
+                {{ smart_budget.net_variable_budget|eur }}
+            </div>
+            <div style="font-size: 0.68rem; color: #64748b; margin-top: 2px;">
+                Entrate - Costi Fissi - Risparmio
+            </div>
+        </div>
+
+        <!-- 2. Già Speso & Rimanente -->
+        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px 14px;">
+            <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: #94a3b8; display: flex; align-items: center; gap: 5px;">
+                <span>💳</span> Speso Finora / Residuo
+            </div>
+            <div style="display: flex; align-items: baseline; gap: 6px; margin-top: 4px;">
+                <span id="dispTotalVarSpent" class="privacy-mask" style="font-size: 1.45rem; font-weight: 900; color: #f87171;" title="Spese variabili sostenute">
+                    {{ smart_budget.total_variable_spent|eur }}
+                </span>
+                <span style="font-size: 0.75rem; color: #94a3b8;">/</span>
+                <span id="dispRemainingVarBudget" class="privacy-mask" style="font-size: 0.95rem; font-weight: 700; color: #34d399;" title="Residuo spendibile">
+                    {{ smart_budget.remaining_variable_budget|eur }}
+                </span>
+            </div>
+            <div style="font-size: 0.68rem; color: #64748b; margin-top: 2px;">
+                Consumo: <strong id="dispOverallPct" style="color: #cbd5e1;">{{ smart_budget.overall_pct }}%</strong> del budget
+            </div>
+        </div>
+
+        <!-- 3. Velocità Spendibile al Giorno -->
+        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px 14px;">
+            <div style="font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: #94a3b8; display: flex; align-items: center; gap: 5px;">
+                <span>⚡</span> Quota Giornaliera Libera
+            </div>
+            <div style="display: flex; align-items: baseline; gap: 4px; margin-top: 4px;">
+                <span id="dispDailySpendable" class="privacy-mask" style="font-size: 1.45rem; font-weight: 900; color: #38bdf8;" title="Media al giorno">
+                    {{ smart_budget.daily_spendable_budget|eur }}
+                </span>
+                <span style="font-size: 0.72rem; font-weight: 700; color: #38bdf8; text-transform: uppercase;">/ GIORNO</span>
+            </div>
+            <div style="font-size: 0.68rem; color: #64748b; margin-top: 2px;">
+                Per i restanti <strong>{{ smart_budget.days_remaining }} giorni</strong> del mese
+            </div>
+        </div>
+    </div>
+
+    <!-- What-If Simulator Collapsible Card -->
+    <div id="smartBudgetSimulatorBox" style="display: none; background: rgba(14, 165, 233, 0.08); border: 1.5px dashed rgba(56, 189, 248, 0.45); border-radius: 14px; padding: 16px 18px; margin-bottom: 22px; transition: all 0.25s ease;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.25rem;">🧪</span>
+                <strong style="color: #fff; font-size: 0.95rem;">Simulatore Istantaneo "What-If"</strong>
+                <span class="badge-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 0.65rem;">Touch & Sliders</span>
+            </div>
+            <button type="button" onclick="resetSimulator()" class="btn btn-sm" style="font-size: 0.72rem; padding: 3px 8px; border-radius: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #94a3b8; cursor: pointer;">
+                ↺ Ripristina Reale
+            </button>
+        </div>
+
+        <p style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 14px;">
+            Vuoi fare una spesa extra o modificare il tuo obiettivo di risparmio? Sposta il cursore o tocca un pulsante rapido per vedere subito come cambia il tuo budget quotidiano e la stima del saldo finale!
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+            <!-- Control 1: Spesa Extra Imprevista -->
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label for="simExtraSlider" style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin: 0;">
+                        🛍️ Simula Spesa Extra Imprevista:
+                    </label>
+                    <strong id="simExtraLabel" style="color: #f87171; font-size: 0.95rem;">+0 €</strong>
+                </div>
+                <input type="range" id="simExtraSlider" min="0" max="800" step="25" value="0" style="width: 100%; accent-color: #f87171; cursor: pointer;" oninput="onSimulatorChange()">
+                <!-- Quick Touch Buttons for Mobile Ergonomics -->
+                <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-sm" onclick="setSimExtra(0)" style="font-size: 0.7rem; padding: 4px 8px; background: rgba(255,255,255,0.06); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;">0 €</button>
+                    <button type="button" class="btn btn-sm" onclick="setSimExtra(50)" style="font-size: 0.7rem; padding: 4px 8px; background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px;">+50 €</button>
+                    <button type="button" class="btn btn-sm" onclick="setSimExtra(100)" style="font-size: 0.7rem; padding: 4px 8px; background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px;">+100 €</button>
+                    <button type="button" class="btn btn-sm" onclick="setSimExtra(200)" style="font-size: 0.7rem; padding: 4px 8px; background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px;">+200 €</button>
+                    <button type="button" class="btn btn-sm" onclick="setSimExtra(350)" style="font-size: 0.7rem; padding: 4px 8px; background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px;">+350 €</button>
+                </div>
+            </div>
+
+            <!-- Control 2: Target Risparmio Protetto -->
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label for="simTargetSlider" style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; margin: 0;">
+                        🎯 Target Risparmio Mensile:
+                    </label>
+                    <strong id="simTargetLabel" style="color: #38bdf8; font-size: 0.95rem;">{{ smart_budget.target_savings|eur }}</strong>
+                </div>
+                <input type="range" id="simTargetSlider" min="0" max="1500" step="50" value="{{ smart_budget.target_savings }}" style="width: 100%; accent-color: #38bdf8; cursor: pointer;" oninput="onSimulatorChange()">
+                <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-sm" onclick="setSimTarget(250)" style="font-size: 0.7rem; padding: 4px 8px; background: rgba(56, 189, 248, 0.15); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px;">250 €</button>
+                    <button type="button" class="btn btn-sm" onclick="setSimTarget(500)" style="font-size: 0.7rem; padding: 4px 8px; background: rgba(56, 189, 248, 0.15); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px;">500 €</button>
+                    <button type="button" class="btn btn-sm" onclick="setSimTarget(750)" style="font-size: 0.7rem; padding: 4px 8px; background: rgba(56, 189, 248, 0.15); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px;">750 €</button>
+                    <button type="button" class="btn btn-sm" onclick="setSimTarget(1000)" style="font-size: 0.7rem; padding: 4px 8px; background: rgba(56, 189, 248, 0.15); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px;">1.000 €</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Simulation Result Live Banner -->
+        <div id="simLiveBanner" style="margin-top: 14px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="simResultIcon" style="font-size: 1.2rem;">🟢</span>
+                <span id="simResultText" style="font-size: 0.82rem; color: #fff; font-weight: 600;">
+                    Con questi parametri, a fine mese avrai un risparmio netto stimato di <strong>{{ smart_budget.projected_savings_end|eur }}</strong>.
+                </span>
+            </div>
+            <div id="simDailyNewBadge" style="font-size: 0.75rem; background: rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 3px 8px; border-radius: 6px; font-weight: 800;">
+                Nuovo Budget: {{ smart_budget.daily_spendable_budget|eur }}/giorno
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Smart Breakdown Progress Bars (Traffic Light System) -->
+    <div style="margin-top: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <div style="font-size: 0.85rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+                <span>📊</span> Monitoraggio per Categoria (Pesi calcolati su media storica 3 mesi)
+            </div>
+            <div style="display: flex; gap: 8px; font-size: 0.68rem; color: #94a3b8;">
+                <span>🟢 &le; 75% in linea</span>
+                <span>🟡 75-95% attenzione</span>
+                <span>🔴 &gt; 95% sforato</span>
+            </div>
+        </div>
+
+        <div id="categoriesBudgetContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px;">
+            {% for cat in smart_budget.categories_budget %}
+            <div class="smart-cat-card" style="background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 10px; padding: 10px 12px; transition: transform 0.15s ease;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                        <span style="font-size: 1.15rem; flex-shrink: 0;">{{ cat.icon }}</span>
+                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <strong style="color: #fff; font-size: 0.82rem;">{{ cat.name }}</strong>
+                            <span style="font-size: 0.65rem; color: #64748b; margin-left: 4px;">({{ cat.weight_pct }}% del budget)</span>
+                        </div>
+                    </div>
+                    <div style="text-align: right; flex-shrink: 0;">
+                        <span class="badge-tag" style="background: {% if cat.status_badge == 'success' %}rgba(16, 185, 129, 0.15){% elif cat.status_badge == 'warning' %}rgba(245, 158, 11, 0.15){% else %}rgba(239, 68, 68, 0.15){% endif %}; color: {{ cat.status_color }}; border: 1px solid {{ cat.status_color }}; font-size: 0.65rem; font-weight: 700; padding: 1px 6px; border-radius: 4px;">
+                            {{ cat.status_icon }} {{ cat.status_text }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Custom Progress Bar -->
+                <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-bottom: 6px;">
+                    <div style="width: {{ cat.pct_spent }}%; height: 100%; background: {{ cat.status_color }}; border-radius: 4px; transition: width 0.3s ease;"></div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem;">
+                    <span style="color: #94a3b8;">
+                        Spesi: <strong style="color: #fff;">{{ cat.spent|eur }}</strong> su <strong style="color: #cbd5e1;">{{ cat.allocated_budget|eur }}</strong>
+                    </span>
+                    <span style="color: {% if cat.remaining >= 0 %}#34d399{% else %}#f87171{% endif %}; font-weight: 700;">
+                        {% if cat.remaining >= 0 %}
+                            -{{ cat.remaining|eur }} disp.
+                        {% else %}
+                            +{{ (-cat.remaining)|eur }} extra
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ======================================================== -->
 <!-- HERO CARD: MESE CORRENTE (SAFE-TO-SPEND) VS PASSATO (CONSUNTIVO RISPARMIO) -->
 <!-- ======================================================== -->
 {% if data.is_current_month %}
@@ -1485,6 +1699,179 @@ function toggleAdvisorForecastCollapse() {
         if (icon) icon.innerText = '🔽';
         if (text) text.innerText = 'Espandi Consigli';
         localStorage.setItem('fisc_advisor_forecast_open', '0');
+    }
+}
+
+// --- SMART BUDGET COPILOT & SIMULATOR LOGIC ---
+const BASE_SMART_BUDGET = {{ smart_budget|tojson if smart_budget else '{}' }};
+
+function toggleSimulatorCollapse() {
+    const box = document.getElementById('smartBudgetSimulatorBox');
+    const btnText = document.getElementById('simulatorToggleBtnText');
+    if (!box) return;
+    if (box.style.display === 'none' || box.style.display === '') {
+        box.style.display = 'block';
+        if (btnText) btnText.innerText = 'Chiudi Simulatore';
+        box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+        box.style.display = 'none';
+        if (btnText) btnText.innerText = 'Simula Spesa Extra';
+    }
+}
+
+function setSimExtra(val) {
+    const slider = document.getElementById('simExtraSlider');
+    if (slider) {
+        slider.value = val;
+        onSimulatorChange();
+    }
+}
+
+function setSimTarget(val) {
+    const slider = document.getElementById('simTargetSlider');
+    if (slider) {
+        slider.value = val;
+        onSimulatorChange();
+    }
+}
+
+function resetSimulator() {
+    const extraSlider = document.getElementById('simExtraSlider');
+    const targetSlider = document.getElementById('simTargetSlider');
+    if (extraSlider) extraSlider.value = 0;
+    if (targetSlider) targetSlider.value = BASE_SMART_BUDGET.target_savings || 500;
+    onSimulatorChange();
+}
+
+let simDebounceTimer = null;
+function onSimulatorChange() {
+    const extraSlider = document.getElementById('simExtraSlider');
+    const targetSlider = document.getElementById('simTargetSlider');
+    const extraVal = parseFloat(extraSlider ? extraSlider.value : 0) || 0;
+    const targetVal = parseFloat(targetSlider ? targetSlider.value : 500) || 500;
+
+    const extraLabel = document.getElementById('simExtraLabel');
+    if (extraLabel) extraLabel.innerText = `+${extraVal.toLocaleString('it-IT', {minimumFractionDigits: 0, maximumFractionDigits: 0})} €`;
+
+    const targetLabel = document.getElementById('simTargetLabel');
+    if (targetLabel) targetLabel.innerText = `€ ${targetVal.toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+    clearTimeout(simDebounceTimer);
+    simDebounceTimer = setTimeout(() => {
+        executeSimulation(extraVal, targetVal);
+    }, 150);
+}
+
+async function executeSimulation(extraExpense, targetSavings) {
+    try {
+        const resp = await fetch('/api/budget/simulate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                year_month: BASE_SMART_BUDGET.year_month,
+                extra_expense: extraExpense,
+                target_savings: targetSavings,
+                salary: BASE_SMART_BUDGET.effective_income
+            })
+        });
+        const res = await resp.json();
+        if (res.success && res.simulation) {
+            updateSmartBudgetUI(res.simulation);
+        }
+    } catch (e) {
+        console.error("Simulation error:", e);
+    }
+}
+
+function updateSmartBudgetUI(sim) {
+    const fmtEur = (num) => `€ ${parseFloat(num || 0).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    
+    // Update Big KPIs
+    const elNet = document.getElementById('dispNetVariableBudget');
+    if (elNet) elNet.innerText = fmtEur(sim.net_variable_budget);
+
+    const elSpent = document.getElementById('dispTotalVarSpent');
+    if (elSpent) elSpent.innerText = fmtEur(sim.total_variable_spent + sim.extra_simulation_expense);
+
+    const elRem = document.getElementById('dispRemainingVarBudget');
+    if (elRem) elRem.innerText = fmtEur(sim.remaining_variable_budget);
+
+    const elPct = document.getElementById('dispOverallPct');
+    if (elPct) elPct.innerText = `${sim.overall_pct}%`;
+
+    const elDaily = document.getElementById('dispDailySpendable');
+    if (elDaily) elDaily.innerText = fmtEur(sim.daily_spendable_budget);
+
+    // Update Headline & Badge
+    const badge = document.getElementById('copilotHealthBadge');
+    if (badge) {
+        badge.innerText = `${sim.overall_icon} ${sim.overall_status}`;
+        badge.style.color = sim.overall_badge === 'success' ? '#34d399' : (sim.overall_badge === 'warning' ? '#fbbf24' : '#f87171');
+        badge.style.background = sim.overall_badge === 'success' ? 'rgba(16, 185, 129, 0.2)' : (sim.overall_badge === 'warning' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)');
+    }
+
+    const hl = document.getElementById('copilotHeadline');
+    if (hl) {
+        hl.innerHTML = `${sim.overall_headline} (Target Risparmio protetto: <strong style="color: #38bdf8;">${fmtEur(sim.target_savings)}</strong>)`;
+    }
+
+    // Update Live Simulation Banner
+    const simIcon = document.getElementById('simResultIcon');
+    const simText = document.getElementById('simResultText');
+    const simDailyBadge = document.getElementById('simDailyNewBadge');
+
+    if (simIcon) simIcon.innerText = sim.target_achieved ? '🟢' : '🔴';
+    if (simText) {
+        if (sim.target_achieved) {
+            simText.innerHTML = `Con questa simulazione centri l'obiettivo! Risparmio netto stimato a fine mese: <strong style="color: #34d399;">${fmtEur(sim.projected_savings_end)}</strong> (+${fmtEur(sim.target_difference)} oltre il target).`;
+        } else {
+            simText.innerHTML = `⚠️ Attenzione: con questa spesa il risparmio netto a fine mese sarà di <strong style="color: #f87171;">${fmtEur(sim.projected_savings_end)}</strong>, sotto il target desiderato di ${fmtEur(sim.target_savings)}.`;
+        }
+    }
+    if (simDailyBadge) {
+        simDailyBadge.innerText = `Nuovo Budget: ${fmtEur(sim.daily_spendable_budget)}/giorno`;
+    }
+
+    // Re-render category cards
+    const container = document.getElementById('categoriesBudgetContainer');
+    if (container && sim.categories_budget) {
+        container.innerHTML = sim.categories_budget.map(cat => {
+            const badgeBg = cat.status_badge === 'success' ? 'rgba(16, 185, 129, 0.15)' : (cat.status_badge === 'warning' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)');
+            const remText = cat.remaining >= 0 ? `-${fmtEur(cat.remaining)} disp.` : `+${fmtEur(Math.abs(cat.remaining))} extra`;
+            const remColor = cat.remaining >= 0 ? '#34d399' : '#f87171';
+
+            return `
+            <div class="smart-cat-card" style="background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 10px; padding: 10px 12px; transition: transform 0.15s ease;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                        <span style="font-size: 1.15rem; flex-shrink: 0;">${cat.icon}</span>
+                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <strong style="color: #fff; font-size: 0.82rem;">${cat.name}</strong>
+                            <span style="font-size: 0.65rem; color: #64748b; margin-left: 4px;">(${cat.weight_pct}% del budget)</span>
+                        </div>
+                    </div>
+                    <div style="text-align: right; flex-shrink: 0;">
+                        <span class="badge-tag" style="background: ${badgeBg}; color: ${cat.status_color}; border: 1px solid ${cat.status_color}; font-size: 0.65rem; font-weight: 700; padding: 1px 6px; border-radius: 4px;">
+                            ${cat.status_icon} ${cat.status_text}
+                        </span>
+                    </div>
+                </div>
+
+                <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-bottom: 6px;">
+                    <div style="width: ${cat.pct_spent}%; height: 100%; background: ${cat.status_color}; border-radius: 4px; transition: width 0.3s ease;"></div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem;">
+                    <span style="color: #94a3b8;">
+                        Spesi: <strong style="color: #fff;">${fmtEur(cat.spent)}</strong> su <strong style="color: #cbd5e1;">${fmtEur(cat.allocated_budget)}</strong>
+                    </span>
+                    <span style="color: ${remColor}; font-weight: 700;">
+                        ${remText}
+                    </span>
+                </div>
+            </div>
+            `;
+        }).join('');
     }
 }
 

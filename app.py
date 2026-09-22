@@ -35,7 +35,8 @@ from services.cashflow_engine import (
     get_monthly_cashflow_data,
     get_multi_month_trend_data,
     get_macro_advisor_insights,
-    get_monthly_forecast_and_considerations
+    get_monthly_forecast_and_considerations,
+    calculate_smart_budget_copilot
 )
 from services.vertical_focus_engine import (
     get_active_focus_categories,
@@ -677,6 +678,13 @@ def dashboard():
         profile_name=user_p_name
     ) if cashflow_summary else None
 
+    smart_budget = calculate_smart_budget_copilot(
+        workspace_id=ws_id,
+        profile_id=p_id_filter,
+        custom_salary=custom_salary,
+        custom_target_savings=custom_target
+    ) if ws_id else None
+
     # Fetch Latest 730 Declaration
     t730_query = "SELECT * FROM tax_declarations_730 WHERE workspace_id = ?"
     t730_params = [ws_id]
@@ -783,6 +791,7 @@ def dashboard():
         trend_data=trend_data,
         advisor_insights=advisor_insights,
         monthly_forecast=monthly_forecast,
+        smart_budget=smart_budget,
         latest_730=latest_730,
         latest_paystub=latest_paystub,
         mortgage_data=mortgage_data,
@@ -1195,6 +1204,14 @@ def cashflow():
         profile_name=p_name
     )
     
+    smart_budget = calculate_smart_budget_copilot(
+        workspace_id=ws_id,
+        profile_id=p_id_filter,
+        year_month=req_month if req_month else None,
+        custom_salary=custom_salary,
+        custom_target_savings=custom_target
+    )
+
     conn.close()
     return render_template(
         "cashflow.html",
@@ -1208,9 +1225,50 @@ def cashflow():
         data=cashflow_data,
         advisor_insights=advisor_insights,
         monthly_forecast=monthly_forecast,
+        smart_budget=smart_budget,
         macro_categories=MACRO_CATEGORIES,
         category_smart_tags=CATEGORY_SMART_TAGS
     )
+
+@app.route("/api/budget/simulate", methods=["POST"])
+@login_required
+def simulate_smart_budget():
+    ws_id = session.get('workspace_id')
+    if not ws_id:
+        return jsonify({"success": False, "error": "Sessione non valida"}), 401
+
+    data = request.get_json(silent=True) or {}
+    req_month = data.get("year_month") or request.args.get("m")
+    custom_salary = data.get("salary") or session.get("custom_salary")
+    custom_target = data.get("target_savings") or session.get("custom_target")
+    extra_expense = float(data.get("extra_expense", 0.0) or 0.0)
+    profile_id = data.get("profile_id")
+
+    try:
+        if custom_salary is not None:
+            custom_salary = float(str(custom_salary).replace(',', '.'))
+    except (ValueError, TypeError):
+        custom_salary = None
+
+    try:
+        if custom_target is not None:
+            custom_target = float(str(custom_target).replace(',', '.'))
+    except (ValueError, TypeError):
+        custom_target = None
+
+    sim_res = calculate_smart_budget_copilot(
+        workspace_id=ws_id,
+        profile_id=profile_id,
+        year_month=req_month,
+        custom_salary=custom_salary,
+        custom_target_savings=custom_target,
+        extra_simulation_expense=extra_expense
+    )
+
+    return jsonify({
+        "success": True,
+        "simulation": sim_res
+    })
 
 @app.route("/cashflow/settings/save", methods=["POST"])
 @login_required
