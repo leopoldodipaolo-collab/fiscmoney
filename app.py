@@ -3106,10 +3106,25 @@ def api_quick_expense_data():
             seen_tags.add(dt.lower())
             tag_pills.append(dt)
 
+    # Categories taxonomy with their subcategories and curated smart tags
+    categories_list = []
+    from services.bank_importer import MACRO_CATEGORIES, CATEGORY_SMART_TAGS
+    for cat_name, cat_meta in MACRO_CATEGORIES.items():
+        cat_tags = [t['code'] for t in CATEGORY_SMART_TAGS.get(cat_name, [])]
+        categories_list.append({
+            "name": cat_name,
+            "icon": cat_meta.get("icon", "📦"),
+            "color": cat_meta.get("color", "#38bdf8"),
+            "subcategories": cat_meta.get("subcategories", []),
+            "tags": cat_tags
+        })
+
     return jsonify({
         "success": True,
         "accounts": [dict(a) for a in accounts],
         "profiles": [dict(p) for p in profiles],
+        "categories": categories_list,
+        "category_tags_map": {k: [t['code'] for t in v] for k, v in CATEGORY_SMART_TAGS.items()},
         "frequent_tags": tag_pills,
         "today_str": datetime.now().strftime("%Y-%m-%d")
     })

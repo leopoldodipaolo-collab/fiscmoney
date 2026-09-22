@@ -1612,34 +1612,45 @@
                     </div>
                 </div>
 
-                <!-- Quick Tags / Category 1-Tap Chips -->
-                <div class="quick-form-section" style="margin-top: 10px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <label class="quick-field-label" style="margin: 0;">Tag & Categoria Rapidi</label>
-                        <span style="font-size: 0.68rem; color: #38bdf8;">Tocca per applicare</span>
+                <!-- Category & Subcategory Row -->
+                <div class="quick-form-grid" style="margin-bottom: 8px;">
+                    <div class="quick-field-col">
+                        <label class="quick-field-label" for="quickExpenseCategorySelect">1. Categoria Principale</label>
+                        <select id="quickExpenseCategorySelect" onchange="onQuickCategoryChange(this.value)" required class="quick-select-input">
+                            <option value="">Seleziona Categoria...</option>
+                        </select>
                     </div>
-                    <div id="quickTagsChips" class="quick-tags-scroll">
-                        <!-- Injected via JS -->
-                        <button type="button" onclick="selectQuickTag('#alimentari', 'Alimentari e Spesa', this)" class="quick-tag-chip">🛒 #alimentari</button>
-                        <button type="button" onclick="selectQuickTag('#carburante', 'Trasporti e Auto', this)" class="quick-tag-chip">⛽ #carburante</button>
-                        <button type="button" onclick="selectQuickTag('#ristorante', 'Ristoranti e Bar', this)" class="quick-tag-chip">🍽️ #ristorante</button>
-                        <button type="button" onclick="selectQuickTag('#farmacia', 'Salute e Benessere', this)" class="quick-tag-chip">💊 #farmacia</button>
-                        <button type="button" onclick="selectQuickTag('#casa', 'Casa e Utenze', this)" class="quick-tag-chip">🏠 #casa</button>
-                        <button type="button" onclick="selectQuickTag('#svago', 'Tempo Libero e Svago', this)" class="quick-tag-chip">🍿 #svago</button>
+                    <div class="quick-field-col">
+                        <label class="quick-field-label" for="quickExpenseSubCategorySelect">Sotto-Categoria</label>
+                        <select id="quickExpenseSubCategorySelect" onchange="onQuickSubCategoryChange(this.value)" class="quick-select-input">
+                            <option value="">Generale / Tutte</option>
+                        </select>
                     </div>
                 </div>
 
-                <!-- Hidden or Secondary Inputs (Date & Category) -->
-                <input type="hidden" id="quickExpenseCategory" value="Altro">
+                <!-- Dynamic Contextual Tags based on selected Category -->
+                <div class="quick-form-section" style="margin-top: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <label class="quick-field-label" style="margin: 0;">2. Tag Specifico della Categoria</label>
+                        <span id="quickTagHint" style="font-size: 0.68rem; color: #38bdf8;">Tocca un tag</span>
+                    </div>
+                    <div id="quickTagsChips" class="quick-tags-scroll">
+                        <span style="font-size: 0.72rem; color: #64748b; padding: 4px 0;">Scegli una categoria sopra per caricare i tag corrispondenti...</span>
+                    </div>
+                </div>
+
+                <!-- Hidden Inputs -->
+                <input type="hidden" id="quickExpenseCategory" value="Spesa & Alimentari">
+                <input type="hidden" id="quickExpenseSubCategory" value="">
                 <input type="hidden" id="quickExpenseTag" value="">
                 <input type="hidden" id="quickExpenseProfileId" value="">
 
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 12px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px; margin-bottom: 14px;">
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-size: 0.72rem; color: #94a3b8;">Data:</span>
-                        <input type="date" id="quickExpenseDate" class="quick-date-input">
+                        <input type="date" id="quickExpenseDate" class="quick-date-input" style="padding: 5px 8px; font-size: 0.75rem;">
                     </div>
-                    <div id="quickSelectedTagBadge" style="display: none; font-size: 0.72rem; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; border-radius: 6px; padding: 2px 8px; font-weight: 700;"></div>
+                    <div id="quickSelectedTagBadge" style="display: none; font-size: 0.72rem; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; border-radius: 6px; padding: 3px 8px; font-weight: 700;"></div>
                 </div>
 
                 <!-- Submit Button -->
@@ -1847,7 +1858,7 @@
     }
 
     function renderQuickExpenseData(data) {
-        // Render Accounts dropdown
+        // 1. Render Accounts dropdown
         const accSelect = document.getElementById('quickExpenseAccount');
         if (accSelect && data.accounts) {
             accSelect.innerHTML = '';
@@ -1860,7 +1871,7 @@
             });
         }
 
-        // Render Profiles switcher
+        // 2. Render Profiles switcher
         const profWrap = document.getElementById('quickProfileButtons');
         if (profWrap && data.profiles && data.profiles.length > 0) {
             profWrap.innerHTML = '';
@@ -1880,25 +1891,92 @@
             document.getElementById('quickExpenseProfileId').value = data.profiles[0].id;
         }
 
+        // 3. Render Categories Dropdown
+        const catSelect = document.getElementById('quickExpenseCategorySelect');
+        if (catSelect && data.categories && data.categories.length > 0) {
+            catSelect.innerHTML = '';
+            data.categories.forEach((c, idx) => {
+                const opt = document.createElement('option');
+                opt.value = c.name;
+                opt.textContent = `${c.icon} ${c.name}`;
+                if (idx === 0) opt.selected = true;
+                catSelect.appendChild(opt);
+            });
+            // Trigger cascade for first category
+            onQuickCategoryChange(data.categories[0].name);
+        }
+
         if (data.today_str && document.getElementById('quickExpenseDate')) {
             document.getElementById('quickExpenseDate').value = data.today_str;
         }
     }
 
+    function onQuickCategoryChange(catName) {
+        if (!catName) return;
+        document.getElementById('quickExpenseCategory').value = catName;
+        document.getElementById('quickExpenseTag').value = '';
+        const badge = document.getElementById('quickSelectedTagBadge');
+        if (badge) badge.style.display = 'none';
+
+        if (!quickExpenseDataCache || !quickExpenseDataCache.categories) return;
+        const currentCat = quickExpenseDataCache.categories.find(c => c.name === catName);
+
+        // 1. Populate Sub-Categories Dropdown
+        const subSelect = document.getElementById('quickExpenseSubCategorySelect');
+        if (subSelect) {
+            subSelect.innerHTML = '<option value="">Generale / Tutte</option>';
+            if (currentCat && currentCat.subcategories) {
+                currentCat.subcategories.forEach(sub => {
+                    const opt = document.createElement('option');
+                    opt.value = sub;
+                    opt.textContent = sub;
+                    subSelect.appendChild(opt);
+                });
+            }
+        }
+
+        // 2. Populate Tags Chips corresponding to this category
+        const tagsContainer = document.getElementById('quickTagsChips');
+        if (tagsContainer) {
+            tagsContainer.innerHTML = '';
+            const catTags = (currentCat && currentCat.tags && currentCat.tags.length > 0) 
+                ? currentCat.tags 
+                : ['#' + catName.toLowerCase().replace(/[^a-z0-9]/g, '')];
+
+            catTags.forEach(tag => {
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'quick-tag-chip';
+                chip.textContent = tag;
+                chip.onclick = function() {
+                    selectQuickTag(tag, catName, chip);
+                };
+                tagsContainer.appendChild(chip);
+            });
+        }
+    }
+
+    function onQuickSubCategoryChange(subVal) {
+        document.getElementById('quickExpenseSubCategory').value = subVal;
+        const descInput = document.getElementById('quickExpenseDesc');
+        if (descInput && !descInput.value && subVal) {
+            descInput.value = subVal;
+        }
+    }
+
     function selectQuickTag(tag, category, btnElement) {
         document.getElementById('quickExpenseTag').value = tag;
-        document.getElementById('quickExpenseCategory').value = category || 'Altro';
 
         const descInput = document.getElementById('quickExpenseDesc');
         if (descInput && !descInput.value) {
-            descInput.value = tag.replace('#', '').charAt(0).toUpperCase() + tag.slice(2);
+            descInput.value = tag.replace('#', '').replace('_', ' ').charAt(0).toUpperCase() + tag.replace('#', '').replace('_', ' ').slice(1);
         }
 
         // Update tag badge
         const badge = document.getElementById('quickSelectedTagBadge');
         if (badge) {
             badge.style.display = 'inline-block';
-            badge.textContent = `${tag} (${category})`;
+            badge.textContent = `Tag: ${tag}`;
         }
 
         // Active state on chip
@@ -1923,6 +2001,7 @@
             account_id: parseInt(document.getElementById('quickExpenseAccount').value),
             profile_id: document.getElementById('quickExpenseProfileId').value || null,
             category: document.getElementById('quickExpenseCategory').value || 'Altro',
+            sub_category: document.getElementById('quickExpenseSubCategory').value || '',
             tags: document.getElementById('quickExpenseTag').value || '',
             date: document.getElementById('quickExpenseDate').value
         };
