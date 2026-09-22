@@ -4542,6 +4542,129 @@ body.hide-micro-expenses .tx-item.is-micro-tx {
   }
 }
 
+/* ======================================================== */
+/* 🧭 SMART BUDGET CO-PILOTA & CATEGORY STRIPS RESPONSIVE   */
+/* ======================================================== */
+#smartBudgetSection {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+#categoriesBudgetContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.smart-cat-card {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+.smart-cat-header-strip {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+@media (max-width: 768px) {
+  #categoriesBudgetContainer {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 640px) {
+  #smartBudgetSection {
+    padding: 14px 10px !important;
+    border-radius: 12px !important;
+  }
+
+  #categoriesBudgetContainer {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .smart-cat-header-strip {
+    padding: 9px 8px 8px 10px !important;
+  }
+
+  .smart-cat-icon-box {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 0.95rem !important;
+    border-radius: 7px !important;
+  }
+
+  .smart-cat-title-text {
+    font-size: 0.80rem !important;
+    max-width: 110px !important;
+  }
+
+  .smart-cat-subtext {
+    font-size: 0.62rem !important;
+  }
+
+  .smart-cat-right {
+    gap: 6px !important;
+    margin-left: 4px !important;
+  }
+
+  .smart-cat-spent-val {
+    font-size: 0.82rem !important;
+  }
+
+  .smart-cat-budget-val {
+    font-size: 0.60rem !important;
+  }
+
+  .smart-cat-pct-badge {
+    min-width: 38px !important;
+    padding: 2px 5px !important;
+    font-size: 0.65rem !important;
+    border-radius: 5px !important;
+  }
+
+  .smart-cat-chevron-wrap {
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .smart-cat-header-strip {
+    padding: 8px 6px 7px 8px !important;
+  }
+
+  .smart-cat-title-text {
+    max-width: 85px !important;
+    font-size: 0.76rem !important;
+  }
+
+  .smart-cat-custom-tag {
+    display: none !important;
+  }
+
+  .smart-cat-spent-val {
+    font-size: 0.78rem !important;
+  }
+
+  .smart-cat-right {
+    gap: 4px !important;
+  }
+
+  .smart-cat-pct-badge {
+    min-width: 34px !important;
+    padding: 2px 4px !important;
+    font-size: 0.62rem !important;
+  }
+}
+
+
 
 
 

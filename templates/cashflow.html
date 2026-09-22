@@ -411,7 +411,7 @@
         </div>
 
         <!-- Potentiometer Accordion Grid (Premium Fintech Visual Design) -->
-        <div id="categoriesBudgetContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 10px;">
+        <div id="categoriesBudgetContainer" style="display: grid; gap: 10px; width: 100%; box-sizing: border-box;">
             {% for cat in smart_budget.categories_budget %}
             <div class="smart-cat-card" id="cardCat_{{ cat.name|replace(' ', '_') }}" style="background: linear-gradient(135deg, rgba(20, 29, 47, 0.75), rgba(15, 23, 42, 0.85)); border: 1.5px solid {% if cat.is_deactivated %}rgba(255, 255, 255, 0.05){% elif cat.status_badge == 'danger' %}rgba(239, 68, 68, 0.45){% elif cat.is_custom %}rgba(56, 189, 248, 0.35){% else %}rgba(255, 255, 255, 0.09){% endif %}; border-radius: 12px; overflow: hidden; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 12px rgba(0,0,0,0.25); position: relative; {% if cat.is_deactivated %}opacity: 0.4; filter: grayscale(0.7);{% endif %}">
                 
@@ -419,26 +419,26 @@
                 <div id="glowCat_{{ cat.name|replace(' ', '_') }}" style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: {% if cat.is_deactivated %}transparent{% else %}{{ cat.status_color }}{% endif %}; transition: background 0.3s ease;"></div>
 
                 <!-- CLICKABLE COMPACT HEADER STRIP (Default Visible) -->
-                <div onclick="toggleCatAccordion('{{ cat.name }}')" style="display: flex; justify-content: space-between; align-items: center; padding: 11px 14px 10px 14px; cursor: pointer; user-select: none; transition: background 0.15s ease;" title="Tocca per regolare il budget" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+                <div onclick="toggleCatAccordion('{{ cat.name }}')" class="smart-cat-header-strip" style="display: flex; justify-content: space-between; align-items: center; padding: 11px 14px 10px 14px; cursor: pointer; user-select: none; transition: background 0.15s ease;" title="Tocca per regolare il budget" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
                     
                     <!-- Left: Category Icon with Soft Backdrop & Title -->
-                    <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                        <div style="width: 34px; height: 34px; border-radius: 9px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+                    <div class="smart-cat-left" style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; overflow: hidden;">
+                        <div class="smart-cat-icon-box" style="width: 34px; height: 34px; border-radius: 9px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
                             {{ cat.icon }}
                         </div>
-                        <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            <div style="display: flex; align-items: center; gap: 6px;">
-                                <strong style="color: #fff; font-size: 0.88rem; letter-spacing: -0.2px;">{{ cat.name }}</strong>
+                        <div class="smart-cat-title-wrap" style="min-width: 0; flex: 1 1 auto; overflow: hidden;">
+                            <div style="display: flex; align-items: center; gap: 5px; overflow: hidden;">
+                                <strong class="smart-cat-title-text" style="color: #fff; font-size: 0.88rem; letter-spacing: -0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">{{ cat.name }}</strong>
                                 {% if cat.is_custom and not cat.is_deactivated %}
-                                <span class="badge-tag" style="background: rgba(56, 189, 248, 0.18); color: #38bdf8; font-size: 0.55rem; padding: 0 4px; border-radius: 4px; font-weight: 700;">Custom</span>
+                                <span class="badge-tag smart-cat-custom-tag" style="background: rgba(56, 189, 248, 0.18); color: #38bdf8; font-size: 0.55rem; padding: 0 4px; border-radius: 4px; font-weight: 700; flex-shrink: 0;">Custom</span>
                                 {% endif %}
                             </div>
-                            <div style="font-size: 0.68rem; color: #64748b; margin-top: 1px;">
+                            <div class="smart-cat-subtext" style="font-size: 0.68rem; color: #64748b; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                 {% if cat.is_deactivated %}
-                                    <span>Nessuna spesa nel mese</span>
+                                    <span>Nessuna spesa</span>
                                 {% else %}
                                     <span id="subRem_{{ cat.name|replace(' ', '_') }}" style="color: {% if cat.remaining >= 0 %}#34d399{% else %}#f87171{% endif %}; font-weight: 600;">
-                                        {% if cat.remaining >= 0 %}Disponibili: {{ cat.remaining|eur }}{% else %}Sforato di {{ (-cat.remaining)|eur }}{% endif %}
+                                        {% if cat.remaining >= 0 %}Disp: {{ cat.remaining|eur }}{% else %}Sforato {{ (-cat.remaining)|eur }}{% endif %}
                                     </span>
                                 {% endif %}
                             </div>
@@ -446,25 +446,25 @@
                     </div>
 
                     <!-- Right: Pill Percent Badge + Speso/Budget Values + Chevron -->
-                    <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+                    <div class="smart-cat-right" style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; margin-left: 8px;">
                         <!-- Spent / Budget Display (Hierarchical: Spent is Big & Crisp) -->
-                        <div style="text-align: right;">
-                            <div style="font-size: 0.92rem; font-weight: 800; letter-spacing: -0.3px; color: {% if cat.is_deactivated %}#64748b{% elif cat.status_badge == 'danger' %}#f87171{% else %}#ffffff{% endif %};">
+                        <div class="smart-cat-spent-col" style="text-align: right; line-height: 1.15;">
+                            <div class="smart-cat-spent-val" style="font-size: 0.90rem; font-weight: 800; letter-spacing: -0.3px; color: {% if cat.is_deactivated %}#64748b{% elif cat.status_badge == 'danger' %}#f87171{% else %}#ffffff{% endif %}; white-space: nowrap;">
                                 <span id="spentDisp_{{ cat.name|replace(' ', '_') }}">{{ cat.spent|eur }}</span>
                             </div>
-                            <div style="font-size: 0.68rem; color: #64748b; margin-top: -1px;">
+                            <div class="smart-cat-budget-val" style="font-size: 0.66rem; color: #64748b; margin-top: 1px; white-space: nowrap;">
                                 su <strong id="budgetValDisp_{{ cat.name|replace(' ', '_') }}" style="color: #38bdf8; font-weight: 700;">{{ cat.allocated_budget|eur }}</strong>
                             </div>
                         </div>
 
                         <!-- Pill Percent Badge with High Contrast Glow -->
-                        <div id="pctBadge_{{ cat.name|replace(' ', '_') }}" style="min-width: 48px; text-align: center; padding: 3px 7px; border-radius: 7px; font-size: 0.72rem; font-weight: 900; background: {% if cat.is_deactivated %}rgba(100, 116, 139, 0.15){% elif cat.status_badge == 'danger' %}linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.35)){% elif cat.status_badge == 'warning' %}linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.35)){% else %}linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.35)){% endif %}; color: {{ cat.status_color }}; border: 1px solid {{ cat.status_color }}; box-shadow: 0 0 10px {% if cat.status_badge == 'danger' %}rgba(239, 68, 68, 0.2){% elif cat.status_badge == 'warning' %}rgba(245, 158, 11, 0.2){% else %}rgba(16, 185, 129, 0.2){% endif %};">
+                        <div id="pctBadge_{{ cat.name|replace(' ', '_') }}" class="smart-cat-pct-badge" style="min-width: 44px; text-align: center; padding: 3px 6px; border-radius: 7px; font-size: 0.70rem; font-weight: 900; background: {% if cat.is_deactivated %}rgba(100, 116, 139, 0.15){% elif cat.status_badge == 'danger' %}linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.35)){% elif cat.status_badge == 'warning' %}linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.35)){% else %}linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.35)){% endif %}; color: {{ cat.status_color }}; border: 1px solid {{ cat.status_color }}; box-shadow: 0 0 10px {% if cat.status_badge == 'danger' %}rgba(239, 68, 68, 0.2){% elif cat.status_badge == 'warning' %}rgba(245, 158, 11, 0.2){% else %}rgba(16, 185, 129, 0.2){% endif %}; white-space: nowrap;">
                             {% if cat.is_deactivated %}0%{% else %}{{ cat.pct_spent }}%{% endif %}
                         </div>
 
                         <!-- Dropdown Chevron with background circle -->
-                        <div style="width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center;">
-                            <span id="chevronCat_{{ cat.name|replace(' ', '_') }}" style="font-size: 0.65rem; color: #94a3b8; transition: transform 0.25s ease;">▼</span>
+                        <div class="smart-cat-chevron-wrap" style="width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <span id="chevronCat_{{ cat.name|replace(' ', '_') }}" style="font-size: 0.60rem; color: #94a3b8; transition: transform 0.25s ease;">▼</span>
                         </div>
                     </div>
                 </div>
