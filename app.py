@@ -1316,7 +1316,15 @@ def get_category_trend_endpoint():
         period = "3M"
     
     year_month = request.args.get("year_month", "").strip() or None
-    profile_id = session.get('active_profile_id')
+    
+    # Rispetta il filtro profilo attivo nella sessione o nei parametri (come in /cashflow e /focus)
+    active_filter = request.args.get('profile_id') or session.get('profile_filter', 'all')
+    profile_id = None
+    if active_filter and str(active_filter).lower() != 'all':
+        try:
+            profile_id = int(active_filter)
+        except (ValueError, TypeError):
+            profile_id = None
 
     if not category:
         return jsonify({"success": False, "error": "Categoria non specificata"}), 400
