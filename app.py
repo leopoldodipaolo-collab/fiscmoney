@@ -37,7 +37,8 @@ from services.cashflow_engine import (
     get_macro_advisor_insights,
     get_monthly_forecast_and_considerations,
     calculate_smart_budget_copilot,
-    save_category_monthly_budgets
+    save_category_monthly_budgets,
+    get_category_trend_intelligence
 )
 from services.vertical_focus_engine import (
     get_active_focus_categories,
@@ -1300,6 +1301,37 @@ def save_category_budgets_endpoint():
         "success": True,
         "saved_count": saved_count,
         "message": f"Budget salvato con successo per {saved_count} categorie."
+    })
+
+@app.route("/api/budget/category-trend", methods=["GET"])
+@login_required
+def get_category_trend_endpoint():
+    ws_id = session.get('workspace_id')
+    if not ws_id:
+        return jsonify({"success": False, "error": "Sessione non valida"}), 401
+
+    category = request.args.get("category", "").strip()
+    period = request.args.get("period", "3M").strip().upper()
+    if period not in ["3M", "6M", "ALL"]:
+        period = "3M"
+    
+    year_month = request.args.get("year_month", "").strip() or None
+    profile_id = session.get('active_profile_id')
+
+    if not category:
+        return jsonify({"success": False, "error": "Categoria non specificata"}), 400
+
+    trend_data = get_category_trend_intelligence(
+        workspace_id=ws_id,
+        category_name=category,
+        period=period,
+        profile_id=profile_id,
+        current_year_month=year_month
+    )
+
+    return jsonify({
+        "success": True,
+        "data": trend_data
     })
 
 @app.route("/cashflow/settings/save", methods=["POST"])

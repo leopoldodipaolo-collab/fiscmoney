@@ -2094,6 +2094,162 @@ def calculate_smart_budget_copilot(workspace_id, profile_id=None, year_month=Non
     }
 
 
+def get_category_trend_intelligence(workspace_id, category_name, period="3M", profile_id=None, current_year_month=None):
+    """
+    Calcola l'intelligence e il trend storico per una categoria specifica.
+    - period: '3M' (ultimi 3 mesi completi), '6M' (ultimi 6 mesi), 'ALL' (tutto lo storico fino a 24 mesi)
+    - Distingue quota fissa/ricorrente da ordinaria
+    - Calcola media, min, max, variabilità e genera la proposta consigliata dal Co-Pilota
+    """
+    now = datetime.now()
+    if not current_year_month:
+        current_year_month = now.strftime("%Y-%m")
+
+    try:
+        cur_y, cur_m = map(int, current_year_month.split("-"))
+    except Exception:
+        cur_y, cur_m = now.year, now.month
+
+    # Determina l'orizzonte dei mesi passati
+    if period == "3M":
+        num_months = 3
+    elif period == "6M":
+        num_months = 6
+    else:  # 'ALL'
+        num_months = 18
+
+    past_months = []
+    cy, cm = cur_y, cur_m
+    for _ in range(num_months):
+        if cm == 1:
+            cy, cm = cy - 1, 12
+        else:
+            cm -= 1
+        past_months.append(f"{cy:04d}-{cm:02d}")
+
+    # Ordine cronologico dal più vecchio al più recente
+    chronological_months = list(reversed(past_months))
+
+    conn = get_db_connection()
+    placeholders = ",".join(["?"] * len(past_months))
+    params = [workspace_id, category_name] + past_months
+    
+    query = f"""
+        SELECT 
+            substr(date, 1, 7) as ym,
+            id,
+            date,
+            description,
+            raw_description,
+            tags,
+            amount,
+            category,
+            sub_category
+        FROM transactions
+        WHERE workspace_id = ?
+          AND category = ?
+          AND is_transfer = 0
+          AND amount < 0
+          AND substr(date, 1, 7) IN ({placeholders})
+    """
+    if profile_id:
+        query += " AND profile_id = ?"
+        params.append(profile_id)
+    
+    query += " ORDER BY date ASC"
+    rows = conn.execute(query, params).fetchall()
+    conn.close()
+
+    # Raggruppa per mese
+    month_data_map = {ym: {"total": 0.0, "fixed": 0.0, "ordinary": 0.0, "tx_count": 0} for ym in chronological_months}
+    
+    fixed_keywords = ['mutuo', 'bollo', 'tari', 'revisione', 'assicuraz', 'enel', 'iliad', 'telepass', 'canone', 'affitto', 'abbonamento', 'vodafone', 'tim', 'wind']
+
+    for r in rows:
+        ym = r['ym']
+        if ym not in month_data_map:
+            continue
+        amt = abs(float(r['amount']))
+        month_data_map[ym]["total"] += amt
+        month_data_map[ym]["tx_count"] += 1
+
+        td = f"{r['description'] or ''} {r['raw_description'] or ''} {r['tags'] or ''}".lower()
+        if any(k in td for k in fixed_keywords):
+            month_data_map[ym]["fixed"] += amt
+        else:
+            month_data_map[ym]["ordinary"] += amt
+
+    MESI_SHORT = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"]
+    
+    monthly_trend = []
+    totals_list = []
+    fixed_list = []
+    ordinary_list = []
+
+    for ym in chronological_months:
+        d = month_data_map[ym]
+        tot = round(d["total"], 2)
+        fix = round(d["fixed"], 2)
+        ord_amt = round(max(0.0, tot - fix), 2)
+        totals_list.append(tot)
+        fixed_list.append(fix)
+        ordinary_list.append(ord_amt)
+
+        y_part, m_part = ym.split("-")
+        label = f"{MESI_SHORT[int(m_part)-1]} '{y_part[2:]}"
+        monthly_trend.append({
+            "year_month": ym,
+            "label": label,
+            "total": tot,
+            "fixed": fix,
+            "ordinary": ord_amt,
+            "tx_count": d["tx_count"]
+        })
+
+    # Calcolo statistiche
+    non_zero_totals = [t for t in totals_list if t > 0]
+    total_months_considered = len(chronological_months)
+    active_months_count = len(non_zero_totals)
+    
+    avg_total = round(sum(totals_list) / max(1, total_months_considered), 2)
+    avg_active = round(sum(non_zero_totals) / max(1, active_months_count), 2) if active_months_count > 0 else 0.0
+    avg_fixed = round(sum(fixed_list) / max(1, total_months_considered), 2)
+    avg_ordinary = round(sum(ordinary_list) / max(1, total_months_considered), 2)
+    
+    min_spend = round(min(non_zero_totals), 2) if non_zero_totals else 0.0
+    max_spend = round(max(totals_list), 2) if totals_list else 0.0
+
+    # Algoritmo di Proposta Consigliata Co-Pilota
+    # 1. Se ci sono spese fisse stabili, prendi la quota fissa + media ordinarie con cuscinetto del 5%
+    # 2. Arrotonda ai 10 € più vicini per ergonomia slider
+    base_calc = avg_fixed + (avg_ordinary * 1.05 if avg_ordinary > 0 else 0.0)
+    if base_calc <= 0:
+        suggested_budget = 0.0
+    else:
+        # Arrotonda al multiplo di 10 superiore o pari
+        suggested_budget = float(int((base_calc + 9.99) / 10) * 10)
+    
+    meta = MACRO_CATEGORIES.get(category_name, {"icon": "🏷️", "color": "#94a3b8"})
+
+    return {
+        "category": category_name,
+        "icon": meta.get("icon", "🏷️"),
+        "color": meta.get("color", "#94a3b8"),
+        "period": period,
+        "months_analyzed": total_months_considered,
+        "active_months": active_months_count,
+        "avg_total": avg_total,
+        "avg_active": avg_active,
+        "avg_fixed": avg_fixed,
+        "avg_ordinary": avg_ordinary,
+        "min_spend": min_spend,
+        "max_spend": max_spend,
+        "suggested_budget": suggested_budget,
+        "monthly_trend": monthly_trend
+    }
+
+
+
 
 
 

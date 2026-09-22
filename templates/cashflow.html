@@ -520,18 +520,26 @@
                         </div>
                     </div>
 
-                    <!-- Margin / Overrun Delta Footer -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; margin-top: 10px; padding: 0 4px;">
-                        <span style="color: #64748b;">Margine spendibile residuo:</span>
-                        <span id="remDisp_{{ cat.name|replace(' ', '_') }}" style="color: {% if cat.is_deactivated %}#64748b{% elif cat.remaining >= 0 %}#34d399{% else %}#f87171{% endif %}; font-weight: 800;">
-                            {% if cat.is_deactivated %}
-                                Nessuna spesa
-                            {% elif cat.remaining >= 0 %}
-                                {{ cat.remaining|eur }} disponibile
-                            {% else %}
-                                +{{ (-cat.remaining)|eur }} sforato
-                            {% endif %}
-                        </span>
+                    <!-- Margin / Overrun Delta Footer & Intelligence Trigger -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; margin-top: 10px; padding: 0 4px; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="color: #64748b;">Residuo:</span>
+                            <span id="remDisp_{{ cat.name|replace(' ', '_') }}" style="color: {% if cat.is_deactivated %}#64748b{% elif cat.remaining >= 0 %}#34d399{% else %}#f87171{% endif %}; font-weight: 800;">
+                                {% if cat.is_deactivated %}
+                                    Nessuna spesa
+                                {% elif cat.remaining >= 0 %}
+                                    {{ cat.remaining|eur }} disp.
+                                {% else %}
+                                    +{{ (-cat.remaining)|eur }} sforato
+                                {% endif %}
+                            </span>
+                        </div>
+                        <button type="button" 
+                                class="btn btn-sm"
+                                onclick="openCatTrendModal('{{ cat.name }}', '{{ cat.icon }}')"
+                                style="font-size: 0.68rem; padding: 3px 9px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                            <span>📊</span> <span>Trend & Focus</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2221,6 +2229,198 @@ function updateSmartBudgetUI(sim) {
     }
 }
 
+// ========================================================
+// 📊 CATEGORY TREND & INTELLIGENCE MODAL HANDLERS
+// ========================================================
+let CURRENT_TREND_CAT_NAME = null;
+let CURRENT_TREND_PERIOD = '3M';
+let CURRENT_SUGGESTED_BUDGET = 0.0;
+
+function openCatTrendModal(catName, icon) {
+    CURRENT_TREND_CAT_NAME = catName;
+    CURRENT_TREND_PERIOD = '3M';
+
+    const modal = document.getElementById('catTrendModal');
+    const titleEl = document.getElementById('catTrendModalTitle');
+    const iconEl = document.getElementById('catTrendModalIcon');
+
+    if (titleEl) titleEl.innerText = catName;
+    if (iconEl) iconEl.innerText = icon || '🏷️';
+
+    if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Set 3M active button
+    updateTrendPeriodButtons('3M');
+    loadCatTrendData(catName, '3M');
+}
+
+function closeCatTrendModal() {
+    const modal = document.getElementById('catTrendModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    CURRENT_TREND_CAT_NAME = null;
+}
+
+function switchCatTrendPeriod(period) {
+    if (!CURRENT_TREND_CAT_NAME) return;
+    CURRENT_TREND_PERIOD = period;
+    updateTrendPeriodButtons(period);
+    loadCatTrendData(CURRENT_TREND_CAT_NAME, period);
+}
+
+function updateTrendPeriodButtons(activePeriod) {
+    ['3M', '6M', 'ALL'].forEach(p => {
+        const btn = document.getElementById(`btnTrendPeriod${p}`);
+        if (!btn) return;
+        if (p === activePeriod) {
+            btn.style.background = 'linear-gradient(135deg, #0ea5e9, #3b82f6)';
+            btn.style.color = '#fff';
+            btn.style.fontWeight = '800';
+            btn.style.borderColor = 'transparent';
+        } else {
+            btn.style.background = 'transparent';
+            btn.style.color = '#94a3b8';
+            btn.style.fontWeight = '700';
+            btn.style.borderColor = 'rgba(255,255,255,0.08)';
+        }
+    });
+}
+
+async function loadCatTrendData(catName, period) {
+    const loadingEl = document.getElementById('catTrendLoading');
+    const contentEl = document.getElementById('catTrendContent');
+    if (loadingEl) loadingEl.style.display = 'block';
+    if (contentEl) contentEl.style.opacity = '0.4';
+
+    try {
+        const curYm = BASE_SMART_BUDGET.year_month || '';
+        const url = `/api/budget/category-trend?category=${encodeURIComponent(catName)}&period=${period}&year_month=${curYm}`;
+        const resp = await fetch(url);
+        const json = await resp.json();
+
+        if (json.success && json.data) {
+            renderCatTrendUI(json.data);
+        } else {
+            console.error("Failed to load trend data:", json.error);
+        }
+    } catch (err) {
+        console.error("Error fetching category trend:", err);
+    } finally {
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (contentEl) contentEl.style.opacity = '1';
+    }
+}
+
+function renderCatTrendUI(data) {
+    CURRENT_SUGGESTED_BUDGET = parseFloat(data.suggested_budget || 0.0);
+
+    // 1. Mini KPIs
+    const kpiAvg = document.getElementById('kpiTrendAvg');
+    if (kpiAvg) kpiAvg.innerText = fmtEurJs(data.avg_total);
+
+    const kpiAvgSub = document.getElementById('kpiTrendAvgSub');
+    if (kpiAvgSub) kpiAvgSub.innerText = `su ${data.months_analyzed} mesi`;
+
+    const kpiFixed = document.getElementById('kpiTrendFixed');
+    if (kpiFixed) kpiFixed.innerText = fmtEurJs(data.avg_fixed);
+
+    const kpiMinMax = document.getElementById('kpiTrendMinMax');
+    if (kpiMinMax) kpiMinMax.innerText = `${fmtEurJs(data.min_spend)} / ${fmtEurJs(data.max_spend)}`;
+
+    // 2. Micro Bars Chart
+    const barsWrap = document.getElementById('catTrendBarsContainer');
+    const avgLineLabel = document.getElementById('chartTrendAvgLineLabel');
+    if (avgLineLabel) avgLineLabel.innerText = `Media: ${fmtEurJs(data.avg_total)}`;
+
+    if (barsWrap) {
+        barsWrap.innerHTML = '';
+        const trend = data.monthly_trend || [];
+        const maxVal = Math.max(...trend.map(t => t.total), data.avg_total, 1.0);
+
+        trend.forEach(item => {
+            const pctHeight = Math.min(100, Math.max(8, (item.total / maxVal) * 85));
+            const hasSpend = item.total > 0;
+            const barBg = hasSpend 
+                ? (item.total > data.avg_total ? 'linear-gradient(180deg, #f59e0b, rgba(245, 158, 11, 0.4))' : 'linear-gradient(180deg, #38bdf8, rgba(56, 189, 248, 0.35))')
+                : 'rgba(255,255,255,0.06)';
+
+            const col = document.createElement('div');
+            col.style.flex = '1';
+            col.style.minWidth = '42px';
+            col.style.display = 'flex';
+            col.style.flexDirection = 'column';
+            col.style.alignItems = 'center';
+            col.style.justifyContent = 'flex-end';
+            col.style.height = '100%';
+
+            col.innerHTML = `
+                <div style="font-size: 0.62rem; font-weight: 800; color: ${hasSpend ? '#fff' : '#64748b'}; margin-bottom: 3px; white-space: nowrap;">
+                    ${hasSpend ? fmtEurJs(item.total).replace('€ ', '') : '-'}
+                </div>
+                <div style="width: 75%; height: ${pctHeight}%; background: ${barBg}; border-radius: 6px 6px 2px 2px; transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: ${hasSpend ? '0 0 8px rgba(56, 189, 248, 0.25)' : 'none'}; border: 1px solid ${hasSpend ? 'rgba(56, 189, 248, 0.5)' : 'transparent'};"></div>
+                <div style="font-size: 0.60rem; color: #94a3b8; margin-top: 5px; white-space: nowrap; font-weight: 600;">
+                    ${item.label}
+                </div>
+            `;
+            barsWrap.appendChild(col);
+        });
+    }
+
+    // 3. Suggested Budget Box
+    const sugBadge = document.getElementById('suggestedBudgetBadge');
+    if (sugBadge) sugBadge.innerText = fmtEurJs(data.suggested_budget);
+
+    const sugExpl = document.getElementById('suggestedBudgetExplanation');
+    if (sugExpl) {
+        if (data.avg_fixed > 0) {
+            sugExpl.innerHTML = `Copre <strong>${fmtEurJs(data.avg_fixed)}</strong> di spese fisse/utenze + <strong>${fmtEurJs(data.avg_ordinary)}</strong> di media ordinarie con cuscinetto 5%.`;
+        } else if (data.avg_total > 0) {
+            sugExpl.innerHTML = `Basato su una spesa media mensile di <strong>${fmtEurJs(data.avg_total)}</strong> con margine prudenziale del 5%.`;
+        } else {
+            sugExpl.innerHTML = `Nessuna spesa rilevata nel periodo selezionato. Puoi mantenerlo a zero o impostare una riserva.`;
+        }
+    }
+}
+
+// 1-Click Apply Suggested Budget
+function applyCatSuggestedBudget() {
+    if (!CURRENT_TREND_CAT_NAME) return;
+    const catName = CURRENT_TREND_CAT_NAME;
+    const val = CURRENT_SUGGESTED_BUDGET;
+
+    const catId = getSafeCatId(catName);
+    const slider = document.getElementById(`sliderCat_${catId}`);
+    if (slider) {
+        if (val > parseFloat(slider.max)) {
+            slider.max = Math.ceil(val * 1.3 / 50) * 50;
+        }
+        slider.value = val;
+    }
+
+    onCatSliderInput(catName, val);
+    triggerDebouncedSimulation();
+
+    // Feedback effect on button
+    const btn = document.getElementById('btnApplySuggestedBudget');
+    if (btn) {
+        btn.innerHTML = '<span>✓</span> <span>Applicato allo Slider!</span>';
+        btn.style.background = 'linear-gradient(135deg, #059669, #047857)';
+    }
+
+    setTimeout(() => {
+        closeCatTrendModal();
+        if (btn) {
+            btn.innerHTML = '<span>✨</span> <span>Applica allo Slider</span>';
+            btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+        }
+    }, 600);
+}
+
 function toggleCascade(elementId, arrowId) {
     const el = document.getElementById(elementId);
     const arrow = document.getElementById(arrowId);
@@ -3073,6 +3273,110 @@ window.addEventListener('click', function(e) {
                 <button type="submit" class="btn btn-sm" style="background: linear-gradient(135deg, var(--accent-primary), #2563eb);">Salva Parametri</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- ======================================================== -->
+<!-- 📊 MODALE: FOCUS & INTELLIGENCE DI CATEGORIA (3M / 6M / TUTTO) -->
+<!-- ======================================================== -->
+<div id="catTrendModal" style="display: none; position: fixed; inset: 0; z-index: 1060; background: rgba(0,0,0,0.78); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 12px; box-sizing: border-box;">
+    <div class="card" style="max-width: 540px; width: 100%; max-height: 90vh; overflow-y: auto; background: linear-gradient(135deg, #0f172a, #1e293b); border: 1.5px solid rgba(56, 189, 248, 0.4); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7), 0 0 25px rgba(56, 189, 248, 0.15); border-radius: 16px; padding: 20px; box-sizing: border-box; position: relative;">
+        
+        <!-- Modal Top Header -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div id="catTrendModalIcon" style="width: 38px; height: 38px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                    🏷️
+                </div>
+                <div>
+                    <h3 id="catTrendModalTitle" style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">
+                        Focus Categoria
+                    </h3>
+                    <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 2px;">
+                        Analisi andamento storico & spesa media mensile
+                    </div>
+                </div>
+            </div>
+            <button type="button" onclick="closeCatTrendModal()" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; border-radius: 8px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer;">✕</button>
+        </div>
+
+        <!-- Period Toggle Switcher (3M, 6M, Tutto) -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; background: rgba(0,0,0,0.35); padding: 4px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; padding-left: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+                Orizzonte:
+            </div>
+            <div style="display: flex; gap: 4px;">
+                <button type="button" id="btnTrendPeriod3M" onclick="switchCatTrendPeriod('3M')" class="btn btn-sm btn-trend-period active" style="font-size: 0.72rem; font-weight: 800; padding: 4px 12px; border-radius: 7px; border: none; background: linear-gradient(135deg, #0ea5e9, #3b82f6); color: #fff; cursor: pointer;">3 Mesi</button>
+                <button type="button" id="btnTrendPeriod6M" onclick="switchCatTrendPeriod('6M')" class="btn btn-sm btn-trend-period" style="font-size: 0.72rem; font-weight: 700; padding: 4px 12px; border-radius: 7px; border: 1px solid rgba(255,255,255,0.08); background: transparent; color: #94a3b8; cursor: pointer;">6 Mesi</button>
+                <button type="button" id="btnTrendPeriodALL" onclick="switchCatTrendPeriod('ALL')" class="btn btn-sm btn-trend-period" style="font-size: 0.72rem; font-weight: 700; padding: 4px 12px; border-radius: 7px; border: 1px solid rgba(255,255,255,0.08); background: transparent; color: #94a3b8; cursor: pointer;">Tutto</button>
+            </div>
+        </div>
+
+        <!-- Loading State Indicator -->
+        <div id="catTrendLoading" style="display: none; text-align: center; padding: 30px 0;">
+            <div style="font-size: 1.5rem; animation: spin 1s linear infinite; display: inline-block;">⏳</div>
+            <div style="color: #94a3b8; font-size: 0.8rem; margin-top: 8px;">Caricamento storico in corso...</div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="catTrendContent">
+            <!-- 3 Mini KPI Boxes -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 16px;">
+                <!-- 1. Spesa Media Mensile -->
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 10px 12px;">
+                    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">📊 Media Mensile</div>
+                    <div id="kpiTrendAvg" style="font-size: 1.25rem; font-weight: 900; color: #38bdf8; margin-top: 3px;">€ 0,00</div>
+                    <div id="kpiTrendAvgSub" style="font-size: 0.62rem; color: #64748b; margin-top: 1px;">su 3 mesi</div>
+                </div>
+
+                <!-- 2. Costi Fissi / Scadenze -->
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 10px; padding: 10px 12px;">
+                    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">📌 Quota Fissa</div>
+                    <div id="kpiTrendFixed" style="font-size: 1.25rem; font-weight: 900; color: #fbbf24; margin-top: 3px;">€ 0,00</div>
+                    <div style="font-size: 0.62rem; color: #64748b; margin-top: 1px;">scadenze/utenze</div>
+                </div>
+
+                <!-- 3. Min / Max Mensile -->
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 10px 12px;">
+                    <div style="font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">↕️ Min / Max</div>
+                    <div id="kpiTrendMinMax" style="font-size: 0.95rem; font-weight: 800; color: #fff; margin-top: 5px;">€ 0 / € 0</div>
+                    <div style="font-size: 0.62rem; color: #64748b; margin-top: 2px;">escursione spesa</div>
+                </div>
+            </div>
+
+            <!-- Micro-Chart: Monthly Bars -->
+            <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px 12px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span style="font-size: 0.72rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">📈 Andamento Mese per Mese</span>
+                    <span id="chartTrendAvgLineLabel" style="font-size: 0.68rem; color: #38bdf8; font-weight: 700;"></span>
+                </div>
+                <div id="catTrendBarsContainer" style="display: flex; align-items: flex-end; gap: 8px; height: 110px; padding-top: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); overflow-x: auto;">
+                    <!-- Dynamically populated via JS -->
+                </div>
+            </div>
+
+            <!-- AI / Co-Pilota Smart Suggestion Box with 1-Click Apply Button -->
+            <div style="background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(99, 102, 241, 0.15)); border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span>💡</span>
+                        <strong style="color: #fff; font-size: 0.82rem;">Proposta Consigliata Co-Pilota:</strong>
+                    </div>
+                    <div style="margin-top: 3px; display: flex; align-items: baseline; gap: 6px;">
+                        <span id="suggestedBudgetBadge" style="font-size: 1.35rem; font-weight: 900; color: #38bdf8; letter-spacing: -0.5px;">€ 0,00</span>
+                        <span style="font-size: 0.68rem; color: #94a3b8;">/ mese</span>
+                    </div>
+                    <div id="suggestedBudgetExplanation" style="font-size: 0.65rem; color: #cbd5e1; margin-top: 2px;">
+                        Calcolato su spese fisse + media ordinarie con margine sicurezza 5%.
+                    </div>
+                </div>
+
+                <button type="button" id="btnApplySuggestedBudget" onclick="applyCatSuggestedBudget()" class="btn btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 800; font-size: 0.78rem; padding: 8px 16px; border-radius: 8px; border: none; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                    <span>✨</span> <span>Applica allo Slider</span>
+                </button>
+            </div>
+        </div>
+
     </div>
 </div>
 
