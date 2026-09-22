@@ -3446,18 +3446,9 @@ body.privacy-mode-active .advisor-insight-item strong:hover {
   opacity: 1 !important;
 }
 
-/* Mobile Responsive compact icon-only button */
+/* Mobile Responsive: nascondi l'occhio privacy dall'header (disponibile con switch nel menu profilo) */
 @media (max-width: 640px) {
   .privacy-toggle-btn {
-    padding: 0 !important;
-    width: 34px !important;
-    height: 34px !important;
-    border-radius: 50% !important;
-    justify-content: center !important;
-    font-size: 1rem !important;
-    flex-shrink: 0;
-  }
-  .privacy-toggle-btn .privacy-btn-text {
     display: none !important;
   }
 }
