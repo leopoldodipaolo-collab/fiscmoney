@@ -614,6 +614,43 @@ def get_profile_paystubs_summary(workspace_id, profile_id, year=None):
             taxes = (p['inps_tax'] or 0) + (p['irpef_net'] or p['irpef_tax'] or 0) + (p['regional_tax'] or 0) + (p['municipal_tax'] or 0)
             chart_taxes[m_idx] = round(taxes, 2)
 
+    # Pension Fund (Fondapi / Fondo Negoziale o Aperto) analytics
+    total_pension_employee = sum(p.get('pension_fund_contrib_employee') or 0.0 for p in paystubs)
+    total_pension_company = sum(p.get('pension_fund_contrib_company') or 0.0 for p in paystubs)
+    total_pension_year = round(total_pension_employee + total_pension_company, 2)
+    
+    # Projection to year end
+    # Max statutory deduction limit (updated to 5,300 € for 2026 as per Legge di Bilancio)
+    pension_cap = 5300.0 if year >= 2026 else 5164.57
+    
+    # Months recorded vs remaining in year (assuming 13 or 14 months if CCNL standard)
+    recorded_months = set(p['month'] for p in paystubs)
+    months_recorded_count = len(recorded_months)
+    
+    avg_monthly_pension = (total_pension_year / months_recorded_count) if months_recorded_count > 0 else 0.0
+    
+    # Remaining paystubs estimation for current year (e.g. from max month recorded up to 13)
+    max_month = max([p['month'] for p in paystubs if p['month'] <= 12], default=0)
+    remaining_regular_months = max(0, 12 - max_month)
+    has_13th = any(p['month'] == 13 for p in paystubs)
+    remaining_months_total = remaining_regular_months + (0 if has_13th else 1)
+    
+    projected_year_end_pension = round(total_pension_year + (avg_monthly_pension * remaining_months_total), 2)
+    voluntary_needed_to_saturate = max(0.0, round(pension_cap - projected_year_end_pension, 2))
+    headroom_current = max(0.0, round(pension_cap - total_pension_year, 2))
+    
+    # Estimate marginal tax bracket based on annualized gross income
+    annualized_gross = (total_gross / months_recorded_count * 13.5) if months_recorded_count > 0 else total_gross
+    if annualized_gross > 50000:
+        marginal_irpef_rate = 0.43
+    elif annualized_gross > 28000:
+        marginal_irpef_rate = 0.35
+    else:
+        marginal_irpef_rate = 0.23
+        
+    estimated_tax_savings_voluntary = round(voluntary_needed_to_saturate * marginal_irpef_rate, 2)
+    estimated_tax_savings_total = round(min(pension_cap, projected_year_end_pension + voluntary_needed_to_saturate) * marginal_irpef_rate, 2)
+
     return {
         'year': year,
         'count': count,
@@ -633,7 +670,21 @@ def get_profile_paystubs_summary(workspace_id, profile_id, year=None):
         'chart_gross': chart_gross,
         'chart_net': chart_net,
         'chart_taxes': chart_taxes,
-        'paystubs': paystubs
+        'paystubs': paystubs,
+        'pension_analytics': {
+            'total_employee': round(total_pension_employee, 2),
+            'total_company': round(total_pension_company, 2),
+            'total_paid_ytd': round(total_pension_year, 2),
+            'pension_cap': pension_cap,
+            'avg_monthly': round(avg_monthly_pension, 2),
+            'remaining_months': remaining_months_total,
+            'projected_year_end': projected_year_end_pension,
+            'voluntary_needed': voluntary_needed_to_saturate,
+            'headroom_current': headroom_current,
+            'marginal_rate_pct': int(marginal_irpef_rate * 100),
+            'estimated_tax_savings_voluntary': estimated_tax_savings_voluntary,
+            'estimated_tax_savings_total': estimated_tax_savings_total
+        }
     }
 
 

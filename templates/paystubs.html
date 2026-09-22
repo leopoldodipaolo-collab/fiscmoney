@@ -222,6 +222,215 @@ if (dz) {
 </div>
 
 <!-- ============================================================ -->
+<!-- 🛡️ FONDAPI & PREVIDENZA COMPLEMENTARE: SATURAZIONE 5.300 €     -->
+<!-- ============================================================ -->
+<div class="card" id="pensionFundCard" style="margin-bottom: 20px; background: linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(24, 39, 75, 0.85)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 16px; padding: 22px; box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.45); position: relative; overflow: hidden;">
+    <!-- Decorative background glow -->
+    <div style="position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(14, 165, 233, 0.18) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
+
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 14px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(14, 165, 233, 0.15); border: 1.5px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                🛡️
+            </div>
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">
+                        Fondo Pensione & Risparmio Fiscale (Fondapi)
+                    </h3>
+                    <span class="badge-tag" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 0.72rem; font-weight: 800; border: 1px solid rgba(16, 185, 129, 0.4);">
+                        Nuovo Tetto 2026: {{ (summary.pension_analytics.pension_cap if summary.pension_analytics else 5300.0)|eur }}
+                    </span>
+                </div>
+                <div style="color: #94a3b8; font-size: 0.78rem; margin-top: 2px;">
+                    Deducibilità IRPEF art. 51 e 10 TUIR • Quota Lavoratore + Quota Azienda (escluso TFR)
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <button type="button" onclick="togglePensionEditModal()" class="btn-secondary" style="padding: 6px 12px; font-size: 0.78rem; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
+                <span>✏️</span> <span>Aggiorna Dati Portale Fondapi</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Progress Visualization Bar (Identica a Fondapi ma potenziata) -->
+    <div style="margin-bottom: 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+            <div>
+                <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Attuale Importo Deducibile Versato</span>
+                <div style="font-size: 1.6rem; font-weight: 800; color: #38bdf8; line-height: 1.1; margin-top: 2px;">
+                    <span id="dispPensionPaid">{{ (summary.pension_analytics.total_paid_ytd if summary.pension_analytics and summary.pension_analytics.total_paid_ytd > 0 else 1369.16)|eur }}</span>
+                    <span style="font-size: 0.8rem; font-weight: 600; color: #94a3b8;">/ {{ (summary.pension_analytics.pension_cap if summary.pension_analytics else 5300.0)|eur }}</span>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Percentuale Tetto Raggiunta</span>
+                <div style="font-size: 1.35rem; font-weight: 800; color: #34d399;" id="dispPensionPct">
+                    25.8%
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Gradient Progress Bar with Marker -->
+        <div style="width: 100%; height: 26px; background: rgba(15, 23, 42, 0.8); border: 1.5px solid rgba(255, 255, 255, 0.12); border-radius: 13px; overflow: hidden; position: relative; padding: 2px;">
+            <!-- Versato Reale -->
+            <div id="barPensionReal" style="height: 100%; width: 25.8%; background: linear-gradient(90deg, #059669, #10b981); border-radius: 10px 0 0 10px; transition: width 0.6s ease; position: relative; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;">
+                <span style="font-size: 0.7rem; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.6);" id="barPensionRealLabel">1.369 €</span>
+            </div>
+            <!-- Proiezione da Busta Paga a Fine Anno (Tratteggiata / Glow) -->
+            <div id="barPensionProjected" style="position: absolute; left: calc(25.8% + 2px); top: 2px; height: calc(100% - 4px); width: 18%; background: repeating-linear-gradient(45deg, rgba(56, 189, 248, 0.4), rgba(56, 189, 248, 0.4) 10px, rgba(14, 165, 233, 0.6) 10px, rgba(14, 165, 233, 0.6) 20px); border-radius: 0 8px 8px 0; transition: width 0.6s ease;">
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 0.72rem; color: #94a3b8;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <span style="display: inline-flex; align-items: center; gap: 5px;">
+                    <span style="width: 10px; height: 10px; background: #10b981; border-radius: 2px; display: inline-block;"></span>
+                    <span>Versato Effettivo</span>
+                </span>
+                <span style="display: inline-flex; align-items: center; gap: 5px;">
+                    <span style="width: 10px; height: 10px; background: #38bdf8; border-radius: 2px; display: inline-block;"></span>
+                    <span>Proiezione Buste Paga Rimanenti (+13ª)</span>
+                </span>
+            </div>
+            <span style="color: #cbd5e1; font-weight: 600;">Limite Massimo: 5.300,00 € (L. Bilancio 2026)</span>
+        </div>
+    </div>
+
+    <!-- 3 Actionable KPI Cards: Proiezione, Bonifico Necessario, Risparmio Tasse 730 -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 14px;">
+        
+        <!-- Box 1: Proiezione a Fine Anno -->
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Stima Fine Anno Naturale</span>
+                <span style="font-size: 1rem;">🗓️</span>
+            </div>
+            <div style="font-size: 1.35rem; font-weight: 800; color: #38bdf8; margin-top: 4px;" id="dispPensionProjectedEnd">
+                € 2.319,16
+            </div>
+            <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px; line-height: 1.3;" id="dispPensionProjectedSub">
+                Stima basata su 5 mensilità residue da ~190 €/mese (Dipendente + Ditta)
+            </div>
+        </div>
+
+        <!-- Box 2: Bonifico Volontario da Fare -->
+        <div style="background: linear-gradient(135deg, rgba(30, 58, 138, 0.35), rgba(15, 23, 42, 0.75)); border: 1.5px solid rgba(59, 130, 246, 0.5); border-radius: 12px; padding: 14px; position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.75rem; color: #93c5fd; font-weight: 800; text-transform: uppercase;">Bonifico Volontario da Fare</span>
+                <span style="font-size: 1.1rem;">🎯</span>
+            </div>
+            <div style="font-size: 1.45rem; font-weight: 800; color: #60a5fa; margin-top: 4px;" id="dispPensionVoluntaryNeeded">
+                € 2.980,84
+            </div>
+            <div style="font-size: 0.72rem; color: #bfdbfe; margin-top: 4px; font-weight: 600;">
+                Da versare a Fondapi entro il <strong>15-20 Dicembre {{ current_year }}</strong>
+            </div>
+        </div>
+
+        <!-- Box 3: Risparmio Fiscale Diretto 730 -->
+        <div style="background: linear-gradient(135deg, rgba(6, 78, 59, 0.35), rgba(15, 23, 42, 0.75)); border: 1.5px solid rgba(16, 185, 129, 0.5); border-radius: 12px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.75rem; color: #6ee7b7; font-weight: 800; text-transform: uppercase;">Rimborso Fiscale 730 Garantito</span>
+                <span style="font-size: 1.1rem;">💰</span>
+            </div>
+            <div style="font-size: 1.45rem; font-weight: 800; color: #34d399; margin-top: 4px;" id="dispPensionTaxSavings">
+                +€ 1.043,29
+            </div>
+            <div style="font-size: 0.72rem; color: #a7f3d0; margin-top: 4px; font-weight: 600;">
+                Recupero IRPEF netto (<span id="dispPensionScaglione">35%</span>) accreditato nella busta paga estiva!
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Advisory Note -->
+    <div style="margin-top: 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <div style="font-size: 0.74rem; color: #cbd5e1; display: flex; align-items: center; gap: 6px;">
+            <span>💡</span>
+            <span><strong>Regola d'oro:</strong> Versando il bonifico deducibile ottieni un rendimento netto immediato del 35%-43% sulle tasse, superiore a qualsiasi rendimento di mercato.</span>
+        </div>
+        <button type="button" onclick="openFondapiInstructionsModal()" class="btn-sm" style="background: linear-gradient(135deg, #1e3a8a, #1d4ed8); border: none; color: #fff; font-weight: 700; font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; cursor: pointer;">
+            Istruzioni Bonifico Fondapi ➔
+        </button>
+    </div>
+</div>
+
+<!-- Modal Personalizza Dati Fondapi Live -->
+<div id="pensionEditModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(5px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: #0f172a; border: 1px solid #334155; border-radius: 16px; max-width: 480px; width: 100%; padding: 22px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <h3 style="color: #fff; font-size: 1.1rem; font-weight: 800; margin: 0;">⚙️ Calibratore Dati Fondapi</h3>
+            <button onclick="togglePensionEditModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer;">&times;</button>
+        </div>
+        <p style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 14px;">
+            Inserisci l'importo esatto che vedi attualmente sul portale Fondapi o calcola la tua proiezione:
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div>
+                <label style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 4px;">Attuale Importo Deducibile Versato (€)</label>
+                <input type="number" step="0.01" id="inputManualPensionPaid" class="form-control" style="background: #1e293b; color: #fff; border: 1px solid #475569; padding: 8px 12px; border-radius: 8px; width: 100%;" value="1369.16">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div>
+                    <label style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 4px;">Versamento Medio Mensile (€)</label>
+                    <input type="number" step="0.01" id="inputMonthlyPensionRate" class="form-control" style="background: #1e293b; color: #fff; border: 1px solid #475569; padding: 8px 12px; border-radius: 8px; width: 100%;" value="190.00">
+                </div>
+                <div>
+                    <label style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 4px;">Buste Paga Rimaste (incl. 13ª)</label>
+                    <input type="number" id="inputRemainingMonths" class="form-control" style="background: #1e293b; color: #fff; border: 1px solid #475569; padding: 8px 12px; border-radius: 8px; width: 100%;" value="5">
+                </div>
+            </div>
+
+            <div>
+                <label style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 4px;">Tuo Scaglione IRPEF Marginale</label>
+                <select id="selectMarginalIrpef" class="form-control" style="background: #1e293b; color: #fff; border: 1px solid #475569; padding: 8px 12px; border-radius: 8px; width: 100%;">
+                    <option value="0.35" selected>35% (Reddito tra 28.000 € e 50.000 €)</option>
+                    <option value="0.43">43% (Reddito superiore a 50.000 €)</option>
+                    <option value="0.23">23% (Reddito fino a 28.000 €)</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px;">
+            <button type="button" onclick="togglePensionEditModal()" class="btn-secondary" style="padding: 7px 14px; border-radius: 8px;">Annulla</button>
+            <button type="button" onclick="applyCustomPensionData()" class="btn-primary" style="background: linear-gradient(135deg, #0284c7, #0369a1); border: none; padding: 7px 14px; border-radius: 8px; font-weight: 700;">Salva & Ricalcola</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Istruzioni Bonifico Fondapi -->
+<div id="fondapiInstructionsModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(5px); z-index: 9999; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: #0f172a; border: 1px solid #334155; border-radius: 16px; max-width: 520px; width: 100%; padding: 22px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <h3 style="color: #fff; font-size: 1.1rem; font-weight: 800; margin: 0;">📝 Come fare il Versamento Volontario Fondapi</h3>
+            <button onclick="openFondapiInstructionsModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.4rem; cursor: pointer;">&times;</button>
+        </div>
+        <div style="color: #cbd5e1; font-size: 0.82rem; line-height: 1.5; display: flex; flex-direction: column; gap: 10px;">
+            <div style="background: rgba(14, 165, 233, 0.1); border-left: 3px solid #38bdf8; padding: 10px 12px; border-radius: 4px;">
+                <strong>1. Accedi all'Area Riservata Fondapi:</strong><br>
+                Vai sul sito ufficiale <a href="https://www.fondapi.it" target="_blank" style="color: #38bdf8; text-decoration: underline;">fondapi.it</a> e clicca sul pulsante <em>"Effettua un versamento volontario"</em>.
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.04); border-left: 3px solid #94a3b8; padding: 10px 12px; border-radius: 4px;">
+                <strong>2. Genera la Distinta / Bonifico:</strong><br>
+                Il portale ti fornirà l'IBAN dedicato di Fondapi e la <strong>causale specifica</strong> contenente il tuo codice iscritto/fiscale.
+            </div>
+            <div style="background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; padding: 10px 12px; border-radius: 4px;">
+                <strong>3. Tempi e Certificazione 730:</strong><br>
+                Esegui il bonifico ordinario entro il <strong>15 Dicembre</strong> per assicurare l'accredito valuta entro il 31/12. A marzo Fondapi comunicherà l'importo direttamente all'Agenzia delle Entrate per il 730 precompilato!
+            </div>
+        </div>
+        <div style="text-align: right; margin-top: 16px;">
+            <button type="button" onclick="openFondapiInstructionsModal()" class="btn-secondary" style="padding: 7px 16px; border-radius: 8px;">Chiudi</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
 <!-- 📈 INTERACTIVE SALARY ANALYTICS & DYNAMIC TRENDS DASHBOARD -->
 <!-- ============================================================ -->
 <div class="card" id="analyticsCard" style="margin-bottom: 20px; background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.7)); border: 1px solid #334155; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);">
@@ -872,7 +1081,113 @@ function renderChart(labels, dataNet, dataBaseNet, dataPremiNet, dataTaxes, data
     });
 }
 
-document.addEventListener('DOMContentLoaded', initAnalytics);
+document.addEventListener('DOMContentLoaded', () => {
+    initAnalytics();
+    initPensionFundWidget();
+});
+
+// ========================================================
+// 🛡️ FONDAPI LIVE CALIBRATOR LOGIC
+// ========================================================
+function togglePensionEditModal() {
+    const modal = document.getElementById('pensionEditModal');
+    if (modal) {
+        modal.style.display = (modal.style.display === 'none' || modal.style.display === '') ? 'flex' : 'none';
+    }
+}
+
+function openFondapiInstructionsModal() {
+    const modal = document.getElementById('fondapiInstructionsModal');
+    if (modal) {
+        modal.style.display = (modal.style.display === 'none' || modal.style.display === '') ? 'flex' : 'none';
+    }
+}
+
+function initPensionFundWidget() {
+    const savedPaid = localStorage.getItem('fondapi_manual_paid');
+    const savedRate = localStorage.getItem('fondapi_monthly_rate');
+    const savedMonths = localStorage.getItem('fondapi_remaining_months');
+    const savedRateIrpef = localStorage.getItem('fondapi_marginal_irpef');
+
+    if (savedPaid !== null) {
+        document.getElementById('inputManualPensionPaid').value = savedPaid;
+    }
+    if (savedRate !== null) {
+        document.getElementById('inputMonthlyPensionRate').value = savedRate;
+    }
+    if (savedMonths !== null) {
+        document.getElementById('inputRemainingMonths').value = savedMonths;
+    }
+    if (savedRateIrpef !== null) {
+        document.getElementById('selectMarginalIrpef').value = savedRateIrpef;
+    }
+
+    recalcPensionFundLive();
+}
+
+function applyCustomPensionData() {
+    const paidVal = parseFloat(document.getElementById('inputManualPensionPaid').value) || 0;
+    const rateVal = parseFloat(document.getElementById('inputMonthlyPensionRate').value) || 0;
+    const remMonths = parseInt(document.getElementById('inputRemainingMonths').value) || 0;
+    const irpefRate = parseFloat(document.getElementById('selectMarginalIrpef').value) || 0.35;
+
+    localStorage.setItem('fondapi_manual_paid', paidVal);
+    localStorage.setItem('fondapi_monthly_rate', rateVal);
+    localStorage.setItem('fondapi_remaining_months', remMonths);
+    localStorage.setItem('fondapi_marginal_irpef', irpefRate);
+
+    recalcPensionFundLive();
+    togglePensionEditModal();
+}
+
+function recalcPensionFundLive() {
+    const PENSION_CAP = 5300.00;
+    const paidVal = parseFloat(document.getElementById('inputManualPensionPaid')?.value || 1369.16);
+    const rateVal = parseFloat(document.getElementById('inputMonthlyPensionRate')?.value || 190.00);
+    const remMonths = parseInt(document.getElementById('inputRemainingMonths')?.value || 5);
+    const irpefRate = parseFloat(document.getElementById('selectMarginalIrpef')?.value || 0.35);
+
+    const projectedEnd = paidVal + (rateVal * remMonths);
+    const voluntaryNeeded = Math.max(0.0, PENSION_CAP - projectedEnd);
+    const pct = Math.min(100.0, (paidVal / PENSION_CAP) * 100);
+    const projectedPct = Math.min(100.0, (projectedEnd / PENSION_CAP) * 100);
+    const taxSavings = voluntaryNeeded * irpefRate;
+
+    // Update DOM
+    if (document.getElementById('dispPensionPaid')) {
+        document.getElementById('dispPensionPaid').innerText = formatEur(paidVal);
+    }
+    if (document.getElementById('dispPensionPct')) {
+        document.getElementById('dispPensionPct').innerText = `${pct.toFixed(1)}%`;
+    }
+    if (document.getElementById('barPensionReal')) {
+        document.getElementById('barPensionReal').style.width = `${Math.max(8, pct)}%`;
+    }
+    if (document.getElementById('barPensionRealLabel')) {
+        document.getElementById('barPensionRealLabel').innerText = `${Math.round(paidVal).toLocaleString('it-IT')} €`;
+    }
+    if (document.getElementById('barPensionProjected')) {
+        const leftPct = pct;
+        const addWidth = Math.max(0, projectedPct - pct);
+        document.getElementById('barPensionProjected').style.left = `calc(${leftPct}% + 2px)`;
+        document.getElementById('barPensionProjected').style.width = `${addWidth}%`;
+    }
+    if (document.getElementById('dispPensionProjectedEnd')) {
+        document.getElementById('dispPensionProjectedEnd').innerText = formatEur(projectedEnd);
+    }
+    if (document.getElementById('dispPensionProjectedSub')) {
+        document.getElementById('dispPensionProjectedSub').innerText = `Stima basata su ${remMonths} mensilità residue da ~${Math.round(rateVal)} €/mese (Dipendente + Ditta)`;
+    }
+    if (document.getElementById('dispPensionVoluntaryNeeded')) {
+        document.getElementById('dispPensionVoluntaryNeeded').innerText = formatEur(voluntaryNeeded);
+    }
+    if (document.getElementById('dispPensionTaxSavings')) {
+        document.getElementById('dispPensionTaxSavings').innerText = `+${formatEur(taxSavings)}`;
+    }
+    if (document.getElementById('dispPensionScaglione')) {
+        document.getElementById('dispPensionScaglione').innerText = `${Math.round(irpefRate * 100)}%`;
+    }
+}
 </script>
 
 {% endblock %}
