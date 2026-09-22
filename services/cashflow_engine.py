@@ -2132,7 +2132,7 @@ def get_category_trend_intelligence(workspace_id, category_name, period="3M", pr
 
     conn = get_db_connection()
     placeholders = ",".join(["?"] * len(past_months))
-    params = [workspace_id, category_name] + past_months
+    params = [workspace_id, category_name, f"{category_name}%"] + past_months
     
     query = f"""
         SELECT 
@@ -2147,7 +2147,7 @@ def get_category_trend_intelligence(workspace_id, category_name, period="3M", pr
             sub_category
         FROM transactions
         WHERE workspace_id = ?
-          AND category = ?
+          AND (category = ? OR category LIKE ?)
           AND is_transfer = 0
           AND amount < 0
           AND substr(date, 1, 7) IN ({placeholders})
@@ -2158,12 +2158,35 @@ def get_category_trend_intelligence(workspace_id, category_name, period="3M", pr
     
     query += " ORDER BY date ASC"
     rows = conn.execute(query, params).fetchall()
+
+    # Rileva anche le spese fisse e scadenze già registrate nel MESE CORRENTE per questa categoria
+    cur_fixed_query = """
+        SELECT amount, description, raw_description, tags
+        FROM transactions
+        WHERE workspace_id = ?
+          AND (category = ? OR category LIKE ?)
+          AND is_transfer = 0
+          AND amount < 0
+          AND substr(date, 1, 7) = ?
+    """
+    cur_fixed_params = [workspace_id, category_name, f"{category_name}%", current_year_month]
+    if profile_id:
+        cur_fixed_query += " AND profile_id = ?"
+        cur_fixed_params.append(profile_id)
+    cur_rows = conn.execute(cur_fixed_query, cur_fixed_params).fetchall()
     conn.close()
+
+    fixed_keywords = ['mutuo', 'bollo', 'tari', 'revisione', 'assicuraz', 'enel', 'iliad', 'telepass', 'canone', 'affitto', 'abbonamento', 'vodafone', 'tim', 'wind', 'comune', 'pagopa', 'tribut', 'imposta']
+
+    current_month_fixed_spent = 0.0
+    for cr in cur_rows:
+        td = f"{cr['description'] or ''} {cr['raw_description'] or ''} {cr['tags'] or ''}".lower()
+        if any(k in td for k in fixed_keywords):
+            current_month_fixed_spent += abs(float(cr['amount']))
+    current_month_fixed_spent = round(current_month_fixed_spent, 2)
 
     # Raggruppa per mese
     month_data_map = {ym: {"total": 0.0, "fixed": 0.0, "ordinary": 0.0, "tx_count": 0} for ym in chronological_months}
-    
-    fixed_keywords = ['mutuo', 'bollo', 'tari', 'revisione', 'assicuraz', 'enel', 'iliad', 'telepass', 'canone', 'affitto', 'abbonamento', 'vodafone', 'tim', 'wind']
 
     for r in rows:
         ym = r['ym']
@@ -2219,14 +2242,16 @@ def get_category_trend_intelligence(workspace_id, category_name, period="3M", pr
     min_spend = round(min(non_zero_totals), 2) if non_zero_totals else 0.0
     max_spend = round(max(totals_list), 2) if totals_list else 0.0
 
-    # Algoritmo di Proposta Consigliata Co-Pilota
-    # 1. Se ci sono spese fisse stabili, prendi la quota fissa + media ordinarie con cuscinetto del 5%
-    # 2. Arrotonda ai 10 € più vicini per ergonomia slider
-    base_calc = avg_fixed + (avg_ordinary * 1.05 if avg_ordinary > 0 else 0.0)
+    # Algoritmo di Proposta Consigliata Co-Pilota:
+    # 1. Deve garantire la copertura ALMENO delle spese fisse/scadenze del mese corrente (es. TARI 387€)
+    #    oppure della quota fissa storica se superiore
+    # 2. Somma la media ordinarie con cuscinetto del 5%
+    # 3. Arrotonda al multiplo di 10 € superiore
+    effective_fixed = max(current_month_fixed_spent, avg_fixed)
+    base_calc = effective_fixed + (avg_ordinary * 1.05 if avg_ordinary > 0 else 0.0)
     if base_calc <= 0:
         suggested_budget = 0.0
     else:
-        # Arrotonda al multiplo di 10 superiore o pari
         suggested_budget = float(int((base_calc + 9.99) / 10) * 10)
     
     meta = MACRO_CATEGORIES.get(category_name, {"icon": "🏷️", "color": "#94a3b8"})
