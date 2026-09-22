@@ -1647,11 +1647,81 @@
             </form>
         </div>
     </div>
+
+    <!-- ======================================================== -->
+    <!-- 📲 PWA APP INSTALL & DOWNLOAD GUIDE MODAL                -->
+    <!-- ======================================================== -->
+    <div id="pwaInstallModal" class="quick-modal-backdrop" style="display: none;" onclick="closePwaModal()">
+        <div class="quick-modal-container" onclick="event.stopPropagation()" style="max-width: 480px;">
+            <div class="quick-modal-drag-handle"></div>
+
+            <div class="quick-modal-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #38bdf8, #2563eb); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);">
+                        📲
+                    </div>
+                    <div>
+                        <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">Scarica FiscMoney</h3>
+                        <span style="font-size: 0.74rem; color: #38bdf8; font-weight: 600;">Installa l'App sul tuo Smartphone o PC</span>
+                    </div>
+                </div>
+                <button type="button" onclick="closePwaModal()" class="quick-modal-close-btn">&times;</button>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px; margin-bottom: 16px;">
+                <p style="font-size: 0.82rem; color: #cbd5e1; margin: 0 0 10px 0; line-height: 1.45;">
+                    Usando FiscMoney come <strong>App</strong> avrai:
+                </p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.75rem; color: #94a3b8;">
+                    <div style="display: flex; align-items: center; gap: 6px;"><span style="color: #34d399; font-weight: 800;">✓</span> Schermo intero (no barre)</div>
+                    <div style="display: flex; align-items: center; gap: 6px;"><span style="color: #34d399; font-weight: 800;">✓</span> Spesa al volo con 1 tap</div>
+                    <div style="display: flex; align-items: center; gap: 6px;"><span style="color: #34d399; font-weight: 800;">✓</span> Icona sul telefono</div>
+                    <div style="display: flex; align-items: center; gap: 6px;"><span style="color: #34d399; font-weight: 800;">✓</span> Caricamenti istantanei</div>
+                </div>
+            </div>
+
+            <!-- Dynamic Native Install Button (Active if supported by browser) -->
+            <div id="pwaNativeInstallBox" style="margin-bottom: 14px;">
+                <button type="button" onclick="triggerPwaInstall()" class="quick-submit-btn" style="background: linear-gradient(135deg, #38bdf8, #2563eb); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span style="font-size: 1.1rem;">⬇️</span>
+                    <span>Installa Subito sul Dispositivo</span>
+                </button>
+            </div>
+
+            <!-- Step by Step Instructions for iOS and Android -->
+            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 12px; padding: 12px 14px;">
+                <div style="font-size: 0.75rem; font-weight: 800; color: #f8fafc; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                    <span>🍎</span> Se usi iPhone (Safari):
+                </div>
+                <ol style="margin: 0 0 12px 18px; padding: 0; font-size: 0.76rem; color: #94a3b8; line-height: 1.5;">
+                    <li>Tocca il tasto <strong>Condividi</strong> <span style="background: rgba(255,255,255,0.1); padding: 1px 6px; border-radius: 4px; color: #fff;">⎋</span> (in basso al centro)</li>
+                    <li>Scorri in basso e scegli <strong>"Aggiungi alla schermata Home"</strong> ➕</li>
+                    <li>Tocca <strong>"Aggiungi"</strong> in alto a destra. Fatto!</li>
+                </ol>
+
+                <div style="font-size: 0.75rem; font-weight: 800; color: #f8fafc; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                    <span>🤖</span> Se usi Android (Chrome) o PC:
+                </div>
+                <ol style="margin: 0 0 0 18px; padding: 0; font-size: 0.76rem; color: #94a3b8; line-height: 1.5;">
+                    <li>Tocca i <strong>tre puntini</strong> ⋮ in alto a destra nel browser</li>
+                    <li>Seleziona <strong>"Installa app"</strong> o <strong>"Aggiungi a schermata Home"</strong></li>
+                </ol>
+            </div>
+
+            <div style="margin-top: 14px; text-align: center;">
+                <button type="button" onclick="closePwaModal()" class="btn btn-secondary btn-sm" style="font-weight: 700; border-radius: 8px; padding: 6px 16px; font-size: 0.78rem;">
+                    Ho capito, chiudi
+                </button>
+            </div>
+        </div>
+    </div>
     {% endif %}
 
     <!-- Service Worker Registration & Quick Expense Script -->
     <script>
-    // PWA Service Worker Registration
+    // PWA Service Worker Registration & App Install Handler
+    let deferredPwaPrompt = null;
+
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('/static/sw.js')
@@ -1663,6 +1733,71 @@
                 });
         });
     }
+
+    // Capture Native Browser PWA Install Prompt (Chrome, Android, Edge, Desktop)
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPwaPrompt = e;
+        const banner = document.getElementById('pwaInstallBanner');
+        if (banner && sessionStorage.getItem('pwa_banner_dismissed') !== 'true') {
+            banner.style.display = 'flex';
+        }
+        const heroBtn = document.getElementById('heroPwaInstallBtn');
+        if (heroBtn) {
+            heroBtn.style.display = 'inline-flex';
+        }
+    });
+
+    function triggerPwaInstall() {
+        if (deferredPwaPrompt) {
+            deferredPwaPrompt.prompt();
+            deferredPwaPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('Utente ha accettato installazione PWA FiscMoney');
+                    closePwaModal();
+                    const banner = document.getElementById('pwaInstallBanner');
+                    if (banner) banner.style.display = 'none';
+                }
+                deferredPwaPrompt = null;
+            });
+        } else {
+            // If iOS Safari or prompt not available directly, open instructional modal
+            openPwaModal();
+        }
+    }
+
+    function openPwaModal() {
+        const modal = document.getElementById('pwaInstallModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function closePwaModal() {
+        const modal = document.getElementById('pwaInstallModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+
+    function dismissPwaBanner() {
+        const banner = document.getElementById('pwaInstallBanner');
+        if (banner) banner.style.display = 'none';
+        sessionStorage.setItem('pwa_banner_dismissed', 'true');
+    }
+
+    // Hide install prompts if already running in standalone PWA mode
+    window.addEventListener('DOMContentLoaded', () => {
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        if (isStandalone) {
+            const banner = document.getElementById('pwaInstallBanner');
+            if (banner) banner.style.display = 'none';
+            const heroBtn = document.getElementById('heroPwaInstallBtn');
+            if (heroBtn) heroBtn.style.display = 'none';
+        }
+    });
 
     // Quick Expense Modal Logic
     let quickExpenseDataCache = null;
