@@ -1969,25 +1969,34 @@ def calculate_smart_budget_copilot(workspace_id, profile_id=None, year_month=Non
         remaining_amt = round(cat_budget_amt - spent_amt, 2)
         pct_spent = round((spent_amt / cat_budget_amt * 100), 1) if cat_budget_amt > 0 else (100.0 if spent_amt > 0 else 0.0)
 
-        # Semaforo Traffic Light:
-        # 🟢 Verde: <= 75%
-        # 🟡 Giallo: 75% - 95%
-        # 🔴 Rosso: > 95%
-        if pct_spent <= 75.0:
-            status_color = "#10b981"
-            status_badge = "success"
-            status_icon = "🟢"
-            status_text = "In linea"
-        elif pct_spent <= 95.0:
+        # Stato e semaforo:
+        # Se budget == 0 e spesa == 0: categoria disattivata / a zero
+        # Se spesa > budget: 🔴 Sforato (effettivo sforamento)
+        # Se spesa <= budget:
+        #    pct_spent <= 80% -> 🟢 In linea
+        #    80% < pct_spent <= 100% -> 🟡 Attenzione (o quasi a limite)
+        is_deactivated = (cat_budget_amt == 0.0 and spent_amt == 0.0)
+
+        if is_deactivated:
+            status_color = "#64748b"
+            status_badge = "neutral"
+            status_icon = "⏸️"
+            status_text = "Disattivata"
+        elif spent_amt > cat_budget_amt:
+            status_color = "#ef4444"
+            status_badge = "danger"
+            status_icon = "🔴"
+            status_text = "Sforato"
+        elif pct_spent >= 85.0:
             status_color = "#f59e0b"
             status_badge = "warning"
             status_icon = "🟡"
             status_text = "Attenzione"
         else:
-            status_color = "#ef4444"
-            status_badge = "danger"
-            status_icon = "🔴"
-            status_text = "Sforato"
+            status_color = "#10b981"
+            status_badge = "success"
+            status_icon = "🟢"
+            status_text = "In linea"
 
         # Step suggerito per il potenziometro (slider)
         max_slider = max(cat_budget_amt * 2.0, spent_amt * 1.5, 300.0)
@@ -2001,6 +2010,7 @@ def calculate_smart_budget_copilot(workspace_id, profile_id=None, year_month=Non
             "historical_avg": hist_cat_averages.get(cat_name, 0.0),
             "allocated_budget": cat_budget_amt,
             "is_custom": is_custom,
+            "is_deactivated": is_deactivated,
             "spent": spent_amt,
             "ordinary_spent": ordinary_spent_amt,
             "fixed_deadlines_spent": fixed_and_deadlines_amt,
