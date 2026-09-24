@@ -210,11 +210,11 @@
                     <div class="kv-row" style="font-size: 0.82rem; margin-bottom: 6px;">
                         <span style="color: var(--text-muted);">Impatto Fiscale:</span>
                         <strong style="color: {% if item.status == 'OPPORTUNITY' %}#fbbf24{% else %}#34d399{% endif %}; font-size: 0.88rem;">
-                            {{ item.financial_impact }}
+                            {{ item.financial_impact|safe }}
                         </strong>
                     </div>
                     <div style="font-size: 0.78rem; color: #94a3b8; background: rgba(0,0,0,0.25); padding: 8px 10px; border-radius: 8px; border-left: 3px solid {{ item.badge_color }};">
-                        <strong>Azione:</strong> {{ item.action_tip }}
+                        <strong>Azione:</strong> {{ item.action_tip|safe }}
                     </div>
                 </div>
             </div>
@@ -245,7 +245,7 @@
                         {{ act.description|safe }}
                     </p>
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem;">
-                        <span style="color: #34d399; font-weight: 600;">Beneficio: {{ act.expected_gain }}</span>
+                        <span style="color: #34d399; font-weight: 600;">Beneficio: {{ act.expected_gain|safe }}</span>
                     </div>
                 </div>
                 {% endfor %}
