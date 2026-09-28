@@ -139,6 +139,7 @@ if (dz) {
 
 
 <!-- Profile Filter Pills -->
+{% if profiles and profiles|length > 1 %}
 <div class="profile-bar-container" style="margin-bottom: 18px;">
     {% for p in profiles %}
     <a href="/paystubs?profile_id={{ p.id }}&year={{ current_year }}" class="profile-pill {% if active_profile.id == p.id %}active{% endif %}">
@@ -148,6 +149,7 @@ if (dz) {
     </a>
     {% endfor %}
 </div>
+{% endif %}
 
 <!-- Aggregated KPI Summary Cards -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px;">
@@ -216,6 +218,7 @@ if (dz) {
 <!-- ============================================================ -->
 <!-- 🛡️ FONDAPI & PREVIDENZA COMPLEMENTARE: SATURAZIONE 5.300 €     -->
 <!-- ============================================================ -->
+{% if summary.paystubs and summary.paystubs|length > 0 %}
 <div class="card" id="pensionFundCard" style="margin-bottom: 20px; background: linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(24, 39, 75, 0.85)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 16px; padding: 22px; box-shadow: 0 12px 30px -8px rgba(0, 0, 0, 0.45); position: relative; overflow: hidden;">
     <!-- Decorative background glow -->
     <div style="position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; background: radial-gradient(circle, rgba(14, 165, 233, 0.18) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
@@ -253,14 +256,14 @@ if (dz) {
             <div>
                 <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Attuale Importo Deducibile Versato</span>
                 <div style="font-size: 1.6rem; font-weight: 800; color: #38bdf8; line-height: 1.1; margin-top: 2px;">
-                    <span id="dispPensionPaid">{{ (summary.pension_analytics.total_paid_ytd if summary.pension_analytics and summary.pension_analytics.total_paid_ytd > 0 else 1369.16)|eur }}</span>
+                    <span id="dispPensionPaid">{{ (summary.pension_analytics.total_paid_ytd if summary.pension_analytics else 0.0)|eur }}</span>
                     <span style="font-size: 0.8rem; font-weight: 600; color: #94a3b8;">/ {{ (summary.pension_analytics.pension_cap if summary.pension_analytics else 5300.0)|eur }}</span>
                 </div>
             </div>
             <div style="text-align: right;">
                 <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Percentuale Tetto Raggiunta</span>
                 <div style="font-size: 1.35rem; font-weight: 800; color: #34d399;" id="dispPensionPct">
-                    25.8%
+                    {{ ((summary.pension_analytics.total_paid_ytd / summary.pension_analytics.pension_cap * 100)|round(1)) if (summary.pension_analytics and summary.pension_analytics.pension_cap > 0) else 0.0 }}%
                 </div>
             </div>
         </div>
@@ -268,8 +271,8 @@ if (dz) {
         <!-- Custom Gradient Progress Bar with Marker -->
         <div style="width: 100%; height: 26px; background: rgba(15, 23, 42, 0.8); border: 1.5px solid rgba(255, 255, 255, 0.12); border-radius: 13px; overflow: hidden; position: relative; padding: 2px;">
             <!-- Versato Reale -->
-            <div id="barPensionReal" style="height: 100%; width: 25.8%; background: linear-gradient(90deg, #059669, #10b981); border-radius: 10px 0 0 10px; transition: width 0.6s ease; position: relative; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;">
-                <span style="font-size: 0.7rem; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.6);" id="barPensionRealLabel">1.369 €</span>
+            <div id="barPensionReal" style="height: 100%; width: {{ [((summary.pension_analytics.total_paid_ytd / summary.pension_analytics.pension_cap * 100)|round(1)), 100]|min if (summary.pension_analytics and summary.pension_analytics.pension_cap > 0) else 0 }}%; background: linear-gradient(90deg, #059669, #10b981); border-radius: 10px 0 0 10px; transition: width 0.6s ease; position: relative; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;">
+                <span style="font-size: 0.7rem; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.6);" id="barPensionRealLabel">{{ (summary.pension_analytics.total_paid_ytd if summary.pension_analytics else 0.0)|eur }}</span>
             </div>
             <!-- Proiezione da Busta Paga a Fine Anno (Tratteggiata / Glow) -->
             <div id="barPensionProjected" style="position: absolute; left: calc(25.8% + 2px); top: 2px; height: calc(100% - 4px); width: 18%; background: repeating-linear-gradient(45deg, rgba(56, 189, 248, 0.4), rgba(56, 189, 248, 0.4) 10px, rgba(14, 165, 233, 0.6) 10px, rgba(14, 165, 233, 0.6) 20px); border-radius: 0 8px 8px 0; transition: width 0.6s ease;">
@@ -301,10 +304,10 @@ if (dz) {
                 <span style="font-size: 1rem;">🗓️</span>
             </div>
             <div style="font-size: 1.35rem; font-weight: 800; color: #38bdf8; margin-top: 4px;" id="dispPensionProjectedEnd">
-                € 2.319,16
+                {{ (summary.pension_analytics.projected_year_end if summary.pension_analytics else 0.0)|eur }}
             </div>
             <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px; line-height: 1.3;" id="dispPensionProjectedSub">
-                Stima basata su 5 mensilità residue da ~190 €/mese (Dipendente + Ditta)
+                Stima basata su {{ summary.pension_analytics.remaining_months if summary.pension_analytics else 0 }} mensilità residue da ~{{ (summary.pension_analytics.avg_monthly if summary.pension_analytics else 0.0)|round|int }} €/mese (Dipendente + Ditta)
             </div>
         </div>
 
@@ -315,7 +318,7 @@ if (dz) {
                 <span style="font-size: 1.1rem;">🎯</span>
             </div>
             <div style="font-size: 1.45rem; font-weight: 800; color: #60a5fa; margin-top: 4px;" id="dispPensionVoluntaryNeeded">
-                € 2.980,84
+                {{ (summary.pension_analytics.voluntary_needed if summary.pension_analytics else 0.0)|eur }}
             </div>
             <div style="font-size: 0.72rem; color: #bfdbfe; margin-top: 4px; font-weight: 600;">
                 Da versare a Fondapi entro il <strong>15-20 Dicembre {{ current_year }}</strong>
@@ -329,10 +332,10 @@ if (dz) {
                 <span style="font-size: 1.1rem;">💰</span>
             </div>
             <div style="font-size: 1.45rem; font-weight: 800; color: #34d399; margin-top: 4px;" id="dispPensionTaxSavings">
-                +€ 1.043,29
+                +{{ (summary.pension_analytics.estimated_tax_savings_voluntary if summary.pension_analytics else 0.0)|eur }}
             </div>
             <div style="font-size: 0.72rem; color: #a7f3d0; margin-top: 4px; font-weight: 600;">
-                Recupero IRPEF netto (<span id="dispPensionScaglione">35%</span>) accreditato nella busta paga estiva!
+                Recupero IRPEF netto (<span id="dispPensionScaglione">{{ summary.pension_analytics.marginal_rate_pct if summary.pension_analytics else 35 }}%</span>) accreditato nella busta paga estiva!
             </div>
         </div>
 
@@ -364,17 +367,17 @@ if (dz) {
         <div style="display: flex; flex-direction: column; gap: 12px;">
             <div>
                 <label style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 4px;">Attuale Importo Deducibile Versato (€)</label>
-                <input type="number" step="0.01" id="inputManualPensionPaid" class="form-control" style="background: #1e293b; color: #fff; border: 1px solid #475569; padding: 8px 12px; border-radius: 8px; width: 100%;" value="1369.16">
+                <input type="number" step="0.01" id="inputManualPensionPaid" class="form-control" style="background: #1e293b; color: #fff; border: 1px solid #475569; padding: 8px 12px; border-radius: 8px; width: 100%;" value="{{ (summary.pension_analytics.total_paid_ytd|round(2)) if summary.pension_analytics and summary.pension_analytics.total_paid_ytd is defined else '0.00' }}">
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div>
                     <label style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 4px;">Versamento Medio Mensile (€)</label>
-                    <input type="number" step="0.01" id="inputMonthlyPensionRate" class="form-control" style="background: #1e293b; color: #fff; border: 1px solid #475569; padding: 8px 12px; border-radius: 8px; width: 100%;" value="190.00">
+                    <input type="number" step="0.01" id="inputMonthlyPensionRate" class="form-control" style="background: #1e293b; color: #fff; border: 1px solid #475569; padding: 8px 12px; border-radius: 8px; width: 100%;" value="{{ (summary.pension_analytics.avg_monthly|round(2)) if summary.pension_analytics and summary.pension_analytics.avg_monthly is defined else '0.00' }}">
                 </div>
                 <div>
                     <label style="font-size: 0.78rem; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 4px;">Buste Paga Rimaste (incl. 13ª)</label>
-                    <input type="number" id="inputRemainingMonths" class="form-control" style="background: #1e293b; color: #fff; border: 1px solid #475569; padding: 8px 12px; border-radius: 8px; width: 100%;" value="5">
+                    <input type="number" id="inputRemainingMonths" class="form-control" style="background: #1e293b; color: #fff; border: 1px solid #475569; padding: 8px 12px; border-radius: 8px; width: 100%;" value="{{ summary.pension_analytics.remaining_months if summary.pension_analytics else '0' }}">
                 </div>
             </div>
 
@@ -421,6 +424,7 @@ if (dz) {
         </div>
     </div>
 </div>
+{% endif %}
 
 <!-- ============================================================ -->
 <!-- 📈 INTERACTIVE SALARY ANALYTICS & DYNAMIC TRENDS DASHBOARD -->
@@ -1229,12 +1233,16 @@ function renderChart(labels, dataNet, dataBaseNet, dataPremiNet, data13thNet, da
 
 document.addEventListener('DOMContentLoaded', () => {
     initAnalytics();
+    {% if summary.paystubs and summary.paystubs|length > 0 %}
     initPensionFundWidget();
+    {% endif %}
 });
 
 // ========================================================
 // 🛡️ FONDAPI LIVE CALIBRATOR LOGIC
 // ========================================================
+const pensionStoragePrefix = 'fondapi_p_{{ active_profile.id if active_profile else 0 }}_';
+
 function togglePensionEditModal() {
     const modal = document.getElementById('pensionEditModal');
     if (modal) {
@@ -1250,21 +1258,21 @@ function openFondapiInstructionsModal() {
 }
 
 function initPensionFundWidget() {
-    const savedPaid = localStorage.getItem('fondapi_manual_paid');
-    const savedRate = localStorage.getItem('fondapi_monthly_rate');
-    const savedMonths = localStorage.getItem('fondapi_remaining_months');
-    const savedRateIrpef = localStorage.getItem('fondapi_marginal_irpef');
+    const savedPaid = localStorage.getItem(pensionStoragePrefix + 'manual_paid');
+    const savedRate = localStorage.getItem(pensionStoragePrefix + 'monthly_rate');
+    const savedMonths = localStorage.getItem(pensionStoragePrefix + 'remaining_months');
+    const savedRateIrpef = localStorage.getItem(pensionStoragePrefix + 'marginal_irpef');
 
-    if (savedPaid !== null) {
+    if (savedPaid !== null && document.getElementById('inputManualPensionPaid')) {
         document.getElementById('inputManualPensionPaid').value = savedPaid;
     }
-    if (savedRate !== null) {
+    if (savedRate !== null && document.getElementById('inputMonthlyPensionRate')) {
         document.getElementById('inputMonthlyPensionRate').value = savedRate;
     }
-    if (savedMonths !== null) {
+    if (savedMonths !== null && document.getElementById('inputRemainingMonths')) {
         document.getElementById('inputRemainingMonths').value = savedMonths;
     }
-    if (savedRateIrpef !== null) {
+    if (savedRateIrpef !== null && document.getElementById('selectMarginalIrpef')) {
         document.getElementById('selectMarginalIrpef').value = savedRateIrpef;
     }
 
@@ -1272,26 +1280,39 @@ function initPensionFundWidget() {
 }
 
 function applyCustomPensionData() {
-    const paidVal = parseFloat(document.getElementById('inputManualPensionPaid').value) || 0;
-    const rateVal = parseFloat(document.getElementById('inputMonthlyPensionRate').value) || 0;
-    const remMonths = parseInt(document.getElementById('inputRemainingMonths').value) || 0;
-    const irpefRate = parseFloat(document.getElementById('selectMarginalIrpef').value) || 0.35;
+    const defaultPaid = parseFloat('{{ (summary.pension_analytics.total_paid_ytd if summary.pension_analytics else 0.0) }}') || 0.0;
+    const defaultRate = parseFloat('{{ (summary.pension_analytics.avg_monthly if summary.pension_analytics else 0.0) }}') || 0.0;
+    const defaultMonths = parseInt('{{ (summary.pension_analytics.remaining_months if summary.pension_analytics else 0) }}') || 0;
 
-    localStorage.setItem('fondapi_manual_paid', paidVal);
-    localStorage.setItem('fondapi_monthly_rate', rateVal);
-    localStorage.setItem('fondapi_remaining_months', remMonths);
-    localStorage.setItem('fondapi_marginal_irpef', irpefRate);
+    const paidVal = parseFloat(document.getElementById('inputManualPensionPaid')?.value) || defaultPaid;
+    const rateVal = parseFloat(document.getElementById('inputMonthlyPensionRate')?.value) || defaultRate;
+    const remMonths = parseInt(document.getElementById('inputRemainingMonths')?.value) || defaultMonths;
+    const irpefRate = parseFloat(document.getElementById('selectMarginalIrpef')?.value) || 0.35;
+
+    localStorage.setItem(pensionStoragePrefix + 'manual_paid', paidVal);
+    localStorage.setItem(pensionStoragePrefix + 'monthly_rate', rateVal);
+    localStorage.setItem(pensionStoragePrefix + 'remaining_months', remMonths);
+    localStorage.setItem(pensionStoragePrefix + 'marginal_irpef', irpefRate);
 
     recalcPensionFundLive();
     togglePensionEditModal();
 }
 
 function recalcPensionFundLive() {
-    const PENSION_CAP = 5300.00;
-    const paidVal = parseFloat(document.getElementById('inputManualPensionPaid')?.value || 1369.16);
-    const rateVal = parseFloat(document.getElementById('inputMonthlyPensionRate')?.value || 190.00);
-    const remMonths = parseInt(document.getElementById('inputRemainingMonths')?.value || 5);
-    const irpefRate = parseFloat(document.getElementById('selectMarginalIrpef')?.value || 0.35);
+    const PENSION_CAP = parseFloat('{{ (summary.pension_analytics.pension_cap if summary.pension_analytics else 5300.0) }}') || 5300.00;
+    const defaultPaid = parseFloat('{{ (summary.pension_analytics.total_paid_ytd if summary.pension_analytics else 0.0) }}') || 0.0;
+    const defaultRate = parseFloat('{{ (summary.pension_analytics.avg_monthly if summary.pension_analytics else 0.0) }}') || 0.0;
+    const defaultMonths = parseInt('{{ (summary.pension_analytics.remaining_months if summary.pension_analytics else 0) }}') || 0;
+
+    const paidInput = document.getElementById('inputManualPensionPaid');
+    const rateInput = document.getElementById('inputMonthlyPensionRate');
+    const monthsInput = document.getElementById('inputRemainingMonths');
+    const irpefInput = document.getElementById('selectMarginalIrpef');
+
+    const paidVal = paidInput ? (parseFloat(paidInput.value) || 0.0) : defaultPaid;
+    const rateVal = rateInput ? (parseFloat(rateInput.value) || 0.0) : defaultRate;
+    const remMonths = monthsInput ? (parseInt(monthsInput.value) || 0) : defaultMonths;
+    const irpefRate = irpefInput ? (parseFloat(irpefInput.value) || 0.35) : 0.35;
 
     const projectedEnd = paidVal + (rateVal * remMonths);
     const voluntaryNeeded = Math.max(0.0, PENSION_CAP - projectedEnd);

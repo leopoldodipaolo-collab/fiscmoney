@@ -275,6 +275,8 @@
                     {% endfor %}
                 </select>
             </div>
+            {% else %}
+            <input type="hidden" name="profile_id" value="{{ selected_profile_id }}">
             {% endif %}
 
             <div style="margin-bottom: 24px;">

@@ -473,11 +473,31 @@ def get_workspace_privacy_context(conn, ws_id, user_id):
             break
         elif is_admin and p['is_primary']:
             my_profile = p
+            break
+
+    # If no linked profile found, try to match by user full_name
+    if not my_profile and user and ws_id:
+        for p in all_profiles:
+            if not p['linked_user_id'] and p['name'].strip().lower() == user['full_name'].strip().lower():
+                conn.execute("UPDATE profiles SET linked_user_id = ? WHERE id = ?", (user_id, p['id']))
+                conn.commit()
+                my_profile = conn.execute("SELECT * FROM profiles WHERE id = ?", (p['id'],)).fetchone()
+                break
+
+    # If still no profile and user is in workspace_members, auto-create a dedicated profile
+    if not my_profile and user and ws_id and mem:
+        role_title = 'Titolare' if is_admin else 'Membro'
+        conn.execute("INSERT INTO profiles (workspace_id, name, is_primary, role_title, linked_user_id) VALUES (?, ?, ?, ?, ?)",
+                     (ws_id, user['full_name'], 1 if is_admin else 0, role_title, user_id))
+        conn.commit()
+        all_profiles = conn.execute("SELECT * FROM profiles WHERE workspace_id = ? ORDER BY is_primary DESC, id ASC", (ws_id,)).fetchall()
+        my_profile = next((p for p in all_profiles if p['linked_user_id'] == user_id), None)
+
     if not my_profile and all_profiles:
-        my_profile = all_profiles[0]
+        my_profile = all_profiles[0] if is_admin else all_profiles[-1]
         
-    if not is_admin and sharing_mode in ['ADMIN_ONLY', 'HYBRID'] and my_profile:
-        # Strictly locked for non-admin in restricted privacy modes
+    if not is_admin and my_profile:
+        # Strictly locked for non-admin to their own profile
         active_filter = str(my_profile['id'])
         session['profile_filter'] = active_filter
         selected_profile = my_profile
@@ -693,7 +713,10 @@ def dashboard():
     # Fetch Latest 730 Declaration
     t730_query = "SELECT * FROM tax_declarations_730 WHERE workspace_id = ?"
     t730_params = [ws_id]
-    if active_filter != 'all' and selected_profile:
+    if not is_admin and my_profile:
+        t730_query += " AND profile_id = ?"
+        t730_params.append(my_profile['id'])
+    elif active_filter != 'all' and selected_profile:
         t730_query += " AND profile_id = ?"
         t730_params.append(selected_profile['id'])
     t730_query += " ORDER BY declaration_year DESC, tax_year DESC LIMIT 1"
@@ -709,7 +732,10 @@ def dashboard():
     # Fetch Latest Paystub
     ps_query = "SELECT * FROM paystubs WHERE workspace_id = ?"
     ps_params = [ws_id]
-    if active_filter != 'all' and selected_profile:
+    if not is_admin and my_profile:
+        ps_query += " AND profile_id = ?"
+        ps_params.append(my_profile['id'])
+    elif active_filter != 'all' and selected_profile:
         ps_query += " AND profile_id = ?"
         ps_params.append(selected_profile['id'])
     ps_query += " ORDER BY year DESC, month DESC LIMIT 1"
@@ -1886,8 +1912,8 @@ def set_profile_filter(filter_val):
     user_id = session.get('user_id')
     ctx = get_workspace_privacy_context(conn, ws_id, user_id)
     
-    # If not admin and mode is HYBRID or ADMIN_ONLY, strictly lock to own profile
-    if not ctx["is_admin"] and ctx["sharing_mode"] in ['ADMIN_ONLY', 'HYBRID']:
+    # If not admin, strictly lock to own profile
+    if not ctx["is_admin"]:
         if ctx["my_profile"]:
             session['profile_filter'] = str(ctx["my_profile"]['id'])
         conn.close()
@@ -4102,35 +4128,43 @@ def delete_transaction(tx_id):
 @login_required
 def paystubs():
     ws_id = session.get('workspace_id')
+    user_id = session.get('user_id')
     if not ws_id:
         return redirect(url_for('dashboard'))
 
     conn = get_db_connection()
-    profiles = conn.execute("SELECT * FROM profiles WHERE workspace_id = ? ORDER BY is_primary DESC, id ASC", (ws_id,)).fetchall()
-    
-    if not profiles:
+    ctx = get_workspace_privacy_context(conn, ws_id, user_id)
+    is_admin = ctx['is_admin']
+    my_profile = ctx['my_profile']
+
+    if not is_admin:
+        profiles = [my_profile] if my_profile else []
+        active_profile = my_profile
+    else:
+        profiles = ctx['all_profiles']
+        req_profile_id = request.args.get('profile_id', type=int)
+        active_profile = None
+        if req_profile_id:
+            active_profile = next((p for p in profiles if p['id'] == req_profile_id), None)
+        
+        if not active_profile:
+            active_filter = session.get('profile_filter', 'all')
+            if active_filter != 'all':
+                active_profile = next((p for p in profiles if str(p['id']) == active_filter), None)
+        
+        if not active_profile and profiles:
+            active_profile = profiles[0]
+
+    if not active_profile:
         conn.close()
         flash("Nessun profilo trovato nel workspace.", "warning")
         return redirect(url_for('dashboard'))
 
-    req_profile_id = request.args.get('profile_id', type=int)
-    active_profile = None
-    if req_profile_id:
-        active_profile = next((p for p in profiles if p['id'] == req_profile_id), None)
-    
-    if not active_profile:
-        active_filter = session.get('profile_filter', 'all')
-        if active_filter != 'all':
-            active_profile = next((p for p in profiles if str(p['id']) == active_filter), None)
-    
-    if not active_profile:
-        active_profile = profiles[0]
-
     from datetime import datetime
     req_year = request.args.get('year', type=int) or datetime.now().year
 
-    # Check distinct years available in paystubs
-    years_rows = conn.execute("SELECT DISTINCT year FROM paystubs WHERE workspace_id = ? ORDER BY year DESC", (ws_id,)).fetchall()
+    # Check distinct years available in paystubs for active_profile
+    years_rows = conn.execute("SELECT DISTINCT year FROM paystubs WHERE workspace_id = ? AND profile_id = ? ORDER BY year DESC", (ws_id, active_profile['id'])).fetchall()
     available_years = [r['year'] for r in years_rows]
     if req_year not in available_years:
         available_years.append(req_year)
@@ -4152,14 +4186,29 @@ def paystubs():
 @login_required
 def paystub_new():
     ws_id = session.get('workspace_id')
+    user_id = session.get('user_id')
     if not ws_id:
         return redirect(url_for('dashboard'))
 
     conn = get_db_connection()
-    profiles = conn.execute("SELECT * FROM profiles WHERE workspace_id = ? ORDER BY is_primary DESC, id ASC", (ws_id,)).fetchall()
-    
-    req_profile_id = request.args.get('profile_id', type=int)
-    profile = next((p for p in profiles if p['id'] == req_profile_id), profiles[0] if profiles else None)
+    ctx = get_workspace_privacy_context(conn, ws_id, user_id)
+    is_admin = ctx['is_admin']
+    my_profile = ctx['my_profile']
+
+    if not is_admin:
+        profiles = [my_profile] if my_profile else []
+        profile = my_profile
+    else:
+        profiles = ctx['all_profiles']
+        req_profile_id = request.args.get('profile_id', type=int)
+        profile = next((p for p in profiles if p['id'] == req_profile_id), None)
+        if not profile:
+            active_filter = session.get('profile_filter', 'all')
+            if active_filter != 'all':
+                profile = next((p for p in profiles if str(p['id']) == active_filter), None)
+        if not profile and profiles:
+            profile = profiles[0]
+
     if not profile:
         conn.close()
         flash("Profilo non trovato.", "error")
@@ -4177,6 +4226,10 @@ def paystub_new():
     if edit_id:
         row = conn.execute("SELECT * FROM paystubs WHERE id = ? AND workspace_id = ?", (edit_id, ws_id)).fetchone()
         if row:
+            if not is_admin and row['profile_id'] != my_profile['id']:
+                conn.close()
+                flash("Accesso non autorizzato.", "error")
+                return redirect(url_for('paystubs'))
             paystub = dict(row)
             edit_mode = True
             default_month = paystub['month']
@@ -4184,6 +4237,10 @@ def paystub_new():
     elif clone_from_id:
         row = conn.execute("SELECT * FROM paystubs WHERE id = ? AND workspace_id = ?", (clone_from_id, ws_id)).fetchone()
         if row:
+            if not is_admin and row['profile_id'] != my_profile['id']:
+                conn.close()
+                flash("Accesso non autorizzato.", "error")
+                return redirect(url_for('paystubs'))
             paystub = dict(row)
             paystub['id'] = None
             paystub['matched_tx_id'] = None
@@ -4213,7 +4270,6 @@ def paystub_new():
     # Find candidate bank transfers
     net_to_match = paystub.get('net_amount', 0.0)
     candidate_transfers = find_candidate_bank_transfers(ws_id, profile['id'], default_month, current_year, net_to_match)
-
 
     conn.close()
 
@@ -4257,7 +4313,24 @@ def paystub_upload_pdf():
         flash(err_msg, "error")
         return redirect(url_for('paystubs'))
 
-    profile_id = request.form.get('profile_id', type=int)
+    conn = get_db_connection()
+    user_id = session.get('user_id')
+    ctx = get_workspace_privacy_context(conn, ws_id, user_id)
+    conn.close()
+
+    if not ctx['is_admin']:
+        profile_id = ctx['my_profile']['id']
+    else:
+        profile_id = request.form.get('profile_id', type=int)
+        if not profile_id and ctx['all_profiles']:
+            active_filter = session.get('profile_filter', 'all')
+            if active_filter != 'all':
+                try:
+                    profile_id = int(active_filter)
+                except (ValueError, TypeError):
+                    profile_id = None
+            if not profile_id:
+                profile_id = ctx['all_profiles'][0]['id']
 
     try:
         file_bytes = file.read()
@@ -4331,19 +4404,35 @@ def paystub_upload_pdf():
         return redirect(url_for('paystub_new', profile_id=profile_id))
 
 @app.route("/paystubs/save", methods=["POST"])
-
 @login_required
 def paystub_save():
     ws_id = session.get('workspace_id')
+    user_id = session.get('user_id')
     if not ws_id:
         return redirect(url_for('dashboard'))
 
-    profile_id = request.form.get('profile_id', type=int)
+    conn = get_db_connection()
+    ctx = get_workspace_privacy_context(conn, ws_id, user_id)
+    is_admin = ctx['is_admin']
+    my_profile = ctx['my_profile']
+
+    paystub_id = request.form.get('paystub_id', type=int)
+    if not is_admin:
+        profile_id = my_profile['id']
+        if paystub_id:
+            check_ps = conn.execute("SELECT profile_id FROM paystubs WHERE id = ? AND workspace_id = ?", (paystub_id, ws_id)).fetchone()
+            if not check_ps or check_ps['profile_id'] != my_profile['id']:
+                conn.close()
+                flash("Accesso non autorizzato.", "error")
+                return redirect(url_for('paystubs'))
+    else:
+        profile_id = request.form.get('profile_id', type=int)
+
     month = request.form.get('month', type=int)
     year = request.form.get('year', type=int)
-    paystub_id = request.form.get('paystub_id', type=int)
 
     if not profile_id or not month or not year:
+        conn.close()
         flash("Profilo, mese e anno sono obbligatori.", "error")
         return redirect(url_for('paystubs'))
 
@@ -4354,7 +4443,6 @@ def paystub_save():
     matched_tx_id = int(matched_tx_id) if matched_tx_id and matched_tx_id.isdigit() else None
     notes = request.form.get('notes', '').strip()
 
-    conn = get_db_connection()
     cursor = conn.cursor()
 
     if paystub_id:
@@ -4508,14 +4596,21 @@ def switch_assistant():
 @login_required
 def paystub_detail(paystub_id):
     ws_id = session.get('workspace_id')
+    user_id = session.get('user_id')
     if not ws_id:
         return redirect(url_for('dashboard'))
 
     conn = get_db_connection()
+    ctx = get_workspace_privacy_context(conn, ws_id, user_id)
     row = conn.execute("SELECT * FROM paystubs WHERE id = ? AND workspace_id = ?", (paystub_id, ws_id)).fetchone()
     if not row:
         conn.close()
         flash("Cedolino non trovato.", "error")
+        return redirect(url_for('paystubs'))
+
+    if not ctx['is_admin'] and row['profile_id'] != ctx['my_profile']['id']:
+        conn.close()
+        flash("Accesso non autorizzato.", "error")
         return redirect(url_for('paystubs'))
 
     paystub = dict(row)
@@ -4543,7 +4638,6 @@ def paystub_detail(paystub_id):
             matched_tx = dict(tx_row)
 
     # Assistant Persona Resolution
-    user_id = session.get('user_id')
     user_row = conn.execute("SELECT assistant_persona FROM users WHERE id = ?", (user_id,)).fetchone()
     
     # Allow URL preview override ?persona=anna or profile preference or user preference
@@ -4600,20 +4694,26 @@ def paystub_detail(paystub_id):
 @login_required
 def paystub_delete(paystub_id):
     ws_id = session.get('workspace_id')
+    user_id = session.get('user_id')
     if not ws_id:
         return redirect(url_for('dashboard'))
 
     conn = get_db_connection()
+    ctx = get_workspace_privacy_context(conn, ws_id, user_id)
     cursor = conn.cursor()
     ps = conn.execute("SELECT * FROM paystubs WHERE id = ? AND workspace_id = ?", (paystub_id, ws_id)).fetchone()
     if ps:
+        if not ctx['is_admin'] and ps['profile_id'] != ctx['my_profile']['id']:
+            conn.close()
+            flash("Accesso non autorizzato.", "error")
+            return redirect(url_for('paystubs'))
         p_id = ps['profile_id']
         y = ps['year']
         cursor.execute("DELETE FROM paystubs WHERE id = ? AND workspace_id = ?", (paystub_id, ws_id))
         conn.commit()
         flash("Cedolino eliminato con successo.", "success")
         conn.close()
-        return redirect(url_for('paystubs', profile_id=p_id, year=y))
+        return redirect(url_for('paystubs', profile_id=p_id if ctx['is_admin'] else None, year=y))
         
     conn.close()
     return redirect(url_for('paystubs'))
@@ -4626,15 +4726,35 @@ def paystub_delete(paystub_id):
 @login_required
 def tax_730_list():
     ws_id = session.get('workspace_id')
+    user_id = session.get('user_id')
     if not ws_id:
         return redirect(url_for('dashboard'))
 
     conn = get_db_connection()
-    profiles = conn.execute("SELECT * FROM profiles WHERE workspace_id = ? ORDER BY is_primary DESC, id ASC", (ws_id,)).fetchall()
-    
-    selected_profile_id = request.args.get('profile_id', type=int)
-    if not selected_profile_id and profiles:
-        selected_profile_id = profiles[0]['id']
+    ctx = get_workspace_privacy_context(conn, ws_id, user_id)
+    is_admin = ctx['is_admin']
+    my_profile = ctx['my_profile']
+
+    if not is_admin:
+        profiles = [my_profile] if my_profile else []
+        selected_profile_id = my_profile['id'] if my_profile else None
+    else:
+        profiles = ctx['all_profiles']
+        req_profile_id = request.args.get('profile_id', type=int)
+        if req_profile_id and any(p['id'] == req_profile_id for p in profiles):
+            selected_profile_id = req_profile_id
+        else:
+            active_filter = session.get('profile_filter', 'all')
+            selected_profile_id = None
+            if active_filter != 'all':
+                try:
+                    f_id = int(active_filter)
+                    if any(p['id'] == f_id for p in profiles):
+                        selected_profile_id = f_id
+                except (ValueError, TypeError):
+                    selected_profile_id = None
+            if not selected_profile_id and profiles:
+                selected_profile_id = profiles[0]['id']
 
     query = '''
         SELECT d.*, p.name as profile_name, ps.month as matched_ps_month, ps.year as matched_ps_year, ps.net_amount as matched_ps_net
@@ -4704,24 +4824,38 @@ def tax_730_list():
 @login_required
 def tax_730_upload_pdf():
     ws_id = session.get('workspace_id')
+    user_id = session.get('user_id')
     if not ws_id:
         return jsonify({'success': False, 'error': 'Workspace non selezionato'}), 400
 
-    profile_id = request.form.get('profile_id', type=int)
+    conn = get_db_connection()
+    ctx = get_workspace_privacy_context(conn, ws_id, user_id)
+    is_admin = ctx['is_admin']
+    my_profile = ctx['my_profile']
+
+    if not is_admin:
+        profile_id = my_profile['id'] if my_profile else None
+    else:
+        profile_id = request.form.get('profile_id', type=int)
+        if not profile_id:
+            active_filter = session.get('profile_filter', 'all')
+            if active_filter != 'all':
+                try:
+                    profile_id = int(active_filter)
+                except (ValueError, TypeError):
+                    profile_id = None
+        if not profile_id and ctx['all_profiles']:
+            profile_id = ctx['all_profiles'][0]['id']
+
     files = request.files.getlist('pdf_files') or [request.files.get('pdf_file')]
     files = [f for f in files if f and f.filename.endswith('.pdf')]
 
     if not files:
+        conn.close()
         flash("Nessun file PDF 730 valido selezionato.", "error")
-        return redirect(url_for('tax_730_list', profile_id=profile_id))
+        return redirect(url_for('tax_730_list', profile_id=profile_id if is_admin else None))
 
-    conn = get_db_connection()
     cursor = conn.cursor()
-
-    # Get default profile if none selected
-    if not profile_id:
-        p_row = conn.execute("SELECT id FROM profiles WHERE workspace_id = ? ORDER BY is_primary DESC LIMIT 1", (ws_id,)).fetchone()
-        profile_id = p_row['id'] if p_row else 1
 
     imported_count = 0
     last_inserted_id = None
@@ -4848,10 +4982,12 @@ def tax_730_upload_pdf():
 @login_required
 def tax_730_detail(decl_id):
     ws_id = session.get('workspace_id')
+    user_id = session.get('user_id')
     if not ws_id:
         return redirect(url_for('dashboard'))
 
     conn = get_db_connection()
+    ctx = get_workspace_privacy_context(conn, ws_id, user_id)
     row = conn.execute('''
         SELECT d.*, p.name as profile_name
         FROM tax_declarations_730 d
@@ -4859,10 +4995,14 @@ def tax_730_detail(decl_id):
         WHERE d.id = ? AND d.workspace_id = ?
     ''', (decl_id, ws_id)).fetchone()
 
-
     if not row:
         conn.close()
         flash("Dichiarazione 730 non trovata.", "error")
+        return redirect(url_for('tax_730_list'))
+
+    if not ctx['is_admin'] and row['profile_id'] != ctx['my_profile']['id']:
+        conn.close()
+        flash("Accesso non autorizzato.", "error")
         return redirect(url_for('tax_730_list'))
 
     tax_decl = dict(row)
@@ -4938,19 +5078,25 @@ def tax_730_detail(decl_id):
 @login_required
 def tax_730_delete(decl_id):
     ws_id = session.get('workspace_id')
+    user_id = session.get('user_id')
     if not ws_id:
         return redirect(url_for('dashboard'))
 
     conn = get_db_connection()
+    ctx = get_workspace_privacy_context(conn, ws_id, user_id)
     cursor = conn.cursor()
     row = conn.execute("SELECT profile_id FROM tax_declarations_730 WHERE id = ? AND workspace_id = ?", (decl_id, ws_id)).fetchone()
     if row:
+        if not ctx['is_admin'] and row['profile_id'] != ctx['my_profile']['id']:
+            conn.close()
+            flash("Accesso non autorizzato.", "error")
+            return redirect(url_for('tax_730_list'))
         p_id = row['profile_id']
         cursor.execute("DELETE FROM tax_declarations_730 WHERE id = ? AND workspace_id = ?", (decl_id, ws_id))
         conn.commit()
         flash("Dichiarazione 730 eliminata.", "success")
         conn.close()
-        return redirect(url_for('tax_730_list', profile_id=p_id))
+        return redirect(url_for('tax_730_list', profile_id=p_id if ctx['is_admin'] else None))
     
     conn.close()
     return redirect(url_for('tax_730_list'))
