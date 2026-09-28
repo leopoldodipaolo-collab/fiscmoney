@@ -1,0 +1,484 @@
+{% extends "base.html" %}
+
+{% block title %}Automazioni Smartphone & Webhook | FiscMoney{% endblock %}
+
+{% block content %}
+
+<!-- Header & Quick Nav -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;">
+    <div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <a href="/transactions" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">← Movimenti</a>
+            <span style="color: var(--text-muted); font-size: 0.85rem;">/</span>
+            <a href="/settings/rules" style="color: var(--text-muted); text-decoration: none; font-size: 0.85rem;">Regole</a>
+            <span style="color: var(--text-muted); font-size: 0.85rem;">/</span>
+            <span style="color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">Webhook Mobile</span>
+        </div>
+        <h2 style="font-size: 1.5rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 10px;">
+            <span>📱</span> Automazioni Smartphone & Webhook API
+            <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-success); border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.72rem;">
+                ⚡ REAL-TIME ATTIVO
+            </span>
+        </h2>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">
+            Registra le spese all'istante intercettando le notifiche push delle tue banche (BPER, Postepay, BancoPosta, Revolut, ecc.).
+        </p>
+    </div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="/settings/rules" class="btn btn-secondary btn-sm" style="display: flex; align-items: center; gap: 6px;">
+            <span>🧠</span>
+            <span>Regole Categorie</span>
+        </a>
+        <a href="/transactions" class="btn btn-sm" style="display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, var(--accent-primary), #2563eb);">
+            <span>💳</span>
+            <span>Vai ai Movimenti</span>
+        </a>
+    </div>
+</div>
+
+<!-- API Credentials & Webhook URL Card -->
+<div class="card" style="margin-bottom: 24px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(99, 102, 241, 0.35); border-radius: 16px; padding: 22px 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 18px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.35); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">
+                🔑
+            </div>
+            <div>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">Credenziali Webhook Private</h3>
+                <p style="color: #94a3b8; font-size: 0.8rem; margin: 2px 0 0 0;">
+                    Usa questa chiave per autorizzare in sicurezza le richieste dal tuo smartphone a FiscMoney.
+                </p>
+            </div>
+        </div>
+        <form action="/settings/integrations/regenerate-key" method="POST" onsubmit="return confirm('Sei sicuro di voler rigenerare la tua API Key? Dovrai aggiornare la configurazione sullo smartphone.');" style="margin: 0;">
+            <button type="submit" class="btn btn-secondary btn-sm" style="border-color: rgba(239, 68, 68, 0.4); color: #fca5a5;" title="Invalida la chiave attuale e ne genera una nuova">
+                <span>🔄</span> Rigenera Chiave
+            </button>
+        </form>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+        <!-- Webhook Endpoint URL -->
+        <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 14px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                    🌐 Webhook Endpoint (POST)
+                </label>
+                <span class="badge-tag" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 0.68rem;">JSON / FORM</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="webhookUrlInput" readonly value="{{ webhook_url }}" style="flex: 1; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.12); color: #38bdf8; font-family: monospace; font-size: 0.82rem; padding: 8px 12px; border-radius: 8px;" />
+                <button type="button" onclick="copyToClipboard('webhookUrlInput', this)" class="btn btn-secondary btn-sm" style="padding: 0 14px;">
+                    📋 Copia
+                </button>
+            </div>
+        </div>
+
+        <!-- API Secret Key -->
+        <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 14px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+                    🔒 API Key Segreta (Header o Parametro)
+                </label>
+                <button type="button" onclick="toggleKeyVisibility()" style="background: transparent; border: none; color: #a5b4fc; font-size: 0.75rem; cursor: pointer; text-decoration: underline;">
+                    <span id="keyVisibilityLabel">👁️ Mostra</span>
+                </button>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <input type="password" id="apiKeyInput" readonly value="{{ api_key }}" style="flex: 1; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.12); color: #a5b4fc; font-family: monospace; font-size: 0.82rem; padding: 8px 12px; border-radius: 8px;" />
+                <button type="button" onclick="copyToClipboard('apiKeyInput', this)" class="btn btn-secondary btn-sm" style="padding: 0 14px;">
+                    📋 Copia
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ready Full URL (MacroDroid Fast Setup) -->
+    <div style="margin-top: 14px; background: rgba(99, 102, 241, 0.08); border: 1px dashed rgba(99, 102, 241, 0.35); border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.1rem;">⚡</span>
+            <span style="font-size: 0.8rem; color: #c7d2fe;">
+                <strong>URL Completo con Chiave:</strong> Ideale per MacroDroid o Comandi Rapidi (evita di configurare header separati).
+            </span>
+        </div>
+        <input type="hidden" id="fullWebhookUrlInput" value="{{ webhook_url_with_key }}" />
+        <button type="button" onclick="copyToClipboard('fullWebhookUrlInput', this)" class="btn btn-sm btn-primary" style="font-size: 0.75rem; padding: 5px 12px; border-radius: 6px; background: #4f46e5;">
+            📋 Copia URL Completo
+        </button>
+    </div>
+</div>
+
+<!-- Interactive Live Simulator & Tester Card -->
+<div class="card" style="margin-bottom: 24px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 16px; padding: 22px 24px;">
+    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+        <span style="font-size: 1.4rem;">🧪</span>
+        <div>
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">Simulatore Notifica dal Vivo (Test Immediato)</h3>
+            <p style="color: var(--text-muted); font-size: 0.82rem; margin: 2px 0 0 0;">
+                Incolla il testo di una notifica ricevuta dalla tua banca o clicca su uno degli esempi per vedere come FiscMoney la riconosce in tempo reale.
+            </p>
+        </div>
+    </div>
+
+    <!-- Quick Example Buttons -->
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="setSampleNotification('BPER Banca: Autorizzazione al pagamento di Euro 12,50 eseguita con carta n. *2651 presso CONAD')" style="font-size: 0.75rem;">
+            🏛️ BPER Carta (CONAD 12,50€)
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="setSampleNotification('BPER Banca: Pagamento di 45,00 EUR con carta *2651 presso ENI STATION')" style="font-size: 0.75rem;">
+            ⛽ BPER (Carburante ENI 45,00€)
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="setSampleNotification('Postepay: Pagamento di 18,30 euro con la carta *9876 presso Farmacia Comunale')" style="font-size: 0.75rem;">
+            💊 Postepay (Farmacia 730 18,30€)
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="setSampleNotification('BPER: Bonifico ricevuto di 1.250,00 EUR da SMC ITALIA')" style="font-size: 0.75rem;">
+            💶 Bonifico Entrata (1.250,00€)
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="setSampleNotification('Satispay: Hai pagato 15,00 € a Pizzeria da Mario')" style="font-size: 0.75rem;">
+            🍕 Satispay (Pizzeria 15,00€)
+        </button>
+    </div>
+
+    <!-- Test Form -->
+    <form id="webhookTestForm" onsubmit="runWebhookSimulation(event)" style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <input type="text" id="simNotificationInput" required placeholder="Es: BPER: Pagamento di 14,50 EUR con carta *2651 presso BAR CENTRALE..." style="flex: 1; min-width: 280px; background: rgba(0, 0, 0, 0.4); border: 1.5px solid rgba(56, 189, 248, 0.3); color: #fff; padding: 10px 14px; border-radius: 10px; font-size: 0.9rem;" />
+            <button type="submit" id="simSubmitBtn" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px; padding: 10px 20px; font-weight: 700; background: linear-gradient(135deg, #0284c7, #2563eb);">
+                <span>⚡</span> Invia Notifica di Prova
+            </button>
+        </div>
+    </form>
+
+    <!-- Simulation Live Feedback Container -->
+    <div id="simResultContainer" style="display: none; margin-top: 16px; border-radius: 12px; padding: 14px 18px; animation: slideInToast 0.3s ease;">
+        <!-- Content populated via JS -->
+    </div>
+</div>
+
+<!-- Step-by-Step Configuration Guides (Tabs) -->
+<div class="card" style="margin-bottom: 24px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 22px 24px;">
+    <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+        <span>📖</span> Guide di Configurazione Passo-Passo
+    </h3>
+
+    <!-- Nav Tabs -->
+    <div style="display: flex; gap: 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 16px; flex-wrap: wrap;">
+        <button type="button" onclick="switchGuideTab('android')" id="tabBtnAndroid" class="guide-tab-btn active-guide-tab" style="padding: 8px 16px; border-radius: 8px; border: none; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <span>🤖</span> Android (MacroDroid)
+        </button>
+        <button type="button" onclick="switchGuideTab('ios')" id="tabBtnIos" class="guide-tab-btn" style="padding: 8px 16px; border-radius: 8px; border: none; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <span>🍏</span> iPhone (Apple Shortcuts)
+        </button>
+        <button type="button" onclick="switchGuideTab('curl')" id="tabBtnCurl" class="guide-tab-btn" style="padding: 8px 16px; border-radius: 8px; border: none; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <span>💻</span> cURL / Terminale
+        </button>
+    </div>
+
+    <!-- Tab 1: Android MacroDroid -->
+    <div id="guideContentAndroid" class="guide-tab-content">
+        <div style="color: #cbd5e1; font-size: 0.88rem; line-height: 1.6;">
+            <p><strong>MacroDroid</strong> è un'app gratuita per Android che consente di eseguire azioni in background quando si verifica un evento (es. ricezione notifica).</p>
+            <ol style="margin-left: 20px; padding-left: 0; display: flex; flex-direction: column; gap: 8px;">
+                <li>Installa <strong>MacroDroid</strong> dal Google Play Store.</li>
+                <li>Tocca <strong>"Aggiungi Macro"</strong>:
+                    <ul>
+                        <li><strong>TRIGGER (Rosso):</strong> Notifica ➔ Notifica ricevuta ➔ Seleziona l'app della tua banca (es. <em>BPER Banca</em>, <em>BancoPosta</em> o <em>Postepay</em>) ➔ Contenuto: <em>Qualsiasi</em>.</li>
+                        <li><strong>AZIONE (Blu):</strong> Connettività ➔ <strong>Richiesta HTTP</strong>:
+                            <ul>
+                                <li>Metodo: <code>POST</code></li>
+                                <li>URL: <code>{{ webhook_url_with_key }}</code></li>
+                                <li>Tipo contenuto: <code>application/json</code></li>
+                                <li>Contenuto (Body): <code>{"notification_text": "{not_text}"}</code></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li>Assegna un nome alla Macro (es. <em>"FiscMoney BPER Sync"</em>) e salva.</li>
+            </ol>
+            <div style="margin-top: 10px; padding: 10px 14px; background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; border-radius: 6px; font-size: 0.82rem; color: #a7f3d0;">
+                ✨ <strong>Zero manutenzione:</strong> Ogni volta che paghi al POS o ricevi un bonifico, MacroDroid invia il testo della notifica a FiscMoney, che la riconosce, la categorizza ed aggiorna il tuo saldo in un secondo.
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 2: iPhone Apple Shortcuts -->
+    <div id="guideContentIos" class="guide-tab-content" style="display: none;">
+        <div style="color: #cbd5e1; font-size: 0.88rem; line-height: 1.6;">
+            <p>Su iPhone puoi utilizzare l'app nativa <strong>Comandi Rapidi (Apple Shortcuts)</strong>, preinstallata su iOS:</p>
+            <ol style="margin-left: 20px; padding-left: 0; display: flex; flex-direction: column; gap: 8px;">
+                <li>Apri l'app <strong>Comandi Rapidi</strong> e tocca il tab <strong>"Automazione"</strong> in basso.</li>
+                <li>Tocca <strong>"+"</strong> per creare una nuova automazione personale.</li>
+                <li>Scegli <strong>"Transazione" (Apple Pay)</strong>: seleziona le tue carte e lascia <em>"Esegui immediatamente"</em>.</li>
+                <li>Aggiungi l'azione <strong>"Ottieni contenuti dell'URL"</strong>:
+                    <ul>
+                        <li>URL: <code>{{ webhook_url_with_key }}</code></li>
+                        <li>Metodo: <code>POST</code></li>
+                        <li>Richiedi corpo: <code>JSON</code></li>
+                        <li>Campi: <code>amount</code> (Importo transazione) e <code>description</code> (Esercente).</li>
+                    </ul>
+                </li>
+                <li>Salva l'automazione. Non dovrai fare altro: ogni volta che usi Apple Pay la spesa apparirà su FiscMoney!</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- Tab 3: cURL -->
+    <div id="guideContentCurl" class="guide-tab-content" style="display: none;">
+        <div style="color: #cbd5e1; font-size: 0.88rem; line-height: 1.6;">
+            <p>Puoi testare o integrare il webhook da qualsiasi script Python, Node.js o dal terminale con cURL:</p>
+            <pre style="background: rgba(0,0,0,0.5); padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); color: #38bdf8; font-family: monospace; font-size: 0.82rem; overflow-x: auto; white-space: pre-wrap;">curl -X POST "{{ webhook_url }}" \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: {{ api_key }}" \
+  -d '{"notification_text": "BPER: Pagamento di 14.50 EUR con carta *2651 presso BAR CENTRALE"}'</pre>
+        </div>
+    </div>
+</div>
+
+<!-- Webhook Recent Logs Card -->
+<div class="card" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 22px 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.25rem;">📋</span>
+            <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff; margin: 0;">Registro Notifiche Ricevute in Tempo Reale</h3>
+        </div>
+        <span style="color: var(--text-muted); font-size: 0.78rem;">Ultimi 20 eventi registrati</span>
+    </div>
+
+    {% if recent_logs %}
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            <thead>
+                <tr style="border-bottom: 1.5px solid rgba(255,255,255,0.1); text-align: left; color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase;">
+                    <th style="padding: 10px 12px;">Data / Ora</th>
+                    <th style="padding: 10px 12px;">Stato</th>
+                    <th style="padding: 10px 12px;">Descrizione / Esercente</th>
+                    <th style="padding: 10px 12px;">Conto</th>
+                    <th style="padding: 10px 12px; text-align: right;">Importo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in recent_logs %}
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 10px 12px; color: var(--text-muted); font-family: monospace; font-size: 0.78rem; white-space: nowrap;">
+                        {{ log.created_at[:16] }}
+                    </td>
+                    <td style="padding: 10px 12px; white-space: nowrap;">
+                        {% if log.status == 'SUCCESS' %}
+                        <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.7rem; font-weight: 700;">
+                            ✓ REGISTRATA
+                        </span>
+                        {% elif log.status == 'DUPLICATE' %}
+                        <span class="badge-tag" style="background: rgba(139, 92, 246, 0.15); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.3); font-size: 0.7rem; font-weight: 700;">
+                            🛡️ DEDUPLICATA
+                        </span>
+                        {% else %}
+                        <span class="badge-tag" style="background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.7rem; font-weight: 700;">
+                            ✕ ERRORE
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 10px 12px;">
+                        <div style="font-weight: 600; color: #fff;">{{ log.parsed_description or 'Sconosciuto' }}</div>
+                        {% if log.error_message and log.status != 'SUCCESS' %}
+                        <div style="font-size: 0.72rem; color: #fca5a5; margin-top: 2px;">{{ log.error_message }}</div>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 10px 12px; color: #94a3b8; font-size: 0.8rem; white-space: nowrap;">
+                        {{ log.account_name or 'Default' }}
+                    </td>
+                    <td style="padding: 10px 12px; text-align: right; font-weight: 700; white-space: nowrap; font-family: monospace;">
+                        {% if log.parsed_amount is not none %}
+                            <span style="color: {{ 'var(--accent-success)' if log.parsed_amount > 0 else '#f87171' }};">
+                                {{ log.parsed_amount|eur_sign }}
+                            </span>
+                        {% else %}
+                            <span style="color: var(--text-muted);">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 35px 20px; color: var(--text-muted);">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">📡</div>
+        <div style="font-weight: 700; color: #cbd5e1; font-size: 0.95rem;">Nessuna notifica ricevuta finora</div>
+        <p style="font-size: 0.8rem; margin-top: 4px; max-width: 450px; margin-left: auto; margin-right: auto;">
+            Configura MacroDroid sul tuo telefono o usa il <strong>Simulatore dal Vivo</strong> qui sopra per inviare una notifica di prova!
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.guide-tab-btn {
+    background: rgba(255, 255, 255, 0.05);
+    color: #94a3b8;
+    transition: all 0.2s ease;
+}
+.guide-tab-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+.active-guide-tab {
+    background: linear-gradient(135deg, #4f46e5, #2563eb) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+</style>
+
+<script>
+function copyToClipboard(elementId, btn) {
+    const input = document.getElementById(elementId);
+    if (!input) return;
+    navigator.clipboard.writeText(input.value).then(() => {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✓ Copiato!';
+        btn.style.borderColor = '#10b981';
+        btn.style.color = '#10b981';
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.borderColor = '';
+            btn.style.color = '';
+        }, 2000);
+    });
+}
+
+function toggleKeyVisibility() {
+    const keyInput = document.getElementById('apiKeyInput');
+    const label = document.getElementById('keyVisibilityLabel');
+    if (keyInput.type === 'password') {
+        keyInput.type = 'text';
+        label.innerText = '🙈 Nascondi';
+    } else {
+        keyInput.type = 'password';
+        label.innerText = '👁️ Mostra';
+    }
+}
+
+function setSampleNotification(text) {
+    const input = document.getElementById('simNotificationInput');
+    if (input) {
+        input.value = text;
+        input.focus();
+    }
+}
+
+function switchGuideTab(tabName) {
+    document.querySelectorAll('.guide-tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.guide-tab-btn').forEach(btn => btn.classList.remove('active-guide-tab'));
+    
+    if (tabName === 'android') {
+        document.getElementById('guideContentAndroid').style.display = 'block';
+        document.getElementById('tabBtnAndroid').classList.add('active-guide-tab');
+    } else if (tabName === 'ios') {
+        document.getElementById('guideContentIos').style.display = 'block';
+        document.getElementById('tabBtnIos').classList.add('active-guide-tab');
+    } else if (tabName === 'curl') {
+        document.getElementById('guideContentCurl').style.display = 'block';
+        document.getElementById('tabBtnCurl').classList.add('active-guide-tab');
+    }
+}
+
+async function runWebhookSimulation(e) {
+    e.preventDefault();
+    const btn = document.getElementById('simSubmitBtn');
+    const input = document.getElementById('simNotificationInput');
+    const resBox = document.getElementById('simResultContainer');
+    
+    const textVal = input.value.trim();
+    if (!textVal) return;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳</span> Elaborazione...';
+    resBox.style.display = 'none';
+    
+    try {
+        const response = await fetch('/api/v1/webhook/transaction', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Api-Key': document.getElementById('apiKeyInput').value
+            },
+            body: JSON.stringify({
+                notification_text: textVal
+            })
+        });
+        
+        const data = await response.json();
+        resBox.style.display = 'block';
+        
+        if (data.success) {
+            if (data.duplicate) {
+                resBox.style.background = 'rgba(139, 92, 246, 0.15)';
+                resBox.style.border = '1px solid rgba(139, 92, 246, 0.4)';
+                resBox.innerHTML = `
+                    <div style="display: flex; align-items: flex-start; gap: 12px;">
+                        <span style="font-size: 1.5rem;">🛡️</span>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 800; color: #c084fc; font-size: 0.95rem;">Movimento Deduplicato con Successo!</div>
+                            <div style="color: #cbd5e1; font-size: 0.85rem; margin-top: 2px;">
+                                ${data.message}
+                            </div>
+                            <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 6px;">
+                                FiscMoney ha riconosciuto che questa notifica era già stata registrata, prevenendo doppi addebiti.
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                resBox.style.background = 'rgba(16, 185, 129, 0.15)';
+                resBox.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+                const sign = data.amount > 0 ? '+' : '-';
+                const formattedAmt = `${sign}€ ${Math.abs(data.amount).toFixed(2).replace('.', ',')}`;
+                
+                resBox.innerHTML = `
+                    <div style="display: flex; align-items: flex-start; gap: 12px;">
+                        <span style="font-size: 1.6rem;">✨</span>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 800; color: #34d399; font-size: 1rem;">Transazione Registrata all'Istante!</div>
+                            <div style="color: #fff; font-size: 0.88rem; margin-top: 4px;">
+                                ${data.message}
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+                                <span class="badge-tag" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 700;">
+                                    🏦 Conto: ${data.account_name}
+                                </span>
+                                <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-weight: 700;">
+                                    🏷️ Categoria: ${data.category}
+                                </span>
+                                ${data.tags ? `<span class="badge-tag" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-weight: 700;">${data.tags}</span>` : ''}
+                                <span class="badge-tag" style="background: rgba(255, 255, 255, 0.1); color: #fff; font-weight: 700;">
+                                    💰 Nuovo Saldo: € ${data.new_balance.toFixed(2).replace('.', ',')}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        } else {
+            resBox.style.background = 'rgba(239, 68, 68, 0.15)';
+            resBox.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+            resBox.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px; color: #f87171;">
+                    <span style="font-size: 1.4rem;">✕</span>
+                    <div>
+                        <strong>Errore elaborazione:</strong> ${data.error || 'Impossibile leggere la notifica.'}
+                    </div>
+                </div>
+            `;
+        }
+    } catch (err) {
+        resBox.style.display = 'block';
+        resBox.style.background = 'rgba(239, 68, 68, 0.15)';
+        resBox.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+        resBox.innerHTML = `<span style="color: #f87171;">Errore di connessione: ${err.message}</span>`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>⚡</span> Invia Notifica di Prova';
+    }
+}
+</script>
+
+{% endblock %}

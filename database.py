@@ -63,11 +63,15 @@ def init_db():
         )
     ''')
     
-    # Safe migration: add sharing_mode to workspaces if missing
+    # Safe migration: add sharing_mode & api_key to workspaces if missing
     cursor.execute("PRAGMA table_info(workspaces)")
     ws_cols = [col[1] for col in cursor.fetchall()]
     if "sharing_mode" not in ws_cols:
         cursor.execute("ALTER TABLE workspaces ADD COLUMN sharing_mode TEXT DEFAULT 'FULL'")
+    if "api_key" not in ws_cols:
+        cursor.execute("ALTER TABLE workspaces ADD COLUMN api_key TEXT")
+        cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_workspaces_api_key ON workspaces(api_key)")
+
 
     
     # 3. Workspace Members (Users linked to Workspaces)
@@ -506,7 +510,29 @@ def init_db():
     ''')
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_cat_budgets_ws_ym ON category_monthly_budgets(workspace_id, year_month)")
 
+    # 15. Smartphone Webhook Logs Table (Tracciamento Notifiche & Automazioni Mobile)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS webhook_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            workspace_id INTEGER NOT NULL,
+            source TEXT DEFAULT 'SMARTPHONE',
+            raw_payload TEXT,
+            parsed_amount REAL,
+            parsed_description TEXT,
+            account_id INTEGER,
+            transaction_id INTEGER,
+            status TEXT DEFAULT 'SUCCESS', -- 'SUCCESS', 'DUPLICATE', 'ERROR'
+            error_message TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
+            FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE SET NULL,
+            FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE SET NULL
+        )
+    ''')
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_webhook_logs_ws ON webhook_logs(workspace_id, created_at DESC)")
+
     # Seed Default Super-Admin if none exists
+
     cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'SUPER_ADMIN'")
     if cursor.fetchone()[0] == 0:
         default_email = os.environ.get("ADMIN_EMAIL", "admin@fiscmoney.it").strip().lower()
@@ -1041,7 +1067,122 @@ def delete_workspace_custom_tag(workspace_id, category, code):
     finally:
         conn.close()
 
+# ---------------------------------------------------------
+# 16. WORKSPACE API KEYS & WEBHOOK MANAGEMENT
+# ---------------------------------------------------------
+def generate_api_key_token():
+    """Generates a secure, cryptographically random API Key for webhooks."""
+    return f"fisc_sec_{secrets.token_hex(20)}"
+
+def get_or_create_workspace_api_key(workspace_id):
+    """Retrieves the active API key for a workspace, generating one if not present."""
+    if not workspace_id:
+        return None
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT api_key FROM workspaces WHERE id = ?", (workspace_id,))
+        row = cursor.fetchone()
+        if row and row['api_key']:
+            return row['api_key']
+        
+        # Generate new key
+        new_key = generate_api_key_token()
+        cursor.execute("UPDATE workspaces SET api_key = ? WHERE id = ?", (new_key, workspace_id))
+        conn.commit()
+        return new_key
+    except Exception as e:
+        print(f"Error in get_or_create_workspace_api_key: {e}")
+        return None
+    finally:
+        conn.close()
+
+def regenerate_workspace_api_key(workspace_id):
+    """Regenerates and overwrites the workspace API key (e.g. if compromised)."""
+    if not workspace_id:
+        return None
+    new_key = generate_api_key_token()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE workspaces SET api_key = ? WHERE id = ?", (new_key, workspace_id))
+        conn.commit()
+        return new_key
+    except Exception as e:
+        print(f"Error in regenerate_workspace_api_key: {e}")
+        return None
+    finally:
+        conn.close()
+
+def get_workspace_by_api_key(api_key):
+    """Validates an API key and returns the corresponding workspace dictionary."""
+    if not api_key:
+        return None
+    clean_key = str(api_key).strip()
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT id, name, type, sharing_mode, api_key FROM workspaces WHERE api_key = ?", (clean_key,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+    except Exception as e:
+        print(f"Error in get_workspace_by_api_key: {e}")
+        return None
+    finally:
+        conn.close()
+
+def log_webhook_event(workspace_id, source='SMARTPHONE', raw_payload='', parsed_amount=None, 
+                      parsed_description=None, account_id=None, transaction_id=None, 
+                      status='SUCCESS', error_message=None):
+    """Logs incoming webhook requests for audit, debugging, and UI inspection."""
+    if not workspace_id:
+        return None
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            INSERT INTO webhook_logs (
+                workspace_id, source, raw_payload, parsed_amount, parsed_description,
+                account_id, transaction_id, status, error_message
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            workspace_id, source, str(raw_payload)[:1000], parsed_amount,
+            parsed_description, account_id, transaction_id, status, error_message
+        ))
+        log_id = cursor.lastrowid
+        conn.commit()
+        return log_id
+    except Exception as e:
+        print(f"Error logging webhook event: {e}")
+        return None
+    finally:
+        conn.close()
+
+def get_recent_webhook_logs(workspace_id, limit=10):
+    """Fetches recent webhook events for the settings dashboard."""
+    if not workspace_id:
+        return []
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute('''
+            SELECT wl.*, a.name as account_name
+            FROM webhook_logs wl
+            LEFT JOIN accounts a ON wl.account_id = a.id
+            WHERE wl.workspace_id = ?
+            ORDER BY wl.id DESC
+            LIMIT ?
+        ''', (workspace_id, limit))
+        rows = cursor.fetchall()
+        return [dict(r) for r in rows]
+    except Exception as e:
+        print(f"Error fetching webhook logs: {e}")
+        return []
+    finally:
+        conn.close()
+
 if __name__ == "__main__":
     init_db()
     print("Database FiscMoney inizializzato con successo!")
+
 

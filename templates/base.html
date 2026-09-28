@@ -186,11 +186,19 @@
                         </a>
                         {% endif %}
 
-                        <a href="/settings/rules" class="profile-dropdown-item">
-                            <span class="dropdown-item-icon">⚙️</span>
+                        <a href="/settings/rules" class="profile-dropdown-item {% if request.path == '/settings/rules' %}active{% endif %}">
+                            <span class="dropdown-item-icon">🧠</span>
                             <div class="dropdown-item-text">
                                 <strong>Regole & Categorie IA</strong>
                                 <small>Auto-categorizzazione spese</small>
+                            </div>
+                        </a>
+
+                        <a href="/settings/integrations" class="profile-dropdown-item {% if request.path == '/settings/integrations' %}active{% endif %}">
+                            <span class="dropdown-item-icon">📱</span>
+                            <div class="dropdown-item-text">
+                                <strong>Automazioni & Webhook Mobile</strong>
+                                <small>Notifiche push in tempo reale</small>
                             </div>
                         </a>
 

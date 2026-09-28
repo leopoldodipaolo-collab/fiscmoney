@@ -10,8 +10,11 @@ from database import (
     init_db, get_db_connection, DB_PATH, log_admin_action, get_active_announcement,
     create_workspace_invitation, get_invitation_by_token, accept_invitation,
     get_workspace_personalization, save_workspace_personalization,
-    get_workspace_custom_tags, add_workspace_custom_tag, delete_workspace_custom_tag
+    get_workspace_custom_tags, add_workspace_custom_tag, delete_workspace_custom_tag,
+    get_or_create_workspace_api_key, regenerate_workspace_api_key,
+    get_workspace_by_api_key, get_recent_webhook_logs, log_webhook_event
 )
+from services.webhook_engine import process_webhook_transaction, parse_notification_text
 from services.bank_importer import (
     MACRO_CATEGORIES,
     CATEGORY_SMART_TAGS,
@@ -2227,6 +2230,99 @@ def settings_rules_delete(rule_id):
     
     flash("Regola eliminata con successo.", "success")
     return redirect(url_for('settings_rules'))
+
+# ---------------------------------------------------------
+# SMARTPHONE WEBHOOK & MOBILE AUTOMATIONS
+# ---------------------------------------------------------
+@app.route("/settings/integrations")
+@login_required
+def settings_integrations():
+    ws_id = session.get('workspace_id')
+    if not ws_id:
+        return redirect(url_for('dashboard'))
+        
+    api_key = get_or_create_workspace_api_key(ws_id)
+    recent_logs = get_recent_webhook_logs(ws_id, limit=20)
+    
+    conn = get_db_connection()
+    accounts = conn.execute("SELECT * FROM accounts WHERE workspace_id = ? ORDER BY id ASC", (ws_id,)).fetchall()
+    conn.close()
+    
+    # Generate full webhook URL based on current request host
+    scheme = request.headers.get('X-Forwarded-Proto', request.scheme)
+    base_url = f"{scheme}://{request.host}"
+    webhook_url = f"{base_url}/api/v1/webhook/transaction"
+    webhook_url_with_key = f"{webhook_url}?api_key={api_key}"
+    
+    return render_template(
+        "settings_integrations.html",
+        api_key=api_key,
+        webhook_url=webhook_url,
+        webhook_url_with_key=webhook_url_with_key,
+        recent_logs=recent_logs,
+        accounts=[dict(a) for a in accounts]
+    )
+
+@app.route("/settings/integrations/regenerate-key", methods=["POST"])
+@login_required
+def settings_integrations_regenerate_key():
+    ws_id = session.get('workspace_id')
+    if not ws_id:
+        return redirect(url_for('dashboard'))
+        
+    new_key = regenerate_workspace_api_key(ws_id)
+    flash("✨ Nuova chiave API generata con successo! Ricordati di aggiornarla sul tuo smartphone.", "success")
+    return redirect(url_for('settings_integrations'))
+
+@app.route("/api/v1/webhook/transaction", methods=["POST"])
+def api_webhook_transaction():
+    """
+    Public webhook receiver for smartphone push notifications and automated transaction capture.
+    Accepts authentication via X-Api-Key header, Authorization Bearer header, query param, or JSON body.
+    """
+    # 1. Extract API Key
+    api_key = (
+        request.headers.get("X-Api-Key") or
+        request.args.get("api_key") or
+        request.headers.get("X-API-KEY")
+    )
+    
+    # Try Authorization: Bearer <key>
+    if not api_key:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            api_key = auth_header[7:].strip()
+            
+    # Try JSON body fallback
+    payload = {}
+    if request.is_json:
+        payload = request.get_json(silent=True) or {}
+    else:
+        payload = request.form.to_dict() or {}
+        
+    if not api_key and payload.get("api_key"):
+        api_key = payload.get("api_key")
+        
+    if not api_key:
+        return jsonify({
+            "success": False,
+            "error": "Autenticazione richiesta. Specifica 'api_key' nell'URL (?api_key=...), nell'header 'X-Api-Key' o nel body JSON."
+        }), 401
+        
+    # 2. Validate API Key against workspaces
+    workspace = get_workspace_by_api_key(api_key)
+    if not workspace:
+        return jsonify({
+            "success": False,
+            "error": "API Key non valida o revocata."
+        }), 403
+        
+    # 3. Process Transaction
+    source = request.headers.get("X-Source", "SMARTPHONE_WEBHOOK")
+    result = process_webhook_transaction(workspace["id"], payload, source=source)
+    
+    status_code = 200 if result.get("success") else 400
+    return jsonify(result), status_code
 
 # ---------------------------------------------------------
 # TRANSACTIONS & EXPENSES LEDGER
