@@ -1287,17 +1287,38 @@
 
 /* RESPONSIVE SMARTPHONE OPTIMIZATION */
 @media (max-width: 768px) {
+  .landing-page-root {
+    padding: 8px 12px 60px 12px;
+  }
   .lp-navbar {
     top: 6px;
-    padding: 8px 12px;
+    padding: 6px 12px;
     margin-bottom: 16px;
   }
+  .lp-nav-brand {
+    gap: 7px;
+  }
+  .lp-nav-logo {
+    width: 28px;
+    height: 28px;
+  }
   .lp-nav-brand-text {
-    font-size: 1rem;
+    font-size: 1.05rem;
+  }
+  .lp-nav-actions {
+    gap: 6px;
   }
   .lp-nav-btn-couple {
     padding: 5px 10px;
-    font-size: 0.74rem;
+    font-size: 0.76rem;
+  }
+  .lp-nav-btn-login {
+    padding: 5px 11px;
+    font-size: 0.78rem;
+  }
+  .lp-nav-btn-cta {
+    padding: 6px 13px;
+    font-size: 0.78rem;
   }
   .lp-hero-headline {
     font-size: 2.1rem;
@@ -1333,6 +1354,72 @@
     font-size: 1rem;
   }
 }
+
+/* SMARTPHONE SPECIFIC (WIDTH <= 580px) */
+@media (max-width: 580px) {
+  .lp-navbar {
+    top: 5px;
+    padding: 5px 10px;
+    margin-bottom: 14px;
+  }
+  .lp-nav-logo {
+    width: 26px;
+    height: 26px;
+  }
+  .lp-nav-brand-text {
+    font-size: 0.98rem;
+    letter-spacing: -0.3px;
+  }
+  .lp-nav-actions {
+    gap: 5px;
+  }
+  /* On smartphones, compact the couple button to icon-only to avoid any clutter */
+  .lp-nav-couple-label {
+    display: none;
+  }
+  .lp-nav-btn-couple {
+    padding: 5px 8px;
+    font-size: 0.85rem;
+    border-radius: 9999px;
+  }
+  .lp-nav-btn-login {
+    padding: 5px 10px;
+    font-size: 0.76rem;
+  }
+  .lp-nav-btn-cta {
+    padding: 5px 12px;
+    font-size: 0.76rem;
+  }
+}
+
+/* ULTRA COMPACT SMARTPHONES (WIDTH <= 400px - e.g. iPhone SE, Galaxy A) */
+@media (max-width: 400px) {
+  .lp-navbar {
+    padding: 5px 8px;
+  }
+  .lp-nav-brand-text {
+    font-size: 0.92rem;
+  }
+  .lp-nav-logo {
+    width: 24px;
+    height: 24px;
+  }
+  /* On very narrow screens, hide the couple icon from navbar entirely so Accedi & Inizia fit seamlessly */
+  .lp-nav-btn-couple {
+    display: none;
+  }
+  .lp-hide-xs {
+    display: none;
+  }
+  .lp-nav-btn-login {
+    padding: 4px 8px;
+    font-size: 0.74rem;
+  }
+  .lp-nav-btn-cta {
+    padding: 5px 10px;
+    font-size: 0.74rem;
+  }
+}
 </style>
 
 <div class="landing-page-root">
@@ -1347,14 +1434,14 @@
             <span class="lp-nav-brand-text">Fisc<span>Money</span></span>
         </a>
         <div class="lp-nav-actions">
-            <a href="#coupleSection" class="lp-nav-btn-couple">
-                💑 Focus Coppie
+            <a href="#coupleSection" class="lp-nav-btn-couple" title="Focus Coppie & Spese Condivise">
+                <span class="lp-nav-couple-icon">💑</span><span class="lp-nav-couple-label"> Focus Coppie</span>
             </a>
             <a href="#authSection" onclick="switchAuthTab('login')" class="lp-nav-btn-login">
                 Accedi
             </a>
             <a href="#authSection" onclick="switchAuthTab('register')" class="lp-nav-btn-cta">
-                Inizia gratis →
+                <span>Inizia<span class="lp-hide-xs"> gratis</span> →</span>
             </a>
         </div>
     </header>
