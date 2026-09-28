@@ -5,6 +5,12 @@ from dateutil.relativedelta import relativedelta
 from database import get_db_connection
 from services.bank_importer import MACRO_CATEGORIES, CATEGORY_SMART_TAGS
 
+MONTH_NAMES_IT = {
+    1: 'Gennaio', 2: 'Febbraio', 3: 'Marzo', 4: 'Aprile',
+    5: 'Maggio', 6: 'Giugno', 7: 'Luglio', 8: 'Agosto',
+    9: 'Settembre', 10: 'Ottobre', 11: 'Novembre', 12: 'Dicembre'
+}
+
 # ---------------------------------------------------------
 # 1. DATABASE SCHEMA INITIALIZATION FOR FOCUS & MORTGAGE
 # ---------------------------------------------------------
@@ -112,9 +118,10 @@ def resolve_timeframe(workspace_id, preset='6M', from_ym=None, to_ym=None):
     """
     now = datetime.now()
     cur_ym = now.strftime("%Y-%m")
+    preset_upper = (preset or '6M').strip().upper()
     
-    # If custom manual range is provided
-    if preset == 'CUSTOM' and from_ym and to_ym:
+    # 1. If custom manual range is provided
+    if preset_upper == 'CUSTOM' and from_ym and to_ym:
         try:
             fy, fm = map(int, from_ym.split('-'))
             ty, tm = map(int, to_ym.split('-'))
@@ -126,19 +133,54 @@ def resolve_timeframe(workspace_id, preset='6M', from_ym=None, to_ym=None):
             start_d = date(now.year, now.month, 1) - relativedelta(months=5)
             end_d = date(now.year, now.month, 1) + relativedelta(months=1) - relativedelta(days=1)
             preset_label = "Ultimi 6 Mesi"
-    elif preset == '2M':
+
+    # 2. THIS_MONTH / 1M / CURRENT_MONTH
+    elif preset_upper in ('THIS_MONTH', '1M', 'CURRENT_MONTH'):
+        start_d = date(now.year, now.month, 1)
+        end_d = date(now.year, now.month, 1) + relativedelta(months=1) - relativedelta(days=1)
+        m_name = MONTH_NAMES_IT.get(now.month, '')
+        preset_label = f"Questo Mese ({m_name} {now.year})"
+
+    # 3. LAST_MONTH / PREV_MONTH
+    elif preset_upper in ('LAST_MONTH', 'PREV_MONTH'):
+        prev_m_dt = date(now.year, now.month, 1) - relativedelta(months=1)
+        start_d = prev_m_dt
+        end_d = date(now.year, now.month, 1) - relativedelta(days=1)
+        m_name = MONTH_NAMES_IT.get(prev_m_dt.month, '')
+        preset_label = f"Mese Scorso ({m_name} {prev_m_dt.year})"
+
+    # 4. LAST_3_MONTHS / 3M
+    elif preset_upper in ('LAST_3_MONTHS', '3M'):
+        start_d = date(now.year, now.month, 1) - relativedelta(months=2)
+        end_d = date(now.year, now.month, 1) + relativedelta(months=1) - relativedelta(days=1)
+        preset_label = "Ultimi 3 Mesi"
+
+    # 5. 2M
+    elif preset_upper == '2M':
         start_d = date(now.year, now.month, 1) - relativedelta(months=1)
         end_d = date(now.year, now.month, 1) + relativedelta(months=1) - relativedelta(days=1)
         preset_label = "Ultimi 2 Mesi"
-    elif preset == '6M':
+
+    # 6. 6M / LAST_6_MONTHS
+    elif preset_upper in ('6M', 'LAST_6_MONTHS'):
         start_d = date(now.year, now.month, 1) - relativedelta(months=5)
         end_d = date(now.year, now.month, 1) + relativedelta(months=1) - relativedelta(days=1)
         preset_label = "Ultimi 6 Mesi"
-    elif preset == '12M':
+
+    # 7. YEAR / THIS_YEAR
+    elif preset_upper in ('YEAR', 'THIS_YEAR'):
+        start_d = date(now.year, 1, 1)
+        end_d = date(now.year, now.month, 1) + relativedelta(months=1) - relativedelta(days=1)
+        preset_label = f"Anno {now.year}"
+
+    # 8. 12M / LAST_12_MONTHS / 1Y
+    elif preset_upper in ('12M', 'LAST_12_MONTHS', '1Y'):
         start_d = date(now.year, now.month, 1) - relativedelta(months=11)
         end_d = date(now.year, now.month, 1) + relativedelta(months=1) - relativedelta(days=1)
         preset_label = "Ultimo Anno (12 Mesi)"
-    elif preset == 'ALL':
+
+    # 9. ALL
+    elif preset_upper == 'ALL':
         conn = get_db_connection()
         min_date_row = conn.execute("SELECT MIN(date) FROM transactions WHERE workspace_id = ?", (workspace_id,)).fetchone()
         conn.close()
@@ -152,8 +194,9 @@ def resolve_timeframe(workspace_id, preset='6M', from_ym=None, to_ym=None):
             start_d = date(2020, 1, 1)
         end_d = date(now.year, now.month, 1) + relativedelta(months=1) - relativedelta(days=1)
         preset_label = "Tutto lo Storico"
+
+    # Default fallback
     else:
-        # Default 6M
         start_d = date(now.year, now.month, 1) - relativedelta(months=5)
         end_d = date(now.year, now.month, 1) + relativedelta(months=1) - relativedelta(days=1)
         preset_label = "Ultimi 6 Mesi"
@@ -803,16 +846,7 @@ def get_category_tags_drilldown(workspace_id, preset='THIS_MONTH', from_ym=None,
       - preset_label: human readable timeframe label
       - from_date, to_date, months_list
     """
-    now = datetime.now()
-    if preset == 'THIS_MONTH':
-        start_d = date(now.year, now.month, 1)
-        end_d = date(now.year, now.month, 1) + relativedelta(months=1) - relativedelta(days=1)
-        preset_label = "Questo Mese"
-        from_date_str = start_d.strftime("%Y-%m-%d")
-        to_date_str = end_d.strftime("%Y-%m-%d")
-        months_list = [now.strftime("%Y-%m")]
-    else:
-        from_date_str, to_date_str, months_list, preset_label = resolve_timeframe(workspace_id, preset, from_ym, to_ym)
+    from_date_str, to_date_str, months_list, preset_label = resolve_timeframe(workspace_id, preset, from_ym, to_ym)
 
     conn = get_db_connection()
     query = """

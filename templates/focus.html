@@ -3128,15 +3128,26 @@ function hexToRgba(hex, alpha) {
 
 // 1. Initialize Donut Chart (Macro Categories)
 function initTagRadarDonutChart() {
-    if (!currentTagDrilldownData || !currentTagDrilldownData.categories || currentTagDrilldownData.categories.length === 0) return;
-
-    const ctx = document.getElementById('tagNestedDonutCanvas');
-    if (!ctx) return;
-
     if (tagDonutChart) {
         tagDonutChart.destroy();
         tagDonutChart = null;
     }
+
+    if (!currentTagDrilldownData || !currentTagDrilldownData.categories || currentTagDrilldownData.categories.length === 0) {
+        const centerTitle = document.getElementById('donutCenterTitle');
+        const centerAmt = document.getElementById('donutCenterAmount');
+        const centerSub = document.getElementById('donutCenterSub');
+        if (centerTitle) centerTitle.innerText = 'NESSUNA SPESA';
+        if (centerAmt) {
+            centerAmt.innerText = '€ 0,00';
+            centerAmt.style.color = '#94a3b8';
+        }
+        if (centerSub && currentTagDrilldownData) centerSub.innerText = currentTagDrilldownData.preset_label;
+        return;
+    }
+
+    const ctx = document.getElementById('tagNestedDonutCanvas');
+    if (!ctx) return;
 
     const categories = currentTagDrilldownData.categories;
     const labels = [];
@@ -3468,6 +3479,18 @@ function resetTagRadarFilter() {
 
         // Select first category
         selectRadarCategory(currentTagDrilldownData.categories[0].name);
+    } else {
+        const centerTitle = document.getElementById('donutCenterTitle');
+        const centerAmt = document.getElementById('donutCenterAmount');
+        const centerSub = document.getElementById('donutCenterSub');
+        if (centerTitle) centerTitle.innerText = 'NESSUNA SPESA';
+        if (centerAmt) {
+            centerAmt.innerText = '€ 0,00';
+            centerAmt.style.color = '#94a3b8';
+        }
+        if (centerSub && currentTagDrilldownData) centerSub.innerText = currentTagDrilldownData.preset_label;
+        const listContainer = document.getElementById('radarTagsListContainer');
+        if (listContainer) listContainer.innerHTML = '<div style="color: #64748b; font-size: 0.8rem; padding: 12px; text-align: center;">Nessun movimento rilevato nel periodo selezionato</div>';
     }
 }
 
@@ -3562,6 +3585,9 @@ async function reloadTagRadarData(params) {
             initTagRadarDonutChart();
             if (currentTagDrilldownData.categories && currentTagDrilldownData.categories.length > 0) {
                 selectRadarCategory(currentTagDrilldownData.categories[0].name);
+            } else {
+                resetTagRadarFilter();
+                resetTimelineCockpit();
             }
         }
     } catch (err) {
@@ -3584,6 +3610,33 @@ function updateTagRadarGlobalUI() {
 
     const rangeLabel = document.getElementById('tagRadarCurrentRangeLabel');
     if (rangeLabel) rangeLabel.innerText = `Periodo: ${d.preset_label}`;
+
+    // Update Top Tag badge pill
+    const topPill = document.getElementById('tagRadarHeaderTopPill');
+    if (topPill) {
+        if (d.top_tag) {
+            topPill.style.display = 'inline-block';
+            topPill.innerHTML = `Top Tag: ${d.top_tag.icon} ${d.top_tag.label} (${d.top_tag.percent}%)`;
+        } else {
+            topPill.style.display = 'none';
+        }
+    }
+
+    // Synchronize "Da:" and "A:" dropdown selects
+    const fromSelect = document.getElementById('tagRadarFromYm');
+    const toSelect = document.getElementById('tagRadarToYm');
+    if (fromSelect && d.from_date) {
+        const fromYm = d.from_date.slice(0, 7);
+        if (Array.from(fromSelect.options).some(o => o.value === fromYm)) {
+            fromSelect.value = fromYm;
+        }
+    }
+    if (toSelect && d.to_date) {
+        const toYm = d.to_date.slice(0, 7);
+        if (Array.from(toSelect.options).some(o => o.value === toYm)) {
+            toSelect.value = toYm;
+        }
+    }
 }
 
 function toggleTagRadarCard() {

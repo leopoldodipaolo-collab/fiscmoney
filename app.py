@@ -1598,10 +1598,11 @@ def focus_hub():
     active_filter = ctx["active_filter"]
     p_id_filter = ctx["p_id_filter"]
     
-    preset = request.args.get('preset', '6M').strip().upper()
+    req_preset = request.args.get('preset')
     from_ym = request.args.get('from_ym', '').strip()
     to_ym = request.args.get('to_ym', '').strip()
     
+    preset = req_preset.strip().upper() if req_preset else '6M'
     if from_ym and to_ym:
         preset = 'CUSTOM'
         
@@ -1617,8 +1618,9 @@ def focus_hub():
     # Mortgage Deep Dive Hub
     mortgage_data = get_mortgage_deep_dive(ws_id, p_id_filter)
     
-    # Couple Split & Shared Expenses Engine
-    couple_split_data = get_couple_split_analytics(ws_id, preset=preset, from_ym=from_ym, to_ym=to_ym) if ws_id else None
+    # Couple Split & Shared Expenses Engine (defaults to THIS_MONTH)
+    couple_preset = request.args.get('couple_preset') or (req_preset if req_preset and req_preset.upper() in ['THIS_MONTH', 'LAST_MONTH', 'LAST_3_MONTHS', 'YEAR', 'ALL', 'CUSTOM'] else 'THIS_MONTH')
+    couple_split_data = get_couple_split_analytics(ws_id, preset=couple_preset, from_ym=from_ym, to_ym=to_ym) if ws_id else None
     
     # Available months in DB for manual range selector
     month_rows = conn.execute('''
@@ -1650,8 +1652,10 @@ def focus_hub():
     persona_key = session.get('assistant_persona') or (active_profile_row['assistant_persona'] if active_profile_row and 'assistant_persona' in active_profile_row.keys() and active_profile_row['assistant_persona'] else None) or (user['assistant_persona'] if user and 'assistant_persona' in user.keys() and user['assistant_persona'] else 'demetrio')
     persona = get_persona(persona_key)
     
-    # Tag Hierarchical Drilldown Data (Nested Donut Engine)
-    tag_drilldown_data = get_category_tags_drilldown(ws_id, preset=preset, from_ym=from_ym, to_ym=to_ym, profile_id=p_id_filter) if ws_id else None
+    # Tag Hierarchical Drilldown Data (Nested Donut Engine - defaults to THIS_MONTH)
+    radar_preset = request.args.get('radar_preset') or (req_preset if req_preset and req_preset.upper() in ['THIS_MONTH', 'LAST_MONTH', 'LAST_3_MONTHS', 'YEAR', 'ALL', 'CUSTOM', '1M', '3M', '6M', '12M'] else 'THIS_MONTH')
+    radar_preset = radar_preset.strip().upper()
+    tag_drilldown_data = get_category_tags_drilldown(ws_id, preset=radar_preset, from_ym=from_ym, to_ym=to_ym, profile_id=p_id_filter) if ws_id else None
     
     conn.close()
     
