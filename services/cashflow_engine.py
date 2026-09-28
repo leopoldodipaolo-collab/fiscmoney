@@ -1105,7 +1105,7 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
 
     conn.close()
 
-    return {
+    data_dict = {
         "year_month": year_month,
         "month_name": calendar.month_name[m],
         "month_name_it": month_name_it,
@@ -1176,6 +1176,495 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         "burn_rate_daily": burn_rate_daily,
         "smart_alerts": smart_alerts
     }
+
+    # Holistic Personal Finance Health Index: FiscMoney Score (0 - 1000)
+    data_dict["fiscmoney_score"] = calculate_fiscmoney_score(data_dict, workspace_id, profile_id)
+
+    return data_dict
+
+
+def calculate_fiscmoney_score(cashflow_data, workspace_id, profile_id=None):
+    """
+    Calcola il 'FiscMoney Score' (0 - 1000): indice personalizzato di salute finanziaria
+    e 3 azioni concrete ('Come arrivare a 800?') per stimolare il ritorno continuo nell'app.
+
+    5 Pilastri (max 200 pt ciascuno):
+    1. Risparmio (Tasso di risparmio, margine safe-to-spend, rispetto del budget)
+    2. Abbonamenti (Incidenza abbonamenti streaming/tech/ricorrenti su stipendio)
+    3. Liquidità (Runway / mesi di cuscinetto di emergenza su spese fisse)
+    4. Spese ricorrenti (Rapporto costi fissi / entrate, benchmark 50/30/20)
+    5. Situazione fiscale (730, spese detraibili tracciate, deduzioni previdenza)
+    """
+    conn = get_db_connection()
+    try:
+        expected_income = float(cashflow_data.get('expected_month_income', 3000.0) or 3000.0)
+        actual_income = float(cashflow_data.get('actual_month_income', 0.0) or 0.0)
+        income_base = max(expected_income, actual_income, 1200.0)
+
+        safe_to_spend = float(cashflow_data.get('monthly_safe_to_spend', 0.0) or 0.0)
+        budget_overrun = float(cashflow_data.get('monthly_budget_overrun', 0.0) or 0.0)
+        savings_rate = float(cashflow_data.get('savings_rate', 0.0) or 0.0)
+        days_remaining = int(cashflow_data.get('days_remaining', 1) or 1)
+
+        # ----------------------------------------------------
+        # PILLAR 1: RISPARMIO (Max 200 pts)
+        # ----------------------------------------------------
+        if budget_overrun > 0:
+            overrun_ratio = budget_overrun / income_base
+            p1_score = max(45, int(90 - (overrun_ratio * 120)))
+            p1_status = "in sofferenza" if p1_score < 80 else "migliorabile"
+            p1_icon = "🔴" if p1_score < 80 else "🟡"
+            p1_badge_class = "danger" if p1_score < 80 else "warning"
+            p1_note = f"Disavanzo di {budget_overrun:,.2f} € nel mese"
+        else:
+            margin_ratio = safe_to_spend / income_base
+            if margin_ratio >= 0.22 or savings_rate >= 22:
+                p1_score = min(200, int(172 + (margin_ratio * 90)))
+                p1_status = "ottimo"
+                p1_icon = "🟢"
+                p1_badge_class = "success"
+            elif margin_ratio >= 0.10 or savings_rate >= 12:
+                p1_score = int(135 + ((margin_ratio - 0.10) / 0.12 * 35))
+                p1_status = "buono"
+                p1_icon = "🟢"
+                p1_badge_class = "success"
+            elif margin_ratio >= 0.03 or savings_rate >= 3:
+                p1_score = int(95 + ((margin_ratio - 0.03) / 0.07 * 35))
+                p1_status = "migliorabile"
+                p1_icon = "🟡"
+                p1_badge_class = "warning"
+            else:
+                p1_score = int(75 + (margin_ratio / 0.03 * 18))
+                p1_status = "migliorabile"
+                p1_icon = "🟡"
+                p1_badge_class = "warning"
+            p1_note = f"Margine disponibile di {safe_to_spend:,.2f} €"
+
+        # ----------------------------------------------------
+        # PILLAR 2: ABBONAMENTI (Max 200 pts)
+        # ----------------------------------------------------
+        sub_keywords = [
+            'netflix', 'spotify', 'prime', 'disney', 'iliad', 'tim', 'vodafone',
+            'wind', 'dazn', 'apple', 'google', 'chatgpt', 'openai', 'claude',
+            'palestra', 'canone', 'icloud', 'abbonament', 'software', 'sky',
+            'nowtv', 'playstation', 'xbox', 'youtube', 'audible', 'telepass'
+        ]
+
+        sub_fixed_total = 0.0
+        sub_count = 0
+        sub_names = []
+        for fc in cashflow_data.get('fixed_items', []):
+            if fc.get('is_income'):
+                continue
+            nm = (fc.get('name', '') or '').lower()
+            cat = (fc.get('category', '') or '').lower()
+            amt = float(fc.get('expected_amount', 0.0) or 0.0)
+            if any(k in nm for k in sub_keywords) or 'digitale' in cat or 'tech' in cat or 'tel' in cat:
+                sub_fixed_total += amt
+                sub_count += 1
+                sub_names.append(fc.get('name'))
+
+        sub_tx_total = 0.0
+        for vt in cashflow_data.get('variable_transactions', []):
+            desc = (vt.get('description', '') or '').lower()
+            cat = (vt.get('category', '') or '').lower()
+            tags = (vt.get('tags', '') or '').lower()
+            amt = float(vt.get('amount', 0.0) or 0.0)
+            if (any(k in desc for k in sub_keywords) or
+                'digitale' in cat or 'tech' in cat or
+                '#streaming' in tags or '#software_ai' in tags or '#telefonia' in tags):
+                sub_tx_total += amt
+                clean_name = vt.get('description', '')[:14]
+                if not any(clean_name.lower() in s.lower() for s in sub_names):
+                    sub_count += 1
+                    sub_names.append(clean_name)
+
+        total_sub_monthly = sub_fixed_total + sub_tx_total
+        sub_ratio = total_sub_monthly / income_base
+
+        if total_sub_monthly <= 40 or sub_ratio <= 0.015:
+            p2_score = min(200, int(185 + (max(0, 40 - total_sub_monthly) / 40 * 15)))
+            p2_status = "ottimo"
+            p2_icon = "🟢"
+            p2_badge_class = "success"
+        elif total_sub_monthly <= 80 or sub_ratio <= 0.035:
+            p2_score = int(145 + ((80 - total_sub_monthly) / 40 * 35))
+            p2_status = "buono"
+            p2_icon = "🟢"
+            p2_badge_class = "success"
+        elif total_sub_monthly <= 150 or sub_ratio <= 0.065:
+            p2_score = int(105 + ((150 - total_sub_monthly) / 70 * 35))
+            p2_status = "migliorabile"
+            p2_icon = "🟡"
+            p2_badge_class = "warning"
+        else:
+            p2_score = max(50, int(100 - ((total_sub_monthly - 150) / 100 * 45)))
+            p2_status = "elevati"
+            p2_icon = "🔴"
+            p2_badge_class = "danger"
+        p2_note = f"{total_sub_monthly:,.2f} €/mese ({sub_count} servizi attivi)"
+
+        # ----------------------------------------------------
+        # PILLAR 3: LIQUIDITÀ (Max 200 pts)
+        # ----------------------------------------------------
+        total_liquid = float(cashflow_data.get('total_liquid_reserve', 0.0) or 0.0)
+        fixed_expected = float(cashflow_data.get('total_fixed_expenses_expected', 1000.0) or 1000.0)
+        monthly_burn_baseline = max(fixed_expected, 750.0)
+        runway_months = round(total_liquid / monthly_burn_baseline, 1)
+
+        if runway_months >= 6.0:
+            p3_score = min(200, int(180 + min(20, (runway_months - 6.0) * 3)))
+            p3_status = "ottima"
+            p3_icon = "🟢"
+            p3_badge_class = "success"
+            p3_note = f"Cuscinetto di {runway_months} mesi ({total_liquid:,.2f} €)"
+        elif runway_months >= 3.0:
+            p3_score = int(145 + ((runway_months - 3.0) / 3.0 * 33))
+            p3_status = "buona"
+            p3_icon = "🟢"
+            p3_badge_class = "success"
+            p3_note = f"Cuscinetto di {runway_months} mesi ({total_liquid:,.2f} €)"
+        elif runway_months >= 1.5:
+            p3_score = int(100 + ((runway_months - 1.5) / 1.5 * 40))
+            p3_status = "migliorabile"
+            p3_icon = "🟡"
+            p3_badge_class = "warning"
+            p3_note = f"Cuscinetto di {runway_months} mesi ({total_liquid:,.2f} €)"
+        else:
+            p3_score = max(40, int(50 + (runway_months / 1.5 * 45)))
+            p3_status = "vulnerabile"
+            p3_icon = "🔴"
+            p3_badge_class = "danger"
+            p3_note = f"Cuscinetto di soli {runway_months} mesi ({total_liquid:,.2f} €)"
+
+        # ----------------------------------------------------
+        # PILLAR 4: SPESE RICORRENTI (Max 200 pts)
+        # ----------------------------------------------------
+        fixed_ratio = (fixed_expected / income_base) * 100
+        if fixed_ratio <= 35:
+            p4_score = 200
+            p4_status = "ottime"
+            p4_icon = "🟢"
+            p4_badge_class = "success"
+            p4_note = f"Solo il {fixed_ratio:.1f}% delle entrate"
+        elif fixed_ratio <= 45:
+            p4_score = int(160 + ((45 - fixed_ratio) / 10 * 35))
+            p4_status = "buone"
+            p4_icon = "🟢"
+            p4_badge_class = "success"
+            p4_note = f"Costi fissi al {fixed_ratio:.1f}% delle entrate"
+        elif fixed_ratio <= 55:
+            p4_score = int(120 + ((55 - fixed_ratio) / 10 * 35))
+            p4_status = "migliorabile"
+            p4_icon = "🟡"
+            p4_badge_class = "warning"
+            p4_note = f"Costi fissi al {fixed_ratio:.1f}% delle entrate"
+        elif fixed_ratio <= 68:
+            p4_score = int(80 + ((68 - fixed_ratio) / 13 * 35))
+            p4_status = "elevate"
+            p4_icon = "🔴"
+            p4_badge_class = "danger"
+            p4_note = f"Costi fissi al {fixed_ratio:.1f}% delle entrate"
+        else:
+            p4_score = max(40, int(75 - ((fixed_ratio - 68) * 1.5)))
+            p4_status = "elevate"
+            p4_icon = "🔴"
+            p4_badge_class = "danger"
+            p4_note = f"Costi fissi al {fixed_ratio:.1f}% delle entrate"
+
+        # ----------------------------------------------------
+        # PILLAR 5: SITUAZIONE FISCALE (Max 200 pts)
+        # ----------------------------------------------------
+        tax_count = conn.execute("SELECT count(*) FROM tax_declarations_730 WHERE workspace_id = ?", (workspace_id,)).fetchone()[0]
+        detr_count = conn.execute("SELECT count(*) FROM transactions WHERE workspace_id = ? AND tags LIKE '%#detraibile_730%'", (workspace_id,)).fetchone()[0]
+
+        if tax_count > 0 and detr_count >= 5:
+            p5_score = 195
+            p5_status = "ottima"
+            p5_icon = "🟢"
+            p5_badge_class = "success"
+            p5_note = f"Modello 730 presente e {detr_count} spese detraibili"
+        elif tax_count > 0 or detr_count >= 3:
+            p5_score = 160
+            p5_status = "buona"
+            p5_icon = "🟢"
+            p5_badge_class = "success"
+            p5_note = f"730 registrato o {detr_count} spese detraibili collegate"
+        elif detr_count > 0:
+            p5_score = 120
+            p5_status = "migliorabile"
+            p5_icon = "🟡"
+            p5_badge_class = "warning"
+            p5_note = f"{detr_count} spese detraibili tracciate"
+        else:
+            p5_score = 80
+            p5_status = "da attivare"
+            p5_icon = "🟡"
+            p5_badge_class = "warning"
+            p5_note = "Nessun 730 caricato o spese detraibili taggate"
+
+    finally:
+        conn.close()
+
+    # Total Score
+    total_score = p1_score + p2_score + p3_score + p4_score + p5_score
+    total_score = max(100, min(1000, total_score))
+
+    # Next Target Milestone: e.g. 742 -> 800, 815 -> 850, 620 -> 700, etc.
+    if total_score < 600:
+        next_target = 650 if total_score < 550 else 700
+    elif total_score < 750:
+        next_target = 800
+    elif total_score < 800:
+        next_target = 800
+    elif total_score < 850:
+        next_target = 850
+    elif total_score < 900:
+        next_target = 900
+    elif total_score < 950:
+        next_target = 950
+    else:
+        next_target = 1000
+
+    points_to_target = max(0, next_target - total_score)
+
+    # SVG Progress Ring Dashoffset Calculation (r=50 -> circumference = 314.16)
+    ring_circumference = 314.16
+    ring_dashoffset = round(ring_circumference * (1.0 - (total_score / 1000.0)), 1)
+
+    # Visual Theme based on Score Tier
+    if total_score >= 820:
+        overall_status = "Eccellente"
+        tier_color = "#10b981"
+        tier_gradient = "linear-gradient(135deg, #10b981, #06b6d4)"
+        tier_bg = "rgba(16, 185, 129, 0.15)"
+        tier_border = "rgba(16, 185, 129, 0.4)"
+        tier_icon = "🚀"
+    elif total_score >= 700:
+        overall_status = "Buono"
+        tier_color = "#38bdf8"
+        tier_gradient = "linear-gradient(135deg, #38bdf8, #6366f1)"
+        tier_bg = "rgba(56, 189, 248, 0.15)"
+        tier_border = "rgba(56, 189, 248, 0.4)"
+        tier_icon = "🛡️"
+    elif total_score >= 550:
+        overall_status = "Migliorabile"
+        tier_color = "#f59e0b"
+        tier_gradient = "linear-gradient(135deg, #f59e0b, #f97316)"
+        tier_bg = "rgba(245, 158, 11, 0.15)"
+        tier_border = "rgba(245, 158, 11, 0.4)"
+        tier_icon = "⚡"
+    else:
+        overall_status = "Sotto Pressione"
+        tier_color = "#ef4444"
+        tier_gradient = "linear-gradient(135deg, #ef4444, #f43f5e)"
+        tier_bg = "rgba(239, 68, 68, 0.15)"
+        tier_border = "rgba(239, 68, 68, 0.4)"
+        tier_icon = "⚠️"
+
+    # Determine 3 Concrete High-Impact Actions
+    actions_pool = []
+
+    # Risparmio action
+    if p1_score < 190:
+        gap = 200 - p1_score
+        pts = min(45, max(20, int(gap * 0.45)))
+        if budget_overrun > 0:
+            actions_pool.append({
+                "pillar": "Risparmio",
+                "icon": "🎯",
+                "title": "Frena le spese variabili nei prossimi giorni",
+                "description": f"Sei a -{budget_overrun:,.2f} € dal budget mensile. Limita le uscite discrezionali a max 15€/giorno nei restanti {days_remaining} giorni per rientrare nel pareggio.",
+                "points": f"+{pts} pt",
+                "points_num": pts,
+                "gap": gap,
+                "action_url": "/cashflow",
+                "action_label": "Verifica Velocità Spesa"
+            })
+        else:
+            actions_pool.append({
+                "pillar": "Risparmio",
+                "icon": "💰",
+                "title": "Automatizza un 'Pay Yourself First'",
+                "description": "Imposta un bonifico ricorrente di 100-150€ verso un conto risparmio/deposito il giorno dello stipendio per proteggere il tuo margine mensile prima di spenderlo.",
+                "points": f"+{pts} pt",
+                "points_num": pts,
+                "gap": gap,
+                "action_url": "/cashflow",
+                "action_label": "Controlla Risparmio"
+            })
+
+    # Abbonamenti action
+    if p2_score < 190:
+        gap = 200 - p2_score
+        pts = min(35, max(15, int(gap * 0.4)))
+        actions_pool.append({
+            "pillar": "Abbonamenti",
+            "icon": "✂️",
+            "title": "Revisiona gli abbonamenti digitali & streaming",
+            "description": f"Rilevati ~{total_sub_monthly:,.2f} €/mese tra servizi streaming, telco e tool ({sub_count} attivi). Sospendere anche 1 solo servizio poco usato fa recuperare fino a 150€/anno.",
+            "points": f"+{pts} pt",
+            "points_num": pts,
+            "gap": gap,
+            "action_url": "/transactions?search=streaming",
+            "action_label": "Revisiona Abbonamenti"
+        })
+
+    # Liquidità action
+    if p3_score < 190:
+        gap = 200 - p3_score
+        pts = min(40, max(20, int(gap * 0.45)))
+        target_buffer = monthly_burn_baseline * 3
+        actions_pool.append({
+            "pillar": "Liquidità",
+            "icon": "🛡️",
+            "title": "Rafforza il cuscinetto di emergenza",
+            "description": f"Porta la riserva liquida a quota {target_buffer:,.0f} € (pari a 3 mesi di spese fisse protette) su un conto remunerato o libero per azzerare i rischi di imprevisti.",
+            "points": f"+{pts} pt",
+            "points_num": pts,
+            "gap": gap,
+            "action_url": "/accounts",
+            "action_label": "Vedi Conti & Saldi"
+        })
+
+    # Spese Ricorrenti action
+    if p4_score < 190:
+        gap = 200 - p4_score
+        pts = min(35, max(15, int(gap * 0.4)))
+        actions_pool.append({
+            "pillar": "Spese Ricorrenti",
+            "icon": "📌",
+            "title": "Ottimizza i costi fissi (utenze & polizze)",
+            "description": f"I costi fissi assorbono il {fixed_ratio:.1f}% delle entrate. Rinegoziare la tariffa luce/gas o la polizza auto può liberare fino a 40-60€ al mese di budget libero.",
+            "points": f"+{pts} pt",
+            "points_num": pts,
+            "gap": gap,
+            "action_url": "/settings/fixed-costs",
+            "action_label": "Gestisci Spese Fisse"
+        })
+
+    # Situazione Fiscale action
+    if p5_score < 190:
+        gap = 200 - p5_score
+        pts = min(40, max(20, int(gap * 0.45)))
+        if tax_count == 0:
+            actions_pool.append({
+                "pillar": "Situazione Fiscale",
+                "icon": "🏛️",
+                "title": "Carica il tuo Modello 730 in FiscMoney",
+                "description": "Importa il PDF del tuo 730 per sbloccare la verifica delle detrazioni fiscali (farmacia, mutuo prima casa, spese mediche) e massimizzare il rimborso IRPEF.",
+                "points": f"+{pts} pt",
+                "points_num": pts,
+                "gap": gap,
+                "action_url": "/tax-730",
+                "action_label": "Carica Modello 730"
+            })
+        else:
+            actions_pool.append({
+                "pillar": "Situazione Fiscale",
+                "icon": "🏷️",
+                "title": "Etichetta le spese sanitarie #detraibile_730",
+                "description": "Assegna il tag #detraibile_730 agli scontrini della farmacia e parcelle sanitarie per recuperare il 19% nella prossima dichiarazione dei redditi.",
+                "points": f"+{pts} pt",
+                "points_num": pts,
+                "gap": gap,
+                "action_url": "/transactions?search=farmacia",
+                "action_label": "Mappa Spese 730"
+            })
+
+    # Fallback pro-actions if pool has fewer than 3 items (user is doing great in most pillars)
+    if len(actions_pool) < 3:
+        actions_pool.append({
+            "pillar": "Previdenza & Futuro",
+            "icon": "📈",
+            "title": "Sfrutta la deduzione del Fondo Pensione",
+            "description": "Versare fino a 5.164,57 € annui nel Fondo Pensione integrativo ti restituisce un risparmio IRPEF immediato fino al 43% in busta paga.",
+            "points": "+25 pt",
+            "points_num": 25,
+            "gap": 40,
+            "action_url": "/tax-730",
+            "action_label": "Scopri Deduzioni 730"
+        })
+    if len(actions_pool) < 3:
+        actions_pool.append({
+            "pillar": "Automazione Smartphone",
+            "icon": "📱",
+            "title": "Attiva Notifiche Automatiche con MacroDroid",
+            "description": "Collega la tua banca con le notifiche push automatiche per registrare le spese all'istante senza inserimento manuale.",
+            "points": "+20 pt",
+            "points_num": 20,
+            "gap": 35,
+            "action_url": "/settings/integrations",
+            "action_label": "Configura MacroDroid"
+        })
+
+    # Sort actions by largest gap to target, then by point boost
+    actions_pool.sort(key=lambda x: (x.get('gap', 0), x.get('points_num', 0)), reverse=True)
+    top_3_actions = actions_pool[:3]
+
+    return {
+        "total_score": total_score,
+        "max_score": 1000,
+        "overall_status": overall_status,
+        "tier_color": tier_color,
+        "tier_gradient": tier_gradient,
+        "tier_bg": tier_bg,
+        "tier_border": tier_border,
+        "tier_icon": tier_icon,
+        "ring_circumference": ring_circumference,
+        "ring_dashoffset": ring_dashoffset,
+        "next_target": next_target,
+        "points_to_target": points_to_target,
+        "pillars": {
+            "risparmio": {
+                "name": "Risparmio",
+                "score": p1_score,
+                "max": 200,
+                "status": p1_status,
+                "icon": p1_icon,
+                "badge_class": p1_badge_class,
+                "note": p1_note
+            },
+            "abbonamenti": {
+                "name": "Abbonamenti",
+                "score": p2_score,
+                "max": 200,
+                "status": p2_status,
+                "icon": p2_icon,
+                "badge_class": p2_badge_class,
+                "note": p2_note
+            },
+            "liquidita": {
+                "name": "Liquidità",
+                "score": p3_score,
+                "max": 200,
+                "status": p3_status,
+                "icon": p3_icon,
+                "badge_class": p3_badge_class,
+                "note": p3_note
+            },
+            "spese_ricorrenti": {
+                "name": "Spese ricorrenti",
+                "score": p4_score,
+                "max": 200,
+                "status": p4_status,
+                "icon": p4_icon,
+                "badge_class": p4_badge_class,
+                "note": p4_note
+            },
+            "fiscale": {
+                "name": "Situazione fiscale",
+                "score": p5_score,
+                "max": 200,
+                "status": p5_status,
+                "icon": p5_icon,
+                "badge_class": p5_badge_class,
+                "note": p5_note
+            }
+        },
+        "actions": top_3_actions
+    }
+
 
 
 def get_multi_month_trend_data(workspace_id, profile_id=None, months_count=12):

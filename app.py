@@ -1228,6 +1228,7 @@ def cashflow():
         is_admin=is_admin,
         current_mode=sharing_mode,
         data=cashflow_data,
+        fiscmoney_score=cashflow_data.get('fiscmoney_score'),
         advisor_insights=advisor_insights,
         monthly_forecast=monthly_forecast,
         smart_budget=smart_budget,

@@ -552,74 +552,241 @@
 <!-- ======================================================== -->
 <!-- HERO CARD: MESE CORRENTE (SAFE-TO-SPEND) VS PASSATO (CONSUNTIVO RISPARMIO) -->
 <!-- ======================================================== -->
+<!-- ======================================================== -->
+<!-- 💎 FISCMONEY SCORE HERO & FINANCIAL HEALTH COCKPIT       -->
+<!-- ======================================================== -->
 {% if data.is_current_month %}
-<!-- 🟢 CURRENT MONTH HERO: SAFE-TO-SPEND COCKPIT -->
-<div class="card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(16, 185, 129, 0.35); margin-bottom: 16px;">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
-        <div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.2rem;">{% if data.monthly_budget_overrun > 0 %}⚠️{% else %}🎯{% endif %}</span>
-                <span style="color: {% if data.monthly_budget_overrun > 0 %}#f87171{% else %}var(--accent-success){% endif %}; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 800;">
-                    {% if data.monthly_budget_overrun > 0 %}Disavanzo Mensile (Budget Superato){% else %}Disponibilità Residua del Mese (Safe-to-Spend){% endif %}
-                </span>
+<div class="card fms-hero-card" style="border: 1.5px solid {{ data.fiscmoney_score.tier_border }};">
+    <!-- Header Bar -->
+    <div class="fms-header-bar">
+        <div class="fms-title-group">
+            <span class="fms-title-icon">💎</span>
+            <div>
+                <h2 class="fms-main-title">FiscMoney Score</h2>
+                <div class="fms-main-subtitle">Indice di salute finanziaria personale in tempo reale</div>
             </div>
-            
-            <div class="privacy-mask" style="font-size: 2.2rem; font-weight: 800; color: {% if data.monthly_budget_overrun > 0 %}#f87171{% else %}#fff{% endif %}; margin-top: 4px; letter-spacing: -0.5px;" title="Passa sopra per sbirciare">
-                {% if data.monthly_budget_overrun > 0 %}
-                    -{{ data.monthly_budget_overrun|eur }}
-                {% else %}
-                    {{ data.monthly_safe_to_spend|eur }}
-                {% endif %}
-            </div>
+        </div>
+        <div class="fms-status-pill" style="background: {{ data.fiscmoney_score.tier_bg }}; color: {{ data.fiscmoney_score.tier_color }}; border: 1px solid {{ data.fiscmoney_score.tier_border }};">
+            <span>{{ data.fiscmoney_score.tier_icon }}</span>
+            <span>{{ data.fiscmoney_score.overall_status }}</span>
+        </div>
+    </div>
 
-            <!-- TACHIMETRO & GAUGE VISIVO: VELOCITÀ DI SPESA GIORNALIERA -->
-            <div class="daily-speedometer-box" style="margin-top: 12px; display: inline-flex; align-items: center; gap: 14px; background: rgba(0, 0, 0, 0.45); border: 1.5px solid {% if data.monthly_budget_overrun > 0 %}rgba(239, 68, 68, 0.5){% elif data.daily_safe_budget > 40 %}rgba(16, 185, 129, 0.45){% elif data.daily_safe_budget > 15 %}rgba(245, 158, 11, 0.45){% else %}rgba(239, 68, 68, 0.45){% endif %}; border-radius: 14px; padding: 10px 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-                <!-- Speedometer Dial Visual -->
-                <div class="speedometer-dial" style="width: 46px; height: 46px; border-radius: 50%; background: {% if data.monthly_budget_overrun > 0 %}conic-gradient(#ef4444 0% 100%, rgba(255,255,255,0.1) 100% 100%){% elif data.daily_safe_budget > 40 %}conic-gradient(#10b981 0% 75%, rgba(255,255,255,0.1) 75% 100%){% elif data.daily_safe_budget > 15 %}conic-gradient(#f59e0b 0% 50%, rgba(255,255,255,0.1) 50% 100%){% else %}conic-gradient(#ef4444 0% 25%, rgba(255,255,255,0.1) 25% 100%){% endif %}; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 12px {% if data.monthly_budget_overrun > 0 %}rgba(239, 68, 68, 0.35){% elif data.daily_safe_budget > 40 %}rgba(16, 185, 129, 0.35){% elif data.daily_safe_budget > 15 %}rgba(245, 158, 11, 0.35){% else %}rgba(239, 68, 68, 0.35){% endif %};">
-                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #0f172a; display: flex; align-items: center; justify-content: center; font-size: 1.15rem;">
-                        {% if data.monthly_budget_overrun > 0 %}🛑{% elif data.daily_safe_budget > 40 %}🚀{% elif data.daily_safe_budget > 15 %}⚡{% else %}⚠️{% endif %}
-                    </div>
-                </div>
-
-                <!-- Daily Rate & Remaining Days -->
-                <div>
-                    <div style="font-size: 0.68rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; color: {% if data.monthly_budget_overrun > 0 %}#f87171{% elif data.daily_safe_budget > 40 %}#34d399{% elif data.daily_safe_budget > 15 %}#fbbf24{% else %}#f87171{% endif %};">
-                        {% if data.monthly_budget_overrun > 0 %}Budget Mensile Esaurito{% else %}Velocità di Spesa Libera{% endif %}
-                    </div>
-                    <div style="display: flex; align-items: baseline; gap: 6px;">
-                        <span class="privacy-mask" style="font-size: 1.55rem; font-weight: 900; color: #fff; letter-spacing: -0.5px;" title="Passa sopra per sbirciare">
-                            {% if data.monthly_budget_overrun > 0 %}0,00 €{% else %}{{ data.daily_safe_budget|eur }}{% endif %}
-                        </span>
-                        <span style="font-size: 0.78rem; font-weight: 800; color: {% if data.monthly_budget_overrun > 0 %}#f87171{% elif data.daily_safe_budget > 40 %}#34d399{% elif data.daily_safe_budget > 15 %}#fbbf24{% else %}#f87171{% endif %}; text-transform: uppercase;">
-                            / GIORNO
-                        </span>
-                    </div>
-                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 1px;">
-                        Per i restanti <strong>{{ data.days_remaining }} giorni</strong> del mese (senza sforare i costi fissi)
-                    </div>
+    <!-- Main Grid: Left (Gauge Dial & Speedometer) + Right (5 Pillars) -->
+    <div class="fms-main-grid">
+        <!-- Left: Gauge & Daily Speedometer -->
+        <div class="fms-dial-col">
+            <div class="fms-gauge-container">
+                <svg class="fms-gauge-svg" viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" r="50" class="fms-gauge-bg"></circle>
+                    <circle cx="60" cy="60" r="50" class="fms-gauge-fill" 
+                            style="stroke: {{ data.fiscmoney_score.tier_color }}; stroke-dasharray: {{ data.fiscmoney_score.ring_circumference }}; stroke-dashoffset: {{ data.fiscmoney_score.ring_dashoffset }};">
+                    </circle>
+                </svg>
+                <div class="fms-gauge-content">
+                    <span class="fms-gauge-score privacy-mask" title="Punteggio salute finanziaria">{{ data.fiscmoney_score.total_score }}</span>
+                    <span class="fms-gauge-max">/ 1000</span>
                 </div>
             </div>
-            
-            <p style="color: var(--text-muted); font-size: 0.78rem; margin-top: 8px; max-width: 580px; line-height: 1.35;">
-                Calcolato sulle entrate attese al netto dei costi fissi prenotati. Spendi sereno per svago, spesa e shopping!
-            </p>
+
+            <!-- Margin / Overrun Badge -->
+            {% if data.monthly_budget_overrun > 0 %}
+            <div class="fms-margin-badge overrun">
+                <span class="fms-margin-label" style="color: #f87171;">⚠️ Disavanzo Mese</span>
+                <strong class="fms-margin-val privacy-mask" style="color: #f87171;">-{{ data.monthly_budget_overrun|eur }}</strong>
+            </div>
+            {% else %}
+            <div class="fms-margin-badge safe">
+                <span class="fms-margin-label" style="color: var(--accent-success);">🎯 Safe-to-Spend</span>
+                <strong class="fms-margin-val privacy-mask" style="color: #fff;">{{ data.monthly_safe_to_spend|eur }}</strong>
+            </div>
+            {% endif %}
+
+            <!-- Daily Speedometer -->
+            <div class="fms-daily-speed-pill">
+                <span class="fms-speed-icon">{% if data.monthly_budget_overrun > 0 %}🛑{% elif data.daily_safe_budget > 40 %}🚀{% elif data.daily_safe_budget > 15 %}⚡{% else %}⚠️{% endif %}</span>
+                <div style="flex: 1; overflow: hidden;">
+                    <div style="display: flex; align-items: baseline; gap: 4px;">
+                        <span class="fms-speed-amount privacy-mask">{% if data.monthly_budget_overrun > 0 %}0,00 €{% else %}{{ data.daily_safe_budget|eur }}{% endif %}</span>
+                        <span class="fms-speed-unit">/ GIORNO</span>
+                    </div>
+                    <div class="fms-speed-sub">
+                        per i restanti <strong>{{ data.days_remaining }} giorni</strong> del mese
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Monthly Budget Breakdown Box -->
-        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 14px; min-width: 270px; flex: 1; max-width: 420px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Calcolo Budget Mese ({{ data.year_month }})</span>
-                <span class="badge-tag" style="font-size: 0.65rem; background: rgba(59, 130, 246, 0.15); color: var(--accent-primary);">Clicca per dettagli</span>
+        <!-- Right: 5 Pillars of Personal Finance -->
+        <div class="fms-pillars-col">
+            <div class="fms-pillars-title">
+                <span>📊 I 5 Pilastri della tua Situazione</span>
+            </div>
+
+            <!-- 1. Risparmio -->
+            <div class="fms-pillar-item">
+                <div class="fms-pillar-top-row">
+                    <div class="fms-pillar-name-wrap">
+                        <span class="fms-pillar-bullet">{{ data.fiscmoney_score.pillars.risparmio.icon }}</span>
+                        <span class="fms-pillar-name">Risparmio</span>
+                        <span class="fms-pillar-status-badge status-{{ data.fiscmoney_score.pillars.risparmio.badge_class }}">
+                            {{ data.fiscmoney_score.pillars.risparmio.status }}
+                        </span>
+                    </div>
+                    <div class="fms-pillar-score-text">
+                        <span>{{ data.fiscmoney_score.pillars.risparmio.score }}</span><small>/200</small>
+                    </div>
+                </div>
+                <div class="fms-pillar-bar-track">
+                    <div class="fms-pillar-bar-fill bar-{{ data.fiscmoney_score.pillars.risparmio.badge_class }}" style="width: {{ (data.fiscmoney_score.pillars.risparmio.score / 2)|round|int }}%;"></div>
+                </div>
+                <div class="fms-pillar-note">{{ data.fiscmoney_score.pillars.risparmio.note }}</div>
+            </div>
+
+            <!-- 2. Abbonamenti -->
+            <div class="fms-pillar-item">
+                <div class="fms-pillar-top-row">
+                    <div class="fms-pillar-name-wrap">
+                        <span class="fms-pillar-bullet">{{ data.fiscmoney_score.pillars.abbonamenti.icon }}</span>
+                        <span class="fms-pillar-name">Abbonamenti</span>
+                        <span class="fms-pillar-status-badge status-{{ data.fiscmoney_score.pillars.abbonamenti.badge_class }}">
+                            {{ data.fiscmoney_score.pillars.abbonamenti.status }}
+                        </span>
+                    </div>
+                    <div class="fms-pillar-score-text">
+                        <span>{{ data.fiscmoney_score.pillars.abbonamenti.score }}</span><small>/200</small>
+                    </div>
+                </div>
+                <div class="fms-pillar-bar-track">
+                    <div class="fms-pillar-bar-fill bar-{{ data.fiscmoney_score.pillars.abbonamenti.badge_class }}" style="width: {{ (data.fiscmoney_score.pillars.abbonamenti.score / 2)|round|int }}%;"></div>
+                </div>
+                <div class="fms-pillar-note">{{ data.fiscmoney_score.pillars.abbonamenti.note }}</div>
+            </div>
+
+            <!-- 3. Liquidità -->
+            <div class="fms-pillar-item">
+                <div class="fms-pillar-top-row">
+                    <div class="fms-pillar-name-wrap">
+                        <span class="fms-pillar-bullet">{{ data.fiscmoney_score.pillars.liquidita.icon }}</span>
+                        <span class="fms-pillar-name">Liquidità</span>
+                        <span class="fms-pillar-status-badge status-{{ data.fiscmoney_score.pillars.liquidita.badge_class }}">
+                            {{ data.fiscmoney_score.pillars.liquidita.status }}
+                        </span>
+                    </div>
+                    <div class="fms-pillar-score-text">
+                        <span>{{ data.fiscmoney_score.pillars.liquidita.score }}</span><small>/200</small>
+                    </div>
+                </div>
+                <div class="fms-pillar-bar-track">
+                    <div class="fms-pillar-bar-fill bar-{{ data.fiscmoney_score.pillars.liquidita.badge_class }}" style="width: {{ (data.fiscmoney_score.pillars.liquidita.score / 2)|round|int }}%;"></div>
+                </div>
+                <div class="fms-pillar-note">{{ data.fiscmoney_score.pillars.liquidita.note }}</div>
+            </div>
+
+            <!-- 4. Spese ricorrenti -->
+            <div class="fms-pillar-item">
+                <div class="fms-pillar-top-row">
+                    <div class="fms-pillar-name-wrap">
+                        <span class="fms-pillar-bullet">{{ data.fiscmoney_score.pillars.spese_ricorrenti.icon }}</span>
+                        <span class="fms-pillar-name">Spese ricorrenti</span>
+                        <span class="fms-pillar-status-badge status-{{ data.fiscmoney_score.pillars.spese_ricorrenti.badge_class }}">
+                            {{ data.fiscmoney_score.pillars.spese_ricorrenti.status }}
+                        </span>
+                    </div>
+                    <div class="fms-pillar-score-text">
+                        <span>{{ data.fiscmoney_score.pillars.spese_ricorrenti.score }}</span><small>/200</small>
+                    </div>
+                </div>
+                <div class="fms-pillar-bar-track">
+                    <div class="fms-pillar-bar-fill bar-{{ data.fiscmoney_score.pillars.spese_ricorrenti.badge_class }}" style="width: {{ (data.fiscmoney_score.pillars.spese_ricorrenti.score / 2)|round|int }}%;"></div>
+                </div>
+                <div class="fms-pillar-note">{{ data.fiscmoney_score.pillars.spese_ricorrenti.note }}</div>
+            </div>
+
+            <!-- 5. Situazione fiscale -->
+            <div class="fms-pillar-item">
+                <div class="fms-pillar-top-row">
+                    <div class="fms-pillar-name-wrap">
+                        <span class="fms-pillar-bullet">{{ data.fiscmoney_score.pillars.fiscale.icon }}</span>
+                        <span class="fms-pillar-name">Situazione fiscale</span>
+                        <span class="fms-pillar-status-badge status-{{ data.fiscmoney_score.pillars.fiscale.badge_class }}">
+                            {{ data.fiscmoney_score.pillars.fiscale.status }}
+                        </span>
+                    </div>
+                    <div class="fms-pillar-score-text">
+                        <span>{{ data.fiscmoney_score.pillars.fiscale.score }}</span><small>/200</small>
+                    </div>
+                </div>
+                <div class="fms-pillar-bar-track">
+                    <div class="fms-pillar-bar-fill bar-{{ data.fiscmoney_score.pillars.fiscale.badge_class }}" style="width: {{ (data.fiscmoney_score.pillars.fiscale.score / 2)|round|int }}%;"></div>
+                </div>
+                <div class="fms-pillar-note">{{ data.fiscmoney_score.pillars.fiscale.note }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🎯 "COME ARRIVARE A 800?" COACHING ACTIONS MODULE -->
+    <div class="fms-coaching-box">
+        <div class="fms-coaching-header">
+            <h3 class="fms-coaching-title">
+                <span>🎯</span>
+                <span>Come arrivare a {{ data.fiscmoney_score.next_target }}?</span>
+            </h3>
+            <span class="fms-target-badge">
+                Mancano +{{ data.fiscmoney_score.points_to_target }} pt
+            </span>
+        </div>
+        <div class="fms-coaching-sub">
+            3 azioni concrete consigliate da FiscMoney basate sui tuoi dati reali:
+        </div>
+        <div class="fms-actions-grid">
+            {% for action in data.fiscmoney_score.actions %}
+            <div class="fms-action-card">
+                <div>
+                    <div class="fms-action-header-row">
+                        <span class="fms-action-pillar-pill">{{ action.pillar }}</span>
+                        <span class="fms-action-pts-pill">{{ action.points }}</span>
+                    </div>
+                    <div class="fms-action-name">
+                        <span>{{ action.icon }}</span>
+                        <span>{{ action.title }}</span>
+                    </div>
+                    <p class="fms-action-desc">{{ action.description }}</p>
+                </div>
+                <a href="{{ action.action_url }}" class="fms-action-cta-btn">
+                    <span>{{ action.action_label }}</span>
+                    <span>→</span>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Collapsible Trigger for Monthly Budget Breakdown -->
+    <button type="button" class="fms-breakdown-toggle-btn" onclick="toggleBudgetCascadeBreakdown()">
+        <span style="display: inline-flex; align-items: center; gap: 6px;">
+            <span>📊</span>
+            <span>Dettaglio Matematico Budget del Mese (Entrate, Costi Fissi, Scadenze, Investimenti)</span>
+        </span>
+        <span id="fmsBudgetCascadeArrow">▼ Mostra</span>
+    </button>
+
+    <!-- Collapsible Drawer: Full Breakdown (Initially hidden for clean cockpit) -->
+    <div id="fmsBudgetCascadeDrawer" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed rgba(255,255,255,0.12);">
+        <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 0.74rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Calcolo Analitico Budget Mese ({{ data.year_month }})</span>
+                <span class="badge-tag" style="font-size: 0.65rem; background: rgba(59, 130, 246, 0.15); color: var(--accent-primary);">Clicca sulle voci per espandere</span>
             </div>
             
             <!-- Inflow Row -->
-            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px; padding: 4px 6px; border-radius: 4px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px; padding: 4px 6px; border-radius: 4px;">
                 <span style="color: var(--text-muted);">💶 Entrate Attese (Stipendio / Base)</span>
                 <strong style="color: #fff;">{{ data.expected_month_income|eur_sign }}</strong>
             </div>
 
             <!-- Fixed Costs Row (Clickable Trigger) -->
-            <div onclick="toggleCascade('cascadeFixedCosts', 'arrowFixed')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 6px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); transition: all 0.2s ease;" title="Clicca per aprire le singole voci di costo fisso">
+            <div onclick="toggleCascade('cascadeFixedCosts', 'arrowFixed')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; margin-bottom: 6px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); transition: all 0.2s ease;" title="Clicca per aprire le singole voci di costo fisso">
                 <div style="display: flex; align-items: center; gap: 6px; color: #f59e0b;">
                     <span id="arrowFixed" style="font-size: 0.7rem; transition: transform 0.2s ease;">▶</span>
                     <span style="font-weight: 600;">📌 Costi Fissi Questo Mese</span>
@@ -627,7 +794,6 @@
                 <strong style="color: #f59e0b;">{{ (-data.total_fixed_expenses_expected)|eur }}</strong>
             </div>
 
-            <!-- Cascade Drawer: Fixed Costs Breakdown -->
             <!-- Cascade Drawer: Fixed Costs Breakdown -->
             <div id="cascadeFixedCosts" style="display: none; background: rgba(0,0,0,0.4); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 8px; max-height: 220px; overflow-y: auto;">
                 <div style="font-size: 0.68rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; text-transform: uppercase;">
@@ -672,7 +838,7 @@
 
             <!-- Planned Deadlines Row (if any) -->
             {% if data.total_deadlines_expected > 0 %}
-            <div onclick="toggleCascade('cascadeDeadlines', 'arrowDl')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 6px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); transition: all 0.2s ease;" title="Clicca per aprire le scadenze straordinarie del mese">
+            <div onclick="toggleCascade('cascadeDeadlines', 'arrowDl')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; margin-bottom: 6px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); transition: all 0.2s ease;" title="Clicca per aprire le scadenze straordinarie del mese">
                 <div style="display: flex; align-items: center; gap: 6px; color: #c084fc;">
                     <span id="arrowDl" style="font-size: 0.7rem; transition: transform 0.2s ease;">▶</span>
                     <span style="font-weight: 600;">📅 Scadenze Programmate Mese</span>
@@ -730,9 +896,9 @@
             </div>
             {% endif %}
 
-            <!-- Investments / PAC Row (Dedicated Section) -->
+            <!-- Investments / PAC Row -->
             {% if data.total_investments_month > 0 %}
-            <div onclick="toggleCascade('cascadeInvestments', 'arrowInv')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 6px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); transition: all 0.2s ease;" title="Clicca per aprire i dettagli degli investimenti e PAC del mese">
+            <div onclick="toggleCascade('cascadeInvestments', 'arrowInv')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; margin-bottom: 6px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); transition: all 0.2s ease;" title="Clicca per aprire i dettagli degli investimenti e PAC del mese">
                 <div style="display: flex; align-items: center; gap: 6px; color: #38bdf8;">
                     <span id="arrowInv" style="font-size: 0.7rem; transition: transform 0.2s ease;">▶</span>
                     <span style="font-weight: 600;">📈 Investimenti & PAC</span>
@@ -770,8 +936,8 @@
             </div>
             {% endif %}
 
-            <!-- Variable Expenses Row (Clickable Trigger) -->
-            <div onclick="toggleCascade('cascadeVariableExpenses', 'arrowVar')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 8px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); transition: all 0.2s ease;" title="Clicca per aprire la lista delle spese variabili del mese">
+            <!-- Variable Expenses Row -->
+            <div onclick="toggleCascade('cascadeVariableExpenses', 'arrowVar')" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; margin-bottom: 8px; padding: 6px 8px; border-radius: var(--radius-sm); cursor: pointer; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); transition: all 0.2s ease;" title="Clicca per aprire la lista delle spese variabili del mese">
                 <div style="display: flex; align-items: center; gap: 6px; color: #f87171;">
                     <span id="arrowVar" style="font-size: 0.7rem; transition: transform 0.2s ease;">▶</span>
                     <span style="font-weight: 600;">💳 Spese Variabili Già Sostenute</span>
@@ -2419,6 +2585,19 @@ function applyCatSuggestedBudget() {
             btn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
         }
     }, 600);
+}
+
+function toggleBudgetCascadeBreakdown() {
+    const drawer = document.getElementById('fmsBudgetCascadeDrawer');
+    const arrow = document.getElementById('fmsBudgetCascadeArrow');
+    if (!drawer) return;
+    if (drawer.style.display === 'none' || drawer.style.display === '') {
+        drawer.style.display = 'block';
+        if (arrow) arrow.innerText = '▲ Nascondi';
+    } else {
+        drawer.style.display = 'none';
+        if (arrow) arrow.innerText = '▼ Mostra';
+    }
 }
 
 function toggleCascade(elementId, arrowId) {

@@ -4664,6 +4664,576 @@ body.hide-micro-expenses .tx-item.is-micro-tx {
   }
 }
 
+/* ======================================================== */
+/* 💎 FISCMONEY SCORE HERO & FINANCIAL HEALTH COCKPIT       */
+/* ======================================================== */
+.fms-hero-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.88));
+  border-radius: 18px;
+  padding: 20px 22px;
+  margin-bottom: 20px;
+  box-shadow: 0 14px 35px -8px rgba(0, 0, 0, 0.65), 0 0 25px -5px rgba(99, 102, 241, 0.18);
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.fms-hero-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.8), rgba(99, 102, 241, 0.9), rgba(16, 185, 129, 0.8), transparent);
+}
+
+/* Header Bar */
+.fms-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fms-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fms-title-icon {
+  font-size: 1.5rem;
+  filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.5));
+}
+
+.fms-main-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 0;
+  background: linear-gradient(135deg, #ffffff 40%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.3px;
+}
+
+.fms-main-subtitle {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.fms-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+/* Main Grid: Left (Score & Speed) + Right (5 Pillars) */
+.fms-main-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 20px;
+}
+
+/* Left Column: Gauge & Speedometer */
+.fms-dial-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 16px 14px;
+  text-align: center;
+}
+
+.fms-gauge-container {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  margin: 0 auto 12px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fms-gauge-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.fms-gauge-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 9;
+}
+
+.fms-gauge-fill {
+  fill: none;
+  stroke-width: 9;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+.fms-gauge-content {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.fms-gauge-score {
+  font-size: 2.1rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -1px;
+}
+
+.fms-gauge-max {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+/* Margin & Speed indicators under dial */
+.fms-margin-badge {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fms-margin-badge.safe {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.fms-margin-badge.overrun {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.fms-margin-label {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.fms-margin-val {
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.fms-daily-speed-pill {
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
+.fms-speed-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.fms-speed-amount {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.fms-speed-unit {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #38bdf8;
+  text-transform: uppercase;
+}
+
+.fms-speed-sub {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* Right Column: 5 Pillars List */
+.fms-pillars-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fms-pillars-title {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fms-pillar-item {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 9px 14px;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.fms-pillar-item:hover {
+  transform: translateX(3px);
+  background: rgba(0, 0, 0, 0.4);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.fms-pillar-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.fms-pillar-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fms-pillar-bullet {
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.fms-pillar-name {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.fms-pillar-status-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  text-transform: capitalize;
+}
+
+.fms-pillar-status-badge.status-success {
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.fms-pillar-status-badge.status-warning {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.fms-pillar-status-badge.status-danger {
+  background: rgba(239, 68, 68, 0.16);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.fms-pillar-score-text {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #cbd5e1;
+}
+
+.fms-pillar-score-text small {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.fms-pillar-bar-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  margin: 6px 0 4px 0;
+  overflow: hidden;
+}
+
+.fms-pillar-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.8s ease;
+}
+
+.fms-pillar-bar-fill.bar-success {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.fms-pillar-bar-fill.bar-warning {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.fms-pillar-bar-fill.bar-danger {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.fms-pillar-note {
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+/* ======================================================== */
+/* 🎯 "COME ARRIVARE A 800?" COACHING ACTIONS MODULE        */
+/* ======================================================== */
+.fms-coaching-box {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(56, 189, 248, 0.05));
+  border: 1.5px solid rgba(99, 102, 241, 0.3);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-top: 14px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+}
+
+.fms-coaching-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.fms-coaching-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.fms-target-badge {
+  background: linear-gradient(135deg, #6366f1, #3b82f6);
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+}
+
+.fms-coaching-sub {
+  font-size: 0.74rem;
+  color: #cbd5e1;
+  margin-bottom: 12px;
+}
+
+.fms-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.fms-action-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fms-action-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.fms-action-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.fms-action-pillar-pill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.fms-action-pts-pill {
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 12px;
+}
+
+.fms-action-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.25;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fms-action-desc {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  line-height: 1.35;
+  margin-bottom: 10px;
+  flex-grow: 1;
+}
+
+.fms-action-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.fms-action-cta-btn:hover {
+  background: rgba(56, 189, 248, 0.25);
+  color: #fff;
+  border-color: rgba(56, 189, 248, 0.6);
+}
+
+/* Collapsible Budget Details Trigger */
+.fms-breakdown-toggle-btn {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  color: #94a3b8;
+  padding: 8px 14px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.fms-breakdown-toggle-btn:hover {
+  background: rgba(0, 0, 0, 0.45);
+  border-color: rgba(56, 189, 248, 0.4);
+  color: #fff;
+}
+
+/* ======================================================== */
+/* 📱 SMARTPHONE RESPONSIVE OPTIMIZATION                     */
+/* ======================================================== */
+@media (max-width: 768px) {
+  .fms-hero-card {
+    padding: 14px 12px;
+    border-radius: 14px;
+    margin-bottom: 14px;
+  }
+
+  .fms-main-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .fms-dial-col {
+    padding: 14px 10px;
+  }
+
+  .fms-gauge-container {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 8px;
+  }
+
+  .fms-gauge-score {
+    font-size: 1.85rem;
+  }
+
+  .fms-pillar-item {
+    padding: 8px 10px;
+  }
+
+  .fms-pillar-name {
+    font-size: 0.8rem;
+  }
+
+  .fms-actions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fms-action-card {
+    padding: 10px 12px;
+  }
+
+  .fms-coaching-box {
+    padding: 12px 10px;
+  }
+
+  .fms-coaching-title {
+    font-size: 0.95rem;
+  }
+
+  .fms-target-badge {
+    font-size: 0.68rem;
+  }
+}
+
+
 
 
 
