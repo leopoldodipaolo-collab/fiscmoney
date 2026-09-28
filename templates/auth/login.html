@@ -1,644 +1,692 @@
 {% extends "base.html" %}
 
-{% block title %}FiscMoney — Sai davvero dove finiscono i soldi di casa?{% endblock %}
+{% block title %}FiscMoney — La finanza di casa, senza Excel. Tutti i tuoi soldi sotto controllo{% endblock %}
+{% block meta_description %}FiscMoney trasforma i tuoi dati finanziari in una situazione semplice da capire: conti, spese, stipendi, risparmi, mutuo e documenti 730 in un unico posto. Senza collegare la banca.{% endblock %}
 
 {% block content %}
 <style>
 /* ========================================================== */
-/* FISCMONEY NEW MINIMALIST CONVERSION LANDING DESIGN SYSTEM   */
+/* FISCMONEY NEW EDITORIAL CONVERSION DESIGN SYSTEM           */
+/* "LA FINANZA DI CASA, SENZA EXCEL"                          */
 /* ========================================================== */
 :root {
-  --lp-bg: #070a12;
-  --lp-card-bg: rgba(15, 23, 42, 0.7);
+  --lp-bg: #070a13;
+  --lp-card-bg: rgba(15, 23, 42, 0.75);
   --lp-card-border: rgba(255, 255, 255, 0.08);
   --lp-accent: #38bdf8;
   --lp-accent-glow: rgba(56, 189, 248, 0.25);
-  --lp-accent-gold: #facc15;
+  --lp-accent-emerald: #10b981;
+  --lp-accent-amber: #f59e0b;
+  --lp-accent-rose: #f43f5e;
+  --lp-accent-indigo: #6366f1;
   --lp-text-title: #ffffff;
+  --lp-text-body: #e2e8f0;
   --lp-text-muted: #94a3b8;
-  --lp-text-body: #cbd5e1;
 }
 
 .landing-page-root {
-  max-width: 960px;
+  max-width: 1040px;
   margin: 0 auto;
-  padding: 20px 16px 80px 16px;
+  padding: 10px 16px 80px 16px;
   color: var(--lp-text-body);
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
   overflow-x: hidden;
 }
 
-/* Ambient glow */
-.lp-ambient-orb {
+/* Sticky Landing Top Navigation Bar */
+.lp-navbar {
+  position: sticky;
+  top: 12px;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 18px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  margin-bottom: 30px;
+}
+
+.lp-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.lp-nav-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+}
+
+.lp-nav-brand-text {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.5px;
+}
+
+.lp-nav-brand-text span {
+  color: var(--lp-accent);
+}
+
+.lp-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lp-nav-btn-login {
+  background: transparent;
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 7px 16px;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.lp-nav-btn-login:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.lp-nav-btn-cta {
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  color: #04101e;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.4);
+  transition: all 0.2s ease;
+}
+
+.lp-nav-btn-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.6);
+  background: linear-gradient(135deg, #0ea5e9, #7dd3fc);
+}
+
+/* Ambient glow orbs */
+.lp-orb {
   position: absolute;
-  width: 320px;
-  height: 320px;
   border-radius: 50%;
   pointer-events: none;
-  filter: blur(100px);
-  opacity: 0.18;
+  filter: blur(110px);
+  opacity: 0.22;
   z-index: 0;
 }
-.lp-orb-top {
-  top: -60px;
+.lp-orb-1 {
+  top: -40px;
   left: 50%;
   transform: translateX(-50%);
-  background: radial-gradient(circle, #38bdf8 0%, #6366f1 70%, transparent);
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, #38bdf8 0%, #6366f1 60%, transparent);
 }
 
-/* Super Wow Neon Holographic Emblem & Radial Glow */
-.lp-hero-stage {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Glowing Cosmic Halo behind Hero */
-.lp-hero-cosmic-halo {
-  position: absolute;
-  top: 45%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(580px, 92vw);
-  height: min(580px, 92vw);
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.28) 0%, rgba(99, 102, 241, 0.18) 45%, rgba(234, 179, 8, 0.08) 70%, transparent 85%);
-  filter: blur(50px);
-  pointer-events: none;
-  z-index: 0;
-  animation: cosmicPulse 6s ease-in-out infinite alternate;
-}
-
-@keyframes cosmicPulse {
-  0% { transform: translate(-50%, -50%) scale(0.92); opacity: 0.7; }
-  100% { transform: translate(-50%, -50%) scale(1.12); opacity: 1; }
-}
-
-/* Concentric Neon Rings */
-.lp-hero-neon-ring {
-  position: absolute;
-  top: 45%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(460px, 86vw);
-  height: min(460px, 86vw);
-  border-radius: 50%;
-  border: 1px dashed rgba(56, 189, 248, 0.25);
-  box-shadow: 0 0 40px rgba(56, 189, 248, 0.15), inset 0 0 30px rgba(56, 189, 248, 0.1);
-  pointer-events: none;
-  z-index: 0;
-  animation: slowSpin 40s linear infinite;
-}
-
-@keyframes slowSpin {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
-/* Holographic Floating Watermark Logo */
-.lp-hero-watermark-logo {
-  position: absolute;
-  top: 45%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(420px, 84vw);
-  height: min(420px, 84vw);
-  border-radius: 50%;
-  object-fit: cover;
-  opacity: 0.28;
-  filter: drop-shadow(0 0 45px rgba(56, 189, 248, 0.85)) drop-shadow(0 0 90px rgba(99, 102, 241, 0.45)) saturate(160%);
-  pointer-events: none;
-  z-index: 0;
-  animation: heroLogoFloat 6s ease-in-out infinite alternate;
-}
-
-@keyframes heroLogoFloat {
-  0% { transform: translate(-50%, -50%) scale(0.95) rotate(-3deg); }
-  100% { transform: translate(-50%, -52%) scale(1.05) rotate(3deg); }
-}
-
-/* Visible Crisp Logo Emblem above the Badge */
-.lp-hero-emblem-badge {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  padding: 3px;
-  background: linear-gradient(135deg, #38bdf8, #0ea5e9, #f59e0b, #ec4899);
-  box-shadow: 0 0 30px rgba(56, 189, 248, 0.6), 0 0 60px rgba(14, 165, 233, 0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 16px auto;
-  position: relative;
-  z-index: 2;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.lp-hero-emblem-badge:hover {
-  transform: scale(1.08) rotate(5deg);
-}
-
-.lp-hero-emblem-badge img {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-  background: #0b0f19;
-}
-
-/* Common Section Container with Breathable Space */
+/* Sections Base */
 .lp-section {
   position: relative;
   z-index: 1;
-  margin-bottom: 72px;
+  margin-bottom: 70px;
 }
 
 /* HERO SECTION */
 .lp-hero-section {
   text-align: center;
-  padding: 50px 10px 30px 10px;
+  padding: 20px 10px 40px 10px;
 }
 
-.lp-hero-badge {
+.lp-hero-tag {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   background: rgba(56, 189, 248, 0.1);
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  padding: 6px 14px;
+  border: 1.5px solid rgba(56, 189, 248, 0.35);
+  padding: 6px 16px;
   border-radius: 9999px;
-  font-size: 0.76rem;
-  font-weight: 700;
+  font-size: 0.78rem;
+  font-weight: 800;
   color: var(--lp-accent);
-  margin-bottom: 24px;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 22px;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.15);
 }
 
 .lp-hero-headline {
-  font-size: clamp(2.2rem, 5.5vw, 3.4rem);
+  font-size: clamp(2.3rem, 5.8vw, 3.8rem);
   font-weight: 900;
   color: var(--lp-text-title);
-  line-height: 1.15;
-  letter-spacing: -1px;
+  line-height: 1.12;
+  letter-spacing: -1.2px;
   margin: 0 auto 20px auto;
-  max-width: 780px;
+  max-width: 860px;
 }
 
 .lp-hero-subheadline {
-  font-size: clamp(1.05rem, 2.2vw, 1.25rem);
-  color: var(--lp-text-body);
-  max-width: 640px;
+  font-size: clamp(1.1rem, 2.4vw, 1.35rem);
+  color: #cbd5e1;
+  max-width: 720px;
   margin: 0 auto 16px auto;
   line-height: 1.55;
-  font-weight: 400;
+  font-weight: 500;
 }
 
-.lp-hero-highlights {
+.lp-hero-explainer {
+  font-size: 0.96rem;
   color: var(--lp-text-muted);
-  font-size: 0.92rem;
-  max-width: 580px;
+  max-width: 660px;
   margin: 0 auto 30px auto;
   line-height: 1.6;
 }
 
-.lp-hero-highlights strong {
-  color: #fff;
-  font-weight: 600;
-}
-
-/* CTA BUTTONS & TRUST SIGNALS */
-.lp-cta-group {
+.lp-cta-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
 }
 
-.lp-btn-primary {
+.lp-btn-hero {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   background: linear-gradient(135deg, #0284c7, #38bdf8);
   color: #04101e;
-  font-size: 1.1rem;
-  font-weight: 800;
-  padding: 16px 36px;
-  border-radius: 14px;
+  font-size: 1.15rem;
+  font-weight: 900;
+  padding: 16px 40px;
+  border-radius: 16px;
   text-decoration: none;
   border: none;
-  box-shadow: 0 10px 30px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  box-shadow: 0 12px 35px rgba(56, 189, 248, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.4);
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.lp-btn-primary:hover {
+.lp-btn-hero:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 36px rgba(56, 189, 248, 0.5);
+  box-shadow: 0 16px 42px rgba(56, 189, 248, 0.6);
   background: linear-gradient(135deg, #0ea5e9, #7dd3fc);
   color: #04101e;
 }
 
-.lp-hero-trust-subtext {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  font-size: 0.8rem;
-  color: var(--lp-text-muted);
-  margin-top: 4px;
-}
-
-.lp-hero-trust-item {
+.lp-hero-trust {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-}
-
-/* PROBLEM STATEMENT SECTION */
-.lp-problem-card {
-  background: linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.85));
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 20px;
-  padding: 36px 30px;
-  text-align: center;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
-}
-
-.lp-problem-lead {
-  font-size: clamp(1.2rem, 2.8vw, 1.55rem);
-  font-weight: 800;
-  color: #fff;
-  line-height: 1.35;
-  margin-bottom: 22px;
-}
-
-.lp-problem-lead span {
-  color: #f87171;
-}
-
-.lp-expenses-pills {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
   gap: 8px;
-  margin: 20px auto 26px auto;
-  max-width: 680px;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin-top: 6px;
 }
 
-.lp-expense-tag {
-  background: rgba(255, 255, 255, 0.04);
+/* SECTION 2: ANCORA UN EXCEL PER GESTIRE I SOLDI DI CASA? */
+.lp-pain-box {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.65), rgba(15, 23, 42, 0.9));
   border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 0.82rem;
+  border-radius: 22px;
+  padding: 40px 32px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+  text-align: center;
+}
+
+.lp-pain-tag {
+  color: #f87171;
+  font-weight: 800;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 12px;
+  display: inline-block;
+}
+
+.lp-pain-title {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.25;
+  margin-bottom: 24px;
+}
+
+.lp-excel-friction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 480px;
+  margin: 0 auto 28px auto;
+  text-align: left;
+}
+
+.lp-friction-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-size: 0.92rem;
   color: #cbd5e1;
 }
 
-.lp-punchline {
+.lp-friction-icon {
   font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--lp-accent-gold);
-  margin-top: 14px;
+  flex-shrink: 0;
 }
 
-/* 3 STEPS SECTION */
+.lp-pain-question {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin: 0 auto 24px auto;
+  max-width: 580px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fca5a5;
+  font-style: italic;
+}
+
+.lp-pain-resolution {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #38bdf8;
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+/* SECTION 3: IMPORTA. ORGANIZZA. CAPISCI. */
+.lp-steps-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
 .lp-steps-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 18px;
-  margin-top: 24px;
+  margin-bottom: 24px;
 }
 
 .lp-step-card {
   background: var(--lp-card-bg);
-  border: 1px solid var(--lp-card-border);
-  border-radius: 16px;
-  padding: 24px 20px;
+  border: 1.5px solid var(--lp-card-border);
+  border-radius: 18px;
+  padding: 28px 24px;
   position: relative;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .lp-step-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(56, 189, 248, 0.35);
+  transform: translateY(-4px);
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
 .lp-step-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: rgba(56, 189, 248, 0.15);
-  color: var(--lp-accent);
+  font-size: 0.8rem;
   font-weight: 900;
-  font-size: 0.95rem;
-  margin-bottom: 12px;
+  color: var(--lp-accent);
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  display: block;
 }
 
 .lp-step-title {
-  font-size: 1.08rem;
-  font-weight: 800;
+  font-size: 1.35rem;
+  font-weight: 900;
   color: #fff;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
+  letter-spacing: -0.3px;
 }
 
 .lp-step-desc {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--lp-text-muted);
-  line-height: 1.45;
+  line-height: 1.55;
   margin: 0;
 }
 
-/* FEATURE SHOWCASE: I SOLDI DI COPPIA (HERO FEATURE 1) */
-.lp-couple-card {
-  background: linear-gradient(135deg, rgba(30, 41, 67, 0.9), rgba(15, 23, 42, 0.95));
-  border: 1.5px solid rgba(236, 72, 153, 0.35);
-  border-radius: 20px;
+/* INTERACTIVE FEATURE SHOWCASES */
+.lp-feature-card {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.95));
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
   padding: 34px 28px;
-  box-shadow: 0 15px 45px rgba(236, 72, 153, 0.15);
-}
-
-.lp-feature-header {
-  margin-bottom: 22px;
+  margin-bottom: 36px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.45);
 }
 
 .lp-feature-kicker {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: #f472b6;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .lp-feature-title {
-  font-size: clamp(1.4rem, 3.2vw, 1.9rem);
+  font-size: clamp(1.4rem, 3.2vw, 2rem);
   font-weight: 900;
   color: #fff;
   line-height: 1.25;
-}
-
-/* Couple Highlight Widget Mock */
-.lp-couple-widget-mock {
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  padding: 24px;
-  margin: 20px 0;
-  text-align: center;
-}
-
-.lp-couple-amount-lead {
-  font-size: clamp(2.2rem, 5vw, 3.2rem);
-  font-weight: 900;
-  color: #34d399;
-  letter-spacing: -1px;
-  line-height: 1.1;
-  margin-bottom: 6px;
-}
-
-.lp-couple-claim-subtext {
-  font-size: 1.05rem;
-  color: #fff;
-  font-weight: 700;
   margin-bottom: 12px;
-}
-
-.lp-couple-pill-summary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-size: 0.82rem;
-  color: #7dd3fc;
-  font-weight: 600;
-}
-
-.lp-feature-footer-quote {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #fde047;
-  text-align: center;
-  margin-top: 18px;
-}
-
-/* FEATURE SHOWCASE: SAFE-TO-SPEND (HERO FEATURE 2) */
-.lp-safetospend-card {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(15, 23, 42, 0.95));
-  border: 1.5px solid rgba(16, 185, 129, 0.35);
-  border-radius: 20px;
-  padding: 34px 28px;
-  box-shadow: 0 15px 45px rgba(16, 185, 129, 0.12);
-}
-
-.lp-safe-kicker {
-  color: #34d399;
-}
-
-.lp-safe-widget-mock {
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  border-radius: 16px;
-  padding: 24px;
-  margin: 20px 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.lp-safe-widget-left {
-  text-align: left;
-}
-
-.lp-safe-amount {
-  font-size: clamp(2rem, 4.5vw, 2.8rem);
-  font-weight: 900;
-  color: #34d399;
   letter-spacing: -0.5px;
 }
 
-.lp-safe-math-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  font-size: 0.78rem;
-  color: var(--lp-text-muted);
+.lp-feature-body {
+  font-size: 0.96rem;
+  color: #cbd5e1;
+  line-height: 1.6;
+  margin-bottom: 22px;
+  max-width: 680px;
 }
 
-.lp-safe-math-tag {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 4px 8px;
-  border-radius: 6px;
+/* Mockup Box Components */
+.lp-mock-box {
+  background: rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 20px 22px;
+  margin: 20px 0;
 }
 
-/* 4 PILLARS (CASA, CASH FLOW, FAMIGLIA, FISCO) */
-.lp-four-pillars-grid {
+.lp-mock-kpi-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.lp-mock-big-num {
+  font-size: 2.2rem;
+  font-weight: 900;
+  letter-spacing: -1px;
+}
+
+.lp-mock-tags-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lp-mock-tag-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 0.88rem;
+}
+
+/* Couple Card Specific */
+.lp-couple-pill-box {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 14px;
-  margin-top: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-.lp-pillar-box {
-  background: var(--lp-card-bg);
-  border: 1px solid var(--lp-card-border);
+.lp-couple-pill {
+  background: rgba(236, 72, 153, 0.08);
+  border: 1px solid rgba(236, 72, 153, 0.25);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lp-couple-settle-banner {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(6, 182, 212, 0.18));
+  border: 1.5px solid rgba(16, 185, 129, 0.45);
   border-radius: 14px;
-  padding: 20px 16px;
-  transition: all 0.2s ease;
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 12px;
 }
 
-.lp-pillar-box:hover {
-  border-color: rgba(56, 189, 248, 0.4);
-  background: rgba(30, 41, 59, 0.6);
+/* Paystub specific */
+.lp-paystub-diff {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-weight: 800;
+  font-size: 0.85rem;
 }
 
-.lp-pillar-icon {
-  font-size: 1.8rem;
+/* 730 Flow Steps */
+.lp-730-flow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin: 18px 0;
+}
+
+.lp-730-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.lp-730-arrow {
+  color: #6366f1;
+  font-size: 1rem;
+}
+
+/* BEFORE / AFTER COMPARISON */
+.lp-compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 24px 0;
+}
+
+.lp-compare-col {
+  border-radius: 18px;
+  padding: 26px 22px;
+}
+
+.lp-compare-before {
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.lp-compare-after {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1.5px solid rgba(16, 185, 129, 0.35);
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.1);
+}
+
+.lp-compare-title {
+  font-size: 1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* CHECKLIST: FISCMONEY È FATTO PER TE SE... */
+.lp-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.lp-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  color: #e2e8f0;
+}
+
+.lp-check-icon {
+  color: var(--lp-accent-emerald);
+  font-weight: 900;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+/* SECURITY & PRIVACY 4 PILLARS */
+.lp-privacy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.lp-privacy-card {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 20px 18px;
+}
+
+.lp-privacy-icon {
+  font-size: 1.6rem;
   margin-bottom: 10px;
   display: block;
 }
 
-.lp-pillar-name {
+.lp-privacy-heading {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.lp-privacy-desc {
+  font-size: 0.84rem;
+  color: var(--lp-text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* FAQ ACCORDION */
+.lp-faq-item {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.lp-faq-item:hover {
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.lp-faq-question {
+  padding: 16px 20px;
   font-size: 1.02rem;
   font-weight: 800;
   color: #fff;
-  margin-bottom: 4px;
-}
-
-.lp-pillar-sub {
-  font-size: 0.8rem;
-  color: var(--lp-text-muted);
-  line-height: 1.4;
-}
-
-/* PRIVACY SECTION */
-.lp-privacy-card {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.95));
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  border-radius: 20px;
-  padding: 36px 30px;
-}
-
-.lp-privacy-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 14px;
-  margin: 24px 0 16px 0;
-}
-
-.lp-privacy-item {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: #fff;
+  cursor: pointer;
 }
 
-/* BETA 100 USERS INVITATION SECTION (HERO CONVERSION) */
-.lp-beta-card {
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(99, 102, 241, 0.15), rgba(15, 23, 42, 0.98));
-  border: 2px solid rgba(56, 189, 248, 0.5);
-  border-radius: 24px;
-  padding: 44px 32px;
-  text-align: center;
-  box-shadow: 0 20px 60px rgba(14, 165, 233, 0.25);
-  position: relative;
-  overflow: hidden;
-}
-
-.lp-beta-counter-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: linear-gradient(90deg, #f59e0b, #eab308);
-  color: #000;
-  font-weight: 900;
-  font-size: 0.8rem;
-  padding: 6px 14px;
-  border-radius: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 15px rgba(234, 179, 8, 0.4);
-}
-
-.lp-beta-title {
-  font-size: clamp(1.8rem, 4vw, 2.4rem);
-  font-weight: 900;
-  color: #fff;
-  line-height: 1.2;
-  margin-bottom: 14px;
-}
-
-.lp-beta-desc {
-  font-size: 1rem;
-  color: var(--lp-text-body);
-  max-width: 620px;
-  margin: 0 auto 24px auto;
+.lp-faq-answer {
+  padding: 0 20px 16px 20px;
+  font-size: 0.9rem;
+  color: var(--lp-text-muted);
   line-height: 1.6;
 }
 
-.lp-beta-perks {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-width: 440px;
-  margin: 0 auto 30px auto;
-  text-align: left;
-  font-size: 0.92rem;
-  color: #e2e8f0;
-}
-
-.lp-beta-perks span {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* INTERACTIVE AUTH MODAL / EMBEDDED FORM */
-.lp-auth-card-anchor {
-  scroll-margin-top: 40px;
+/* FINAL CTA & INTEGRATED AUTH BOX */
+.lp-final-box {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.12), rgba(99, 102, 241, 0.12), rgba(15, 23, 42, 0.98));
+  border: 2px solid rgba(56, 189, 248, 0.45);
+  border-radius: 26px;
+  padding: 44px 30px;
+  box-shadow: 0 20px 60px rgba(14, 165, 233, 0.2);
+  margin-bottom: 60px;
+  text-align: center;
 }
 
 .lp-auth-panel {
-  background: #0f172a;
-  border: 1.5px solid rgba(56, 189, 248, 0.4);
+  max-width: 440px;
+  margin: 28px auto 0 auto;
+  background: rgba(11, 16, 27, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 20px;
-  padding: 30px 24px;
-  max-width: 480px;
-  margin: 0 auto;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
+  padding: 24px 22px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
   text-align: left;
 }
 
 .lp-tabs-bar {
   display: flex;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.4);
   padding: 4px;
+  border-radius: 12px;
   margin-bottom: 20px;
-  gap: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .lp-tab-btn {
   flex: 1;
-  background: none;
+  background: transparent;
   border: none;
   color: var(--lp-text-muted);
   font-weight: 700;
-  font-size: 0.88rem;
-  padding: 10px 14px;
+  font-size: 0.85rem;
+  padding: 8px 12px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -649,10 +697,10 @@
 }
 
 .lp-tab-btn.active {
-  background: var(--lp-accent);
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
   color: #04101e;
   font-weight: 800;
-  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.4);
+  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.35);
 }
 
 .lp-input-group {
@@ -663,45 +711,43 @@
   display: block;
   font-size: 0.78rem;
   font-weight: 700;
-  color: var(--lp-text-body);
+  color: #cbd5e1;
   margin-bottom: 5px;
 }
 
 .lp-input {
   width: 100%;
   box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.5);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  padding: 12px 14px;
+  padding: 10px 14px;
   color: #fff;
-  font-size: 0.95rem;
-  font-weight: 600;
-  transition: border-color 0.2s;
+  font-size: 0.92rem;
+  outline: none;
+  transition: border-color 0.2s ease;
 }
 
 .lp-input:focus {
-  outline: none;
   border-color: var(--lp-accent);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
 }
 
 .lp-submit-btn {
   width: 100%;
-  padding: 14px;
   background: linear-gradient(135deg, #0284c7, #38bdf8);
-  border: none;
-  border-radius: 10px;
   color: #04101e;
-  font-size: 1rem;
+  border: none;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 0.95rem;
   font-weight: 800;
   cursor: pointer;
+  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.35);
-  margin-top: 10px;
   transition: all 0.2s ease;
 }
 
@@ -710,513 +756,801 @@
   transform: translateY(-1px);
 }
 
-/* FAQ ACCORDION */
-.lp-faq-container {
-  max-width: 720px;
-  margin: 0 auto;
+/* FOOTER */
+.lp-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 40px 0 20px 0;
+  margin-top: 60px;
 }
 
-.lp-faq-item {
-  background: var(--lp-card-bg);
-  border: 1px solid var(--lp-card-border);
-  border-radius: 12px;
-  margin-bottom: 10px;
-  padding: 16px 20px;
-  transition: all 0.2s ease;
+.lp-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 30px;
 }
 
-.lp-faq-question {
-  font-size: 1rem;
-  font-weight: 800;
+.lp-footer-brand-title {
+  font-size: 1.2rem;
+  font-weight: 900;
   color: #fff;
   margin-bottom: 6px;
+}
+
+.lp-footer-col-title {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.6px;
+  margin-bottom: 12px;
+}
+
+.lp-footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
 }
 
-.lp-faq-answer {
-  font-size: 0.88rem;
-  color: var(--lp-text-muted);
-  line-height: 1.5;
-  margin: 0;
+.lp-footer-links a {
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 0.85rem;
+  transition: color 0.2s ease;
 }
 
-/* FINAL HOOK CTA */
-.lp-final-cta {
+.lp-footer-links a:hover {
+  color: var(--lp-accent);
+}
+
+.lp-footer-copy {
   text-align: center;
-  padding: 50px 20px 20px 20px;
+  font-size: 0.78rem;
+  color: #64748b;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.lp-final-headline {
-  font-size: clamp(1.6rem, 3.5vw, 2.2rem);
-  font-weight: 900;
-  color: #fff;
-  margin-bottom: 14px;
-}
-
-/* RESPONSIVE MOBILE TWEAKS (Full Smartphone Optimization) */
-@media (max-width: 640px) {
-  .landing-page-root {
-    padding: 10px 12px 60px 12px;
+/* RESPONSIVE SMARTPHONE OPTIMIZATION */
+@media (max-width: 768px) {
+  .lp-navbar {
+    top: 6px;
+    padding: 8px 14px;
+    margin-bottom: 20px;
   }
-  .lp-section {
-    margin-bottom: 42px;
-  }
-  .lp-hero-section {
-    padding: 28px 6px 20px 6px;
+  .lp-nav-brand-text {
+    font-size: 1.05rem;
   }
   .lp-hero-headline {
-    font-size: 2rem;
-    line-height: 1.18;
-    margin-bottom: 14px;
+    font-size: 2.1rem;
+    letter-spacing: -0.8px;
   }
   .lp-hero-subheadline {
-    font-size: 1rem;
-    line-height: 1.48;
-    margin-bottom: 12px;
+    font-size: 1.05rem;
   }
-  .lp-hero-highlights {
-    font-size: 0.85rem;
-    line-height: 1.5;
-    margin-bottom: 24px;
+  .lp-pain-box, .lp-feature-card, .lp-final-box {
+    padding: 24px 16px;
+    border-radius: 18px;
   }
-  .lp-hero-emblem-badge {
-    width: 60px;
-    height: 60px;
-    margin-bottom: 12px;
+  .lp-compare-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
   }
-  .lp-hero-watermark-logo {
-    width: min(300px, 86vw);
-    height: min(300px, 86vw);
-    opacity: 0.22;
-  }
-  .lp-hero-neon-ring {
-    width: min(320px, 88vw);
-    height: min(320px, 88vw);
-  }
-  .lp-hero-cosmic-halo {
-    width: min(340px, 94vw);
-    height: min(340px, 94vw);
-  }
-  .lp-problem-card,
-  .lp-couple-card,
-  .lp-safetospend-card,
-  .lp-privacy-card,
-  .lp-beta-card {
-    padding: 22px 14px;
-    border-radius: 16px;
-  }
-  .lp-problem-lead {
-    font-size: 1.25rem;
-    line-height: 1.35;
-  }
-  .lp-expenses-pills {
-    gap: 6px;
-  }
-  .lp-expense-tag {
-    font-size: 0.78rem;
-    padding: 5px 10px;
-  }
-  .lp-safe-widget-mock {
+  .lp-730-flow {
     flex-direction: column;
     align-items: flex-start;
-    padding: 16px;
   }
-  .lp-safe-amount {
-    font-size: 2.2rem;
+  .lp-730-arrow {
+    transform: rotate(90deg);
+    margin-left: 8px;
   }
-  .lp-btn-primary {
-    width: 100%;
-    padding: 15px 18px;
-    font-size: 1rem;
-    border-radius: 12px;
-  }
-  .lp-hero-trust-subtext {
-    flex-direction: column;
-    gap: 6px;
-    font-size: 0.76rem;
-  }
-  .lp-pillars-grid {
+  .lp-footer-grid {
     grid-template-columns: 1fr;
-    gap: 10px;
+    gap: 20px;
   }
-  .lp-auth-panel {
-    padding: 20px 16px;
+  .lp-btn-hero {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 20px;
+    font-size: 1.05rem;
   }
 }
 </style>
 
 <div class="landing-page-root">
-    <div class="lp-ambient-orb lp-orb-top"></div>
+    <div class="lp-orb lp-orb-1"></div>
+
+    <!-- ========================================================== -->
+    <!-- STICKY TOP NAVBAR (ACCEDI / INIZIA GRATIS)                  -->
+    <!-- ========================================================== -->
+    <header class="lp-navbar">
+        <a href="/" class="lp-nav-brand">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FiscMoney Logo" class="lp-nav-logo">
+            <span class="lp-nav-brand-text">Fisc<span>Money</span></span>
+        </a>
+        <div class="lp-nav-actions">
+            <a href="#authSection" onclick="switchAuthTab('login')" class="lp-nav-btn-login">
+                Accedi
+            </a>
+            <a href="#authSection" onclick="switchAuthTab('register')" class="lp-nav-btn-cta">
+                Inizia gratis →
+            </a>
+        </div>
+    </header>
+
 
     <!-- ========================================================== -->
     <!-- 1. HERO SECTION                                            -->
     <!-- ========================================================== -->
-    <section class="lp-section lp-hero-section lp-hero-stage" style="position: relative; overflow: visible;">
-        <!-- Glowing Cosmic Halo behind Hero -->
-        <div class="lp-hero-cosmic-halo"></div>
+    <section class="lp-section lp-hero-section">
+        <div class="lp-hero-tag">
+            <span>📊</span>
+            <span>LA FINANZA DI CASA, SENZA EXCEL</span>
+        </div>
 
-        <!-- Concentric Neon Orbital Ring -->
-        <div class="lp-hero-neon-ring"></div>
-
-        <!-- Holographic Watermark Logo Floating in Background -->
-        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="" class="lp-hero-watermark-logo" aria-hidden="true">
-
-        <div style="position: relative; z-index: 2; width: 100%;">
-            <!-- Crisp Illuminated 3D Logo Emblem -->
-            <div class="lp-hero-emblem-badge" title="FiscMoney">
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FiscMoney Logo">
-            </div>
-
-            <div class="lp-hero-badge">
-                <span>🧪 BETA PRIVATA</span>
-                <span>&bull;</span>
-                <span>PRIMI 100 UTENTI</span>
-            </div>
-
-            <h1 class="lp-hero-headline">
-                Sai davvero dove finiscono i soldi di casa?
-            </h1>
+        <h1 class="lp-hero-headline">
+            Tutti i tuoi soldi.<br>Finalmente sotto controllo.
+        </h1>
 
         <p class="lp-hero-subheadline">
-            FiscMoney trasforma il tuo estratto conto in una fotografia chiara delle tue finanze.
+            Conti, spese, stipendi, risparmi, mutuo e documenti fiscali in un unico posto.
         </p>
 
-        <p class="lp-hero-highlights">
-            Spese, cash flow, mutuo, risparmio e <strong>gestione dei soldi in coppia</strong>.<br>
-            Senza collegare il tuo conto bancario.
+        <p class="lp-hero-explainer">
+            FiscMoney trasforma i tuoi dati finanziari in una situazione semplice da capire, così sai quanto hai, dove spendi e quanto puoi davvero permetterti di spendere.
         </p>
 
-        <div class="lp-cta-group">
-            <a href="#joinBetaAnchor" onclick="openAuthModal('register')" class="lp-btn-primary">
-                <span>🟦 Entra nella Beta di FiscMoney</span>
-                <span>➔</span>
+        <div class="lp-cta-wrap">
+            <a href="#authSection" onclick="switchAuthTab('register')" class="lp-btn-hero">
+                <span>Inizia gratis</span>
+                <span>→</span>
             </a>
-
-            <div class="lp-hero-trust-subtext">
-                <span class="lp-hero-trust-item">
-                    <span>🔒</span> Non chiediamo mai le credenziali della tua banca
-                </span>
-                <span class="lp-hero-trust-item">
-                    <span>✨</span> Accesso Gratuito
-                </span>
+            <div class="lp-hero-trust">
+                <span>🔒</span>
+                <span>Nessun conto bancario da collegare. Importa il tuo estratto conto e inizia.</span>
             </div>
-        </div>
         </div>
     </section>
 
 
     <!-- ========================================================== -->
-    <!-- 2. IL VERO PROBLEMA                                        -->
+    <!-- 2. ANCORA UN EXCEL PER GESTIRE I SOLDI DI CASA?            -->
     <!-- ========================================================== -->
     <section class="lp-section">
-        <div class="lp-problem-card">
-            <div class="lp-problem-lead">
-                Il tuo conto corrente ti dice <span>quanti</span> soldi hai.<br>
-                Non cosa sta succedendo ai tuoi soldi.
-            </div>
-
-            <p style="color: var(--lp-text-muted); font-size: 0.95rem; margin: 0 auto; max-width: 600px;">
-                Ogni mese arrivano stipendio, addebiti e decine di movimenti sparsi:
-            </p>
-
-            <div class="lp-expenses-pills">
-                <span class="lp-expense-tag">💼 Stipendio</span>
-                <span class="lp-expense-tag">🏠 Mutuo Casa</span>
-                <span class="lp-expense-tag">⚡ Bollette Luce & Gas</span>
-                <span class="lp-expense-tag">🛒 Spesa Supermercato</span>
-                <span class="lp-expense-tag">📦 Amazon</span>
-                <span class="lp-expense-tag">🍕 Cene & Ristoranti</span>
-                <span class="lp-expense-tag">🚗 Assicurazione & Bollo</span>
-                <span class="lp-expense-tag">📺 Abbonamenti Streaming</span>
-                <span class="lp-expense-tag">🚨 Spese Impreviste</span>
-            </div>
-
-            <div class="lp-punchline">
-                “Ma come ho fatto a spendere così tanto?”
-            </div>
-            <p style="color: #fff; font-size: 1.08rem; font-weight: 800; margin-top: 10px; letter-spacing: -0.2px;">
-                FiscMoney trova i soldi che non sapevi di spendere.
-            </p>
-            <p style="color: var(--lp-text-muted); font-size: 0.88rem; margin-top: 4px;">
-                Dalle micro-spese ricorrenti agli addebiti dimenticati, fino alle spese anticipate per la casa.
-            </p>
-        </div>
-    </section>
-
-
-    <!-- ========================================================== -->
-    <!-- 3. COME FUNZIONA IN 3 PASSI                                -->
-    <!-- ========================================================== -->
-    <section class="lp-section" style="text-align: center;">
-        <div style="font-size: 0.8rem; font-weight: 800; color: var(--lp-accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
-            SEMPLICE & VELOCE
-        </div>
-        <h2 style="font-size: clamp(1.4rem, 3.2vw, 2rem); font-weight: 900; color: #fff; margin-bottom: 6px;">
-            Carica il tuo estratto conto. Il resto lo fa FiscMoney.
-        </h2>
-        <p style="color: var(--lp-text-muted); font-size: 0.92rem; max-width: 580px; margin: 0 auto;">
-            Compatibilità immediata con i formati Excel e CSV delle banche italiane.
-        </p>
-
-        <div class="lp-steps-grid">
-            <div class="lp-step-card">
-                <div class="lp-step-num">1</div>
-                <div class="lp-step-title">Importa</div>
-                <p class="lp-step-desc">Trascina il CSV o XLSX scaricato dal tuo home banking. Non ci colleghiamo mai al tuo conto.</p>
-            </div>
-
-            <div class="lp-step-card">
-                <div class="lp-step-num">2</div>
-                <div class="lp-step-title">FiscMoney organizza</div>
-                <p class="lp-step-desc">Le transazioni vengono catalogate, memorizzate con auto-apprendimento e riconciliate.</p>
-            </div>
-
-            <div class="lp-step-card">
-                <div class="lp-step-num">3</div>
-                <div class="lp-step-title">Capisci</div>
-                <p class="lp-step-desc">Scopri dove finiscono i soldi, monitora l'andamento nel tempo e vedi cosa puoi permetterti oggi.</p>
-            </div>
-        </div>
-    </section>
-
-
-    <!-- ========================================================== -->
-    <!-- 4. IL VERO DIFFERENZIATORE: I SOLDI DI COPPIA              -->
-    <!-- ========================================================== -->
-    <section class="lp-section">
-        <div class="lp-couple-card">
-            <div class="lp-feature-header">
-                <div class="lp-feature-kicker">💑 IL VERO DIFFERENZIATORE</div>
-                <div class="lp-feature-title">I soldi di coppia diventano finalmente semplici.</div>
-                <p style="color: var(--lp-text-body); font-size: 0.92rem; margin-top: 6px;">
-                    FiscMoney confronta automaticamente le spese condivise di casa e calcola chi ha anticipato cosa in tempo reale.
-                </p>
-            </div>
-
-            <!-- Realistic Couple Refund Simulation Widget -->
-            <div class="lp-couple-widget-mock">
-                <div style="font-size: 0.78rem; font-weight: 800; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
-                    Bilancio Condiviso Nucleo
-                </div>
-                <div class="lp-couple-amount-lead">
-                    € 1.259,52
-                </div>
-                <div class="lp-couple-claim-subtext">
-                    Paolo deve alla sua compagna Maria
-                </div>
-                <div>
-                    <span class="lp-couple-pill-summary">
-                        <span>⚖️</span> Quota 50/50 Riconciliata &bull; Nessuna spesa persa
-                    </span>
-                </div>
-            </div>
-
-            <div class="lp-feature-footer-quote">
-                “Basta fogli Excel. Basta calcoli a fine mese. Basta 'quanto ti devo?'”
-            </div>
-        </div>
-    </section>
-
-
-    <!-- ========================================================== -->
-    <!-- 5. SAFE-TO-SPEND: QUANTO PUOI DAVVERO SPENDERE             -->
-    <!-- ========================================================== -->
-    <section class="lp-section">
-        <div class="lp-safetospend-card">
-            <div class="lp-feature-header">
-                <div class="lp-feature-kicker lp-safe-kicker">🎯 FEATURE PROTAGONISTA</div>
-                <div class="lp-feature-title">Non guardare solo quanto hai. Scopri quanto puoi spendere.</div>
-                <p style="color: var(--lp-text-body); font-size: 0.92rem; margin-top: 6px;">
-                    Puoi avere € 2.000 sul conto e non poterli realmente toccare perché ti aspettano mutuo, bollette e scadenze già programmate.
-                </p>
-            </div>
-
-            <div class="lp-safe-widget-mock">
-                <div class="lp-safe-widget-left">
-                    <div style="font-size: 0.75rem; font-weight: 800; color: #86efac; text-transform: uppercase; letter-spacing: 0.5px;">
-                        Safe-to-Spend Libero Oggi
-                    </div>
-                    <div class="lp-safe-amount">
-                        € 584,20
-                    </div>
-                    <div style="font-size: 0.78rem; color: #a7f3d0; font-weight: 600;">
-                        ✓ Già al netto di mutuo, bollette e target di risparmio
-                    </div>
-                </div>
-
-                <div class="lp-safe-math-strip">
-                    <span class="lp-safe-math-tag">🏠 Mutuo protetto</span>
-                    <span class="lp-safe-math-tag">⚡ Utenze accantonate</span>
-                    <span class="lp-safe-math-tag">🎯 Risparmio 20%</span>
-                </div>
-            </div>
-
-            <p style="text-align: center; color: #cbd5e1; font-size: 0.95rem; margin: 0;">
-                FiscMoney considera entrate, impegni e rate previste per rispondere a un'unica domanda chiave: <strong>“Quanto posso spendere oggi a cuor leggero?”</strong>
-            </p>
-        </div>
-    </section>
-
-
-    <!-- ========================================================== -->
-    <!-- 6. VISIONE COMPLETA DELLE TUE FINANZE                      -->
-    <!-- ========================================================== -->
-    <section class="lp-section" style="text-align: center;">
-        <div style="font-size: 0.8rem; font-weight: 800; color: var(--lp-accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
-            PIATTAFORMA INTEGRATA
-        </div>
-        <h2 style="font-size: clamp(1.4rem, 3.2vw, 2rem); font-weight: 900; color: #fff; margin-bottom: 6px;">
-            Non solo spese. Una visione completa delle tue finanze.
-        </h2>
-        <p style="color: var(--lp-text-muted); font-size: 0.92rem; max-width: 580px; margin: 0 auto;">
-            Un solo posto per gestire tutta la vita economica e fiscale della casa.
-        </p>
-
-        <div class="lp-four-pillars-grid">
-            <div class="lp-pillar-box">
-                <span class="lp-pillar-icon">🏠</span>
-                <div class="lp-pillar-name">Casa & Mutuo</div>
-                <div class="lp-pillar-sub">Piano ammortamento, tasso, interessi deducibili e spese di manutenzione.</div>
-            </div>
-
-            <div class="lp-pillar-box">
-                <span class="lp-pillar-icon">💰</span>
-                <div class="lp-pillar-name">Cash Flow</div>
-                <div class="lp-pillar-sub">Entrate, uscite fisse e andamento del risparmio netto mese dopo mese.</div>
-            </div>
-
-            <div class="lp-pillar-box">
-                <span class="lp-pillar-icon">👨‍👩‍👧‍👦</span>
-                <div class="lp-pillar-name">Famiglia</div>
-                <div class="lp-pillar-sub">Più membri, conti separati, spese condivise e patrimonio aggregato.</div>
-            </div>
-
-            <div class="lp-pillar-box">
-                <span class="lp-pillar-icon">🧾</span>
-                <div class="lp-pillar-name">Fisco & 730</div>
-                <div class="lp-pillar-sub">Spese sanitarie, detrazioni IRPEF 19% e monitoraggio cedolini stipendio.</div>
-            </div>
-        </div>
-    </section>
-
-
-    <!-- ========================================================== -->
-    <!-- 7. PRIVACY & SICUREZZA BANCHE                              -->
-    <!-- ========================================================== -->
-    <section class="lp-section">
-        <div class="lp-privacy-card">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                <span style="font-size: 1.5rem;">🔐</span>
-                <h3 style="font-size: 1.35rem; font-weight: 800; color: #fff; margin: 0;">I tuoi soldi restano tuoi.</h3>
-            </div>
-            <p style="color: var(--lp-text-body); font-size: 0.95rem; margin: 0 0 16px 0; line-height: 1.5;">
-                FiscMoney non ha bisogno delle tue credenziali bancarie. Tu scarichi l'estratto conto dal tuo home banking abituale e decidi liberamente cosa caricare.
-            </p>
-
-            <div class="lp-privacy-list">
-                <div class="lp-privacy-item">
-                    <span style="color: #f87171;">✕</span> Nessuna password bancaria
-                </div>
-                <div class="lp-privacy-item">
-                    <span style="color: #f87171;">✕</span> Nessun accesso al tuo conto
-                </div>
-                <div class="lp-privacy-item">
-                    <span style="color: #34d399;">✓</span> Sei tu a controllare i dati
-                </div>
-                <div class="lp-privacy-item">
-                    <span style="color: #34d399;">✓</span> Cancellazione in ogni momento
-                </div>
-            </div>
-
-            <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                <span style="font-size: 0.8rem; color: var(--lp-text-muted);">Crittografia AES e conformità GDPR italiana.</span>
-                <a href="/privacy" target="_blank" style="color: var(--lp-accent); font-size: 0.82rem; text-decoration: underline; font-weight: 700;">Scopri come proteggiamo i tuoi dati →</a>
-            </div>
-        </div>
-    </section>
-
-
-    <!-- ========================================================== -->
-    <!-- 8. CHI C'È DIETRO FISCMONEY (FOUNDER STORY)                -->
-    <!-- ========================================================== -->
-    <section class="lp-section">
-        <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.65), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 32px 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
-            <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 16px;">
-                <div style="width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg, #0284c7, #38bdf8); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; flex-shrink: 0; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.35);">
-                    👤
-                </div>
-                <div>
-                    <span style="font-size: 0.75rem; font-weight: 800; color: var(--lp-accent); text-transform: uppercase; letter-spacing: 0.8px;">
-                        DIETRO FISCMONEY
-                    </span>
-                    <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin: 2px 0 0 0;">
-                        Ciao, sono Leopoldo.
-                    </h3>
-                </div>
-            </div>
-
-            <div style="font-size: 0.95rem; color: #cbd5e1; line-height: 1.65; display: flex; flex-direction: column; gap: 12px;">
-                <p style="margin: 0;">
-                    Per oltre 5 anni ho gestito le finanze di casa con un foglio Excel sempre più complesso: tra mutuo, spese anticipate con la compagna, bollette e scadenze annuali, ogni fine mese era un mal di testa.
-                </p>
-                <p style="margin: 0;">
-                    Non volevo cedere le password del mio conto a un'app sconosciuta, ma ero stanco di fare calcoli a mano.
-                </p>
-                <p style="margin: 0;">
-                    Così ho costruito FiscMoney: prima per risolvere il mio problema quotidiano, e oggi per condividerlo con le prime 100 famiglie che vogliono avere il controllo vero dei propri soldi, senza stress e senza cedere la propria privacy bancaria.
-                </p>
-            </div>
-
-            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px dashed rgba(255, 255, 255, 0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                <div>
-                    <strong style="color: #fff; font-size: 0.92rem; display: block;">Leopoldo Di Paolo</strong>
-                    <span style="color: var(--lp-text-muted); font-size: 0.78rem;">Ideatore e Sviluppatore di FiscMoney</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 0.8rem; color: var(--lp-text-muted);">Hai domande o idee? Scrivimi a:</span>
-                    <a href="mailto:info@fiscmoney.it" style="display: inline-flex; align-items: center; gap: 6px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; font-weight: 700; font-size: 0.82rem; padding: 6px 12px; border-radius: 8px; text-decoration: none;">
-                        <span>✉️</span> <span>info@fiscmoney.it</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-
-    <!-- ========================================================== -->
-    <!-- 9. BETA PRIVATA: PRIMI 100 UTENTI                          -->
-    <!-- ========================================================== -->
-    <section class="lp-section lp-auth-card-anchor" id="joinBetaAnchor">
-        <div class="lp-beta-card">
-            <div class="lp-beta-counter-badge">
-                <span>🧪 POSTI LIMITATI: PRIMI 100 UTENTI</span>
-            </div>
-
-            <h2 class="lp-beta-title">
-                Stiamo costruendo FiscMoney insieme ai primi 100 utenti.
+        <div class="lp-pain-box">
+            <span class="lp-pain-tag">Perché nasce FiscMoney</span>
+            <h2 class="lp-pain-title">
+                Ancora un Excel per gestire i soldi di casa?
             </h2>
 
-            <p class="lp-beta-desc">
-                FiscMoney è appena nato. Prima di aprirlo a tutti vogliamo provarlo con un piccolo gruppo di persone reali, capire cosa funziona al meglio e quali funzioni servono davvero.
+            <p style="color: #cbd5e1; font-size: 1rem; margin-bottom: 20px;">
+                Ogni mese aggiorni fogli, formule e categorie:
             </p>
 
-            <div class="lp-beta-perks">
-                <span>✓ Utilizzi FiscMoney gratuitamente</span>
-                <span>✓ Tutte le funzionalità attive (Coppia, 730, Safe-to-Spend)</span>
-                <span>✓ Canale diretto per feedback e suggerimenti</span>
-                <span>✓ Contribuisci a decidere cosa costruire dopo</span>
+            <div class="lp-excel-friction-list">
+                <div class="lp-friction-item">
+                    <span class="lp-friction-icon">🏦</span>
+                    <span>Poi controlli il conto corrente</span>
+                </div>
+                <div class="lp-friction-item">
+                    <span class="lp-friction-icon">💳</span>
+                    <span>Poi la carta</span>
+                </div>
+                <div class="lp-friction-item">
+                    <span class="lp-friction-icon">💼</span>
+                    <span>Poi la busta paga</span>
+                </div>
+                <div class="lp-friction-item">
+                    <span class="lp-friction-icon">🏠</span>
+                    <span>Poi il mutuo</span>
+                </div>
+                <div class="lp-friction-item">
+                    <span class="lp-friction-icon">🧾</span>
+                    <span>Poi cerchi i documenti per il 730</span>
+                </div>
             </div>
 
-            <!-- Interactive Auth Card (Login & Register Integrated) -->
+            <div class="lp-pain-question">
+                "Ma quanto abbiamo davvero speso questo mese?"
+            </div>
+
+            <div class="lp-pain-resolution">
+                FiscMoney nasce per eliminare tutto questo.<br>
+                Un unico posto per capire la situazione finanziaria della tua casa.
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 3. IMPORTA. ORGANIZZA. CAPISCI.                            -->
+    <!-- ========================================================== -->
+    <section class="lp-section">
+        <div class="lp-steps-header">
+            <h2 style="font-size: clamp(1.6rem, 3.5vw, 2.4rem); font-weight: 900; color: #fff; margin-bottom: 8px;">
+                Importa. Organizza. Capisci.
+            </h2>
+            <p style="color: var(--lp-text-muted); font-size: 1rem;">
+                Non devi diventare un esperto di finanza. Devi solo partire dai dati che hai già.
+            </p>
+        </div>
+
+        <div class="lp-steps-grid">
+            <!-- Step 1 -->
+            <div class="lp-step-card">
+                <span class="lp-step-num">01 — IMPORTA</span>
+                <h3 class="lp-step-title">Carica i tuoi dati</h3>
+                <p class="lp-step-desc">
+                    Carica il tuo estratto conto, le tue buste paga e i documenti che vuoi organizzare con un semplice file Excel, CSV o PDF.
+                </p>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="lp-step-card">
+                <span class="lp-step-num">02 — ORGANIZZA</span>
+                <h3 class="lp-step-title">FiscMoney fa ordine</h3>
+                <p class="lp-step-desc">
+                    FiscMoney organizza entrate, spese e informazioni finanziarie in modo semplice, pulito e categorizzato in automatico.
+                </p>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="lp-step-card">
+                <span class="lp-step-num">03 — CAPISCI</span>
+                <h3 class="lp-step-title">Prendi il controllo</h3>
+                <p class="lp-step-desc">
+                    Scopri quanto spendi, quanto risparmi e come sta cambiando la tua reale situazione economica nel tempo.
+                </p>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 10px;">
+            <a href="#authSection" onclick="switchAuthTab('register')" class="lp-btn-hero" style="font-size: 1rem; padding: 12px 30px;">
+                <span>Inizia gratis →</span>
+            </a>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 4. QUANTO PUOI DAVVERO SPENDERE? (SAFE-TO-SPEND)           -->
+    <!-- ========================================================== -->
+    <section class="lp-section">
+        <div class="lp-feature-card">
+            <span class="lp-feature-kicker" style="color: #38bdf8;">🎯 IL TUO SAFE-TO-SPEND</span>
+            <h2 class="lp-feature-title">Quanto puoi davvero spendere?</h2>
+            
+            <p class="lp-feature-body">
+                Avere <strong>€2.000</strong> sul conto non significa avere €2.000 da spendere.<br>
+                Ci sono bollette da pagare. C'è il mutuo. Ci sono le spese previste. Ci sono gli obiettivi di risparmio.<br>
+                Per questo FiscMoney ti aiuta a distinguere <em>quanto hai</em> da <em>quanto puoi realmente spendere</em>.
+            </p>
+
+            <!-- Interactive Visual Safe-to-Spend Mockup -->
+            <div class="lp-mock-box" style="border-color: rgba(56, 189, 248, 0.3);">
+                <div class="lp-mock-kpi-row">
+                    <div>
+                        <span style="font-size: 0.76rem; color: #94a3b8; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px;">Il tuo Safe-to-Spend</span>
+                        <div style="font-size: 0.9rem; color: #fff; margin-top: 2px;">Disponibile oggi</div>
+                    </div>
+                    <div class="lp-mock-big-num" style="color: #38bdf8;">€ 1.284</div>
+                </div>
+
+                <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 10px; font-weight: 700; text-transform: uppercase;">
+                    Dopo aver considerato in automatico:
+                </div>
+                <div class="lp-mock-tags-list">
+                    <div class="lp-mock-tag-item">
+                        <span>📌 Spese previste & utenze del mese</span>
+                        <strong style="color: #f87171;">-€ 480</strong>
+                    </div>
+                    <div class="lp-mock-tag-item">
+                        <span>🏠 Mutuo prima casa</span>
+                        <strong style="color: #f87171;">-€ 750</strong>
+                    </div>
+                    <div class="lp-mock-tag-item">
+                        <span>💰 Obiettivi di risparmio concordati</span>
+                        <strong style="color: #34d399;">-€ 500</strong>
+                    </div>
+                    <div class="lp-mock-tag-item">
+                        <span>📅 Altre uscite programmate del mese</span>
+                        <strong style="color: #c084fc;">-€ 120</strong>
+                    </div>
+                </div>
+            </div>
+
+            <p style="font-size: 0.92rem; color: #cbd5e1; margin-bottom: 20px;">
+                Sai esattamente quanto puoi spendere ogni giorno senza perdere di vista il resto del mese.
+            </p>
+
+            <a href="#authSection" onclick="switchAuthTab('register')" class="lp-nav-btn-cta" style="display: inline-block; padding: 10px 24px; font-size: 0.92rem;">
+                Scopri il tuo Safe-to-Spend →
+            </a>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 5. DOVE FINISCONO I TUOI SOLDI?                            -->
+    <!-- ========================================================== -->
+    <section class="lp-section">
+        <div class="lp-feature-card">
+            <span class="lp-feature-kicker" style="color: #10b981;">📊 FOTOGRAFIA DEL MESE</span>
+            <h2 class="lp-feature-title">Dove finiscono i tuoi soldi?</h2>
+
+            <p class="lp-feature-body">
+                Non limitarti a guardare il saldo.<br>
+                FiscMoney trasforma le tue transazioni in una fotografia chiara ed esaustiva delle tue finanze.
+            </p>
+
+            <!-- Monthly Photography Mockup -->
+            <div class="lp-mock-box" style="border-color: rgba(16, 185, 129, 0.3);">
+                <div style="font-size: 0.8rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 12px;">Questo mese</div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                    <div style="background: rgba(255,255,255,0.04); border-radius: 10px; padding: 10px 12px;">
+                        <span style="font-size: 0.72rem; color: #94a3b8;">Entrate</span>
+                        <div style="font-size: 1.25rem; font-weight: 900; color: #fff; margin-top: 2px;">€ 3.420</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.04); border-radius: 10px; padding: 10px 12px;">
+                        <span style="font-size: 0.72rem; color: #94a3b8;">Spese</span>
+                        <div style="font-size: 1.25rem; font-weight: 900; color: #f87171; margin-top: 2px;">€ 1.936</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.04); border-radius: 10px; padding: 10px 12px;">
+                        <span style="font-size: 0.72rem; color: #94a3b8;">Risparmio</span>
+                        <div style="font-size: 1.25rem; font-weight: 900; color: #34d399; margin-top: 2px;">€ 800</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.04); border-radius: 10px; padding: 10px 12px;">
+                        <span style="font-size: 0.72rem; color: #94a3b8;">Disponibile</span>
+                        <div style="font-size: 1.25rem; font-weight: 900; color: #38bdf8; margin-top: 2px;">€ 684</div>
+                    </div>
+                </div>
+
+                <div style="font-size: 0.76rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 8px;">
+                    E puoi vedere immediatamente dove stanno andando i tuoi soldi:
+                </div>
+                <div class="lp-mock-tags-list">
+                    <div class="lp-mock-tag-item">
+                        <span>🏠 Casa & Utenze</span>
+                        <strong style="color: #fff;">€ 920</strong>
+                    </div>
+                    <div class="lp-mock-tag-item">
+                        <span>🛒 Alimentari & Spesa</span>
+                        <strong style="color: #fff;">€ 340</strong>
+                    </div>
+                    <div class="lp-mock-tag-item">
+                        <span>🚗 Trasporti & Carburante</span>
+                        <strong style="color: #fff;">€ 180</strong>
+                    </div>
+                    <div class="lp-mock-tag-item">
+                        <span>🎭 Tempo libero & Ristoranti</span>
+                        <strong style="color: #fff;">€ 220</strong>
+                    </div>
+                    <div class="lp-mock-tag-item">
+                        <span>📱 Abbonamenti & Streaming</span>
+                        <strong style="color: #fff;">€ 87</strong>
+                    </div>
+                </div>
+            </div>
+
+            <p style="font-size: 0.92rem; color: #cbd5e1;">
+                Finalmente sai dove stai spendendo e dove puoi migliorare, senza compilare manualmente formule o grafici.
+            </p>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 6. I SOLDI DI CASA SONO DI DUE PERSONE (COPPIA)            -->
+    <!-- ========================================================== -->
+    <section class="lp-section">
+        <div class="lp-feature-card" style="border-color: rgba(236, 72, 153, 0.35);">
+            <span class="lp-feature-kicker" style="color: #f472b6;">👫 SPESE CONDIVISE & COPPIA</span>
+            <h2 class="lp-feature-title">
+                I soldi di casa sono di due persone.<br>Perché gestirli su due Excel?
+            </h2>
+
+            <p class="lp-feature-body">
+                Quando vivi in coppia, le spese diventano presto complicate:<br>
+                <em>Chi ha pagato la spesa? Chi ha pagato la bolletta? Quanto deve mettere ciascuno? Chi deve cosa?</em><br>
+                FiscMoney tiene insieme la situazione finanziaria della coppia senza perdere di vista le spese individuali.
+            </p>
+
+            <!-- Couple Settlement Box -->
+            <div class="lp-mock-box" style="border-color: rgba(236, 72, 153, 0.25);">
+                <div class="lp-couple-pill-box">
+                    <div class="lp-couple-pill">
+                        <div>
+                            <span style="font-size: 0.72rem; color: #94a3b8;">👩 Maria ha pagato</span>
+                            <div style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;">€ 840</div>
+                        </div>
+                    </div>
+                    <div class="lp-couple-pill">
+                        <div>
+                            <span style="font-size: 0.72rem; color: #94a3b8;">👨 Paolo ha pagato</span>
+                            <div style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;">€ 560</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lp-couple-settle-banner">
+                    <div>
+                        <div style="font-size: 0.72rem; color: #a7f3d0; text-transform: uppercase;">Quota corretta (50/50)</div>
+                        <div style="font-size: 0.88rem; font-weight: 700;">€ 700 a testa</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 1.15rem; color: #34d399; font-weight: 900;">Paolo deve a Maria € 140</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.82rem; color: #94a3b8; justify-content: center; margin-top: 10px;">
+                    <span>✓ Niente calcoli a mano</span>
+                    <span>✓ Niente fogli Excel</span>
+                    <span>✓ Niente "aspetta che controllo"</span>
+                </div>
+            </div>
+
+            <a href="#authSection" onclick="switchAuthTab('register')" class="lp-nav-btn-cta" style="display: inline-block; padding: 10px 24px; font-size: 0.92rem; background: linear-gradient(135deg, #db2777, #f472b6); color: #fff;">
+                Gestisci le spese di coppia →
+            </a>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 7. LA TUA BUSTA PAGA, FINALMENTE COMPRENSIBILE            -->
+    <!-- ========================================================== -->
+    <section class="lp-section">
+        <div class="lp-feature-card">
+            <span class="lp-feature-kicker" style="color: #c084fc;">💼 ANALISI BUSTA PAGA</span>
+            <h2 class="lp-feature-title">
+                La tua busta paga, finalmente comprensibile.
+            </h2>
+
+            <p class="lp-feature-body">
+                La busta paga è piena di numeri.<br>
+                Ma quello che vuoi sapere è semplice: <strong>"Perché questo mese ho preso questa cifra?"</strong><br>
+                Con FiscMoney puoi organizzare e analizzare le tue buste paga per capire meglio:
+                stipendio lordo e netto, contributi, imposte, detrazioni, TFR e variazioni rispetto ai mesi precedenti.
+            </p>
+
+            <!-- Paystub Comparison Mockup -->
+            <div class="lp-mock-box" style="border-color: rgba(192, 132, 252, 0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
+                    <div>
+                        <span style="font-size: 0.74rem; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Un esempio concreto</span>
+                        <div style="font-size: 1.6rem; font-weight: 900; color: #fff; margin-top: 2px;">
+                            € 2.184 <span style="font-size: 0.85rem; color: #94a3b8; font-weight: 600;">(Netto questo mese)</span>
+                        </div>
+                        <div style="font-size: 0.85rem; color: #94a3b8;">Netto mese precedente: € 2.057</div>
+                    </div>
+                    <div class="lp-paystub-diff">
+                        <span>📈 +€ 127</span>
+                    </div>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.04); border-radius: 10px; padding: 10px 14px; font-size: 0.85rem; color: #cbd5e1;">
+                    💡 FiscMoney ti spiega esattamente quali componenti hanno determinato la variazione (ore straordinari, acconti addizionali o nuove detrazioni applicate).
+                </div>
+            </div>
+
+            <a href="#authSection" onclick="switchAuthTab('register')" class="lp-nav-btn-cta" style="display: inline-block; padding: 10px 24px; font-size: 0.92rem;">
+                Analizza la tua busta paga →
+            </a>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 8. IL TUO FISCO NON DOVREBBE INIZIARE A MAGGIO (730)       -->
+    <!-- ========================================================== -->
+    <section class="lp-section">
+        <div class="lp-feature-card">
+            <span class="lp-feature-kicker" style="color: #f59e0b;">🏛️ FISCO & DETRAZIONI 730</span>
+            <h2 class="lp-feature-title">
+                Il tuo fisco non dovrebbe iniziare a maggio.
+            </h2>
+
+            <p class="lp-feature-body">
+                Organizza durante l'anno quello che ti servirà per il 730.<br>
+                Documenti fiscali, spese sanitarie e ricevute rischiano di essere sparsi tra email, cartelle, cassetti e PDF.<br>
+                FiscMoney ti aiuta a raccoglierli e organizzarli durante l'anno. Così quando arriva il momento della dichiarazione, non devi ricominciare da zero.
+            </p>
+
+            <!-- 730 Year Flow Visual -->
+            <div class="lp-730-flow">
+                <div class="lp-730-step">
+                    <span>📄</span>
+                    <span>Raccogli i documenti</span>
+                </div>
+                <span class="lp-730-arrow">→</span>
+                <div class="lp-730-step">
+                    <span>🧾</span>
+                    <span>Organizzi le spese</span>
+                </div>
+                <span class="lp-730-arrow">→</span>
+                <div class="lp-730-step">
+                    <span>📊</span>
+                    <span>Costruisci la situazione</span>
+                </div>
+                <span class="lp-730-arrow">→</span>
+                <div class="lp-730-step" style="color: #34d399;">
+                    <span>📋</span>
+                    <span>Arrivi al 730 ordinato</span>
+                </div>
+            </div>
+
+            <a href="#authSection" onclick="switchAuthTab('register')" class="lp-nav-btn-cta" style="display: inline-block; padding: 10px 24px; font-size: 0.92rem;">
+                Organizza il tuo anno fiscale →
+            </a>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 9. UNA SOLA SITUAZIONE FINANZIARIA. TUTTA LA FAMIGLIA.     -->
+    <!-- ========================================================== -->
+    <section class="lp-section">
+        <div class="lp-pain-box" style="text-align: left;">
+            <span class="lp-pain-tag" style="color: #38bdf8;">Tutta la famiglia</span>
+            <h2 class="lp-pain-title" style="margin-bottom: 14px;">
+                Una sola situazione finanziaria. Tutta la famiglia.
+            </h2>
+            <p style="color: #cbd5e1; font-size: 1rem; line-height: 1.6; margin-bottom: 20px;">
+                La vita economica di una famiglia non sta dentro un singolo conto corrente.<br>
+                Ci sono <strong>stipendi, conti, carte, mutuo, bollette, spese quotidiane, risparmi e obiettivi</strong>.
+            </p>
+            <p style="color: var(--lp-text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 22px;">
+                FiscMoney ti permette di avere una visione complessiva della situazione economica della tua casa.<br>
+                <strong style="color: #fff;">Meno fogli. Meno calcoli. Più chiarezza.</strong>
+            </p>
+
+            <!-- 5 Strumenti a 1 Solo Posto: Prima vs Dopo -->
+            <div style="font-size: 0.8rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">
+                Da 5 strumenti a un solo posto:
+            </div>
+            <div class="lp-compare-grid">
+                <div class="lp-compare-col lp-compare-before">
+                    <div class="lp-compare-title" style="color: #f87171;">
+                        <span>❌</span> <span>Prima</span>
+                    </div>
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; font-size: 0.88rem; color: #cbd5e1;">
+                        <li>🏦 Conto corrente</li>
+                        <li>💳 Carta</li>
+                        <li>📊 Foglio Excel</li>
+                        <li>💼 Busta paga</li>
+                        <li>🧾 Documenti fiscali</li>
+                    </ul>
+                    <div style="margin-top: 14px; font-size: 0.82rem; color: #f87171; font-style: italic;">
+                        ↓ "Dove avevo segnato questa cosa?"
+                    </div>
+                </div>
+
+                <div class="lp-compare-col lp-compare-after">
+                    <div class="lp-compare-title" style="color: #34d399;">
+                        <span>💎</span> <span>Dopo con FiscMoney</span>
+                    </div>
+                    <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; font-size: 0.88rem; color: #fff; font-weight: 600;">
+                        <li>💶 Entrate</li>
+                        <li>💳 Spese</li>
+                        <li>📈 Risparmi</li>
+                        <li>👨‍👩‍👧‍👦 Famiglia & Coppia</li>
+                        <li>🏛️ Fisco & 730</li>
+                    </ul>
+                    <div style="margin-top: 14px; font-size: 0.82rem; color: #34d399; font-weight: 700;">
+                        ✓ Tutto organizzato in un unico posto.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 10. FISCMONEY È FATTO PER TE SE...                         -->
+    <!-- ========================================================== -->
+    <section class="lp-section">
+        <h2 style="font-size: clamp(1.5rem, 3.2vw, 2.2rem); font-weight: 900; color: #fff; text-align: center; margin-bottom: 24px;">
+            FiscMoney è fatto per te se...
+        </h2>
+
+        <div class="lp-checklist">
+            <div class="lp-check-item">
+                <span class="lp-check-icon">✓</span>
+                <span>Usi Excel per tenere sotto controllo le tue finanze.</span>
+            </div>
+            <div class="lp-check-item">
+                <span class="lp-check-icon">✓</span>
+                <span>Hai più conti o carte da monitorare.</span>
+            </div>
+            <div class="lp-check-item">
+                <span class="lp-check-icon">✓</span>
+                <span>Vivi in coppia e dividete le spese di casa.</span>
+            </div>
+            <div class="lp-check-item">
+                <span class="lp-check-icon">✓</span>
+                <span>Vuoi sapere con certezza quanto puoi realmente spendere ogni mese.</span>
+            </div>
+            <div class="lp-check-item">
+                <span class="lp-check-icon">✓</span>
+                <span>Vuoi capire meglio le voci della tua busta paga e perché cambia.</span>
+            </div>
+            <div class="lp-check-item">
+                <span class="lp-check-icon">✓</span>
+                <span>Vuoi arrivare a maggio con i documenti per il 730 già catalogati.</span>
+            </div>
+            <div class="lp-check-item">
+                <span class="lp-check-icon">✓</span>
+                <span>Vuoi sapere con trasparenza quanto stai realmente risparmiando.</span>
+            </div>
+        </div>
+
+        <!-- The Transparent Truth Section -->
+        <div style="background: rgba(0, 0, 0, 0.35); border: 1px dashed rgba(255, 255, 255, 0.12); border-radius: 16px; padding: 22px 24px; margin-top: 24px;">
+            <div style="font-size: 0.85rem; font-weight: 800; color: #f59e0b; text-transform: uppercase; margin-bottom: 6px;">
+                E se non vuoi gestire le tue finanze?
+            </div>
+            <p style="font-size: 0.92rem; color: #cbd5e1; line-height: 1.6; margin: 0;">
+                Va bene così. Se non ti interessa sapere dove finiscono i tuoi soldi, quanto stai risparmiando o come organizzare la situazione finanziaria della tua famiglia, probabilmente FiscMoney non fa per te.<br>
+                Ma se oggi usi Excel, fogli di calcolo e app diverse per cercare di tenere tutto sotto controllo... <strong>FiscMoney è fatto proprio per questo.</strong>
+            </p>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 11. I TUOI DATI FINANZIARI SONO TUOI (PRIVACY & SICUREZZA) -->
+    <!-- ========================================================== -->
+    <section class="lp-section">
+        <div style="text-align: center; margin-bottom: 24px;">
+            <span style="color: #38bdf8; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.8px;">Massima Riservatezza</span>
+            <h2 style="font-size: clamp(1.5rem, 3.2vw, 2.2rem); font-weight: 900; color: #fff; margin-top: 4px;">
+                I tuoi dati finanziari sono tuoi.
+            </h2>
+            <p style="color: var(--lp-text-muted); font-size: 0.95rem; max-width: 600px; margin: 8px auto 0 auto;">
+                Quando si parla di soldi, la privacy non è un dettaglio. Per questo siamo trasparenti su come vengono gestiti i tuoi dati.
+            </p>
+        </div>
+
+        <div class="lp-privacy-grid">
+            <div class="lp-privacy-card">
+                <span class="lp-privacy-icon">🔒</span>
+                <h3 class="lp-privacy-heading">Sicurezza</h3>
+                <p class="lp-privacy-desc">Protezione con crittografia end-to-end e credenziali di sicurezza isolate.</p>
+            </div>
+            <div class="lp-privacy-card">
+                <span class="lp-privacy-icon">👁️</span>
+                <h3 class="lp-privacy-heading">Trasparenza</h3>
+                <p class="lp-privacy-desc">Sai sempre quali informazioni vengono utilizzate e a quale esclusivo scopo.</p>
+            </div>
+            <div class="lp-privacy-card">
+                <span class="lp-privacy-icon">🗑️</span>
+                <h3 class="lp-privacy-heading">Controllo</h3>
+                <p class="lp-privacy-desc">Puoi esportare o eliminare definitivamente i tuoi dati in qualsiasi momento con 1 clic.</p>
+            </div>
+            <div class="lp-privacy-card">
+                <span class="lp-privacy-icon">🚫</span>
+                <h3 class="lp-privacy-heading">Nessuna sorpresa</h3>
+                <p class="lp-privacy-desc">Nessuna vendita di dati a terzi, nessuna pubblicità e nessun linguaggio complicato.</p>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <a href="/privacy" class="lp-nav-btn-login" style="display: inline-block; font-size: 0.82rem;">
+                Scopri come proteggiamo i tuoi dati →
+            </a>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 12. LE DOMANDE CHE TI FAI OGNI MESE (FAQ)                  -->
+    <!-- ========================================================== -->
+    <section class="lp-section">
+        <h2 style="font-size: clamp(1.5rem, 3.2vw, 2.2rem); font-weight: 900; color: #fff; text-align: center; margin-bottom: 24px;">
+            Le domande che ti fai ogni mese.
+        </h2>
+
+        <div>
+            <div class="lp-faq-item">
+                <div class="lp-faq-question" onclick="toggleFaq('faq1')">
+                    <span>Quanto ho speso?</span>
+                    <span id="faq1-arrow">▼</span>
+                </div>
+                <div id="faq1" class="lp-faq-answer" style="display: block;">
+                    FiscMoney organizza le tue transazioni ed estratti conto mostrandoti con chiarezza visiva come vengono distribuite le tue uscite.
+                </div>
+            </div>
+
+            <div class="lp-faq-item">
+                <div class="lp-faq-question" onclick="toggleFaq('faq2')">
+                    <span>Quanto sto risparmiando?</span>
+                    <span id="faq2-arrow">▼</span>
+                </div>
+                <div id="faq2" class="lp-faq-answer" style="display: block;">
+                    Puoi confrontare entrate, uscite e tasso di risparmio reale mese dopo mese per verificare se sei in linea con i tuoi piani.
+                </div>
+            </div>
+
+            <div class="lp-faq-item">
+                <div class="lp-faq-question" onclick="toggleFaq('faq3')">
+                    <span>Quanto posso spendere?</span>
+                    <span id="faq3-arrow">▼</span>
+                </div>
+                <div id="faq3" class="lp-faq-answer" style="display: block;">
+                    Il Safe-to-Spend calcola la tua reale disponibilità spendibile al netto di mutuo, bollette e impegni del mese, indicandoti anche la velocità libera giornaliera.
+                </div>
+            </div>
+
+            <div class="lp-faq-item">
+                <div class="lp-faq-question" onclick="toggleFaq('faq4')">
+                    <span>Quanto abbiamo speso come famiglia?</span>
+                    <span id="faq4-arrow">▼</span>
+                </div>
+                <div id="faq4" class="lp-faq-answer" style="display: block;">
+                    Puoi avere una visione complessiva condivisa delle spese di casa aggregando i flussi di tutta la famiglia in un unico cockpit.
+                </div>
+            </div>
+
+            <div class="lp-faq-item">
+                <div class="lp-faq-question" onclick="toggleFaq('faq5')">
+                    <span>Chi deve cosa nella coppia?</span>
+                    <span id="faq5-arrow">▼</span>
+                </div>
+                <div id="faq5" class="lp-faq-answer" style="display: block;">
+                    FiscMoney calcola istantaneamente il saldo dare/avere tra i partner per le spese comuni, azzerando le discussioni e i conti manuali.
+                </div>
+            </div>
+
+            <div class="lp-faq-item">
+                <div class="lp-faq-question" onclick="toggleFaq('faq6')">
+                    <span>Cosa mi serve per il 730?</span>
+                    <span id="faq6-arrow">▼</span>
+                </div>
+                <div id="faq6" class="lp-faq-answer" style="display: block;">
+                    Puoi organizzare durante l'anno i documenti, gli scontrini sanitari (#detraibile_730) e le spese del mutuo per arrivare a maggio con tutto pronto.
+                </div>
+            </div>
+
+            <div class="lp-faq-item">
+                <div class="lp-faq-question" onclick="toggleFaq('faq7')">
+                    <span>Cosa significa la mia busta paga?</span>
+                    <span id="faq7-arrow">▼</span>
+                </div>
+                <div id="faq7" class="lp-faq-answer" style="display: block;">
+                    Puoi analizzare le voci del cedolino, visualizzare la quota di contributi, imposte e TFR e capire perché lo stipendio netto è variato rispetto al mese precedente.
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- ========================================================== -->
+    <!-- 13. BASTA EXCEL & AUTH PANEL (REGISTRAZIONE / LOGIN)        -->
+    <!-- ========================================================== -->
+    <section class="lp-section" id="authSection">
+        <div class="lp-final-box">
+            <h2 style="font-size: clamp(2rem, 4.5vw, 3rem); font-weight: 900; color: #fff; margin-bottom: 10px; letter-spacing: -1px;">
+                Basta Excel.
+            </h2>
+            <p style="font-size: 1.15rem; color: #cbd5e1; max-width: 600px; margin: 0 auto 8px auto; font-weight: 600;">
+                Porta la tua situazione finanziaria in FiscMoney.
+            </p>
+            <p style="font-size: 0.95rem; color: #94a3b8; margin-bottom: 24px;">
+                Conti, spese, stipendi, risparmi, famiglia e fisco. Tutto in un unico posto.
+            </p>
+
+            <!-- Interactive Auth Card (Registration & Login Integrated) -->
             <div class="lp-auth-panel" id="authBox">
                 <div class="lp-tabs-bar">
                     <button type="button" id="tabBtnRegister" class="lp-tab-btn active" onclick="switchAuthTab('register')">
-                        <span>✨</span> Entra nella Beta
+                        <span>✨</span> Inizia gratis
                     </button>
                     <button type="button" id="tabBtnLogin" class="lp-tab-btn" onclick="switchAuthTab('login')">
-                        <span>🔑</span> Ho già un Account
+                        <span>🔑</span> Ho già un account
                     </button>
                 </div>
 
@@ -1234,19 +1568,19 @@
                         </div>
 
                         <div class="lp-input-group">
-                            <label for="regPassword">Password di Sicurezza (min. 8 car.)</label>
+                            <label for="regPassword">Password (min. 8 caratteri)</label>
                             <input type="password" id="regPassword" name="password" minlength="8" class="lp-input" placeholder="••••••••" required autocomplete="new-password">
                         </div>
 
                         <div style="margin-bottom: 16px;">
                             <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; font-size: 0.76rem; color: #cbd5e1; line-height: 1.35;">
                                 <input type="checkbox" name="privacy_consent" value="1" required style="margin-top: 2px; accent-color: var(--lp-accent); width: 16px; height: 16px; flex-shrink: 0;">
-                                <span>Accetto l'<a href="/privacy" target="_blank" style="color: #38bdf8; text-decoration: underline; font-weight: 600;">Informativa Privacy</a>. Dati privati, protetti e mai ceduti a terzi.</span>
+                                <span>Accetto l'<a href="/privacy" target="_blank" style="color: #38bdf8; text-decoration: underline; font-weight: 600;">Informativa Privacy</a>. Dati privati, crittografati e mai ceduti a terzi.</span>
                             </label>
                         </div>
 
                         <button type="submit" class="lp-submit-btn">
-                            <span>Entra nella Beta Gratuita</span>
+                            <span>Inizia gratis adesso</span>
                             <span>➔</span>
                         </button>
                     </form>
@@ -1273,66 +1607,59 @@
                 </div>
             </div>
 
-        </div>
-    </section>
-
-
-    <!-- ========================================================== -->
-    <!-- 9. FAQ ESSENZIALI                                          -->
-    <!-- ========================================================== -->
-    <section class="lp-section">
-        <h3 style="text-align: center; font-size: 1.4rem; font-weight: 800; color: #fff; margin-bottom: 22px;">
-            Domande Frequenti (FAQ)
-        </h3>
-
-        <div class="lp-faq-container">
-            <div class="lp-faq-item">
-                <div class="lp-faq-question"><span>❓</span> FiscMoney si collega direttamente al mio conto corrente?</div>
-                <p class="lp-faq-answer">No. Non è necessario e non ti chiederemo mai le credenziali bancarie. Scarichi il file CSV o Excel dal tuo home banking e lo importi con un drag & drop in pochi secondi.</p>
-            </div>
-
-            <div class="lp-faq-item">
-                <div class="lp-faq-question"><span>🏛️</span> Quali banche sono supportate?</div>
-                <p class="lp-faq-answer">FiscMoney supporta i formati di oltre 15 banche italiane ed europee, tra cui BPER Banca, Poste Italiane (BancoPosta e Postepay), Intesa Sanpaolo, UniCredit, BCC, Revolut, BBVA, Fineco, Illimity e qualsiasi estratto conto standard in formato CSV o Excel.</p>
-            </div>
-
-            <div class="lp-faq-item">
-                <div class="lp-faq-question"><span>💶</span> Quanto costa?</div>
-                <p class="lp-faq-answer">Durante la fase di Beta Privata per i primi 100 utenti, FiscMoney è completamente gratuito con accesso illimitato a tutte le funzionalità avanzate.</p>
-            </div>
-
-            <div class="lp-faq-item">
-                <div class="lp-faq-question"><span>🔒</span> I miei dati vengono venduti o condivisi?</div>
-                <p class="lp-faq-answer">Assolutamente no. Il nostro modello è basato sulla massima riservatezza: i tuoi dati finanziari rimangono crittografati sul tuo database e puoi esportarli o cancellarli integralmente in qualsiasi momento.</p>
-            </div>
-
-            <div class="lp-faq-item">
-                <div class="lp-faq-question"><span>👫</span> Posso usare FiscMoney insieme al mio partner?</div>
-                <p class="lp-faq-answer">Certamente. FiscMoney supporta workspace familiari con tracciamento delle spese condivise 50/50, gestione dei conti personali e calcolo automatico dei rimborsi di coppia senza fogli Excel.</p>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 18px;">
+                Nessuna carta di credito richiesta &bull; Nessun conto da collegare
             </div>
         </div>
     </section>
 
 
     <!-- ========================================================== -->
-    <!-- 10. CHIUSURA EMOTIVA & ULTIMA CTA                          -->
+    <!-- 14. FOOTER                                                 -->
     <!-- ========================================================== -->
-    <section class="lp-section lp-final-cta">
-        <div class="lp-final-headline">
-            La prossima volta che ti chiedi “dove sono finiti i miei soldi?”, prova a scoprirlo davvero.
-        </div>
-        <p style="color: var(--lp-text-muted); font-size: 0.95rem; margin-bottom: 24px;">
-            Entra ora nella beta privata di FiscMoney e costruisci con noi il tuo nuovo modo di gestire il budget.
-        </p>
+    <footer class="lp-footer">
+        <div class="lp-footer-grid">
+            <div>
+                <div class="lp-footer-brand-title">FiscMoney</div>
+                <p style="font-size: 0.88rem; color: #94a3b8; line-height: 1.5; margin: 0; max-width: 280px;">
+                    La finanza di casa, senza Excel.
+                </p>
+            </div>
 
-        <a href="#joinBetaAnchor" onclick="openAuthModal('register')" class="lp-btn-primary">
-            <span>🟦 Prova FiscMoney gratuitamente</span>
-            <span>➔</span>
-        </a>
-        <div style="font-size: 0.78rem; color: var(--lp-text-muted); margin-top: 12px;">
-            Primi 100 utenti &bull; Beta privata &bull; Nessuna carta richiesta
+            <div>
+                <div class="lp-footer-col-title">Prodotto</div>
+                <ul class="lp-footer-links">
+                    <li><a href="#authSection" onclick="switchAuthTab('register')">Come funziona</a></li>
+                    <li><a href="#authSection" onclick="switchAuthTab('register')">Funzionalità</a></li>
+                    <li><a href="#authSection" onclick="switchAuthTab('register')">Prezzi</a></li>
+                    <li><a href="#authSection" onclick="switchAuthTab('register')">Per le coppie</a></li>
+                    <li><a href="#authSection" onclick="switchAuthTab('register')">Fisco e 730</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <div class="lp-footer-col-title">Risorse</div>
+                <ul class="lp-footer-links">
+                    <li><a href="/login">Accedi</a></li>
+                    <li><a href="#authSection" onclick="switchAuthTab('register')">Guide & FAQ</a></li>
+                    <li><a href="/privacy">Sicurezza</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <div class="lp-footer-col-title">Azienda</div>
+                <ul class="lp-footer-links">
+                    <li><a href="/privacy">Privacy</a></li>
+                    <li><a href="/privacy">Termini e condizioni</a></li>
+                    <li><a href="mailto:support@fiscmoney.it">Contatti</a></li>
+                </ul>
+            </div>
         </div>
-    </section>
+
+        <div class="lp-footer-copy">
+            &copy; {{ now.year if now else 2026 }} FiscMoney &bull; Tutti i diritti riservati.
+        </div>
+    </footer>
 
 </div>
 
@@ -1342,6 +1669,8 @@ function switchAuthTab(tab) {
     const btnLogin = document.getElementById('tabBtnLogin');
     const paneRegister = document.getElementById('authPaneRegister');
     const paneLogin = document.getElementById('authPaneLogin');
+
+    if (!btnRegister || !btnLogin || !paneRegister || !paneLogin) return;
 
     if (tab === 'register') {
         btnRegister.classList.add('active');
@@ -1360,12 +1689,25 @@ function switchAuthTab(tab) {
     }
 }
 
-function openAuthModal(tab) {
-    switchAuthTab(tab);
-    const target = document.getElementById('joinBetaAnchor');
-    if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+function toggleFaq(id) {
+    const answer = document.getElementById(id);
+    const arrow = document.getElementById(id + '-arrow');
+    if (!answer) return;
+    if (answer.style.display === 'none' || answer.style.display === '') {
+        answer.style.display = 'block';
+        if (arrow) arrow.textContent = '▲';
+    } else {
+        answer.style.display = 'none';
+        if (arrow) arrow.textContent = '▼';
     }
 }
+
+// Auto-switch to login tab if arriving with ?tab=login
+document.addEventListener('DOMContentLoaded', function() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('tab') === 'login' || window.location.hash === '#login') {
+        switchAuthTab('login');
+    }
+});
 </script>
 {% endblock %}
