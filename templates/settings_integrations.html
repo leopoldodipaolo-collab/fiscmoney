@@ -257,6 +257,8 @@
                             <span class="badge-tag status-success">✓ REGISTRATA</span>
                             {% elif log.status == 'DUPLICATE' %}
                             <span class="badge-tag status-duplicate">🛡️ DEDUPLICATA</span>
+                            {% elif log.status == 'SKIPPED' %}
+                            <span class="badge-tag status-skipped">⚪ INFORMATIVA</span>
                             {% else %}
                             <span class="badge-tag status-error">✕ ERRORE</span>
                             {% endif %}
@@ -293,6 +295,8 @@
                     <span class="badge-tag status-success">✓ REGISTRATA</span>
                     {% elif log.status == 'DUPLICATE' %}
                     <span class="badge-tag status-duplicate">🛡️ DEDUPLICATA</span>
+                    {% elif log.status == 'SKIPPED' %}
+                    <span class="badge-tag status-skipped">⚪ INFORMATIVA</span>
                     {% else %}
                     <span class="badge-tag status-error">✕ ERRORE</span>
                     {% endif %}
@@ -730,6 +734,13 @@
     font-size: 0.68rem;
     font-weight: 700;
 }
+.status-skipped {
+    background: rgba(148, 163, 184, 0.15);
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    font-size: 0.68rem;
+    font-weight: 700;
+}
 .empty-logs-box {
     text-align: center;
     padding: 30px 16px;
@@ -984,7 +995,26 @@ async function runWebhookSimulation(e) {
         resBox.style.display = 'block';
         
         if (data.success) {
-            if (data.duplicate) {
+            if (data.skipped) {
+                resBox.style.background = 'rgba(100, 116, 139, 0.15)';
+                resBox.style.border = '1px solid rgba(148, 163, 184, 0.4)';
+                resBox.style.borderRadius = '12px';
+                resBox.style.padding = '12px 14px';
+                resBox.innerHTML = `
+                    <div style="display: flex; align-items: flex-start; gap: 10px;">
+                        <span style="font-size: 1.4rem;">⚪</span>
+                        <div style="flex: 1;">
+                            <div style="font-weight: 800; color: #cbd5e1; font-size: 0.92rem;">Notifica Informativa Ignorata</div>
+                            <div style="color: #94a3b8; font-size: 0.82rem; margin-top: 2px;">
+                                ${data.message}
+                            </div>
+                            <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px;">
+                                FiscMoney ha verificato che il messaggio non rappresenta una spesa contabile. Nessun movimento aggiunto.
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (data.duplicate) {
                 resBox.style.background = 'rgba(139, 92, 246, 0.15)';
                 resBox.style.border = '1px solid rgba(139, 92, 246, 0.4)';
                 resBox.style.borderRadius = '12px';

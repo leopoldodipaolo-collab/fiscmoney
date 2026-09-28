@@ -34,16 +34,40 @@ def parse_amount_str(val_str):
     except ValueError:
         return 0.0
 
+# Non-financial notification filter (promotions, OTPs, login alerts, service messages)
+NON_FINANCIAL_KEYWORDS = [
+    "codice otp", "codice di sicurezza", "codice temporaneo", "codice verifica", 
+    "usa questo codice", "non condividere", "non condividerlo", "one-time password",
+    "accesso effettuato", "nuovo accesso", "login", "dispositivo non riconosciuto",
+    "nuovo documento", "documento disponibile", "estratto conto disponibile", "comunicazione online",
+    "scopri l'offerta", "scopri le novita", "passa a", "passa al conto", "apri un conto",
+    "aggiorna l'app", "nuova versione disponibile", "condizioni contrattuali"
+]
+
 def parse_notification_text(text):
     """
     Intelligently extracts transaction fields from push notification text of Italian banking apps:
     BPER Banca, Poste Italiane, Postepay, BancoPosta, Intesa Sanpaolo, Revolut, UniCredit, Satispay, etc.
+    Safely rejects informational, promotional, OTP and security notifications.
     """
     text_clean = (text or "").strip()
     if not text_clean:
         return None
         
     text_lower = text_clean.lower()
+    
+    # 0. Safety Guard: Discard non-financial messages (OTP, security, promotional, new documents)
+    if any(k in text_lower for k in NON_FINANCIAL_KEYWORDS):
+        return {
+            "raw_text": text_clean,
+            "amount": 0.0,
+            "is_income": False,
+            "merchant": "Notifica Informativa",
+            "card_pan": None,
+            "bank_hint": None,
+            "is_non_transactional": True,
+            "skip_reason": "Notifica promozionale, OTP o di servizio non dispositiva"
+        }
     
     # 1. Income detection
     income_kw = [
@@ -52,20 +76,40 @@ def parse_notification_text(text):
     ]
     is_income = any(k in text_lower for k in income_kw)
     
-    # 2. Extract Amount
-    # Matches: Euro 12,50 | 12,50 EUR | 12,50 € | € 12,50 | 1.250,00 EUR | 45.00 euro | 12.50
-    amt_match = re.search(
-        r'(?:euro|eur|€)?\s*([+-]?[0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{1,2})|[+-]?[0-9]+(?:[.,][0-9]{1,2})?)\s*(?:euro|eur|€)?', 
-        text_clean, 
-        re.IGNORECASE
-    )
+    # 2. Extract Amount with Strict Currency Context
+    # Must have an explicit currency symbol/word OR be preceded by an explicit financial action
     raw_amount = 0.0
     matched_amt_str = ""
-    if amt_match:
-        matched_amt_str = amt_match.group(0)
-        raw_amount = parse_amount_str(amt_match.group(1))
+    
+    # A. Currency attached (e.g. "EUR 12,50", "12,50 €", "Euro 1.250,00", "€ 45,00")
+    curr_match = re.search(r'(?:euro|eur|€)\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{1,2})|[0-9]+(?:[.,][0-9]{1,2})?)', text_clean, re.IGNORECASE)
+    if not curr_match:
+        curr_match = re.search(r'([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{1,2})|[0-9]+(?:[.,][0-9]{1,2})?)\s*(?:euro|eur|€)', text_clean, re.IGNORECASE)
+        
+    if curr_match:
+        matched_amt_str = curr_match.group(0)
+        raw_amount = parse_amount_str(curr_match.group(1))
+    else:
+        # B. Transactional keyword followed by "di [importo]"
+        action_match = re.search(r'(?:pagamento|spesa|addebito|bonifico|prelievo|operazione|accredito|autorizzazione|ricarica)\s+(?:di|da)?\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{1,2})|[0-9]+(?:[.,][0-9]{1,2})?)', text_clean, re.IGNORECASE)
+        if action_match:
+            matched_amt_str = action_match.group(0)
+            raw_amount = parse_amount_str(action_match.group(1))
+            
+    if raw_amount == 0.0:
+        return {
+            "raw_text": text_clean,
+            "amount": 0.0,
+            "is_income": False,
+            "merchant": "Notifica Senza Spesa",
+            "card_pan": None,
+            "bank_hint": None,
+            "is_non_transactional": True,
+            "skip_reason": "Nessuna spesa o importo in valuta rilevato nel testo"
+        }
         
     final_amount = abs(raw_amount) if is_income else -abs(raw_amount)
+
     
     # 3. Extract Card PAN / Last digits (*2651, **1234, terminante con 9876)
     card_pan = None
@@ -250,6 +294,16 @@ def process_webhook_transaction(workspace_id, payload_dict, source='SMARTPHONE')
     if raw_text:
         parsed_info = parse_notification_text(raw_text)
         if parsed_info:
+            if parsed_info.get('is_non_transactional'):
+                reason = parsed_info.get('skip_reason', 'Notifica informativa o promozionale')
+                log_webhook_event(workspace_id, source=source, raw_payload=payload_dict,
+                                  parsed_amount=0.0, parsed_description=parsed_info.get('merchant', 'Informativa'),
+                                  status='SKIPPED', error_message=reason)
+                return {
+                    "success": True,
+                    "skipped": True,
+                    "message": f"Notifica informativa ignorata: {reason}."
+                }
             amount = parsed_info['amount']
             description = parsed_info['merchant']
             
