@@ -437,22 +437,9 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
     conn = get_db_connection()
     
     if not year_month:
-        cur_ym = now.strftime("%Y-%m")
-        # Check if transactions exist in current calendar month
-        has_curr = conn.execute("SELECT 1 FROM transactions WHERE workspace_id = ? AND substr(date, 1, 7) = ? LIMIT 1", (workspace_id, cur_ym)).fetchone()
-        if has_curr:
-            year_month = cur_ym
-        else:
-            # Fallback to latest available month with transactions or paystubs
-            max_row = conn.execute("SELECT MAX(substr(date, 1, 7)) FROM transactions WHERE workspace_id = ?", (workspace_id,)).fetchone()
-            if max_row and max_row[0]:
-                year_month = max_row[0]
-            else:
-                max_ps = conn.execute("SELECT MAX(year), MAX(month) FROM paystubs WHERE workspace_id = ?", (workspace_id,)).fetchone()
-                if max_ps and max_ps[0] and max_ps[1]:
-                    year_month = f"{int(max_ps[0]):04d}-{int(max_ps[1]):02d}"
-                else:
-                    year_month = cur_ym
+        # Dal 1° del mese il cashflow è sempre il mese di calendario corrente,
+        # anche se non ci sono ancora movimenti importati.
+        year_month = now.strftime("%Y-%m")
         
     seed_smart_fixed_costs(workspace_id, profile_id)
     
@@ -499,7 +486,11 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
     actual_month_income = 0.0
     actual_month_expenses = 0.0
     for tx in tx_rows:
+        # Escludi trasferimenti interni (giroconto prepagata, ecc.)
         if tx['is_transfer']:
+            continue
+        # Doppia protezione: escludi anche per tag #giroconto
+        if '#giroconto' in (tx['tags'] or '').lower():
             continue
         amt = tx['amount']
         if amt > 0:
@@ -773,10 +764,11 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
             em_name = f"{MESI_IT[em_idx-1]} {ey}"
         except Exception:
             em_name = ym
+        is_cur = (ym == datetime.now().strftime("%Y-%m"))
         available_months_extended.append({
             "value": ym,
-            "label": em_name,
-            "is_current": (ym == datetime.now().strftime("%Y-%m"))
+            "label": f"{em_name} (Mese Corrente)" if is_cur else em_name,
+            "is_current": is_cur
         })
 
     # 7.5. RETROSPECTIVE & HISTORICAL MONTH PERFORMANCE ANALYTICS

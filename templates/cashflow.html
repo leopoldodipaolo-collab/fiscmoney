@@ -1306,7 +1306,6 @@
 <!-- ======================================================== -->
 <!-- INTERACTIVE EXPENSE COMPOSITION & CATEGORY DRILL-DOWN    -->
 <!-- ======================================================== -->
-{% if data.category_breakdown|length > 0 %}
 <div id="category-composition-card" class="card" style="background: rgba(15, 23, 42, 0.7); border: 1.5px solid var(--border-color); margin-bottom: 16px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 10px;">
@@ -1537,39 +1536,18 @@
                     </div>
                 </div>
             </div>
+            {% else %}
+            <div style="background: rgba(0,0,0,0.25); border: 1px dashed var(--border-color); border-radius: var(--radius-md); padding: 18px 16px; text-align: center;">
+                <div style="font-size: 1.4rem; margin-bottom: 6px;">📭</div>
+                <strong style="color: #fff; font-size: 0.88rem; display: block;">Nessuna spesa registrata per {{ data.month_name_it }}</strong>
+                <p style="color: var(--text-muted); font-size: 0.75rem; margin: 6px 0 0 0;">
+                    Il grafico giorno per giorno è già visibile sopra. Appena arriveranno i movimenti, compariranno qui le categorie e il confronto con {{ data.prev_month_name_it }}.
+                </p>
+            </div>
             {% endfor %}
         </div>
     </div>
 </div>
-{% else %}
-<!-- Placeholder when 0 expenses recorded yet -->
-<div id="category-composition-card" class="card" style="background: rgba(15, 23, 42, 0.7); border: 1.5px dashed var(--border-color); margin-bottom: 16px; text-align: center; padding: 24px;">
-    <span style="font-size: 2rem;">📊</span>
-    <h3 style="font-size: 1rem; font-weight: 700; color: #fff; margin: 8px 0 4px 0;">Nessuna Spesa Registrata per {{ data.month_name_it }}</h3>
-    <p style="color: var(--text-muted); font-size: 0.8rem; max-width: 450px; margin: 0 auto 14px auto;">
-        Appena importerai i movimenti bancari o registrerai uscite per questo mese, vedrai comparire qui il grafico ad anello, la ripartizione per categoria e il confronto con {{ data.prev_month_name_it }}.
-    </p>
-    <div style="display: flex; justify-content: center;">
-        <div class="card-month-select-pill" title="Seleziona un altro mese">
-            <a href="/cashflow?m={{ data.prev_year_month }}#category-composition-card" class="month-nav-btn" title="Mese Precedente ({{ data.prev_month_name_it }})">
-                ‹
-            </a>
-            <form method="GET" action="/cashflow#category-composition-card" id="emptyMonthSelectForm" style="margin: 0; display: inline-flex; align-items: center;">
-                <select name="m" class="month-select-input" onchange="document.getElementById('emptyMonthSelectForm').submit()" title="Seleziona Mese da Analizzare">
-                    {% for ym_item in data.available_months_extended %}
-                    <option value="{{ ym_item.value }}" {% if data.year_month == ym_item.value %}selected{% endif %}>
-                        📅 {{ ym_item.label }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </form>
-            <a href="/cashflow?m={{ data.next_year_month }}#category-composition-card" class="month-nav-btn" title="Mese Successivo ({{ data.next_month_name_it }})">
-                ›
-            </a>
-        </div>
-    </div>
-</div>
-{% endif %}
 
 <!-- ======================================================== -->
 <!-- ======================================================== -->
