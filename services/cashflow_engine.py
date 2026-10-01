@@ -538,6 +538,9 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         pat = fc['match_pattern'] or fc['name']
         matched_txs = []
         for tx in tx_rows:
+            # I giroconti interni (ricarica prepagata, ecc.) non devono essere contati come spese
+            if tx['is_transfer']:
+                continue
             desc = (tx['description'] or '') + " " + (tx['raw_description'] or '')
             # Evita che investimenti Directa o PAC vengano agganciati erroneamente a costi fissi (es. Mutuo)
             if 'directa' in desc.lower() and 'directa' not in pat.lower():
@@ -656,6 +659,9 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         # Check if matched in this month's transactions
         matched_txs = []
         for tx in tx_rows:
+            # I giroconti interni non devono essere contati come scadenze
+            if tx['is_transfer']:
+                continue
             desc = (tx['description'] or '') + " " + (tx['raw_description'] or '')
             if re.search(pat, desc, re.IGNORECASE) and tx['amount'] < 0:
                 matched_txs.append(tx)
