@@ -62,8 +62,8 @@
             <!-- Webhook Endpoint URL -->
             <div class="credential-box">
                 <div class="credential-box-head">
-                    <label>🌐 Endpoint Webhook (POST)</label>
-                    <span class="badge-tag badge-cyan">JSON / FORM</span>
+                    <label>🌐 URL in Settings (corto, senza chiave)</label>
+                    <span class="badge-tag badge-cyan">POST /api/hook</span>
                 </div>
                 <div class="input-copy-group">
                     <input type="text" id="webhookUrlInput" readonly value="{{ webhook_url }}" class="copy-input text-cyan" />
@@ -71,6 +71,9 @@
                         📋 Copia
                     </button>
                 </div>
+                <p class="card-desc" style="margin-top: 8px; font-size: 0.78rem;">
+                    Incolla <strong>solo questo</strong> nella tab Settings di MacroDroid. La chiave va nella tab <strong>Query Params</strong> (nome <code>api_key</code>), così l’URL non si taglia.
+                </p>
             </div>
 
             <!-- API Secret Key -->
@@ -95,7 +98,7 @@
             <div class="full-url-text">
                 <span class="flash-icon">⚡</span>
                 <span>
-                    <strong>URL con Chiave Integrata:</strong> Ideale per MacroDroid (evita di configurare header separati).
+                    <strong>MacroDroid:</strong> Settings = URL corto sopra. Tab Query Params: nome <code>api_key</code>, valore = chiave copiata. Poi apri l’URL corto nel browser del telefono: deve comparire <code>Webhook FiscMoney attivo</code>.
                 </span>
             </div>
             <input type="hidden" id="fullWebhookUrlInput" value="{{ webhook_url_with_key }}" />
@@ -188,7 +191,8 @@
                         <span>Connettività ➔ <strong>Richiesta HTTP</strong>:</span>
                         <ul class="guide-sublist">
                             <li>Metodo: <code>POST</code></li>
-                            <li>URL: copialo con il pulsante <em>Copia URL Completo</em> qui sopra (non troncarlo)</li>
+                            <li>Tab <strong>Settings</strong> → URL: <code>{{ webhook_url }}</code> (corto, <em>senza</em> chiave). Tocca <code>…</code> e verifica che l’URL sia intero, non tagliato a <code>/api/v1/we</code>.</li>
+                            <li>Tab <strong>Query Params</strong> → aggiungi <code>api_key</code> = la chiave copiata qui sopra</li>
                             <li>Content-Type: <code>application/json</code></li>
                             <li>Follow redirects: <strong>OFF</strong></li>
                             <li>Body (inserisci i placeholder dal pulsante <code>…</code>, non copiarli a mano): <code>{"notification_text": "{not_title} {not_text}"}</code></li>

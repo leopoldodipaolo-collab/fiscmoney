@@ -2283,13 +2283,15 @@ def settings_integrations():
     # Generate full webhook URL based on current request host
     scheme = request.headers.get('X-Forwarded-Proto', request.scheme)
     base_url = f"{scheme}://{request.host}"
-    webhook_url = f"{base_url}/api/v1/webhook/transaction"
+    webhook_url = f"{base_url}/api/hook"
+    webhook_url_legacy = f"{base_url}/api/v1/webhook/transaction"
     webhook_url_with_key = f"{webhook_url}?api_key={api_key}"
     
     return render_template(
         "settings_integrations.html",
         api_key=api_key,
         webhook_url=webhook_url,
+        webhook_url_legacy=webhook_url_legacy,
         webhook_url_with_key=webhook_url_with_key,
         recent_logs=recent_logs,
         accounts=[dict(a) for a in accounts]
@@ -2306,11 +2308,13 @@ def settings_integrations_regenerate_key():
     flash("✨ Nuova chiave API generata con successo! Ricordati di aggiornarla sul tuo smartphone.", "success")
     return redirect(url_for('settings_integrations'))
 
-@app.route("/api/v1/webhook/transaction", methods=["POST"])
+@app.route("/api/hook", methods=["GET", "POST", "PUT"])
+@app.route("/api/v1/webhook/transaction", methods=["GET", "POST", "PUT"])
 def api_webhook_transaction():
     """
     Public webhook receiver for smartphone push notifications and automated transaction capture.
     Accepts authentication via X-Api-Key header, Authorization Bearer header, query param, or JSON body.
+    GET is a connectivity ping (open the URL in the phone browser to verify reachability).
     """
     # 1. Extract API Key
     api_key = (
@@ -2318,6 +2322,8 @@ def api_webhook_transaction():
         request.args.get("api_key") or
         request.headers.get("X-API-KEY")
     )
+    if api_key:
+        api_key = urllib.parse.unquote(str(api_key)).strip()
     
     # Try Authorization: Bearer <key>
     if not api_key:
@@ -2345,7 +2351,23 @@ def api_webhook_transaction():
                 payload = {"notification_text": raw_body}
         
     if not api_key and payload.get("api_key"):
-        api_key = payload.get("api_key")
+        api_key = urllib.parse.unquote(str(payload.get("api_key"))).strip()
+
+    if request.method == "GET":
+        if not api_key:
+            return jsonify({
+                "ok": True,
+                "message": "Webhook FiscMoney attivo. Da MacroDroid usa POST e metti api_key nella scheda Query Params."
+            }), 200
+        workspace = get_workspace_by_api_key(api_key)
+        if not workspace:
+            return jsonify({"ok": False, "error": "API Key non valida o revocata."}), 403
+        return jsonify({
+            "ok": True,
+            "authenticated": True,
+            "workspace": workspace["name"],
+            "message": "Chiave valida. Ora configura POST da MacroDroid."
+        }), 200
         
     if not api_key:
         return jsonify({
