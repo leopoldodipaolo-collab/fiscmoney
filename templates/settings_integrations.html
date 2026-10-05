@@ -181,22 +181,36 @@
                     <li>Apri <strong>MacroDroid</strong> e tocca <strong>"Aggiungi Macro"</strong> (+).</li>
                     <li>
                         <strong>TRIGGER (Rosso):</strong>
-                        <span>Notifica ➔ Notifica ricevuta ➔ seleziona la tua banca (es. <em>BPER Banca</em> o <em>Postepay</em>) o <em>"Qualsiasi app"</em> con filtro testo <code>BPER</code>.</span>
+                        <span>Notifica ➔ Notifica ricevuta ➔ seleziona solo l'app banca (es. <em>BPER</em>). Imposta il filtro testo su <strong>Any / Qualsiasi</strong>: non usare “Contains EUR”. Su Android 15 il testo può essere nascosto e il filtro blocca la macro.</span>
                     </li>
                     <li>
                         <strong>AZIONE (Blu):</strong>
                         <span>Connettività ➔ <strong>Richiesta HTTP</strong>:</span>
                         <ul class="guide-sublist">
                             <li>Metodo: <code>POST</code></li>
-                            <li>URL: <code>{{ webhook_url_with_key }}</code></li>
+                            <li>URL: copialo con il pulsante <em>Copia URL Completo</em> qui sopra (non troncarlo)</li>
                             <li>Content-Type: <code>application/json</code></li>
-                            <li>Body: <code>{"notification_text": "{not_text}"}</code></li>
+                            <li>Follow redirects: <strong>OFF</strong></li>
+                            <li>Body (inserisci i placeholder dal pulsante <code>…</code>, non copiarli a mano): <code>{"notification_text": "{not_title} {not_text}"}</code></li>
                         </ul>
                     </li>
                     <li>Salva la Macro toccando l'icona del foglietto 📄 in alto a destra.</li>
+                    <li>
+                        <strong>Permessi Android (obbligatori, altrimenti il registro resta vuoto):</strong>
+                        <ul class="guide-sublist">
+                            <li>Impostazioni ➔ App speciali / Accesso speciale ➔ <strong>Accesso alle notifiche</strong> ➔ MacroDroid <strong>ON</strong></li>
+                            <li>Android 15+: Impostazioni ➔ Notifiche ➔ <strong>Enhanced notifications</strong> (o “Notifiche avanzate / intelligenti”) ➔ <strong>OFF</strong>. Altrimenti BPER nasconde importi e OTP e MacroDroid non vede il testo.</li>
+                            <li>Impostazioni ➔ App ➔ MacroDroid ➔ Batteria ➔ <strong>Senza restrizioni</strong></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <strong>Test:</strong> apri la macro ➔ azione HTTP ➔ icona Play. Poi ricarica questa pagina.
+                        Se compare una riga (anche errore importo), rete e API key sono ok e manca solo il trigger notifica.
+                        Se resta vuoto, l’URL è incompleto oppure MacroDroid non ha rete/permessi.
+                    </li>
                 </ol>
                 <div class="tip-callout">
-                    ✨ <strong>Fatto!</strong> Ogni volta che paghi con la carta o ricevi un bonifico, FiscMoney registra la spesa e aggiorna il saldo da solo.
+                    ✨ FiscMoney ignora da solo OTP, login e promozioni: non serve filtrare “EUR” sul telefono.
                 </div>
             </div>
         </div>

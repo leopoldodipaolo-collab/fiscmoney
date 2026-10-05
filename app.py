@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import uuid
 import functools
 import urllib.parse
@@ -2324,12 +2325,24 @@ def api_webhook_transaction():
         if auth_header.startswith("Bearer "):
             api_key = auth_header[7:].strip()
             
-    # Try JSON body fallback
+    # Try JSON body fallback (also raw body: MacroDroid may omit charset or send slightly invalid JSON)
     payload = {}
     if request.is_json:
         payload = request.get_json(silent=True) or {}
     else:
         payload = request.form.to_dict() or {}
+    if not payload and request.data:
+        try:
+            raw_body = request.get_data(as_text=True) or ""
+            parsed = json.loads(raw_body) if raw_body.strip().startswith("{") else None
+            if isinstance(parsed, dict):
+                payload = parsed
+            elif raw_body.strip():
+                payload = {"notification_text": raw_body.strip()}
+        except Exception:
+            raw_body = (request.get_data(as_text=True) or "").strip()
+            if raw_body:
+                payload = {"notification_text": raw_body}
         
     if not api_key and payload.get("api_key"):
         api_key = payload.get("api_key")
