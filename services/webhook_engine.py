@@ -41,7 +41,8 @@ NON_FINANCIAL_KEYWORDS = [
     "accesso effettuato", "nuovo accesso", "login", "dispositivo non riconosciuto",
     "nuovo documento", "documento disponibile", "estratto conto disponibile", "comunicazione online",
     "scopri l'offerta", "scopri le novita", "passa a", "passa al conto", "apri un conto",
-    "aggiorna l'app", "nuova versione disponibile", "condizioni contrattuali"
+    "aggiorna l'app", "nuova versione disponibile", "condizioni contrattuali",
+    "sensitive notification", "contenuto nascosto", "enhanced notifications"
 ]
 
 def parse_notification_text(text):
@@ -53,6 +54,19 @@ def parse_notification_text(text):
     text_clean = (text or "").strip()
     if not text_clean:
         return None
+
+    # Play su MacroDroid senza notifica lascia i placeholder letterali
+    if re.search(r'\{not_(title|text|app_name)\}|\[not_(title|text)\]', text_clean, re.IGNORECASE):
+        return {
+            "raw_text": text_clean,
+            "amount": 0.0,
+            "is_income": False,
+            "merchant": "Placeholder MacroDroid",
+            "card_pan": None,
+            "bank_hint": None,
+            "is_non_transactional": True,
+            "skip_reason": "I placeholder {not_title}/{not_text} non sono stati sostituiti. Non usare Play sull'azione HTTP: la macro deve scattare da una notifica BPER vera (inserisci i campi dal pulsante …)."
+        }
         
     text_lower = text_clean.lower()
     
@@ -81,17 +95,24 @@ def parse_notification_text(text):
     raw_amount = 0.0
     matched_amt_str = ""
     
+    text_amt = text_clean.replace("\xa0", " ").replace("\u202f", " ").replace("\u2009", " ")
+    amt_num = r'([0-9]{1,3}(?:[.\s][0-9]{3})*(?:[.,][0-9]{1,2})|[0-9]+(?:[.,][0-9]{1,2})?)'
+
     # A. Currency attached (e.g. "EUR 12,50", "12,50 €", "Euro 1.250,00", "€ 45,00")
-    curr_match = re.search(r'(?:euro|eur|€)\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{1,2})|[0-9]+(?:[.,][0-9]{1,2})?)', text_clean, re.IGNORECASE)
+    curr_match = re.search(r'(?:euro|eur|€)\s*' + amt_num, text_amt, re.IGNORECASE)
     if not curr_match:
-        curr_match = re.search(r'([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{1,2})|[0-9]+(?:[.,][0-9]{1,2})?)\s*(?:euro|eur|€)', text_clean, re.IGNORECASE)
+        curr_match = re.search(amt_num + r'\s*(?:euro|eur|€)', text_amt, re.IGNORECASE)
         
     if curr_match:
         matched_amt_str = curr_match.group(0)
         raw_amount = parse_amount_str(curr_match.group(1))
     else:
         # B. Transactional keyword followed by "di [importo]"
-        action_match = re.search(r'(?:pagamento|spesa|addebito|bonifico|prelievo|operazione|accredito|autorizzazione|ricarica)\s+(?:di|da)?\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{1,2})|[0-9]+(?:[.,][0-9]{1,2})?)', text_clean, re.IGNORECASE)
+        action_match = re.search(
+            r'(?:pagamento|spesa|addebito|bonifico|prelievo|operazione|accredito|autorizzazione|ricarica|movimento|transazione|pagato|addebitati|prelevati|importo)\s+(?:di|da|per)?\s*' + amt_num,
+            text_amt,
+            re.IGNORECASE
+        )
         if action_match:
             matched_amt_str = action_match.group(0)
             raw_amount = parse_amount_str(action_match.group(1))
@@ -275,18 +296,30 @@ def process_webhook_transaction(workspace_id, payload_dict, source='SMARTPHONE')
         return {"success": False, "error": "Workspace ID mancante"}
         
     # A. Extract data either from raw notification text or structured fields
-    raw_text = (
-        payload_dict.get('notification_text') or 
-        payload_dict.get('text') or 
-        payload_dict.get('message') or 
-        payload_dict.get('raw_text') or ''
-    ).strip()
+    text_keys = (
+        'notification_text', 'text', 'message', 'raw_text',
+        'not_text', 'not_title', 'ntitle', 'ntext', 'title', 'body', 'ticker'
+    )
+    chunks = []
+    for k in text_keys:
+        v = payload_dict.get(k)
+        if v is None:
+            continue
+        s = str(v).strip()
+        if s and s not in chunks:
+            chunks.append(s)
+    raw_text = " ".join(chunks).strip()
     
     amount = None
     description = None
     account_hint = payload_dict.get('account') or payload_dict.get('account_name')
     account_id = payload_dict.get('account_id')
     date_str = payload_dict.get('date') or datetime.now().strftime("%Y-%m-%d")
+    try:
+        from zoneinfo import ZoneInfo
+        date_str = payload_dict.get('date') or datetime.now(ZoneInfo("Europe/Rome")).strftime("%Y-%m-%d")
+    except Exception:
+        pass
     custom_category = payload_dict.get('category')
     custom_tags = payload_dict.get('tags')
     

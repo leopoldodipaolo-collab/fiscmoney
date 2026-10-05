@@ -269,7 +269,7 @@
                 <tbody>
                     {% for log in recent_logs %}
                     <tr class="log-table-row">
-                        <td class="log-col-date">{{ log.created_at[:16] }}</td>
+                        <td class="log-col-date">{{ log.created_at_local or log.created_at[:16] }}</td>
                         <td>
                             {% if log.status == 'SUCCESS' %}
                             <span class="badge-tag status-success">✓ REGISTRATA</span>
@@ -285,6 +285,9 @@
                             <div class="log-desc-text">{{ log.parsed_description or 'Sconosciuto' }}</div>
                             {% if log.error_message and log.status != 'SUCCESS' %}
                             <div class="log-err-text">{{ log.error_message }}</div>
+                            {% endif %}
+                            {% if log.raw_payload %}
+                            <div class="log-raw-text">{{ log.raw_payload }}</div>
                             {% endif %}
                         </td>
                         <td class="log-account-text">{{ log.account_name or 'Default' }}</td>
@@ -308,7 +311,7 @@
             {% for log in recent_logs %}
             <div class="mobile-log-card">
                 <div class="mobile-log-top">
-                    <span class="mobile-log-date">🕒 {{ log.created_at[:16] }}</span>
+                    <span class="mobile-log-date">🕒 {{ log.created_at_local or log.created_at[:16] }}</span>
                     {% if log.status == 'SUCCESS' %}
                     <span class="badge-tag status-success">✓ REGISTRATA</span>
                     {% elif log.status == 'DUPLICATE' %}
@@ -334,6 +337,9 @@
                 </div>
                 {% if log.error_message and log.status != 'SUCCESS' %}
                 <div class="mobile-log-err">⚠️ {{ log.error_message }}</div>
+                {% endif %}
+                {% if log.raw_payload %}
+                <div class="log-raw-text">{{ log.raw_payload }}</div>
                 {% endif %}
             </div>
             {% endfor %}
@@ -803,6 +809,14 @@
     font-size: 0.72rem;
     color: #fca5a5;
     margin-top: 2px;
+}
+.log-raw-text {
+    font-size: 0.68rem;
+    color: #64748b;
+    margin-top: 4px;
+    font-family: ui-monospace, monospace;
+    word-break: break-word;
+    white-space: pre-wrap;
 }
 .log-account-text {
     padding: 10px 12px;

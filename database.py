@@ -1,7 +1,7 @@
 import os
 import secrets
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 
 DB_PATH = os.environ.get("DATABASE_PATH", os.path.join(os.path.dirname(__file__), "fiscmoney.db"))
@@ -1131,6 +1131,23 @@ def get_workspace_by_api_key(api_key):
     finally:
         conn.close()
 
+def _format_rome_time(ts):
+    """SQLite CURRENT_TIMESTAMP is UTC; show Europe/Rome for the integrations log."""
+    if not ts:
+        return ""
+    try:
+        s = str(ts)[:19].replace("T", " ")
+        dt = datetime.strptime(s, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        try:
+            from zoneinfo import ZoneInfo
+            local = dt.astimezone(ZoneInfo("Europe/Rome"))
+        except Exception:
+            local = dt.astimezone(timezone(timedelta(hours=2)))
+        return local.strftime("%d/%m/%Y %H:%M")
+    except Exception:
+        return str(ts)[:16]
+
+
 def log_webhook_event(workspace_id, source='SMARTPHONE', raw_payload='', parsed_amount=None, 
                       parsed_description=None, account_id=None, transaction_id=None, 
                       status='SUCCESS', error_message=None):
@@ -1174,7 +1191,12 @@ def get_recent_webhook_logs(workspace_id, limit=10):
             LIMIT ?
         ''', (workspace_id, limit))
         rows = cursor.fetchall()
-        return [dict(r) for r in rows]
+        logs = []
+        for r in rows:
+            item = dict(r)
+            item["created_at_local"] = _format_rome_time(item.get("created_at"))
+            logs.append(item)
+        return logs
     except Exception as e:
         print(f"Error fetching webhook logs: {e}")
         return []
