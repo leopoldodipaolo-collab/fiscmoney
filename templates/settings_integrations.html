@@ -195,7 +195,11 @@
                             <li>Tab <strong>Query Params</strong> → aggiungi <code>api_key</code> = la chiave copiata qui sopra</li>
                             <li>Content-Type: <code>application/json</code></li>
                             <li>Follow redirects: <strong>OFF</strong></li>
-                            <li>Body (inserisci i placeholder dal pulsante <code>…</code>, non copiarli a mano): <code>{"notification_text": "{not_title} {not_text}"}</code></li>
+                            <li>
+                                Body: scrivi solo <code>{"notification_text": ""}</code>, metti il cursore tra le virgolette, tocca <code>…</code> e inserisci in ordine
+                                <strong>Titolo notifica</strong>, uno spazio, <strong>Testo notifica</strong>, uno spazio, <strong>Testo esteso / Big text</strong>.
+                                Se copi <code>{not_text}</code> dalla guida, MacroDroid lo manda com’è e FiscMoney non vede l’importo.
+                            </li>
                         </ul>
                     </li>
                     <li>Salva la Macro toccando l'icona del foglietto 📄 in alto a destra.</li>

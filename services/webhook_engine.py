@@ -65,7 +65,7 @@ def parse_notification_text(text):
             "card_pan": None,
             "bank_hint": None,
             "is_non_transactional": True,
-            "skip_reason": "I placeholder {not_title}/{not_text} non sono stati sostituiti. Non usare Play sull'azione HTTP: la macro deve scattare da una notifica BPER vera (inserisci i campi dal pulsante …)."
+            "skip_reason": "Il titolo è arrivato ma {not_text} è ancora letterale. Nel body JSON cancella {not_text}, tocca … e scegli Testo notifica (e Testo esteso). Non copiarlo a mano."
         }
         
     text_lower = text_clean.lower()
