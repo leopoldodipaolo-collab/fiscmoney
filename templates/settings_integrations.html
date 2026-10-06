@@ -184,7 +184,7 @@
                     <li>Apri <strong>MacroDroid</strong> e tocca <strong>"Aggiungi Macro"</strong> (+).</li>
                     <li>
                         <strong>TRIGGER (Rosso):</strong>
-                        <span>Notifica ➔ Notifica ricevuta ➔ seleziona solo l'app banca (es. <em>BPER</em>). Imposta il filtro testo su <strong>Any / Qualsiasi</strong>: non usare “Contains EUR”. Su Android 15 il testo può essere nascosto e il filtro blocca la macro.</span>
+                        <span>Notifica ➔ Notifica ricevuta. Seleziona <em>più app</em>: <strong>BPER</strong> e anche <strong>Google Wallet / GPay</strong> (e Samsung Wallet se paghi dal Samsung). Molti acquisti POS non notificano BPER, ma Google Wallet: se il trigger è solo BPER, FiscMoney non riceve nulla. Filtro testo: <strong>Any / Qualsiasi</strong> (niente “Contains EUR”).</span>
                     </li>
                     <li>
                         <strong>AZIONE (Blu):</strong>
@@ -218,7 +218,7 @@
                     </li>
                 </ol>
                 <div class="tip-callout">
-                    ✨ FiscMoney ignora da solo OTP, login e promozioni: non serve filtrare “EUR” sul telefono.
+                    ✨ Il lucchetto “attendi 3 giorni” di MacroDroid free blocca solo le <strong>nuove</strong> macro: quella già salvata deve restare ON e continua a girare. Se dopo un acquisto il registro FiscMoney non ha una riga nuova, apri MacroDroid ➔ menu ➔ <strong>System log</strong>: se non c’è “Notification received”, il trigger non è scattato (app sbagliata o filtro testo).
                 </div>
             </div>
         </div>

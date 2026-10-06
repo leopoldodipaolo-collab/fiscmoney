@@ -56,7 +56,7 @@ def parse_notification_text(text):
         return None
 
     # Play su MacroDroid senza notifica lascia i placeholder letterali
-    if re.search(r'\{not_(title|text|app_name)\}|\[not_(title|text)\]', text_clean, re.IGNORECASE):
+    if re.search(r'\{not_(title|text|text_big|app_name|ticker)\}|\{notification\}|\[not_(title|text)\]', text_clean, re.IGNORECASE):
         return {
             "raw_text": text_clean,
             "amount": 0.0,
