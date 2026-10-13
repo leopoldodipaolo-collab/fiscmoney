@@ -187,20 +187,25 @@
                         <span>Notifica ➔ Notifica ricevuta. Seleziona <em>più app</em>: <strong>BPER</strong> e anche <strong>Google Wallet / GPay</strong> (e Samsung Wallet se paghi dal Samsung). Molti acquisti POS non notificano BPER, ma Google Wallet: se il trigger è solo BPER, FiscMoney non riceve nulla. Filtro testo: <strong>Any / Qualsiasi</strong> (niente “Contains EUR”).</span>
                     </li>
                     <li>
-                        <strong>AZIONE (Blu):</strong>
-                        <span>Connettività ➔ <strong>Richiesta HTTP</strong>:</span>
-                        <ul class="guide-sublist">
-                            <li>Metodo: <code>POST</code></li>
-                            <li>Tab <strong>Settings</strong> → URL: <code>{{ webhook_url }}</code> (corto, <em>senza</em> chiave). Tocca <code>…</code> e verifica che l’URL sia intero, non tagliato a <code>/api/v1/we</code>.</li>
-                            <li>Tab <strong>Query Params</strong> → aggiungi <code>api_key</code> = la chiave copiata qui sopra</li>
-                            <li>Content-Type: <code>application/json</code></li>
-                            <li>Follow redirects: <strong>OFF</strong></li>
+                        <strong>AZIONI (Blu) — due azioni, in quest’ordine:</strong>
+                        <ol class="guide-sublist">
                             <li>
-                                Body: scrivi solo <code>{"notification_text": ""}</code>, metti il cursore tra le virgolette, tocca <code>…</code> e inserisci in ordine
-                                <strong>Titolo notifica</strong>, uno spazio, <strong>Testo notifica</strong>, uno spazio, <strong>Testo esteso / Big text</strong>.
-                                Se copi <code>{not_text}</code> dalla guida, MacroDroid lo manda com’è e FiscMoney non vede l’importo.
+                                <strong>1. Imposta variabile</strong> (MacroDroid ➔ Imposta variabile). Crea una stringa globale <code>bper_msg</code>.
+                                Nel valore tocca <code>…</code> e inserisci: <em>Titolo notifica</em> + spazio + <em>Testo notifica</em> + spazio + <em>Testo esteso / Big text</em>.
+                                Non scrivere <code>{not_text}</code> a mano: l’HTTP di MacroDroid <strong>non lo sostituisce</strong> (per questo FiscMoney riceve solo “Gruppo BPER Banca”).
                             </li>
-                        </ul>
+                            <li>
+                                <strong>2. Richiesta HTTP</strong> (Connettività):
+                                <ul>
+                                    <li>Metodo: <code>POST</code></li>
+                                    <li>URL: <code>{{ webhook_url }}</code></li>
+                                    <li>Query Params: <code>api_key</code> = la chiave copiata qui sopra</li>
+                                    <li>Content-Type: <code>application/json</code></li>
+                                    <li>Follow redirects: <strong>OFF</strong></li>
+                                    <li>Body: <code>{"notification_text": ""}</code> poi tra le virgolette tocca <code>…</code> ➔ variabili MacroDroid ➔ <code>bper_msg</code> (diventa <code>{v=bper_msg}</code>)</li>
+                                </ul>
+                            </li>
+                        </ol>
                     </li>
                     <li>Salva la Macro toccando l'icona del foglietto 📄 in alto a destra.</li>
                     <li>

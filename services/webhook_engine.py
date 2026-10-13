@@ -55,17 +55,25 @@ def parse_notification_text(text):
     if not text_clean:
         return None
 
-    # Play su MacroDroid senza notifica lascia i placeholder letterali
-    if re.search(r'\{not_(title|text|text_big|app_name|ticker)\}|\{notification\}|\[not_(title|text)\]', text_clean, re.IGNORECASE):
+    # L'azione HTTP di MacroDroid spesso non espande {not_text} nel JSON.
+    # Togliamo i token letterali e proviamo comunque a leggere un importo dal resto.
+    placeholder_re = re.compile(
+        r'\{not_(title|text|text_big|big_text|app_name|ticker|sub_text)\}|\{notification\}|\{v=[^}]+\}|\[not_(title|text)\]',
+        re.IGNORECASE,
+    )
+    had_placeholder = bool(placeholder_re.search(text_clean))
+    text_clean = placeholder_re.sub(' ', text_clean)
+    text_clean = re.sub(r'\s+', ' ', text_clean).strip()
+    if not text_clean:
         return {
-            "raw_text": text_clean,
+            "raw_text": text,
             "amount": 0.0,
             "is_income": False,
             "merchant": "Placeholder MacroDroid",
             "card_pan": None,
             "bank_hint": None,
             "is_non_transactional": True,
-            "skip_reason": "Il titolo è arrivato ma {not_text} è ancora letterale. Nel body JSON cancella {not_text}, tocca … e scegli Testo notifica (e Testo esteso). Non copiarlo a mano."
+            "skip_reason": "MacroDroid ha inviato solo placeholder. Usa prima l'azione Imposta variabile (titolo+testo+testo esteso dal pulsante …), poi nell'HTTP {v=bper_msg}."
         }
         
     text_lower = text_clean.lower()
@@ -118,15 +126,24 @@ def parse_notification_text(text):
             raw_amount = parse_amount_str(action_match.group(1))
             
     if raw_amount == 0.0:
+        skip_reason = "Nessuna spesa o importo in valuta rilevato nel testo"
+        merchant = "Notifica Senza Spesa"
+        if had_placeholder:
+            merchant = "Placeholder MacroDroid"
+            skip_reason = (
+                "Arrivato solo il titolo BPER: l'azione HTTP non espande {not_text}. "
+                "Aggiungi PRIMA l'azione Imposta variabile (stringa bper_msg = Titolo + Testo + Testo esteso dal pulsante …), "
+                "poi nel body HTTP usa {\"notification_text\": \"{v=bper_msg}\"} inserendo la variabile dal pulsante …."
+            )
         return {
             "raw_text": text_clean,
             "amount": 0.0,
             "is_income": False,
-            "merchant": "Notifica Senza Spesa",
+            "merchant": merchant,
             "card_pan": None,
             "bank_hint": None,
             "is_non_transactional": True,
-            "skip_reason": "Nessuna spesa o importo in valuta rilevato nel testo"
+            "skip_reason": skip_reason
         }
         
     final_amount = abs(raw_amount) if is_income else -abs(raw_amount)
