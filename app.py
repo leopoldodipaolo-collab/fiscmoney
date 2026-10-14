@@ -42,7 +42,9 @@ from services.cashflow_engine import (
     get_monthly_forecast_and_considerations,
     calculate_smart_budget_copilot,
     save_category_monthly_budgets,
-    get_category_trend_intelligence
+    get_category_trend_intelligence,
+    is_internal_giroconto,
+    giroconto_transfer_flag
 )
 from services.vertical_focus_engine import (
     get_active_focus_categories,
@@ -2623,6 +2625,8 @@ def transactions():
         cat = tx['category'] or 'Altro'
         tags = tx['tags'] or ''
         
+        if is_internal_giroconto(tx):
+            continue
         if amt > 0:
             total_income += amt
         else:
@@ -2686,6 +2690,8 @@ def transactions():
     PALETTE = ["#38bdf8", "#ec4899", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#f97316", "#a855f7", "#e11d48", "#14b8a6"]
 
     for tx in tx_list:
+        if is_internal_giroconto(tx):
+            continue
         amt = tx['amount']
         if amt < 0:
             spent_amt = abs(amt)
@@ -2849,11 +2855,12 @@ def quick_update_transaction():
         conn.close()
         return jsonify({"success": False, "error": "Movimento non trovato"}), 404
         
+    is_transfer = giroconto_transfer_flag(category, sub_category, tags)
     conn.execute('''
         UPDATE transactions 
-        SET category = ?, sub_category = ?, tags = ?
+        SET category = ?, sub_category = ?, tags = ?, is_transfer = ?
         WHERE id = ?
-    ''', (category, sub_category, tags, tx_id))
+    ''', (category, sub_category, tags, is_transfer, tx_id))
     conn.commit()
     conn.close()
     
@@ -3172,24 +3179,26 @@ def batch_categorize_merchant():
         clean_ids = [int(x) for x in tx_ids if str(x).isdigit()]
         if clean_ids:
             placeholders = ','.join('?' for _ in clean_ids)
-            params = [category, sub_category if sub_category else None]
+            is_transfer = giroconto_transfer_flag(category, sub_category, tags)
+            params = [category, sub_category if sub_category else None, is_transfer]
             if tags:
                 params.append(tags)
-                sql = f"UPDATE transactions SET category = ?, sub_category = ?, tags = ? WHERE id IN ({placeholders}) AND workspace_id = ?"
+                sql = f"UPDATE transactions SET category = ?, sub_category = ?, is_transfer = ?, tags = ? WHERE id IN ({placeholders}) AND workspace_id = ?"
             else:
-                sql = f"UPDATE transactions SET category = ?, sub_category = ? WHERE id IN ({placeholders}) AND workspace_id = ?"
+                sql = f"UPDATE transactions SET category = ?, sub_category = ?, is_transfer = ? WHERE id IN ({placeholders}) AND workspace_id = ?"
             params.extend(clean_ids)
             params.append(ws_id)
             cursor = conn.execute(sql, params)
             updated_count = cursor.rowcount
             conn.commit()
     elif pattern:
-        params = [category, sub_category if sub_category else None]
+        is_transfer = giroconto_transfer_flag(category, sub_category, tags)
+        params = [category, sub_category if sub_category else None, is_transfer]
         if tags:
             params.append(tags)
-            sql = "UPDATE transactions SET category = ?, sub_category = ?, tags = ? WHERE workspace_id = ? AND (LOWER(description) LIKE ? OR LOWER(raw_description) LIKE ?)"
+            sql = "UPDATE transactions SET category = ?, sub_category = ?, is_transfer = ?, tags = ? WHERE workspace_id = ? AND (LOWER(description) LIKE ? OR LOWER(raw_description) LIKE ?)"
         else:
-            sql = "UPDATE transactions SET category = ?, sub_category = ? WHERE workspace_id = ? AND (LOWER(description) LIKE ? OR LOWER(raw_description) LIKE ?)"
+            sql = "UPDATE transactions SET category = ?, sub_category = ?, is_transfer = ? WHERE workspace_id = ? AND (LOWER(description) LIKE ? OR LOWER(raw_description) LIKE ?)"
         params.append(ws_id)
         params.append(f"%{pattern.lower()}%")
         params.append(f"%{pattern.lower()}%")

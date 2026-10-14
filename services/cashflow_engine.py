@@ -14,6 +14,34 @@ MONTH_NAMES_IT_SHORT = {
     7: "Lug", 8: "Ago", 9: "Set", 10: "Ott", 11: "Nov", 12: "Dic"
 }
 
+def is_internal_giroconto(tx):
+    """True for internal transfers: is_transfer flag, #giroconto, or subcategory Giroconto Interno."""
+    if tx is None:
+        return False
+
+    def _val(key, default=""):
+        try:
+            if hasattr(tx, "keys") and key in tx.keys():
+                v = tx[key]
+            elif isinstance(tx, dict):
+                v = tx.get(key, default)
+            else:
+                return default
+            return default if v is None else v
+        except Exception:
+            return default
+
+    flag = _val("is_transfer", 0)
+    if flag in (1, True, "1"):
+        return True
+    blob = f"{_val('tags')} {_val('sub_category')} {_val('category')}".lower()
+    return "giroconto" in blob
+
+
+def giroconto_transfer_flag(category="", sub_category="", tags=""):
+    blob = f"{category or ''} {sub_category or ''} {tags or ''}".lower()
+    return 1 if "giroconto" in blob else 0
+
 def format_clean_tag_display(raw_name, tags="", match_pattern="", category="", amount=0.0):
     """
     Restituisce (display_title, clean_tag, tag_badge) puliti basandosi su tag e regole,
@@ -486,11 +514,7 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
     actual_month_income = 0.0
     actual_month_expenses = 0.0
     for tx in tx_rows:
-        # Escludi trasferimenti interni (giroconto prepagata, ecc.)
-        if tx['is_transfer']:
-            continue
-        # Doppia protezione: escludi anche per tag #giroconto
-        if '#giroconto' in (tx['tags'] or '').lower():
+        if is_internal_giroconto(tx):
             continue
         amt = tx['amount']
         if amt > 0:
@@ -529,8 +553,7 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         pat = fc['match_pattern'] or fc['name']
         matched_txs = []
         for tx in tx_rows:
-            # I giroconti interni (ricarica prepagata, ecc.) non devono essere contati come spese
-            if tx['is_transfer']:
+            if is_internal_giroconto(tx):
                 continue
             desc = (tx['description'] or '') + " " + (tx['raw_description'] or '')
             # Evita che investimenti Directa o PAC vengano agganciati erroneamente a costi fissi (es. Mutuo)
@@ -650,8 +673,7 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         # Check if matched in this month's transactions
         matched_txs = []
         for tx in tx_rows:
-            # I giroconti interni non devono essere contati come scadenze
-            if tx['is_transfer']:
+            if is_internal_giroconto(tx):
                 continue
             desc = (tx['description'] or '') + " " + (tx['raw_description'] or '')
             if re.search(pat, desc, re.IGNORECASE) and tx['amount'] < 0:
@@ -700,7 +722,7 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
     investment_tx_list = []
     
     for tx in tx_rows:
-        if tx['is_transfer']:
+        if is_internal_giroconto(tx):
             continue
         if tx['amount'] < 0 and tx['id'] not in all_matched_ids:
             tx_tags_raw = (tx['tags'] or '').strip()
@@ -801,7 +823,7 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
     prev_month_expenses = 0.0
     prev_category_totals = {}
     for ptx in prev_tx_rows:
-        if ptx['is_transfer']:
+        if is_internal_giroconto(ptx):
             continue
         if ptx['amount'] < 0:
             p_amt = abs(ptx['amount'])
@@ -835,7 +857,7 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
     
     # Fetch accounts map for tx description enrichment if needed
     for tx in tx_rows:
-        if tx['is_transfer']:
+        if is_internal_giroconto(tx):
             continue
         if tx['amount'] < 0:
             c = tx['category'] or 'Altro'
@@ -931,7 +953,7 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
     # Pre-index transactions by day
     txs_by_day = {d: [] for d in range(1, num_days_in_month + 1)}
     for tx in tx_rows:
-        if tx['is_transfer'] or tx['amount'] >= 0:
+        if is_internal_giroconto(tx) or tx['amount'] >= 0:
             continue
         try:
             tx_dt = datetime.strptime(tx['date'][:10], "%Y-%m-%d")
@@ -1716,7 +1738,7 @@ def get_multi_month_trend_data(workspace_id, profile_id=None, months_count=12):
 
     # Query all transactions within this workspace and profile filter
     query = '''
-        SELECT amount, date, category, tags
+        SELECT amount, date, category, sub_category, tags, is_transfer
         FROM transactions
         WHERE workspace_id = ?
     '''
@@ -1763,8 +1785,7 @@ def get_multi_month_trend_data(workspace_id, profile_id=None, months_count=12):
                 ym = f"{parts[2]}-{parts[1].zfill(2)}"
                 
         if ym and ym in monthly_data:
-            # Exclude internal transfers/giroconti from general income/expense calculation
-            if "#giroconto" in tags or cat == "Giroconto Interno":
+            if is_internal_giroconto(tx):
                 continue
                 
             if amt > 0:
@@ -2361,6 +2382,9 @@ def calculate_smart_budget_copilot(workspace_id, profile_id=None, year_month=Non
         WHERE workspace_id = ? 
           AND is_transfer = 0 
           AND amount < 0
+          AND IFNULL(LOWER(tags), '') NOT LIKE '%giroconto%'
+          AND IFNULL(LOWER(sub_category), '') NOT LIKE '%giroconto%'
+          AND IFNULL(LOWER(category), '') NOT LIKE '%giroconto%'
           AND substr(date, 1, 7) IN ({placeholders})
     """
     if profile_id:
@@ -2371,7 +2395,7 @@ def calculate_smart_budget_copilot(workspace_id, profile_id=None, year_month=Non
     hist_rows = conn.execute(hist_query, hist_params).fetchall()
     conn.close()
 
-    excluded_cats = ['Giroconto', 'Trasferimento', 'Entrate & Stipendio']
+    excluded_cats = ['Giroconto', 'Trasferimento', 'Entrate & Stipendio', 'Giroconti & Trasferimenti']
     hist_cat_averages = {}
     total_hist_spend = 0.0
     
@@ -2424,7 +2448,7 @@ def calculate_smart_budget_copilot(workspace_id, profile_id=None, year_month=Non
 
         meta = MACRO_CATEGORIES.get(cat_name, {"icon": "🏷️", "color": "#94a3b8"})
         spent_amt = round(current_cat_spent_map.get(cat_name, 0.0), 2)
-        cat_txs = current_cat_txs_map.get(cat_name, [])
+        cat_txs = [t for t in current_cat_txs_map.get(cat_name, []) if not is_internal_giroconto(t)]
 
         # Dettaglio composizione interna (es. quante spese sono fisse/scadenze vs ordinarie)
         # Cerchiamo transazioni con tag ricorrenti o legate a mutuo/bollo/utenze
@@ -2636,6 +2660,8 @@ def get_category_trend_intelligence(workspace_id, category_name, period="3M", pr
         WHERE workspace_id = ?
           AND (category = ? OR category LIKE ?)
           AND is_transfer = 0
+          AND IFNULL(LOWER(tags), '') NOT LIKE '%giroconto%'
+          AND IFNULL(LOWER(sub_category), '') NOT LIKE '%giroconto%'
           AND amount < 0
           AND substr(date, 1, 7) IN ({placeholders})
     """
@@ -2653,6 +2679,7 @@ def get_category_trend_intelligence(workspace_id, category_name, period="3M", pr
         WHERE workspace_id = ?
           AND (category = ? OR category LIKE ?)
           AND is_transfer = 0
+          AND IFNULL(LOWER(tags), '') NOT LIKE '%giroconto%'
           AND amount < 0
           AND substr(date, 1, 7) = ?
     """

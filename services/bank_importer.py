@@ -998,12 +998,13 @@ def apply_rule_retroactively(workspace_id, pattern, category, sub_category="", t
     affected = 0
     if matching_ids:
         placeholders = ','.join('?' for _ in matching_ids)
-        params = [category, sub_category if sub_category else None]
+        is_transfer = 1 if "giroconto" in f"{category} {sub_category} {tags}".lower() else 0
+        params = [category, sub_category if sub_category else None, is_transfer]
         if tags:
             params.append(tags)
-            sql = f"UPDATE transactions SET category = ?, sub_category = ?, tags = ? WHERE id IN ({placeholders}) AND workspace_id = ?"
+            sql = f"UPDATE transactions SET category = ?, sub_category = ?, is_transfer = ?, tags = ? WHERE id IN ({placeholders}) AND workspace_id = ?"
         else:
-            sql = f"UPDATE transactions SET category = ?, sub_category = ? WHERE id IN ({placeholders}) AND workspace_id = ?"
+            sql = f"UPDATE transactions SET category = ?, sub_category = ?, is_transfer = ? WHERE id IN ({placeholders}) AND workspace_id = ?"
         params.extend(matching_ids)
         params.append(workspace_id)
         cursor.execute(sql, params)
