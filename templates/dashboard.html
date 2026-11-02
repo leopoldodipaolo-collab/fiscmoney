@@ -454,6 +454,7 @@
 .glance-mini-ring .val.cyan { stroke: #38bdf8; }
 .glance-mini-ring .val.green { stroke: #34d399; }
 .glance-mini-ring .val.gold { stroke: #fbbf24; }
+.glance-mini-ring .val.red { stroke: #f87171; }
 .glance-mini-core {
     position: absolute;
     inset: 0;
@@ -983,59 +984,73 @@
 <!-- 🗓️ SCADENZARIO & RADAR USCITE FUTURE (FAMILY BUDGET)    -->
 <!-- ======================================================== -->
 {% if deadlines_radar and deadlines_radar.deadlines|length > 0 %}
-<div class="card deadlines-radar-card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.90)); border: 1.5px solid rgba(234, 179, 8, 0.35); margin-bottom: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.45); border-radius: 16px; padding: 18px 20px;">
+{% set rad_circ = 213.63 %}
+{% set cov_pct = [deadlines_radar.overall_progress or 0, 100]|min %}
+{% set miss_pct = ((deadlines_radar.total_remaining / deadlines_radar.total_expected * 100) if deadlines_radar.total_expected else 0) %}
+{% set miss_pct = [miss_pct, 100]|min %}
+<div class="card deadlines-radar-card radar-wow">
+    <div class="radar-wow-orb radar-wow-orb-a"></div>
+    <div class="radar-wow-orb radar-wow-orb-b"></div>
     
     <!-- Top Header: Title & Controls -->
-    <div class="radar-top-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px;">
-        <div class="radar-title-group" style="display: flex; align-items: center; gap: 12px;">
-            <div class="radar-header-icon" style="width: 42px; height: 42px; border-radius: 12px; background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.35); display: flex; align-items: center; justify-content: center; font-size: 1.45rem;">
-                🗓️
-            </div>
+    <div class="radar-top-header">
+        <div class="radar-title-group">
+            <div class="radar-header-icon">🗓️</div>
             <div>
-                <h3 class="radar-title-text" style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    Radar Scadenze Future & Spese Famiglia
-                    <span class="badge-tag" style="background: rgba(234, 179, 8, 0.18); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.4); font-size: 0.68rem; font-weight: 800;">
-                        12 MESI
-                    </span>
-                    <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.68rem; font-weight: 800;">
-                        {{ deadlines_radar.active_deadlines_count }} DA SALDARE
-                    </span>
+                <div class="radar-kicker">Calendario famiglia</div>
+                <h3 class="radar-title-text">
+                    Radar scadenze
+                    <span class="radar-chip gold">12 mesi</span>
+                    <span class="radar-chip green">{{ deadlines_radar.active_deadlines_count }} da saldare</span>
                 </h3>
-                <p class="radar-sub-text" style="color: var(--text-muted); font-size: 0.76rem; margin: 2px 0 0 0;">
-                    Pianificazione impegni importanti (Condominio, Bollo, TARI, Assicurazioni) con monitoraggio quote di coppia
+                <p class="radar-sub-text">
+                    Condominio, bollo, TARI, assicurazioni e quote di coppia
                 </p>
             </div>
         </div>
 
-        <div class="radar-header-actions" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <button type="button" onclick="openAddDeadlineModal()" class="btn btn-primary btn-sm" style="font-size: 0.76rem; font-weight: 800; padding: 6px 14px; background: linear-gradient(135deg, #eab308, #ca8a04); border: none; color: #000; border-radius: 8px; box-shadow: 0 2px 8px rgba(234, 179, 8, 0.3);">
+        <div class="radar-header-actions">
+            <button type="button" onclick="openAddDeadlineModal()" class="radar-btn-gold">
                 ➕ Nuova Scadenza
             </button>
-            <a href="/cashflow" class="btn btn-secondary btn-sm" style="font-size: 0.74rem; padding: 5px 12px; border-color: rgba(234, 179, 8, 0.35); color: #fde047; border-radius: 8px;">
-                Vedi nel Cash Flow →
-            </a>
+            <a href="/cashflow" class="radar-btn-ghost">Cash Flow →</a>
         </div>
     </div>
 
-    <!-- Executive KPI Bar -->
-    <div class="radar-kpi-bar" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 16px;">
-        <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 8px 12px;">
-            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">🎯 Totale Previsto</span>
-            <div class="privacy-mask" style="font-size: 1.1rem; font-weight: 900; color: #fff; margin-top: 2px;">
-                {{ deadlines_radar.total_expected|eur }}
+    <div class="radar-kpi-bar radar-kpi-wow">
+        <div class="radar-kpi tot">
+            <span class="radar-kpi-lbl">🎯 Totale previsto</span>
+            <div class="privacy-mask radar-kpi-val">{{ deadlines_radar.total_expected|eur }}</div>
+            <div class="radar-cover-bar"><span class="paid" style="width: {{ cov_pct }}%;"></span><span class="miss" style="width: {{ miss_pct }}%;"></span></div>
+        </div>
+        <div class="radar-kpi cov">
+            <div class="glance-mini-ring-wrap">
+                <svg class="glance-mini-ring" viewBox="0 0 80 80" aria-hidden="true">
+                    <circle class="trk" cx="40" cy="40" r="34"></circle>
+                    <circle class="val green" cx="40" cy="40" r="34"
+                        stroke-dasharray="{{ rad_circ }}"
+                        stroke-dashoffset="{{ '%.2f'|format(rad_circ * (1 - cov_pct / 100)) }}"></circle>
+                </svg>
+                <div class="glance-mini-core">{{ '%.0f'|format(cov_pct) }}%</div>
+            </div>
+            <div>
+                <span class="radar-kpi-lbl">✓ Già coperto</span>
+                <div class="privacy-mask radar-kpi-val green">{{ deadlines_radar.total_paid|eur }}</div>
             </div>
         </div>
-        <div style="background: rgba(16, 185, 129, 0.08); border: 1.5px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 8px 12px;">
-            <span style="font-size: 0.65rem; color: #34d399; font-weight: 700; text-transform: uppercase;">✓ Già Coperto / Anticipato</span>
-            <div class="privacy-mask" style="font-size: 1.1rem; font-weight: 900; color: #34d399; margin-top: 2px;">
-                {{ deadlines_radar.total_paid|eur }}
-                <small style="font-size: 0.7rem; color: #a7f3d0; font-weight: 700;">({{ deadlines_radar.overall_progress }}%)</small>
+        <div class="radar-kpi miss">
+            <div class="glance-mini-ring-wrap">
+                <svg class="glance-mini-ring" viewBox="0 0 80 80" aria-hidden="true">
+                    <circle class="trk" cx="40" cy="40" r="34"></circle>
+                    <circle class="val red" cx="40" cy="40" r="34"
+                        stroke-dasharray="{{ rad_circ }}"
+                        stroke-dashoffset="{{ '%.2f'|format(rad_circ * (1 - miss_pct / 100)) }}"></circle>
+                </svg>
+                <div class="glance-mini-core">{{ '%.0f'|format(miss_pct) }}%</div>
             </div>
-        </div>
-        <div style="background: rgba(239, 68, 68, 0.08); border: 1.5px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 8px 12px;">
-            <span style="font-size: 0.65rem; color: #f87171; font-weight: 700; text-transform: uppercase;">🚨 Da Completare / Mancanti</span>
-            <div class="privacy-mask" style="font-size: 1.1rem; font-weight: 900; color: #f87171; margin-top: 2px;">
-                {{ deadlines_radar.total_remaining|eur }}
+            <div>
+                <span class="radar-kpi-lbl">🚨 Da completare</span>
+                <div class="privacy-mask radar-kpi-val red">{{ deadlines_radar.total_remaining|eur }}</div>
             </div>
         </div>
     </div>
@@ -1357,78 +1372,68 @@
 <!-- 📈 ANDAMENTO STORICO: ENTRATE, USCITE & TARGET RISPARMIO -->
 <!-- ======================================================== -->
 {% if trend_data and trend_data.months_list|length > 0 %}
-<div id="trend-history-card" class="card" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.85)); border: 1.5px solid rgba(59, 130, 246, 0.35); margin-bottom: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.4);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
-                📈
+{% set trend_circ = 213.63 %}
+{% set trend_rate = trend_data.avg_savings_rate or 0 %}
+{% set trend_rate_fill = [trend_rate / 20 * 100, 100]|min if trend_rate > 0 else 0 %}
+<div id="trend-history-card" class="card trend-wow">
+    <div class="trend-wow-orb trend-wow-orb-a"></div>
+    <div class="trend-wow-orb trend-wow-orb-b"></div>
+    <div class="trend-wow-head">
+        <div class="trend-wow-title-group">
+            <div class="trend-wow-icon">📈</div>
+            <div>
+                <div class="radar-kicker" style="color:#7dd3fc;">Grafici & risparmio</div>
+                <h3 class="trend-wow-title">Andamento mensile</h3>
+                <p class="trend-wow-sub">Entrate, uscite e quota accantonata nel periodo</p>
+            </div>
+        </div>
+        <div class="trend-range-pills">
+            <button type="button" class="btn-trend-range {% if trend_data.months_count == 3 %}active{% endif %}" onclick="changeDashboardTrendRange(3, this)">3 Mesi</button>
+            <button type="button" class="btn-trend-range {% if trend_data.months_count == 6 %}active{% endif %}" onclick="changeDashboardTrendRange(6, this)">6 Mesi</button>
+            <button type="button" class="btn-trend-range {% if trend_data.months_count == 12 %}active{% endif %}" onclick="changeDashboardTrendRange(12, this)">12 Mesi</button>
+            <button type="button" class="btn-trend-range {% if trend_data.months_count == 18 %}active{% endif %}" onclick="changeDashboardTrendRange(18, this)">18 Mesi</button>
+            <button type="button" class="btn-trend-range {% if trend_data.months_count == 24 %}active{% endif %}" onclick="changeDashboardTrendRange(24, this)">24 Mesi</button>
+        </div>
+    </div>
+
+    <div class="trend-kpi-wow">
+        <div class="trend-kpi in">
+            <span class="radar-kpi-lbl">💶 Entrate nel periodo</span>
+            <div id="trendKpiIncome" class="privacy-mask radar-kpi-val green" title="Passa sopra per sbirciare">{{ trend_data.total_period_income|eur }}</div>
+        </div>
+        <div class="trend-kpi out">
+            <span class="radar-kpi-lbl">💳 Spese nel periodo</span>
+            <div id="trendKpiExpenses" class="privacy-mask radar-kpi-val red" title="Passa sopra per sbirciare">{{ trend_data.total_period_expenses|eur }}</div>
+        </div>
+        <div class="trend-kpi sav">
+            <span class="radar-kpi-lbl">📈 Risparmio netto</span>
+            <div id="trendKpiSavings" class="privacy-mask radar-kpi-val" style="color: {% if trend_data.total_period_savings >= 0 %}#7dd3fc{% else %}#f87171{% endif %};" title="Passa sopra per sbirciare">{{ trend_data.total_period_savings|eur_sign }}</div>
+        </div>
+        <div class="trend-kpi rate">
+            <div class="glance-mini-ring-wrap">
+                <svg class="glance-mini-ring" viewBox="0 0 80 80" aria-hidden="true">
+                    <circle class="trk" cx="40" cy="40" r="34"></circle>
+                    <circle id="trendRateRingVal" class="val gold" cx="40" cy="40" r="34"
+                        stroke-dasharray="{{ trend_circ }}"
+                        stroke-dashoffset="{{ '%.2f'|format(trend_circ * (1 - trend_rate_fill / 100)) }}"></circle>
+                </svg>
+                <div class="glance-mini-core">20%</div>
             </div>
             <div>
-                <h3 style="font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0;">
-                    Andamento Mensile: Entrate, Uscite & Target Risparmio
-                </h3>
-                <p style="color: var(--text-muted); font-size: 0.76rem; margin: 2px 0 0 0;">
-                    Monitoraggio storico delle entrate, spese complessive e quota di risparmio accantonata per mese
-                </p>
-            </div>
-        </div>
-
-        <!-- Dynamic In-Place Range Selector Buttons (No Page Reload / No Scroll Jump) -->
-        <div style="display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.35); padding: 3px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); flex-wrap: wrap;">
-            <button type="button" class="btn-trend-range {% if trend_data.months_count == 3 %}active{% endif %}" onclick="changeDashboardTrendRange(3, this)">
-                3 Mesi
-            </button>
-            <button type="button" class="btn-trend-range {% if trend_data.months_count == 6 %}active{% endif %}" onclick="changeDashboardTrendRange(6, this)">
-                6 Mesi
-            </button>
-            <button type="button" class="btn-trend-range {% if trend_data.months_count == 12 %}active{% endif %}" onclick="changeDashboardTrendRange(12, this)">
-                12 Mesi
-            </button>
-            <button type="button" class="btn-trend-range {% if trend_data.months_count == 18 %}active{% endif %}" onclick="changeDashboardTrendRange(18, this)">
-                18 Mesi
-            </button>
-            <button type="button" class="btn-trend-range {% if trend_data.months_count == 24 %}active{% endif %}" onclick="changeDashboardTrendRange(24, this)">
-                24 Mesi (2 Anni)
-            </button>
-        </div>
-    </div>
-
-    <!-- 4 Period Key Highlights -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px;">
-        <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; padding: 10px 12px;">
-            <span style="font-size: 0.68rem; color: #86efac; font-weight: 700; text-transform: uppercase;">💶 Entrate nel Periodo</span>
-            <div id="trendKpiIncome" class="privacy-mask" style="font-size: 1.15rem; font-weight: 800; color: var(--accent-success); margin-top: 2px;" title="Passa sopra per sbirciare">
-                {{ trend_data.total_period_income|eur }}
-            </div>
-        </div>
-        <div style="background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 10px 12px;">
-            <span style="font-size: 0.68rem; color: #fca5a5; font-weight: 700; text-transform: uppercase;">💳 Spese nel Periodo</span>
-            <div id="trendKpiExpenses" class="privacy-mask" style="font-size: 1.15rem; font-weight: 800; color: #f87171; margin-top: 2px;" title="Passa sopra per sbirciare">
-                {{ trend_data.total_period_expenses|eur }}
-            </div>
-        </div>
-        <div style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 10px 12px;">
-            <span style="font-size: 0.68rem; color: #7dd3fc; font-weight: 700; text-transform: uppercase;">📈 Risparmio Netto Totale</span>
-            <div id="trendKpiSavings" class="privacy-mask" style="font-size: 1.15rem; font-weight: 800; color: {% if trend_data.total_period_savings >= 0 %}#38bdf8{% else %}#f87171{% endif %}; margin-top: 2px;" title="Passa sopra per sbirciare">
-                {{ trend_data.total_period_savings|eur_sign }}
-            </div>
-        </div>
-        <div style="background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 8px; padding: 10px 12px;">
-            <span style="font-size: 0.68rem; color: #fde047; font-weight: 700; text-transform: uppercase;">🎯 Tasso Medio Risparmio</span>
-            <div id="trendKpiAvgRate" class="privacy-mask" style="font-size: 1.15rem; font-weight: 800; color: #f59e0b; margin-top: 2px;" title="Passa sopra per sbirciare">
-                {{ "%.1f"|format(trend_data.avg_savings_rate) }}%
-                <small style="font-size: 0.65rem; color: var(--text-muted); font-weight: 500;">(Target: 20%)</small>
+                <span class="radar-kpi-lbl">🎯 Tasso medio</span>
+                <div id="trendKpiAvgRate" class="privacy-mask radar-kpi-val gold" title="Passa sopra per sbirciare">
+                    {{ "%.1f"|format(trend_data.avg_savings_rate) }}%
+                    <small>(target 20%)</small>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Interactive Multi-Month Chart Canvas (Full 320px Height) -->
-    <div style="position: relative; width: 100%; height: 320px; margin-bottom: 8px;">
+    <div class="trend-chart-wrap">
         <canvas id="dashboardTrendChart"></canvas>
     </div>
 
-    <!-- Interactive Toggle Buttons Legend & Hint Footer -->
-    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px; font-size: 0.75rem; color: var(--text-muted); flex-wrap: wrap; gap: 10px;">
+    <div class="trend-wow-foot">
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <button type="button" class="btn-chart-toggle active" id="dbToggle_0" onclick="toggleDashboardSeries(0, this)" title="Attiva / Disattiva le Entrate">
                 <span class="indicator" style="width: 10px; height: 10px; background: #10b981; border-radius: 2px; display: inline-block;"></span> 
@@ -1462,32 +1467,23 @@
 <!-- ======================================================== -->
 <!-- 📈 WIDGET: PORTAFOGLIO INVESTIMENTI & PAC ETF (DIRECTA)   -->
 <!-- ======================================================== -->
-<div id="investmentsCard" class="card" style="background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(16, 185, 129, 0.35); box-shadow: 0 10px 28px rgba(0,0,0,0.35); margin-bottom: 16px; position: relative; overflow: hidden;">
+<div id="investmentsCard" class="card inv-wow">
+    <div class="inv-wow-orb inv-wow-orb-a"></div>
+    <div class="inv-wow-orb inv-wow-orb-b"></div>
     
-    <!-- Header: Title, Broker Badge & Action Buttons -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(16, 185, 129, 0.18); border: 1px solid rgba(16, 185, 129, 0.35); display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
-                📈
-            </div>
+    <div class="inv-wow-head">
+        <div class="inv-wow-title-group">
+            <div class="inv-wow-icon">💼</div>
             <div>
-                <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
-                    Portafoglio ETF & Investimenti PAC
-                    <span class="badge-tag" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">
-                        Directa & PAC
-                    </span>
+                <div class="radar-kicker" style="color:#6ee7b7;">Investimenti & PAC</div>
+                <h3 class="inv-wow-title">
+                    Portafoglio ETF
+                    <span class="radar-chip green">Directa</span>
                 </h3>
-                <span style="font-size: 0.74rem; color: var(--text-muted);">
-                    Accumulo capitale a lungo termine, Prezzo Medio di Carico (PMC) e quote possedute
-                </span>
+                <p class="inv-wow-sub">Capitale versato, PMC e quote accumulate</p>
             </div>
         </div>
-        
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <button type="button" onclick="openInvestmentModal()" class="btn btn-sm" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 700; border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-                <span>➕ Registra Acquisto ETF</span>
-            </button>
-        </div>
+        <button type="button" onclick="openInvestmentModal()" class="inv-btn-green">➕ Registra Acquisto ETF</button>
     </div>
 
     <!-- Smart Callout: Detected Unlinked Broker Deposit (es. Bonifico 1.000 € verso Directa) -->
@@ -1511,47 +1507,36 @@
     </div>
     {% endif %}
 
-    <!-- Global Highlights Bar -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 14px;">
-        <!-- Capitale Totale Investito -->
-        <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.25);">
-            <div style="font-size: 0.68rem; color: #34d399; font-weight: 700; text-transform: uppercase;">💰 Capitale Versato Totale</div>
-            <div class="privacy-mask" style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;" title="Passa sopra per sbirciare">
+    <div class="inv-kpi-wow">
+        <div class="inv-kpi cap">
+            <span class="radar-kpi-lbl">💰 Capitale versato</span>
+            <div class="privacy-mask radar-kpi-val green" title="Passa sopra per sbirciare">
                 {{ portfolio_summary.total_capital_invested|eur if portfolio_summary else '€ 0,00' }}
             </div>
-            <small style="color: var(--text-muted); font-size: 0.68rem;">{{ portfolio_summary.total_orders_count if portfolio_summary else 0 }} acquisti registrati</small>
+            <span class="inv-kpi-hint">{{ portfolio_summary.total_orders_count if portfolio_summary else 0 }} acquisti registrati</span>
         </div>
-
-        <!-- Strumenti in Accumulo -->
-        <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
-            <div style="font-size: 0.68rem; color: #38bdf8; font-weight: 700; text-transform: uppercase;">📊 ETF / Strumenti PAC</div>
-            <div style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-top: 2px;">
-                {{ portfolio_summary.instruments_count if portfolio_summary else 0 }} Titoli
-            </div>
-            <small style="color: var(--text-muted); font-size: 0.68rem;">{{ 'Vanguard All-World' if portfolio_summary.instruments_count > 0 else 'In attesa di primo acquisto' }}</small>
+        <div class="inv-kpi etf">
+            <span class="radar-kpi-lbl">📊 ETF / strumenti PAC</span>
+            <div class="radar-kpi-val">{{ portfolio_summary.instruments_count if portfolio_summary else 0 }} titoli</div>
+            <span class="inv-kpi-hint">{{ 'In accumulo' if portfolio_summary and portfolio_summary.instruments_count > 0 else 'In attesa del primo acquisto' }}</span>
         </div>
-
-        <!-- Commissioni Broker -->
-        <div style="background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
-            <div style="font-size: 0.68rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">🛡️ Commissioni Eseguite</div>
-            <div style="font-size: 1.25rem; font-weight: 800; color: #cbd5e1; margin-top: 2px;">
-                {{ portfolio_summary.total_fees_paid|eur if portfolio_summary else '€ 0,00' }}
-            </div>
-            <small style="color: #34d399; font-size: 0.68rem;">PAC Gratuito / Zero commissioni Directa</small>
+        <div class="inv-kpi fee">
+            <span class="radar-kpi-lbl">🛡️ Commissioni</span>
+            <div class="radar-kpi-val">{{ portfolio_summary.total_fees_paid|eur if portfolio_summary else '€ 0,00' }}</div>
+            <span class="inv-kpi-hint">PAC Directa a zero commissioni</span>
         </div>
     </div>
 
     <!-- Active Instruments List / Table -->
     {% if portfolio_summary and portfolio_summary.instruments and portfolio_summary.instruments|length > 0 %}
-    <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px 14px;">
-        <div style="font-size: 0.75rem; font-weight: 800; color: #cbd5e1; text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <span>Dettaglio Strumenti in Accumulo</span>
-            <span style="font-size: 0.7rem; color: #38bdf8; font-weight: 600;">{{ portfolio_summary.instruments|length }} attivo/i</span>
+    <div class="inv-list">
+        <div class="inv-list-head">
+            <span>Strumenti in accumulo</span>
+            <span>{{ portfolio_summary.instruments|length }} attivo/i</span>
         </div>
-
-        <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div class="inv-list-body">
             {% for inst in portfolio_summary.instruments %}
-            <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div class="inv-inst-row">
                 <div>
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <strong style="color: #fff; font-size: 0.95rem;">{{ inst.name }}</strong>
@@ -3011,7 +2996,13 @@ async function changeDashboardTrendRange(monthsCount, btn) {
                 elSav.style.color = td.total_period_savings >= 0 ? '#38bdf8' : '#f87171';
             }
             if (elAvg) {
-                elAvg.innerHTML = `${(td.avg_savings_rate || 0).toFixed(1)}% <small style="font-size: 0.65rem; color: var(--text-muted); font-weight: 500;">(Target: 20%)</small>`;
+                elAvg.innerHTML = `${(td.avg_savings_rate || 0).toFixed(1)}% <small>(target 20%)</small>`;
+            }
+            const ring = document.getElementById('trendRateRingVal');
+            if (ring) {
+                const circ = 213.63;
+                const fill = Math.max(0, Math.min(100, ((td.avg_savings_rate || 0) / 20) * 100));
+                ring.setAttribute('stroke-dashoffset', (circ * (1 - fill / 100)).toFixed(2));
             }
 
             // 3. Update Chart datasets smoothly
@@ -3639,6 +3630,133 @@ if (document.readyState === 'loading') {
     }
 }
 
+.trend-wow, .inv-wow {
+    position: relative;
+    overflow: hidden;
+    border-radius: 22px;
+    padding: 20px 22px 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.trend-wow {
+    background:
+        radial-gradient(1100px 380px at 10% -18%, rgba(56, 189, 248, 0.16), transparent 50%),
+        radial-gradient(700px 280px at 100% 0%, rgba(168, 85, 247, 0.12), transparent 48%),
+        linear-gradient(165deg, #0b1220 0%, #111827 55%, #0f172a 100%);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+}
+.inv-wow {
+    background:
+        radial-gradient(1100px 380px at 8% -18%, rgba(16, 185, 129, 0.18), transparent 50%),
+        radial-gradient(700px 280px at 100% 0%, rgba(56, 189, 248, 0.1), transparent 48%),
+        linear-gradient(165deg, #0b1220 0%, #111827 55%, #0f172a 100%);
+    border: 1px solid rgba(16, 185, 129, 0.32);
+}
+.trend-wow-orb, .inv-wow-orb {
+    position: absolute; border-radius: 50%; filter: blur(42px); pointer-events: none;
+}
+.trend-wow-orb-a { width: 220px; height: 220px; background: rgba(56,189,248,0.22); top: -80px; left: 18%; }
+.trend-wow-orb-b { width: 180px; height: 180px; background: rgba(168,85,247,0.16); bottom: -70px; right: -20px; }
+.inv-wow-orb-a { width: 220px; height: 220px; background: rgba(16,185,129,0.22); top: -80px; left: 14%; }
+.inv-wow-orb-b { width: 180px; height: 180px; background: rgba(56,189,248,0.14); bottom: -70px; right: -20px; }
+.trend-wow-head, .inv-wow-head {
+    position: relative; z-index: 1;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+}
+.trend-wow-title-group, .inv-wow-title-group { display: flex; align-items: center; gap: 12px; }
+.trend-wow-icon, .inv-wow-icon {
+    width: 52px; height: 52px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; flex-shrink: 0;
+}
+.trend-wow-icon {
+    background: linear-gradient(135deg, rgba(56,189,248,0.3), rgba(14,165,233,0.08));
+    border: 1px solid rgba(125,211,252,0.4);
+    box-shadow: 0 0 22px rgba(56,189,248,0.25);
+}
+.inv-wow-icon {
+    background: linear-gradient(135deg, rgba(16,185,129,0.3), rgba(5,150,105,0.08));
+    border: 1px solid rgba(52,211,153,0.4);
+    box-shadow: 0 0 22px rgba(16,185,129,0.28);
+}
+.trend-wow-title, .inv-wow-title {
+    margin: 3px 0 0; font-size: 1.28rem; font-weight: 900; color: #fff;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.trend-wow-sub, .inv-wow-sub { margin: 4px 0 0; font-size: 0.78rem; color: #94a3b8; }
+.trend-range-pills {
+    display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+    background: rgba(2,6,23,0.55); padding: 4px; border-radius: 999px;
+    border: 1px solid rgba(125,211,252,0.2);
+}
+.trend-kpi-wow, .inv-kpi-wow {
+    position: relative; z-index: 1;
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px; margin-bottom: 16px;
+}
+.inv-kpi-wow { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.trend-kpi, .inv-kpi {
+    background: rgba(2,6,23,0.55);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px; padding: 13px 14px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    min-width: 0;
+}
+.trend-kpi.in { border-top: 3px solid #34d399; }
+.trend-kpi.out { border-top: 3px solid #f87171; }
+.trend-kpi.sav { border-top: 3px solid #38bdf8; }
+.trend-kpi.rate { border-top: 3px solid #fbbf24; display: flex; align-items: center; gap: 10px; }
+.trend-kpi.rate .glance-mini-ring-wrap { width: 64px; height: 64px; flex-shrink: 0; }
+.inv-kpi.cap { border-top: 3px solid #34d399; }
+.inv-kpi.etf { border-top: 3px solid #38bdf8; }
+.inv-kpi.fee { border-top: 3px solid #94a3b8; }
+.inv-kpi-hint { display: block; margin-top: 4px; font-size: 0.68rem; color: #64748b; }
+.trend-chart-wrap {
+    position: relative; z-index: 1; width: 100%; height: 320px;
+    margin-bottom: 10px; border-radius: 16px;
+    background: rgba(2,6,23,0.35);
+    border: 1px solid rgba(125,211,252,0.12);
+    padding: 8px;
+}
+.trend-wow-foot {
+    position: relative; z-index: 1;
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;
+    font-size: 0.75rem; color: #94a3b8; flex-wrap: wrap; gap: 10px;
+}
+.inv-btn-green {
+    font-size: 0.76rem; font-weight: 800; padding: 8px 14px;
+    background: linear-gradient(135deg, #34d399, #059669); color: #052e16;
+    border: none; border-radius: 999px; cursor: pointer;
+    box-shadow: 0 6px 18px rgba(16,185,129,0.35);
+}
+.inv-list {
+    position: relative; z-index: 1;
+    background: rgba(2,6,23,0.45);
+    border: 1px solid rgba(52,211,153,0.18);
+    border-radius: 16px; padding: 12px 14px;
+}
+.inv-list-head {
+    font-size: 0.72rem; font-weight: 800; color: #cbd5e1; text-transform: uppercase;
+    letter-spacing: 0.05em; margin-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.inv-list-head span:last-child { color: #34d399; font-weight: 700; text-transform: none; }
+.inv-list-body { display: flex; flex-direction: column; gap: 8px; }
+.inv-inst-row {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px; padding: 12px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 10px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.inv-inst-row:hover { border-color: rgba(52,211,153,0.4); transform: translateY(-1px); }
+@media (max-width: 800px) {
+    .trend-kpi-wow, .inv-kpi-wow { grid-template-columns: 1fr 1fr; }
+    .trend-chart-wrap { height: 240px; }
+}
 /* Trend Range Filter Buttons */
 .btn-trend-range {
     background: transparent;
@@ -3656,9 +3774,10 @@ if (document.readyState === 'loading') {
     background: rgba(255, 255, 255, 0.08);
 }
 .btn-trend-range.active {
-    background: var(--accent-primary) !important;
+    background: linear-gradient(135deg, #38bdf8, #6366f1) !important;
     color: #fff !important;
-    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+    border-radius: 999px;
 }
 
 /* Smartphone Responsive Optimizations for Top Cards */
@@ -3739,6 +3858,181 @@ if (document.readyState === 'loading') {
     .assistant-kpi-grid > div:last-child {
         grid-column: span 2 !important;
     }
+}
+
+.radar-wow {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(1100px 380px at 8% -20%, rgba(250, 204, 21, 0.16), transparent 50%),
+        radial-gradient(800px 320px at 100% 0%, rgba(56, 189, 248, 0.1), transparent 46%),
+        linear-gradient(165deg, #0b1220 0%, #111827 55%, #0f172a 100%);
+    border: 1px solid rgba(250, 204, 21, 0.28);
+    border-radius: 22px;
+    padding: 20px 22px 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.radar-wow-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(42px);
+    pointer-events: none;
+}
+.radar-wow-orb-a { width: 240px; height: 240px; background: rgba(250, 204, 21, 0.18); top: -90px; left: 12%; }
+.radar-wow-orb-b { width: 200px; height: 200px; background: rgba(244, 63, 94, 0.12); bottom: -80px; right: -30px; }
+.radar-wow .radar-top-header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.radar-wow .radar-title-group { display: flex; align-items: center; gap: 12px; }
+.radar-wow .radar-header-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(250, 204, 21, 0.28), rgba(234, 179, 8, 0.08));
+    border: 1px solid rgba(250, 204, 21, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.55rem;
+    box-shadow: 0 0 24px rgba(250, 204, 21, 0.25);
+    flex-shrink: 0;
+}
+.radar-kicker {
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #fde68a;
+}
+.radar-wow .radar-title-text {
+    margin: 3px 0 0;
+    font-size: 1.28rem;
+    font-weight: 900;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.radar-chip {
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-radius: 999px;
+    padding: 3px 8px;
+}
+.radar-chip.gold { background: rgba(250, 204, 21, 0.18); color: #facc15; border: 1px solid rgba(250, 204, 21, 0.4); }
+.radar-chip.green { background: rgba(16, 185, 129, 0.16); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); }
+.radar-wow .radar-sub-text { color: #94a3b8; font-size: 0.78rem; margin: 4px 0 0; }
+.radar-wow .radar-header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.radar-btn-gold {
+    font-size: 0.76rem;
+    font-weight: 800;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, #facc15, #eab308);
+    border: none;
+    color: #0f172a;
+    border-radius: 999px;
+    box-shadow: 0 6px 18px rgba(234, 179, 8, 0.35);
+    cursor: pointer;
+}
+.radar-btn-ghost {
+    font-size: 0.74rem;
+    font-weight: 800;
+    padding: 7px 12px;
+    border: 1px solid rgba(250, 204, 21, 0.35);
+    color: #fde047;
+    border-radius: 999px;
+    text-decoration: none;
+    background: rgba(15, 23, 42, 0.5);
+}
+.radar-kpi-wow {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1.1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.radar-kpi {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(2, 6, 23, 0.55);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 12px 14px;
+    min-width: 0;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.radar-kpi.tot { border-top: 3px solid #facc15; }
+.radar-kpi.cov { border-top: 3px solid #34d399; }
+.radar-kpi.miss { border-top: 3px solid #f87171; }
+.radar-kpi .glance-mini-ring-wrap { width: 72px; height: 72px; }
+.radar-kpi-lbl {
+    display: block;
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 4px;
+}
+.radar-kpi-val {
+    font-size: 1.28rem;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -0.03em;
+}
+.radar-kpi-val.green { color: #86efac; text-shadow: 0 0 16px rgba(52,211,153,0.35); }
+.radar-kpi-val.red { color: #fca5a5; text-shadow: 0 0 16px rgba(248,113,113,0.35); }
+.radar-kpi-val.gold { color: #fcd34d; text-shadow: 0 0 16px rgba(251,191,36,0.35); }
+.radar-kpi-val small { font-size: 0.65rem; color: #94a3b8; font-weight: 600; }
+.radar-cover-bar {
+    display: flex;
+    height: 7px;
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 10px;
+    background: rgba(255,255,255,0.08);
+}
+.radar-cover-bar .paid { background: linear-gradient(90deg, #34d399, #6ee7b7); }
+.radar-cover-bar .miss { background: linear-gradient(90deg, #fb7185, #f43f5e); }
+.radar-wow .radar-split-container { position: relative; z-index: 1; }
+.radar-wow .radar-calendar-panel {
+    background: rgba(2, 6, 23, 0.55);
+    border: 1px solid rgba(250, 204, 21, 0.18);
+    border-radius: 16px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.radar-wow .radar-month-row.has-items {
+    box-shadow: 0 0 14px rgba(59, 130, 246, 0.18);
+}
+.radar-wow .radar-month-row.is-current {
+    box-shadow: 0 0 18px rgba(250, 204, 21, 0.35);
+    animation: radarPulse 2.4s ease-in-out infinite;
+}
+@keyframes radarPulse {
+    0%, 100% { box-shadow: 0 0 10px rgba(250, 204, 21, 0.2); }
+    50% { box-shadow: 0 0 22px rgba(250, 204, 21, 0.45); }
+}
+.radar-wow .deadline-item-card {
+    background: rgba(2, 6, 23, 0.5) !important;
+    border-radius: 14px !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.radar-wow .deadline-item-card:hover {
+    transform: translateY(-1px);
+    border-color: rgba(250, 204, 21, 0.4) !important;
 }
 
 /* Radar Scadenze Responsiveness & Polish */
@@ -3904,13 +4198,14 @@ if (document.readyState === 'loading') {
     }
 
     /* KPI Bar on Mobile */
-    .radar-kpi-bar {
-        grid-template-columns: 1fr 1fr !important;
+    .radar-kpi-bar,
+    .radar-kpi-wow {
+        grid-template-columns: 1fr !important;
         gap: 6px !important;
         margin-bottom: 12px !important;
     }
     .radar-kpi-bar > div:last-child {
-        grid-column: span 2 !important;
+        grid-column: auto !important;
     }
     .radar-kpi-bar > div {
         padding: 8px 10px !important;
