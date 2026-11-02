@@ -58,6 +58,13 @@
     box-sizing: border-box;
 }
 
+.tags-derive-list {
+    display: flex !important;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+}
+
 .tag-focus-pill {
     min-width: 0;
     max-width: 100%;
@@ -1456,130 +1463,56 @@
                     </div>
                 </div>
                 
-                <!-- CARD METRICS SUMMARY & DIRECT Q&A BOXES -->
-                <div class="focus-qa-grid">
-                    
-                    <!-- Main Spend Pill -->
-                    <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 12px 14px;">
-                        <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">
-                            Spesa Totale nel Periodo
-                        </div>
-                        <div id="totSpent_{{ card_idx }}" style="font-size: 1.4rem; font-weight: 800; color: #fff; margin-top: 2px;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+                    <div>
+                        <div style="font-size: 0.68rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;">Nel periodo</div>
+                        <div id="totSpent_{{ card_idx }}" style="font-size: 1.35rem; font-weight: 900; color: #fff; margin-top: 1px;">
                             € {{ "{:,.2f}".format(cat.total_spent)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}
                         </div>
-                        <small id="avgSpent_{{ card_idx }}" style="color: #94a3b8; font-size: 0.72rem; display: block; margin-top: 2px;">
-                            Media: € {{ "{:,.2f}".format(cat.monthly_avg)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}/mese ({{ cat.tx_count }} movimenti)
-                        </small>
                     </div>
-
-                    <!-- Direct Answers -->
-                    {% for ans in cat.answers %}
-                    <div class="qna-box-{{ card_idx }}" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 12px 14px;">
-                        <div style="font-size: 0.74rem; color: #cbd5e1; font-weight: 700;">
-                            {{ ans.question }}
-                        </div>
-                        <div style="font-size: 1.3rem; font-weight: 800; color: {{ cat.color }}; margin: 3px 0 1px 0;">
-                            {{ ans.answer }}
-                        </div>
-                        <small style="color: #94a3b8; font-size: 0.7rem; display: block;">
-                            {{ ans.detail }}
-                        </small>
-                    </div>
-                    {% endfor %}
+                    <small id="avgSpent_{{ card_idx }}" style="color: #94a3b8; font-size: 0.78rem; font-weight: 600;">
+                        Media € {{ "{:,.2f}".format(cat.monthly_avg)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}/mese · {{ cat.tx_count }} movimenti
+                    </small>
                 </div>
 
-                <!-- ======================================================== -->
-                <!-- ALL TAGS COMPLETE ANALYSIS MATRIX                        -->
-                <!-- ======================================================== -->
-                <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                        <div style="font-size: 0.82rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
-                            <span>🏷️</span> Mappatura Completa dei Tag di "{{ cat.category_name }}"
-                        </div>
-                        <span style="font-size: 0.7rem; color: var(--text-muted);">
-                            💡 Clicca su un tag per filtrare l'elenco movimenti in basso
-                        </span>
+                <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px; margin-bottom: 12px;">
+                    <div style="font-size: 0.82rem; font-weight: 800; color: #fff; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                        <span>📈 Come va nel tempo</span>
+                        <span style="font-size: 0.65rem; color: #38bdf8; font-weight: 700; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 4px; padding: 2px 6px;">Mese in corso</span>
                     </div>
+                    <div style="position: relative; width: 100%; height: 200px;">
+                        <canvas id="barChart_{{ card_idx }}"></canvas>
+                    </div>
+                </div>
 
-                    <!-- Complete Grid of All Standard + Custom Tags -->
-                    <div class="tags-grid-box" id="tagsGrid_{{ card_idx }}">
-                        {% for tg in cat.all_tags_analysis %}
-                        <div onclick="filterDrawerByTag('drawer_{{ card_idx }}', '{{ tg.code }}', this)" 
+                <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px; margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
+                        <div style="font-size: 0.82rem; font-weight: 800; color: #fff;">🔍 Da dove arriva</div>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Tocca una voce per vedere le spese</span>
+                    </div>
+                    <div class="tags-grid-box tags-derive-list" id="tagsGrid_{{ card_idx }}">
+                        {% for tg in cat.all_tags_analysis if tg.has_activity %}
+                        <div onclick="filterDrawerByTag('drawer_{{ card_idx }}', '{{ tg.code }}', this)"
                              class="tag-focus-pill"
-                             style="background: {% if tg.has_activity %}rgba(255,255,255,0.04){% else %}rgba(0,0,0,0.2){% endif %}; border: 1px solid {% if tg.has_activity %}rgba(255,255,255,0.1){% else %}rgba(255,255,255,0.03){% endif %}; border-left: 3px solid {% if tg.has_activity %}{{ cat.color }}{% else %}#475569{% endif %}; border-radius: 8px; padding: 6px 8px; cursor: pointer; transition: all 0.2s ease; min-width: 0; box-sizing: border-box;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 4px; min-width: 0;">
-                                <span style="font-size: 0.74rem; font-weight: 700; color: {% if tg.has_activity %}#fff{% else %}#64748b{% endif %}; display: flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                    <span style="flex-shrink: 0;">{{ tg.icon }}</span> <span style="overflow: hidden; text-overflow: ellipsis;">{{ tg.label }}</span>
+                             style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 10px; cursor: pointer;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                                <span style="font-size: 0.82rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px; min-width: 0;">
+                                    <span>{{ tg.icon }}</span>
+                                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ tg.label }}</span>
+                                    <span style="color: #94a3b8; font-weight: 600; font-size: 0.68rem;">{{ tg.tx_count }}</span>
                                 </span>
-                                <span style="font-size: 0.62rem; color: #94a3b8; font-weight: 600; flex-shrink: 0; white-space: nowrap;">
-                                    {{ tg.tx_count }} mov.
-                                </span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 4px; min-width: 0;">
-                                <div style="min-width: 0; overflow: hidden;">
-                                    <span style="font-size: 0.88rem; font-weight: 800; color: {% if tg.has_activity %}#38bdf8{% else %}#475569{% endif %}; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                        € {{ "{:,.2f}".format(tg.total_amount)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}
-                                    </span>
-                                    <span style="font-size: 0.64rem; color: #94a3b8; font-weight: 600; display: block; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                        Med: € {{ "{:,.2f}".format(tg.monthly_avg)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}/m
-                                    </span>
-                                </div>
-                                <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600; flex-shrink: 0;">
-                                    {{ tg.percent }}%
+                                <span style="font-size: 0.82rem; font-weight: 800; color: #38bdf8; white-space: nowrap;">
+                                    € {{ "{:,.2f}".format(tg.total_amount)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}
+                                    <span style="color: #94a3b8; font-weight: 700; font-size: 0.7rem;">{{ tg.percent }}%</span>
                                 </span>
                             </div>
-                            <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                            <div style="background: rgba(255,255,255,0.06); height: 4px; border-radius: 2px; margin-top: 6px; overflow: hidden;">
                                 <div style="background: {{ cat.color }}; height: 100%; width: {{ tg.percent }}%;"></div>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
-                </div>
-
-                <!-- ======================================================== -->
-                <!-- CHARTS & SUBCATEGORY VISUALIZATION                       -->
-                <!-- ======================================================== -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; margin-bottom: 16px;">
-                    
-                    <!-- Monthly Trend Stacked Bar Chart -->
-                    <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px;">
-                        <div style="font-size: 0.8rem; font-weight: 700; color: #fff; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-                            <div style="display: flex; align-items: center; gap: 6px;">
-                                <span>📊</span> <span>Evoluzione Mensile Spesa</span>
-                            </div>
-                            <span style="font-size: 0.65rem; color: #38bdf8; font-weight: 700; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 4px; padding: 2px 6px;">
-                                ⚡ Mese in corso
-                            </span>
-                        </div>
-                        <div style="position: relative; width: 100%; height: 180px;">
-                            <canvas id="barChart_{{ card_idx }}"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Donut Breakdown by Subcategory -->
-                    <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px;">
-                        <div style="font-size: 0.8rem; font-weight: 700; color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
-                            <span>🍩</span> Ripartizione Sotto-voci
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <div style="position: relative; width: 130px; height: 130px; flex-shrink: 0;">
-                                <canvas id="donutChart_{{ card_idx }}"></canvas>
-                            </div>
-                            <div id="subcatList_{{ card_idx }}" style="flex: 1; display: flex; flex-direction: column; gap: 4px; max-height: 140px; overflow-y: auto;">
-                                {% for s in cat.subcat_breakdown %}
-                                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem;">
-                                    <span style="color: #cbd5e1; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px;" title="{{ s.name }}">
-                                        {{ s.name }}
-                                    </span>
-                                    <span style="color: #fff; font-weight: 700;">
-                                        € {{ "{:,.2f}".format(s.amount)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }} ({{ s.percent }}%)
-                                    </span>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-
+                    <div id="subcatList_{{ card_idx }}" style="display: none;"></div>
                 </div>
 
                 <!-- ======================================================== -->
@@ -1588,13 +1521,13 @@
                 {% if cat.transactions|length > 0 %}
                 <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
                     <div onclick="toggleDrawer('drawer_{{ card_idx }}', 'arrow_{{ card_idx }}')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none;">
-                        <div style="font-size: 0.76rem; color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                            <span>🧾</span> Visualizza movimenti recenti ({{ cat.transactions|length }} transazioni)
+                        <div style="font-size: 0.82rem; color: #fff; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+                            <span>🧾</span> Le spese ({{ cat.transactions|length }})
                         </div>
-                        <span id="arrow_{{ card_idx }}" style="font-size: 0.68rem; color: #94a3b8; transition: transform 0.2s ease;">▶</span>
+                        <span id="arrow_{{ card_idx }}" style="font-size: 0.68rem; color: #94a3b8; transition: transform 0.2s ease; transform: rotate(90deg);">▶</span>
                     </div>
 
-                    <div id="drawer_{{ card_idx }}" style="display: none; margin-top: 8px; background: rgba(0,0,0,0.35); border-radius: 8px; padding: 8px 12px;">
+                    <div id="drawer_{{ card_idx }}" style="display: block; margin-top: 8px; background: rgba(0,0,0,0.35); border-radius: 8px; padding: 8px 12px;">
                         <div id="txsList_{{ card_idx }}" style="display: flex; flex-direction: column; gap: 6px; max-height: 220px; overflow-y: auto;">
                             {% for tx in cat.transactions %}
                             <div class="tx-row-item" data-tags="{{ tx.tags }}" data-subcat="{{ tx.subcategory }}" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 0.76rem;">
@@ -2101,6 +2034,7 @@ function filterDrawerByTag(drawerId, tagCode, pillElem) {
         if (matched === 0) {
             rows.forEach(r => { r.style.display = 'flex'; r.style.background = 'transparent'; });
         }
+        drawer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 }
 
@@ -2156,32 +2090,22 @@ async function updateCardTimeframe(cardIdx, categoryName, preset, fromYm = '', t
             // 2. Re-render All Tags Grid
             const tagsGrid = document.getElementById(`tagsGrid_${cardIdx}`);
             if (tagsGrid && d.all_tags_analysis) {
-                tagsGrid.innerHTML = d.all_tags_analysis.map(tg => `
-                    <div onclick="filterDrawerByTag('drawer_${cardIdx}', '${tg.code}', this)" 
+                tagsGrid.innerHTML = d.all_tags_analysis.filter(tg => tg.has_activity).map(tg => `
+                    <div onclick="filterDrawerByTag('drawer_${cardIdx}', '${tg.code}', this)"
                          class="tag-focus-pill"
-                         style="background: ${tg.has_activity ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.2)'}; border: 1px solid ${tg.has_activity ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.03)'}; border-left: 3px solid ${tg.has_activity ? d.color : '#475569'}; border-radius: 8px; padding: 6px 8px; cursor: pointer; transition: all 0.2s ease; min-width: 0; box-sizing: border-box;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 4px; min-width: 0;">
-                            <span style="font-size: 0.74rem; font-weight: 700; color: ${tg.has_activity ? '#fff' : '#64748b'}; display: flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                <span style="flex-shrink: 0;">${tg.icon}</span> <span style="overflow: hidden; text-overflow: ellipsis;">${tg.label}</span>
+                         style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 10px; cursor: pointer;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                            <span style="font-size: 0.82rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px; min-width: 0;">
+                                <span>${tg.icon}</span>
+                                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${tg.label}</span>
+                                <span style="color: #94a3b8; font-weight: 600; font-size: 0.68rem;">${tg.tx_count}</span>
                             </span>
-                            <span style="font-size: 0.62rem; color: #94a3b8; font-weight: 600; flex-shrink: 0; white-space: nowrap;">
-                                ${tg.tx_count} mov.
-                            </span>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 4px; min-width: 0;">
-                            <div style="min-width: 0; overflow: hidden;">
-                                <span style="font-size: 0.88rem; font-weight: 800; color: ${tg.has_activity ? '#38bdf8' : '#475569'}; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                    € ${formatEurJs(tg.total_amount)}
-                                </span>
-                                <span style="font-size: 0.64rem; color: #94a3b8; font-weight: 600; display: block; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                    Med: € ${formatEurJs(tg.monthly_avg)}/m
-                                </span>
-                            </div>
-                            <span style="font-size: 0.65rem; color: #94a3b8; font-weight: 600; flex-shrink: 0;">
-                                ${tg.percent}%
+                            <span style="font-size: 0.82rem; font-weight: 800; color: #38bdf8; white-space: nowrap;">
+                                € ${formatEurJs(tg.total_amount)}
+                                <span style="color: #94a3b8; font-weight: 700; font-size: 0.7rem;">${tg.percent}%</span>
                             </span>
                         </div>
-                        <div style="background: rgba(255,255,255,0.05); height: 3px; border-radius: 2px; width: 100%; margin-top: 4px; overflow: hidden;">
+                        <div style="background: rgba(255,255,255,0.06); height: 4px; border-radius: 2px; margin-top: 6px; overflow: hidden;">
                             <div style="background: ${d.color}; height: 100%; width: ${tg.percent}%;"></div>
                         </div>
                     </div>

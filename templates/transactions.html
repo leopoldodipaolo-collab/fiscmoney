@@ -1287,35 +1287,17 @@
     </div>
 
     {% if available_months|length > 0 %}
-    {% set ns = namespace(keep='') %}
-    {% if selected_category %}{% set ns.keep = ns.keep ~ '&category=' ~ (selected_category|urlencode) %}{% endif %}
-    {% if search_query %}{% set ns.keep = ns.keep ~ '&q=' ~ (search_query|urlencode) %}{% endif %}
-    {% if selected_tag %}{% set ns.keep = ns.keep ~ '&tag=' ~ (selected_tag|urlencode) %}{% endif %}
-    {% if selected_account_id %}{% set ns.keep = ns.keep ~ '&account_id=' ~ selected_account_id %}{% endif %}
-    {% if status_filter %}{% set ns.keep = ns.keep ~ '&status=' ~ status_filter %}{% endif %}
     <div class="tx-month-filter-bar" style="display: flex; align-items: center; gap: 8px; margin: 0 0 14px 0; flex-wrap: wrap;">
-        <span style="font-size: 0.72rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap;">🗓️ Mese</span>
-        <div class="triage-months-scroll" style="display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; flex: 1; min-width: 0; padding: 2px 0;">
-            <a href="/transactions?month=all{{ ns.keep }}"
-               class="triage-month-capsule {% if selected_month == 'all' %}active{% endif %}"
-               style="flex-shrink: 0;">
-                <div class="month-capsule-title"><strong>Tutti</strong></div>
-            </a>
+        <label for="txMonthSelect" style="font-size: 0.72rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap;">🗓️ Mese</label>
+        <select id="txMonthSelect" onchange="onTxMonthChange(this)"
+                style="flex: 1; min-width: 180px; max-width: 340px; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.14); border-radius: 8px; padding: 7px 10px; font-size: 0.82rem; font-weight: 700; cursor: pointer;">
+            <option value="all" {% if selected_month == 'all' %}selected{% endif %}>Tutti i mesi</option>
             {% for m in available_months %}
-            {% set is_m_active = (selected_month == m.ym) %}
-            <a href="/transactions?month={{ m.ym }}{{ ns.keep }}"
-               class="triage-month-capsule {% if is_m_active %}active{% endif %} {% if m.is_current_month %}is-current{% endif %}"
-               style="flex-shrink: 0;">
-                <div class="month-capsule-title">
-                    {% if m.is_current_month %}<span>📍</span>{% endif %}
-                    <strong>{{ m.name_short or m.name_full }}</strong>
-                </div>
-                <div class="month-capsule-meta">
-                    <span class="count-tx">{{ m.tx_count }}</span>
-                </div>
-            </a>
+            <option value="{{ m.ym }}" {% if selected_month == m.ym %}selected{% endif %}>
+                {% if m.is_current_month %}📍 {% endif %}{{ m.name_full }} — {{ m.tx_count }} mov.
+            </option>
             {% endfor %}
-        </div>
+        </select>
     </div>
     {% endif %}
 
@@ -5965,11 +5947,14 @@ function saveTxWorkspaceState() {
             openFolders,
             view: localStorage.getItem('fisc_tx_main_view') || 'folders'
         }));
+        sessionStorage.setItem('fisc_tx_restore_once', '1');
     } catch (e) { /* ignore */ }
 }
 
 function restoreTxWorkspaceState() {
     try {
+        if (sessionStorage.getItem('fisc_tx_restore_once') !== '1') return;
+        sessionStorage.removeItem('fisc_tx_restore_once');
         const raw = sessionStorage.getItem(txWorkspaceStorageKey());
         if (!raw) return;
         const state = JSON.parse(raw);
@@ -5984,6 +5969,12 @@ function restoreTxWorkspaceState() {
             requestAnimationFrame(() => window.scrollTo(0, state.scrollY));
         }
     } catch (e) { /* ignore */ }
+}
+
+function onTxMonthChange(sel) {
+    const params = new URLSearchParams(window.location.search);
+    params.set('month', sel.value);
+    window.location.search = params.toString();
 }
 
 function currentTransactionsReturnUrl() {
@@ -6004,7 +5995,6 @@ function toggleCategoryFolder(folderId) {
         folder.classList.add('is-open');
         if (body) body.style.display = 'block';
     }
-    saveTxWorkspaceState();
 }
 
 function applyFiglioButtonState(btn, isFiglio) {
@@ -6116,7 +6106,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         next.value = currentTransactionsReturnUrl();
     });
-    window.addEventListener('beforeunload', saveTxWorkspaceState);
 
     // 2. If initial query exists in search input, trigger live filter
     const initialInput = document.getElementById('liveTxSearchInput');
