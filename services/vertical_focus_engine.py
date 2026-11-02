@@ -5,6 +5,22 @@ from dateutil.relativedelta import relativedelta
 from database import get_db_connection
 from services.bank_importer import MACRO_CATEGORIES, CATEGORY_SMART_TAGS
 
+def _sparkline_points(series, width=72, height=20):
+    if not series:
+        return ""
+    peak = max(series) or 1.0
+    n = len(series)
+    if n == 1:
+        y = height - (series[0] / peak) * (height - 2) - 1
+        return f"0,{y:.1f} {width},{y:.1f}"
+    pts = []
+    for i, v in enumerate(series):
+        x = i * (width / (n - 1))
+        y = height - (float(v) / peak) * (height - 2) - 1
+        pts.append(f"{x:.1f},{y:.1f}")
+    return " ".join(pts)
+
+
 MONTH_NAMES_IT = {
     1: 'Gennaio', 2: 'Febbraio', 3: 'Marzo', 4: 'Aprile',
     5: 'Maggio', 6: 'Giugno', 7: 'Luglio', 8: 'Agosto',
@@ -257,12 +273,50 @@ def get_vertical_category_data(workspace_id, category_name, preset='6M', from_ym
     num_months = max(len(months_list), 1)
     monthly_avg = round(total_spent / num_months, 2)
 
+    TAG_ALIASES = {
+        "#brico": "#brico_arredo",
+        "#faidate": "#brico_arredo",
+        "#arredo": "#brico_arredo",
+        "#curacasa": "#cura_casa",
+        "#detersivi": "#cura_casa",
+        "#igiene": "#cura_casa",
+        "#igiene_casa": "#cura_casa",
+        "#pedaggi": "#telepass",
+        "#meccanico": "#tagliando_meccanico",
+        "#tagliando": "#tagliando_meccanico",
+        "#gomme": "#cambio_gomme",
+        "#gommista": "#cambio_gomme",
+        "#parcheggi": "#parcheggio",
+        "#farmacie": "#farmacia",
+        "#medicinali": "#farmacia",
+        "#medico": "#visite_esami",
+        "#visite": "#visite_esami",
+        "#visita": "#visite_esami",
+    }
+    IGNORED_TAGS = {
+        "#casa", "#auto", "#spesa", "#lavoro", "#viaggi", "#salute", "#tasse", "#generico", "#varie"
+    }
+
+    def _canon_tag(tg):
+        clean = (tg or "").strip().lower()
+        if not clean:
+            return None
+        if not clean.startswith("#"):
+            clean = f"#{clean}"
+        if clean in IGNORED_TAGS:
+            return None
+        return TAG_ALIASES.get(clean, clean)
+
+    official_tags = CATEGORY_SMART_TAGS.get(category_name, [])
+    official_codes = {ot["code"] for ot in official_tags}
+
     # 1. Breakdown by Subcategory & Tags
     tag_totals = {}
     tag_counts = {}
     tag_tx_map = {}
     subcat_totals = {}
     monthly_tag_matrix = {m: {} for m in months_list}
+    monthly_primary_tag = {m: {} for m in months_list}
     monthly_cat_totals = {m: 0.0 for m in months_list}
 
     parsed_txs = []
@@ -281,6 +335,7 @@ def get_vertical_category_data(workspace_id, category_name, preset='6M', from_ym
         subcat_totals[subcat] = subcat_totals.get(subcat, 0.0) + amt
 
         # Aggregate Tags
+        canons = []
         if tag_list:
             for tg in tag_list:
                 clean_tg = tg if tg.startswith('#') else f"#{tg}"
@@ -289,13 +344,21 @@ def get_vertical_category_data(workspace_id, category_name, preset='6M', from_ym
                 if clean_tg not in tag_tx_map:
                     tag_tx_map[clean_tg] = []
                 tag_tx_map[clean_tg].append(r['id'])
+                canon = _canon_tag(tg)
+                if canon and canon not in canons:
+                    canons.append(canon)
         else:
             tag_totals['#generico'] = tag_totals.get('#generico', 0.0) + amt
             tag_counts['#generico'] = tag_counts.get('#generico', 0) + 1
 
-        # Time series matrix
+        if not canons:
+            canons = ['#altro']
+
         if t_ym in monthly_tag_matrix:
-            monthly_tag_matrix[t_ym][subcat] = monthly_tag_matrix[t_ym].get(subcat, 0.0) + amt
+            for canon in canons:
+                monthly_tag_matrix[t_ym][canon] = monthly_tag_matrix[t_ym].get(canon, 0.0) + amt
+            primary = next((c for c in canons if c in official_codes), canons[0])
+            monthly_primary_tag[t_ym][primary] = monthly_primary_tag[t_ym].get(primary, 0.0) + amt
             monthly_cat_totals[t_ym] += amt
 
         parsed_txs.append({
@@ -309,7 +372,6 @@ def get_vertical_category_data(workspace_id, category_name, preset='6M', from_ym
         })
 
     # 1.1 Complete Tag Analysis for ALL category tags (curated + discovered)
-    official_tags = CATEGORY_SMART_TAGS.get(category_name, [])
     all_tags_dict = {}
     for ot in official_tags:
         code = ot['code']
@@ -324,37 +386,6 @@ def get_vertical_category_data(workspace_id, category_name, preset='6M', from_ym
             "percent": 0.0,
             "has_activity": False
         }
-
-    # Helper: tag alias / synonym mappings to prevent duplicate cloned cards
-    # E.g. in 'Casa & Immobili', '#brico' and '#faidate' roll up to '#brico_arredo'.
-    TAG_ALIASES = {
-        # Casa & Immobili
-        "#brico": "#brico_arredo",
-        "#faidate": "#brico_arredo",
-        "#arredo": "#brico_arredo",
-        "#curacasa": "#cura_casa",
-        "#detersivi": "#cura_casa",
-        "#igiene": "#cura_casa",
-        "#igiene_casa": "#cura_casa",
-        # Auto & Mobilità
-        "#pedaggi": "#telepass",
-        "#meccanico": "#tagliando_meccanico",
-        "#tagliando": "#tagliando_meccanico",
-        "#gomme": "#cambio_gomme",
-        "#gommista": "#cambio_gomme",
-        "#parcheggi": "#parcheggio",
-        # Salute
-        "#farmacie": "#farmacia",
-        "#medicinali": "#farmacia",
-        "#medico": "#visite_esami",
-        "#visite": "#visite_esami",
-        "#visita": "#visite_esami",
-    }
-
-    # Ignored / Redundant tags that replicate the macro category name or add no semantic distinction
-    IGNORED_TAGS = {
-        "#casa", "#auto", "#spesa", "#lavoro", "#viaggi", "#salute", "#tasse", "#generico", "#varie"
-    }
 
     # Add any extra genuine custom tags found in transactions (skipping aliases, ignored, and officially covered)
     for tg, t_amt in tag_totals.items():
@@ -400,12 +431,6 @@ def get_vertical_category_data(workspace_id, category_name, preset='6M', from_ym
                 for tx_id in tag_tx_map.get(tg, []):
                     matched_tx_ids.add(tx_id)
 
-        # 2. Subcategory matching: if subcat matches and transactions exist
-        if subcat_name:
-            for tx in parsed_txs:
-                if tx['subcategory'] == subcat_name:
-                    matched_tx_ids.add(tx['id'])
-
         # Calculate exact non-duplicated sum for matched transactions
         if matched_tx_ids:
             tx_lookup = {tx['id']: tx['amount'] for tx in parsed_txs}
@@ -420,6 +445,9 @@ def get_vertical_category_data(workspace_id, category_name, preset='6M', from_ym
         info["monthly_avg"] = round(tot / num_months, 2)
         info["percent"] = round((tot / total_spent * 100), 1) if total_spent > 0 else 0.0
         info["has_activity"] = (cnt > 0)
+        series = [round(monthly_tag_matrix.get(ym, {}).get(clean_code, 0.0), 2) for ym in months_list]
+        info["monthly_series"] = series
+        info["sparkline"] = _sparkline_points(series)
 
     # Sort tags: active tags with highest spend first, then inactive
     all_tags_analysis = sorted(all_tags_dict.values(), key=lambda x: (x["has_activity"], x["total_amount"]), reverse=True)
@@ -514,18 +542,16 @@ def get_vertical_category_data(workspace_id, category_name, preset='6M', from_ym
         if ym == current_ym:
             current_month_index = idx
 
-    # Prepare Top 4 Subcategories for Stacked Bar Datasets, plus 'Altro'
-    top_subcat_names = [s[0] for s in sorted_subcats[:4]]
+    palette = ["#3b82f6", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#06b6d4", "#f97316", "#14b8a6"]
     chart_datasets = []
-    palette = ["#3b82f6", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#06b6d4"]
-    
-    for idx, s_name in enumerate(top_subcat_names):
+    active_tag_rows = [t for t in all_tags_analysis if t.get("has_activity")]
+    for idx, tg in enumerate(active_tag_rows):
         col = palette[idx % len(palette)]
-        data_points = []
-        for ym in months_list:
-            data_points.append(round(monthly_tag_matrix[ym].get(s_name, 0.0), 2))
+        data_points = [round(monthly_primary_tag.get(ym, {}).get(tg["code"], 0.0), 2) for ym in months_list]
+        if not any(data_points):
+            data_points = tg.get("monthly_series") or data_points
         chart_datasets.append({
-            "label": s_name,
+            "label": f"{tg['code']}",
             "backgroundColor": col,
             "data": data_points
         })

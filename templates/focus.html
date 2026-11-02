@@ -1477,7 +1477,7 @@
 
                 <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px; margin-bottom: 12px;">
                     <div style="font-size: 0.82rem; font-weight: 800; color: #fff; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-                        <span>📈 Come va nel tempo</span>
+                        <span>📈 Andamento per #</span>
                         <span style="font-size: 0.65rem; color: #38bdf8; font-weight: 700; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 4px; padding: 2px 6px;">Mese in corso</span>
                     </div>
                     <div style="position: relative; width: 100%; height: 200px;">
@@ -1487,23 +1487,31 @@
 
                 <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md); padding: 14px; margin-bottom: 12px;">
                     <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
-                        <div style="font-size: 0.82rem; font-weight: 800; color: #fff;">🔍 Da dove arriva</div>
-                        <span style="font-size: 0.7rem; color: var(--text-muted);">Tocca una voce per vedere le spese</span>
+                        <div style="font-size: 0.82rem; font-weight: 800; color: #fff;"># Tutti gli hashtag</div>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">Tocca un # per vedere le spese</span>
                     </div>
                     <div class="tags-grid-box tags-derive-list" id="tagsGrid_{{ card_idx }}">
-                        {% for tg in cat.all_tags_analysis if tg.has_activity %}
+                        {% for tg in cat.all_tags_analysis %}
                         <div onclick="filterDrawerByTag('drawer_{{ card_idx }}', '{{ tg.code }}', this)"
                              class="tag-focus-pill"
-                             style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 10px; cursor: pointer;">
+                             style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 10px; cursor: pointer; opacity: {{ 1 if tg.has_activity else 0.45 }};">
                             <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                                 <span style="font-size: 0.82rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px; min-width: 0;">
                                     <span>{{ tg.icon }}</span>
                                     <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ tg.label }}</span>
+                                    <span style="color: #38bdf8; font-weight: 700; font-size: 0.72rem; font-family: ui-monospace, monospace;">{{ tg.code }}</span>
                                     <span style="color: #94a3b8; font-weight: 600; font-size: 0.68rem;">{{ tg.tx_count }}</span>
                                 </span>
-                                <span style="font-size: 0.82rem; font-weight: 800; color: #38bdf8; white-space: nowrap;">
-                                    € {{ "{:,.2f}".format(tg.total_amount)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}
-                                    <span style="color: #94a3b8; font-weight: 700; font-size: 0.7rem;">{{ tg.percent }}%</span>
+                                <span style="display: flex; align-items: center; gap: 10px;">
+                                    {% if tg.sparkline %}
+                                    <svg width="72" height="20" viewBox="0 0 72 20" aria-hidden="true" style="flex-shrink:0;">
+                                        <polyline fill="none" stroke="{{ cat.color }}" stroke-width="1.6" points="{{ tg.sparkline }}"></polyline>
+                                    </svg>
+                                    {% endif %}
+                                    <span style="font-size: 0.82rem; font-weight: 800; color: #38bdf8; white-space: nowrap;">
+                                        € {{ "{:,.2f}".format(tg.total_amount)|replace(',', 'X')|replace('.', ',')|replace('X', '.') }}
+                                        <span style="color: #94a3b8; font-weight: 700; font-size: 0.7rem;">{{ tg.percent }}%</span>
+                                    </span>
                                 </span>
                             </div>
                             <div style="background: rgba(255,255,255,0.06); height: 4px; border-radius: 2px; margin-top: 6px; overflow: hidden;">
@@ -2090,19 +2098,23 @@ async function updateCardTimeframe(cardIdx, categoryName, preset, fromYm = '', t
             // 2. Re-render All Tags Grid
             const tagsGrid = document.getElementById(`tagsGrid_${cardIdx}`);
             if (tagsGrid && d.all_tags_analysis) {
-                tagsGrid.innerHTML = d.all_tags_analysis.filter(tg => tg.has_activity).map(tg => `
+                tagsGrid.innerHTML = d.all_tags_analysis.map(tg => `
                     <div onclick="filterDrawerByTag('drawer_${cardIdx}', '${tg.code}', this)"
                          class="tag-focus-pill"
-                         style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 10px; cursor: pointer;">
+                         style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 10px; cursor: pointer; opacity: ${tg.has_activity ? 1 : 0.45};">
                         <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                             <span style="font-size: 0.82rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px; min-width: 0;">
                                 <span>${tg.icon}</span>
                                 <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${tg.label}</span>
+                                <span style="color: #38bdf8; font-weight: 700; font-size: 0.72rem; font-family: ui-monospace, monospace;">${tg.code}</span>
                                 <span style="color: #94a3b8; font-weight: 600; font-size: 0.68rem;">${tg.tx_count}</span>
                             </span>
-                            <span style="font-size: 0.82rem; font-weight: 800; color: #38bdf8; white-space: nowrap;">
-                                € ${formatEurJs(tg.total_amount)}
-                                <span style="color: #94a3b8; font-weight: 700; font-size: 0.7rem;">${tg.percent}%</span>
+                            <span style="display: flex; align-items: center; gap: 10px;">
+                                ${tg.sparkline ? `<svg width="72" height="20" viewBox="0 0 72 20" aria-hidden="true" style="flex-shrink:0;"><polyline fill="none" stroke="${d.color}" stroke-width="1.6" points="${tg.sparkline}"></polyline></svg>` : ''}
+                                <span style="font-size: 0.82rem; font-weight: 800; color: #38bdf8; white-space: nowrap;">
+                                    € ${formatEurJs(tg.total_amount)}
+                                    <span style="color: #94a3b8; font-weight: 700; font-size: 0.7rem;">${tg.percent}%</span>
+                                </span>
                             </span>
                         </div>
                         <div style="background: rgba(255,255,255,0.06); height: 4px; border-radius: 2px; margin-top: 6px; overflow: hidden;">
