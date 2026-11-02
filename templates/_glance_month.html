@@ -1,0 +1,81 @@
+<!-- TAB 1: SINTESI OGGI (DEFAULT) -->
+<div id="dashTabContent_glance" class="dash-tab-content active" style="display: block;">
+{% set daily_quota = (smart_budget.daily_spendable_budget if smart_budget else (cashflow.daily_safe_budget if cashflow else 0)) %}
+{% set still_free = (smart_budget.remaining_variable_budget if smart_budget else (cashflow.monthly_safe_to_spend if cashflow else 0)) %}
+{% set spent_month = (cashflow.variable_expenses if cashflow else 0) %}
+{% set days_left = (cashflow.days_remaining if cashflow else 0) %}
+{% set dim = (cashflow.days_in_month if cashflow and cashflow.days_in_month else 30) %}
+{% set day_pct = ((days_left / dim * 100) if dim else 0) %}
+{% set circ = 326.73 %}
+{% set ring_off = circ * (1 - (days_left / dim if dim else 0)) %}
+{% set mesi_it = ['', 'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'] %}
+{% set ym = (cashflow.year_month.split('-') if cashflow and cashflow.year_month else []) %}
+{% set mese_nome = mesi_it[ym[1]|int] if ym|length == 2 else '' %}
+
+<div class="card glance-month-board">
+    <div class="glance-orb glance-orb-a"></div>
+    <div class="glance-orb glance-orb-b"></div>
+
+    <div class="glance-month-head">
+        <div>
+            <div class="glance-kicker">Questo mese</div>
+            <h3 class="glance-title">
+                {% if selected_profile %}{{ selected_profile.name.split()[0] }}{% elif active_filter == 'all' %}Famiglia{% else %}Oggi{% endif %}
+                <span class="glance-sub">{% if mese_nome %}{{ mese_nome }} {{ ym[0] }}{% elif cashflow %}{{ cashflow.year_month }}{% endif %}</span>
+            </h3>
+        </div>
+        <div class="glance-head-actions">
+            <button type="button" onclick="togglePrivacyMode()" class="privacy-toggle-btn" style="font-size: 0.72rem; padding: 3px 9px;" title="Nascondi/Mostra importi (Shift+P)">
+                <span class="privacy-icon-unmasked">👁️ Nascondi</span>
+                <span class="privacy-icon-masked" style="display: none;">🙈 Mostra</span>
+            </button>
+            <a href="/cashflow" class="glance-link">Cash Flow →</a>
+        </div>
+    </div>
+
+    <div class="glance-hero">
+        <div class="glance-ring-wrap">
+            <svg class="glance-ring" viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="glance-ring-track" cx="60" cy="60" r="52"></circle>
+                <circle class="glance-ring-val" cx="60" cy="60" r="52"
+                    stroke-dasharray="{{ circ }}"
+                    stroke-dashoffset="{{ '%.2f'|format(ring_off) }}"></circle>
+            </svg>
+            <div class="glance-ring-core">
+                <div class="glance-quota-label">Quota</div>
+                <div class="privacy-mask glance-quota-num">{{ daily_quota|eur }}</div>
+                <div class="glance-quota-unit">/ giorno</div>
+            </div>
+        </div>
+        <div class="glance-hero-copy">
+            <div class="glance-days-pill">{{ days_left }} giorni restanti</div>
+            <div class="privacy-mask glance-free-line">Ancora spendibile</div>
+            <div class="privacy-mask glance-free-val">{{ still_free|eur }}</div>
+            <p class="glance-hero-hint">Se spendi circa questa quota al giorno, chiudi il mese in equilibrio.</p>
+        </div>
+    </div>
+
+    <div class="glance-stats">
+        <div class="glance-stat spent">
+            <span class="glance-stat-lbl">Speso nel mese</span>
+            <span class="privacy-mask glance-stat-val">{% if spent_month %}{{ (-spent_month)|eur }}{% else %}€ 0,00{% endif %}</span>
+            <span class="glance-stat-hint">spese variabili</span>
+        </div>
+        <div class="glance-stat in">
+            <span class="glance-stat-lbl">Entrate attese</span>
+            <span class="privacy-mask glance-stat-val">{% if cashflow %}{{ cashflow.expected_month_income|eur_sign }}{% else %}€ 0,00{% endif %}</span>
+            <span class="glance-stat-hint">stipendio / media</span>
+        </div>
+        <div class="glance-stat fix">
+            <span class="glance-stat-lbl">Fissi del mese</span>
+            <span class="privacy-mask glance-stat-val">{% if cashflow %}{{ (-cashflow.total_fixed_expenses_expected)|eur }}{% else %}€ 0,00{% endif %}</span>
+            <span class="glance-stat-hint">{% if cashflow %}pagati {{ cashflow.total_fixed_expenses_paid|eur }} · restano {{ cashflow.total_fixed_expenses_pending|eur }}{% else %}costi fissi{% endif %}</span>
+        </div>
+        <div class="glance-stat liq">
+            <span class="glance-stat-lbl">Saldo liquido</span>
+            <span class="privacy-mask glance-stat-val">{{ total_balance|eur }}</span>
+            <a href="/transactions" class="glance-stat-hint">tutti i conti →</a>
+        </div>
+    </div>
+</div>
+</div> <!-- /#dashTabContent_glance -->
