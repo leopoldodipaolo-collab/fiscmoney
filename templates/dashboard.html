@@ -1453,6 +1453,9 @@
 
         <!-- Dynamic In-Place Range Selector Buttons (No Page Reload / No Scroll Jump) -->
         <div style="display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.35); padding: 3px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); flex-wrap: wrap;">
+            <button type="button" class="btn-trend-range {% if trend_data.months_count == 3 %}active{% endif %}" onclick="changeDashboardTrendRange(3, this)">
+                3 Mesi
+            </button>
             <button type="button" class="btn-trend-range {% if trend_data.months_count == 6 %}active{% endif %}" onclick="changeDashboardTrendRange(6, this)">
                 6 Mesi
             </button>

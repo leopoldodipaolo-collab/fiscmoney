@@ -699,13 +699,13 @@ def dashboard():
     p_id_filter = int(active_filter) if active_filter != 'all' else None
     cashflow_summary = get_monthly_cashflow_data(ws_id, p_id_filter) if ws_id else None
     
-    trend_range = request.args.get('trend_range', '12').strip()
+    trend_range = request.args.get('trend_range', '3').strip()
     try:
         trend_count = int(trend_range)
-        if trend_count not in [6, 12, 18, 24]:
-            trend_count = 12
+        if trend_count not in [3, 6, 12, 18, 24]:
+            trend_count = 3
     except (ValueError, TypeError):
-        trend_count = 12
+        trend_count = 3
 
     trend_data = get_multi_month_trend_data(ws_id, p_id_filter, months_count=trend_count) if ws_id else None
     advisor_insights = get_macro_advisor_insights(ws_id, p_id_filter) if ws_id else []
@@ -900,13 +900,13 @@ def api_dashboard_trend():
     active_filter = session.get("active_profile_filter", "all")
     p_id_filter = int(active_filter) if active_filter != "all" else None
     
-    trend_range = request.args.get("range", "12").strip()
+    trend_range = request.args.get("range", "3").strip()
     try:
         trend_count = int(trend_range)
-        if trend_count not in [6, 12, 18, 24]:
-            trend_count = 12
+        if trend_count not in [3, 6, 12, 18, 24]:
+            trend_count = 3
     except (ValueError, TypeError):
-        trend_count = 12
+        trend_count = 3
         
     trend_data = get_multi_month_trend_data(ws_id, p_id_filter, months_count=trend_count)
     return jsonify({"success": True, "trend_data": trend_data})
