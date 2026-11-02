@@ -277,14 +277,32 @@ def parse_paystub_pdf(file_stream_or_path):
     if data['overtime_amount'] > 0:
         data['extracted_highlights'].append(f"Straordinari: € {data['overtime_amount']:,.2f}")
 
+    # Festività / altre competenze extra (non nella paga base)
+    for l in lines:
+        if 'festivit' in l.lower():
+            amounts = re.findall(r'(\d{1,3}(?:\.\d{3})*,\d{2}|\d+\.\d{2})', l)
+            if amounts:
+                fest_val = clean_amount(amounts[-1])
+                if 20.0 < fest_val < 5000:
+                    data['other_additions'] = round(data['other_additions'] + fest_val, 2)
+                    break
+
     # -------------------------------------------------------------
     # 3. Net Amount (Netto a Pagare)
     # -------------------------------------------------------------
-    # Match spaced or non-spaced "N e t to a P a g ar e ... EURO 3.064,44"
-    net_m = re.search(r'n\s*e\s*t\s*t\s*o[^\d\n\r]{0,100}?(\d{1,3}(?:\.\d{3})*,\d{2}|\d+\.\d{2})', raw_lower)
+    # Prefer the boxed total: "N e t to a P a g ar e ... EURO 3.165,89"
+    net_m = re.search(
+        r'n\s*e\s*t\s*t\s*o\s*a\s*p\s*a\s*g\s*a\s*r\s*e[^\d\n\r]{0,120}?(?:euro\s*)?(\d{1,3}(?:\.\d{3})*,\d{2})',
+        raw_lower
+    )
     if not net_m:
-        net_m = re.search(r'(?:accredito|totale\s+netto|netto\s+in\s+busta)[^\d\n\r]{0,80}?(\d{1,3}(?:\.\d{3})*,\d{2}|\d+\.\d{2})', raw_lower)
-    
+        net_m = re.search(
+            r'(?:netto\s+a\s+pagare|accredito|totale\s+netto|netto\s+in\s+busta)[^\d\n\r]{0,80}?(?:euro\s*)?(\d{1,3}(?:\.\d{3})*,\d{2}|\d+\.\d{2})',
+            raw_lower
+        )
+    if not net_m:
+        net_m = re.search(r'euro\s+(\d{1,3}(?:\.\d{3})*,\d{2})', raw_lower)
+
     if net_m:
         data['net_amount'] = clean_amount(net_m.group(1))
         data['extracted_highlights'].append(f"Netto Busta: € {data['net_amount']:,.2f}")

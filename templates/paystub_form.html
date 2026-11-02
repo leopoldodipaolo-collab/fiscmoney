@@ -469,7 +469,8 @@ function updateLiveCalculations() {
     const calcNet = finalGross - totalTaxes + tratt;
 
     const netEl = document.getElementById('in_net_amount');
-    if (calcNet > 0) {
+    const pdfLocked = netEl && netEl.dataset.fromPdf === '1';
+    if (calcNet > 0 && !pdfLocked) {
         netEl.value = calcNet.toFixed(2);
     }
     const finalNet = parseFloat(netEl.value) || calcNet;
@@ -581,11 +582,19 @@ function uploadAndFillForm(input) {
         if (d.ticket_unit_value) setVal('in_ticket_unit_value', d.ticket_unit_value);
         if (d.ticket_total_value) setVal('in_ticket_total_value', d.ticket_total_value);
 
-        // Net Amount
+        // Netto a pagare dal PDF (EURO ...): non farlo ricalcolare dal lordo incompleto
         setVal('in_net_amount', d.net_amount);
+        const netElPdf = document.getElementById('in_net_amount');
+        if (netElPdf && d.net_amount) {
+            netElPdf.dataset.fromPdf = '1';
+        }
 
         updateLiveCalculations();
+        if (d.net_amount) setVal('in_net_amount', d.net_amount);
         updateTicketTotal();
+        if (d.net_amount && document.getElementById('liveNetDisplay')) {
+            document.getElementById('liveNetDisplay').innerText = '€ ' + Number(d.net_amount).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
     })
     .catch(err => {
         statusDiv.style.background = 'rgba(239, 68, 68, 0.15)';
