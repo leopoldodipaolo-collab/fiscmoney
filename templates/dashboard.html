@@ -4,14 +4,11 @@
 
 {% block content %}
 
-<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.35); border-radius:10px; padding:8px 12px; margin-bottom:12px;">
-    <span style="font-size:0.8rem; color:#fde68a; font-weight:650;">C’è una prova di Home più snella, con i tuoi dati veri.</span>
-    <a href="/lab/home" style="font-size:0.78rem; font-weight:800; color:#0f172a; background:#fbbf24; border-radius:8px; padding:5px 12px; text-decoration:none;">Apri la prova →</a>
-</div>
-
+{% set current_mode = active_workspace.sharing_mode if active_workspace and active_workspace.sharing_mode else 'FULL' %}
+<div class="dash-top-split">
+<div class="dash-top-main">
 <!-- Executive Hero Greeting & Workspace Card -->
-<!-- Executive Hero Greeting & Workspace Card -->
-<div class="card hero-greeting-card" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)); border: 1px solid rgba(56, 189, 248, 0.35); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); padding: 18px 20px; border-radius: 16px; margin-bottom: 16px; position: relative; overflow: hidden;">
+<div class="card hero-greeting-card" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)); border: 1px solid rgba(56, 189, 248, 0.35); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); padding: 18px 20px; border-radius: 16px; margin-bottom: 0; position: relative; overflow: hidden;">
     <!-- Ambient glow behind the logo -->
     <div style="position: absolute; top: -40px; left: -40px; width: 160px; height: 160px; background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
 
@@ -35,7 +32,6 @@
 
         <!-- Workspace Type Badge & Privacy Control -->
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            {% set current_mode = active_workspace.sharing_mode if active_workspace and active_workspace.sharing_mode else 'FULL' %}
             <span class="badge-tag" style="background: {% if active_workspace.type == 'FAMILY' %}rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: var(--accent-success);{% else %}rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); color: var(--accent-primary);{% endif %} padding: 5px 10px; font-weight: 700; font-size: 0.72rem; letter-spacing: 0.5px;">
                 {{ '👨‍👩‍👧‍👦 WORKSPACE FAMIGLIA' if active_workspace.type == 'FAMILY' else '👤 WORKSPACE SINGOLO' }}
             </span>
@@ -50,10 +46,6 @@
             </span>
             {% endif %}
 
-            <!-- PWA App Download / Install Direct Button -->
-            <button id="heroPwaInstallBtn" type="button" onclick="openPwaModal()" class="badge-tag" style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(37, 99, 235, 0.25)); border: 1.5px solid rgba(56, 189, 248, 0.5); color: #38bdf8; font-size: 0.74rem; font-weight: 800; padding: 5px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; box-shadow: 0 0 12px rgba(56, 189, 248, 0.2); transition: all 0.2s ease;" title="Scarica o installa FiscMoney come App sul tuo dispositivo">
-                <span>📲</span> <span>Scarica App</span>
-            </button>
         </div>
     </div>
 
@@ -157,87 +149,116 @@
     </div>
     {% endif %}
 </div>
-
-<!-- ======================================================== -->
-<!-- 📲 PWA SMART PROMO BANNER (DISMISSIBLE MOBILE INVITATION) -->
-<!-- ======================================================== -->
-<div id="pwaInstallBanner" style="display: flex; align-items: center; justify-content: space-between; background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(37, 99, 235, 0.18)); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 14px; padding: 12px 16px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); flex-wrap: wrap; gap: 10px;">
-    <div style="display: flex; align-items: center; gap: 12px; min-width: 240px; flex: 1;">
-        <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(56, 189, 248, 0.2); border: 1px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0;">
-            📲
-        </div>
-        <div>
-            <strong style="color: #fff; font-size: 0.88rem; display: block;">Usa FiscMoney come App sul tuo Telefono</strong>
-            <span style="font-size: 0.74rem; color: #cbd5e1;">Aggiungila alla Home: si apre a schermo intero e registri le spese con 1 tap!</span>
-        </div>
-    </div>
-    <div style="display: flex; align-items: center; gap: 8px;">
-        <button type="button" onclick="triggerPwaInstall()" class="btn btn-sm" style="background: linear-gradient(135deg, #38bdf8, #2563eb); color: #fff; border: none; font-weight: 800; font-size: 0.78rem; padding: 6px 14px; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 10px rgba(37, 99, 235, 0.4);">
-            Installa App
-        </button>
-        <button type="button" onclick="dismissPwaBanner()" style="background: transparent; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; padding: 4px; line-height: 1;" title="Nascondi per questa sessione">&times;</button>
-    </div>
 </div>
 
-<!-- ======================================================== -->
-<!-- 🔍 PROTAGONIST HERO OMNIBAR SEARCH COCKPIT CARD          -->
-<!-- ======================================================== -->
-<div class="card dashboard-hero-omnibar-card" onclick="openOmnibarModal()" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.38); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 0 25px rgba(56, 189, 248, 0.1); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; position: relative; overflow: hidden; cursor: pointer; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);">
-    <!-- Ambient top corner glow -->
-    <div style="position: absolute; top: -35px; right: -35px; width: 140px; height: 140px; background: radial-gradient(circle, rgba(56, 189, 248, 0.22) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
-
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0; box-shadow: 0 2px 10px rgba(56, 189, 248, 0.25);">
-                ⚡
-            </div>
-            <div>
-                <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
-                    Chiedi al tuo Hub Finanziario
-                    <span class="badge-tag" style="background: rgba(56, 189, 248, 0.18); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 0.65rem; font-weight: 800; text-transform: uppercase;">
-                        Risposte Istantanee
-                    </span>
-                </h3>
-                <p style="font-size: 0.76rem; color: var(--text-muted); margin: 2px 0 0 0;">
-                    Digita una parola per conoscere spesa annuale, media mensile e movimenti (es. <em>"quanto ho speso per l'asilo?"</em>)
-                </p>
-            </div>
+<div class="dash-top-side">
+    <div class="card dash-side-search dashboard-hero-omnibar-card" onclick="openOmnibarModal()">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px;">
+            <div style="font-size:0.92rem; font-weight:800; color:#fff;">Cerca</div>
+            <span style="font-size:0.68rem; color:#94a3b8; font-weight:700;">Ctrl K</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 6px;">
-            <span class="badge-tag" style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); color: #cbd5e1; font-size: 0.72rem; padding: 4px 10px;">
-                Tasto rapido: <kbd style="background: rgba(255,255,255,0.12); padding: 1px 5px; border-radius: 4px; font-weight: 800; color: #fff;">Ctrl K</kbd>
-            </span>
+        <div style="background: rgba(10, 15, 29, 0.85); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 10px; padding: 9px 12px; display: flex; align-items: center; gap: 8px;">
+            <span style="color:#38bdf8;">🔍</span>
+            <span style="color:#94a3b8; font-size:0.8rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">asilo, carburante, mutuo…</span>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;" onclick="event.stopPropagation()">
+            <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('asilo')">🎒 Asilo</button>
+            <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('carburante')">⛽ Carburante</button>
+            <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('spesa')">🛒 Spesa</button>
+            <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('mutuo')">🏠 Mutuo</button>
         </div>
     </div>
-
-    <!-- Wide Fake Input Row with Spotlight Glow -->
-    <div style="background: rgba(10, 15, 29, 0.85); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 11px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: all 0.2s ease;" onmouseover="this.style.borderColor='rgba(56, 189, 248, 0.7)';" onmouseout="this.style.borderColor='rgba(56, 189, 248, 0.35)';">
-        <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
-            <span style="font-size: 1.15rem; color: #38bdf8; flex-shrink: 0;">🔍</span>
-            <span style="color: #94a3b8; font-size: 0.88rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                Cerca spesa, tag o commerciante (es. <strong style="color: #cbd5e1;">asilo</strong>, <strong style="color: #cbd5e1;">carburante</strong>, <strong style="color: #cbd5e1;">spesa</strong>, <strong style="color: #cbd5e1;">mutuo</strong>)...
-            </span>
+    <div id="pwaInstallBanner" class="dash-side-pwa">
+        <div style="min-width:0;">
+            <strong style="color:#fff; font-size:0.78rem; display:block;">Apri come App</strong>
+            <span style="font-size:0.7rem; color:#94a3b8;">Schermo intero, 1 tap per le spese</span>
         </div>
-        <button type="button" class="btn btn-sm" style="background: linear-gradient(135deg, #0ea5e9, #2563eb); color: #fff; font-weight: 800; font-size: 0.75rem; padding: 6px 14px; border-radius: 8px; border: none; flex-shrink: 0; box-shadow: 0 2px 10px rgba(14, 165, 233, 0.35);">
-            Cerca Subito &rarr;
-        </button>
+        <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+            <button type="button" id="heroPwaInstallBtn" onclick="triggerPwaInstall(); event.stopPropagation();" class="btn btn-sm" style="background:linear-gradient(135deg,#38bdf8,#2563eb); color:#fff; border:none; font-weight:800; font-size:0.72rem; padding:5px 10px; border-radius:7px; cursor:pointer;">Installa</button>
+            <button type="button" onclick="dismissPwaBanner()" style="background:transparent; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:2px 4px; line-height:1;" title="Nascondi">&times;</button>
+        </div>
     </div>
-
-    <!-- Quick Query Pills Row (Single-Touch Instant Answers) -->
-    <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap;" onclick="event.stopPropagation()">
-        <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">Domande Frequenti:</span>
-        <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('asilo')">🎒 Asilo</button>
-        <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('carburante')">⛽ Carburante</button>
-        <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('spesa')">🛒 Spesa</button>
-        <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('mutuo')">🏠 Mutuo</button>
-        <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('amazon')">📦 Amazon</button>
-        <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('bollette')">⚡ Bollette</button>
-        <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('farmacia')">💊 Farmacia</button>
-    </div>
+</div>
 </div>
 
 <!-- UNIFIED ONBOARDING CHECKLIST HUB (Integrated Assistant Guidance) -->
 <style>
+.dash-top-split {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+    gap: 12px;
+    align-items: stretch;
+    margin-bottom: 16px;
+}
+.dash-top-main,
+.dash-top-side {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.dash-top-main .hero-greeting-card {
+    margin-bottom: 0 !important;
+    height: 100%;
+}
+.dash-side-search {
+    flex: 1;
+    cursor: pointer;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
+    border: 1.5px solid rgba(56, 189, 248, 0.35);
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.35);
+}
+.assistant-briefing-fold {
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 10px;
+}
+.assistant-briefing-fold > summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    color: #cbd5e1;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+.assistant-briefing-fold > summary::-webkit-details-marker { display: none; }
+.assistant-briefing-preview {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+.assistant-briefing-hint {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #a5b4fc;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 7px;
+    padding: 4px 8px;
+}
+.assistant-briefing-fold[open] .assistant-briefing-hint { display: none; }
+.dash-side-pwa {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 12px;
+    padding: 10px 12px;
+}
+@media (max-width: 960px) {
+    .dash-top-split {
+        grid-template-columns: 1fr;
+    }
+}
 @media (max-width: 640px) {
     #aiOnboardingChecklistBanner {
         padding: 14px 12px !important;
@@ -406,170 +427,6 @@
 </div>
 
 
-<!-- AI Executive Assistant Hero Briefing Card -->
-{% if assistant_briefing %}
-<div class="card assistant-hero-card" id="persona-switcher-box" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)); border: 1.5px solid rgba(99, 102, 241, 0.4); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5); position: relative; overflow: hidden; margin-bottom: 16px;">
-    <!-- Subtle background accent glow -->
-    <div style="position: absolute; top: -30px; right: -30px; width: 140px; height: 140px; background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
-
-    <div class="assistant-header-row" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(99, 102, 241, 0.2); border: 2px solid {{ active_persona.badge_color or 'rgba(99, 102, 241, 0.5)' }}; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); flex-shrink: 0; overflow: hidden; cursor: pointer;" onclick="openAssistantModal()" title="Clicca per cambiare assistente">
-                {% if active_persona.image %}
-                <img src="{{ active_persona.image }}" alt="{{ active_persona.name }}" style="width: 100%; height: 100%; object-fit: cover;">
-                {% else %}
-                {{ assistant_briefing.avatar or assistant_briefing.persona_avatar or '🤖' }}
-                {% endif %}
-            </div>
-            <div>
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0; cursor: pointer;" onclick="openAssistantModal()" title="Clicca per cambiare assistente">
-                        {{ assistant_briefing.name or assistant_briefing.persona_name or 'Assistente AI' }}
-                    </h3>
-                    <span class="badge-tag" style="background: {{ active_persona.badge_bg or 'rgba(99, 102, 241, 0.2)' }}; color: {{ active_persona.badge_color or '#c7d2fe' }}; font-size: 0.7rem; font-weight: 700; border: 1px solid {{ active_persona.border_color or 'rgba(99, 102, 241, 0.35)' }};">
-                        {{ assistant_briefing.role_badge or assistant_briefing.persona_role or 'Consulente' }}
-                    </span>
-                </div>
-                <div style="color: #94a3b8; font-size: 0.75rem; margin-top: 2px;">
-                    Assistente Finanziario & Fiscale Intelligente
-                </div>
-            </div>
-        </div>
-
-        <!-- Assistant Modal Trigger Button -->
-        <button type="button" 
-                onclick="openAssistantModal()" 
-                class="btn-change-persona"
-                title="Cambia assistente virtuale">
-            <span>✨</span>
-            <span>Cambia Assistente</span>
-        </button>
-    </div>
-
-    <!-- Assistant Persona Speech Bubble -->
-    <div style="background: rgba(15, 23, 42, 0.6); border-radius: 12px; padding: 12px 14px; border: 1px solid rgba(255, 255, 255, 0.06); margin-bottom: 12px;">
-        <div style="font-weight: 700; color: #e2e8f0; font-size: 0.88rem; margin-bottom: 4px;">
-            {{ assistant_briefing.headline|safe }}
-        </div>
-        <p style="color: #cbd5e1; font-size: 0.8rem; line-height: 1.45; margin: 0;">
-            {{ assistant_briefing.overview|safe }}
-        </p>
-    </div>
-
-    <!-- Live Executive KPI Pill Bar (Responsive Grid) -->
-    <div class="assistant-kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 12px;">
-        <!-- Smart Budget Co-Pilota & Safe to spend -->
-        <a href="/cashflow" style="text-decoration: none; display: block; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 8px 10px; transition: transform 0.15s ease;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="font-size: 0.68rem; color: var(--accent-success); font-weight: 700; text-transform: uppercase;">
-                    {% if smart_budget %}🧭 Smart Budget ({{ smart_budget.overall_icon }}){% else %}🎯 Safe-to-Spend Libero{% endif %}
-                </div>
-                {% if smart_budget %}
-                <span class="badge-tag" style="font-size: 0.58rem; padding: 1px 4px; background: rgba(16, 185, 129, 0.2); color: #34d399;">
-                    {{ smart_budget.daily_spendable_budget|eur }}/gg
-                </span>
-                {% endif %}
-            </div>
-            <div class="privacy-mask" style="font-size: 1.05rem; font-weight: 800; color: #fff; margin-top: 2px;" title="Passa sopra per sbirciare">
-                {% if smart_budget %}
-                    {{ smart_budget.remaining_variable_budget|eur }}
-                {% elif cashflow %}
-                    {{ cashflow.monthly_safe_to_spend|eur }}
-                {% else %}
-                    € 0,00
-                {% endif %}
-            </div>
-        </a>
-
-        <!-- Latest Salary & Tickets -->
-        <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 8px; padding: 8px 10px;">
-            <div style="font-size: 0.68rem; color: #93c5fd; font-weight: 700; text-transform: uppercase;">💶 Ultimo Stipendio Netto</div>
-            <div class="privacy-mask" style="font-size: 1.05rem; font-weight: 800; color: #fff; margin-top: 2px;" title="Passa sopra per sbirciare">
-                {% if latest_paystub %}
-                    {{ latest_paystub.net_salary|eur }}
-                    {% if latest_paystub.ticket_total and latest_paystub.ticket_total > 0 %}
-                    <span style="font-size: 0.7rem; color: #34d399; font-weight: 600;">+{{ latest_paystub.ticket_total|eur }} 🎟️</span>
-                    {% endif %}
-                {% else %}
-                    Nessun cedolino
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Latest 730 Refund / Debt -->
-        <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 8px 10px;">
-            <div style="font-size: 0.68rem; color: #fcd34d; font-weight: 700; text-transform: uppercase;">🏛️ Modello 730 ({{ latest_730.tax_year if latest_730 else 'Recente' }})</div>
-            <div class="privacy-mask" style="font-size: 1.05rem; font-weight: 800; color: {% if latest_730 and latest_730.tax_outcome_val > 0 %}#34d399{% elif latest_730 and latest_730.tax_outcome_val < 0 %}#f87171{% else %}#fff{% endif %}; margin-top: 2px;" title="Passa sopra per sbirciare">
-                {% if latest_730 %}
-                    {{ latest_730.tax_outcome_val|eur_sign }}
-                    <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 500;">({{ latest_730.tax_outcome_type }})</span>
-                {% else %}
-                    Da caricare
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <!-- Smart Recommendation Callout -->
-    {% if assistant_briefing.recommendation %}
-    <div style="display: flex; align-items: center; gap: 8px; background: rgba(99, 102, 241, 0.12); border: 1px dashed rgba(99, 102, 241, 0.35); border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; color: #e0e7ff; margin-bottom: 12px;">
-        <span>💡</span>
-        <span>{{ assistant_briefing.recommendation|safe }}</span>
-    </div>
-    {% endif %}
-
-    <!-- Integrated Collapsible: 🧠 Macro Advisor - Analisi Globale & Strategie -->
-    {% if advisor_insights and advisor_insights|length > 0 %}
-    <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 12px; margin-top: 4px;">
-        <!-- Toggle Header Button -->
-        <div onclick="toggleAssistantMacroAdvisor()" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 8px 12px; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 10px; transition: all 0.2s ease;" id="macroAdvisorToggleHeader">
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <span style="font-size: 1.25rem;">🧠</span>
-                <div>
-                    <div style="font-size: 0.88rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <span>Analisi Finanziaria Globale & Strategie</span>
-                        <span class="badge-tag" style="background: rgba(59, 130, 246, 0.18); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.35); font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">
-                            {{ advisor_insights|length }} Insight Strategici
-                        </span>
-                    </div>
-                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 1px;">
-                        Autonomia patrimoniale, tasso di risparmio, entrate medie e margini di ottimizzazione
-                    </div>
-                </div>
-            </div>
-
-            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                <button type="button" class="btn btn-sm" id="btnToggleMacroAdvisor" style="background: rgba(59, 130, 246, 0.18); border: 1px solid rgba(59, 130, 246, 0.4); color: #93c5fd; font-weight: 800; font-size: 0.74rem; padding: 5px 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 4px;">
-                    <span id="macroAdvisorArrow">▾ Espandi Analisi</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Collapsible Body with Insights -->
-        <div id="macroAdvisorBody" style="display: none; margin-top: 12px; padding: 4px 0;">
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 8px;">
-                <a href="/cashflow" class="btn btn-secondary btn-sm" style="font-size: 0.7rem; padding: 3px 8px; border-color: rgba(59, 130, 246, 0.35); color: #93c5fd;">
-                    Apri Cash Flow Completo →
-                </a>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-                {% for ins in advisor_insights %}
-                <div class="advisor-insight-item advisor-{{ ins.type }}" style="padding: 10px 14px; border-radius: 10px;">
-                    <div class="advisor-icon" style="font-size: 1.15rem;">{{ ins.icon }}</div>
-                    <div class="advisor-content">
-                        <div class="advisor-title" style="font-size: 0.85rem; font-weight: 800;">{{ ins.title }}</div>
-                        <div class="advisor-text" style="font-size: 0.78rem; line-height: 1.45;">{{ ins.text|safe }}</div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-    {% endif %}
-</div>
-{% endif %}
-
-
 <!-- ======================================================== -->
 <!-- DASHBOARD TABS NAVIGATION BAR (Sleek Segmented Controls) -->
 <!-- ======================================================== -->
@@ -584,7 +441,7 @@
         </span>
     </div>
     <span style="font-size: 0.68rem; color: var(--text-muted);">
-        4 Aree Tematiche
+        5 sezioni
     </span>
 </div>
 
@@ -621,7 +478,7 @@
         <span class="tab-icon">📈</span>
         <div class="tab-text-group">
             <span class="tab-title">
-                Trend 6 Mesi
+                Trend
                 <span class="tab-active-dot"></span>
             </span>
             <span class="tab-subtitle">Grafici &amp; Risparmio</span>
@@ -642,6 +499,19 @@
             <span class="tab-subtitle">Investimenti &amp; PAC</span>
         </div>
     </button>
+
+    {% if assistant_briefing %}
+    <button type="button" class="dash-tab-btn" id="dashTabBtn_advisor" onclick="switchDashboardTab('advisor', this)">
+        <span class="tab-icon">🧠</span>
+        <div class="tab-text-group">
+            <span class="tab-title">
+                {{ assistant_briefing.name or 'Consulente' }}
+                <span class="tab-active-dot"></span>
+            </span>
+            <span class="tab-subtitle">Briefing &amp; strategie</span>
+        </div>
+    </button>
+    {% endif %}
 </div>
 
 <!-- TAB 1: SINTESI OGGI (DEFAULT) -->
@@ -1678,6 +1548,126 @@
 
 
 </div> <!-- /#dashTabContent_investments -->
+
+<!-- TAB 5: CONSULENTE -->
+{% if assistant_briefing %}
+<div id="dashTabContent_advisor" class="dash-tab-content" style="display: none;">
+<div class="card assistant-hero-card" id="persona-switcher-box" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)); border: 1.5px solid rgba(99, 102, 241, 0.4); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); position: relative; overflow: hidden; margin-bottom: 16px;">
+    <div style="position: absolute; top: -30px; right: -30px; width: 140px; height: 140px; background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
+
+    <div class="assistant-header-row" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(99, 102, 241, 0.2); border: 2px solid {{ active_persona.badge_color or 'rgba(99, 102, 241, 0.5)' }}; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0; overflow: hidden; cursor: pointer;" onclick="openAssistantModal()" title="Cambia assistente">
+                {% if active_persona.image %}
+                <img src="{{ active_persona.image }}" alt="{{ active_persona.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                {% else %}
+                {{ assistant_briefing.avatar or assistant_briefing.persona_avatar or '🤖' }}
+                {% endif %}
+            </div>
+            <div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <h3 style="font-size: 1.05rem; font-weight: 800; color: #fff; margin: 0; cursor: pointer;" onclick="openAssistantModal()">
+                        {{ assistant_briefing.name or assistant_briefing.persona_name or 'Assistente AI' }}
+                    </h3>
+                    <span class="badge-tag" style="background: {{ active_persona.badge_bg or 'rgba(99, 102, 241, 0.2)' }}; color: {{ active_persona.badge_color or '#c7d2fe' }}; font-size: 0.7rem; font-weight: 700; border: 1px solid {{ active_persona.border_color or 'rgba(99, 102, 241, 0.35)' }};">
+                        {{ assistant_briefing.role_badge or assistant_briefing.persona_role or 'Consulente' }}
+                    </span>
+                </div>
+                <div style="color: #94a3b8; font-size: 0.75rem; margin-top: 2px;">Briefing finanziario e fiscale</div>
+            </div>
+        </div>
+        <button type="button" onclick="openAssistantModal()" class="btn-change-persona" title="Cambia assistente virtuale">
+            <span>✨</span>
+            <span>Cambia Assistente</span>
+        </button>
+    </div>
+
+    <div style="background: rgba(15, 23, 42, 0.6); border-radius: 12px; padding: 12px 14px; border: 1px solid rgba(255, 255, 255, 0.06); margin-bottom: 12px;">
+        <div style="font-weight: 700; color: #e2e8f0; font-size: 0.88rem; margin-bottom: 4px;">
+            {{ assistant_briefing.headline|safe }}
+        </div>
+        <p style="color: #cbd5e1; font-size: 0.8rem; line-height: 1.45; margin: 0;">
+            {{ assistant_briefing.overview|safe }}
+        </p>
+    </div>
+
+    <div class="assistant-kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 12px;">
+        <a href="/cashflow" style="text-decoration: none; display: block; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 8px 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 0.68rem; color: var(--accent-success); font-weight: 700; text-transform: uppercase;">
+                    {% if smart_budget %}🧭 Smart Budget ({{ smart_budget.overall_icon }}){% else %}🎯 Safe-to-Spend{% endif %}
+                </div>
+                {% if smart_budget %}
+                <span class="badge-tag" style="font-size: 0.58rem; padding: 1px 4px; background: rgba(16, 185, 129, 0.2); color: #34d399;">{{ smart_budget.daily_spendable_budget|eur }}/gg</span>
+                {% endif %}
+            </div>
+            <div class="privacy-mask" style="font-size: 1.05rem; font-weight: 800; color: #fff; margin-top: 2px;">
+                {% if smart_budget %}{{ smart_budget.remaining_variable_budget|eur }}{% elif cashflow %}{{ cashflow.monthly_safe_to_spend|eur }}{% else %}€ 0,00{% endif %}
+            </div>
+        </a>
+        <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 8px; padding: 8px 10px;">
+            <div style="font-size: 0.68rem; color: #93c5fd; font-weight: 700; text-transform: uppercase;">💶 Ultimo Stipendio Netto</div>
+            <div class="privacy-mask" style="font-size: 1.05rem; font-weight: 800; color: #fff; margin-top: 2px;">
+                {% if latest_paystub %}
+                    {{ latest_paystub.net_salary|eur }}
+                    {% if latest_paystub.ticket_total and latest_paystub.ticket_total > 0 %}
+                    <span style="font-size: 0.7rem; color: #34d399; font-weight: 600;">+{{ latest_paystub.ticket_total|eur }} 🎟️</span>
+                    {% endif %}
+                {% else %}
+                    Nessun cedolino
+                {% endif %}
+            </div>
+        </div>
+        <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 8px; padding: 8px 10px;">
+            <div style="font-size: 0.68rem; color: #fcd34d; font-weight: 700; text-transform: uppercase;">🏛️ Modello 730 ({{ latest_730.tax_year if latest_730 else 'Recente' }})</div>
+            <div class="privacy-mask" style="font-size: 1.05rem; font-weight: 800; color: {% if latest_730 and latest_730.tax_outcome_val > 0 %}#34d399{% elif latest_730 and latest_730.tax_outcome_val < 0 %}#f87171{% else %}#fff{% endif %}; margin-top: 2px;">
+                {% if latest_730 %}
+                    {{ latest_730.tax_outcome_val|eur_sign }}
+                    <span style="font-size: 0.68rem; color: #94a3b8; font-weight: 500;">({{ latest_730.tax_outcome_type }})</span>
+                {% else %}
+                    Da caricare
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if assistant_briefing.recommendation %}
+    <div style="display: flex; align-items: center; gap: 8px; background: rgba(99, 102, 241, 0.12); border: 1px dashed rgba(99, 102, 241, 0.35); border-radius: 8px; padding: 8px 12px; font-size: 0.78rem; color: #e0e7ff; margin-bottom: 12px;">
+        <span>💡</span>
+        <span>{{ assistant_briefing.recommendation|safe }}</span>
+    </div>
+    {% endif %}
+
+    {% if advisor_insights and advisor_insights|length > 0 %}
+    <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 12px; margin-top: 4px;">
+        <div onclick="toggleAssistantMacroAdvisor()" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 8px 12px; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 10px;" id="macroAdvisorToggleHeader">
+            <div>
+                <div style="font-size: 0.88rem; font-weight: 800; color: #fff;">Analisi &amp; strategie</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">{{ advisor_insights|length }} insight</div>
+            </div>
+            <button type="button" class="btn btn-sm" id="btnToggleMacroAdvisor" style="background: rgba(59, 130, 246, 0.18); border: 1px solid rgba(59, 130, 246, 0.4); color: #93c5fd; font-weight: 800; font-size: 0.74rem; padding: 5px 12px; border-radius: 8px;">
+                <span id="macroAdvisorArrow">▾ Espandi Analisi</span>
+            </button>
+        </div>
+        <div id="macroAdvisorBody" style="display: none; margin-top: 12px;">
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                {% for ins in advisor_insights %}
+                <div class="advisor-insight-item advisor-{{ ins.type }}" style="padding: 10px 14px; border-radius: 10px;">
+                    <div class="advisor-icon" style="font-size: 1.15rem;">{{ ins.icon }}</div>
+                    <div class="advisor-content">
+                        <div class="advisor-title" style="font-size: 0.85rem; font-weight: 800;">{{ ins.title }}</div>
+                        <div class="advisor-text" style="font-size: 0.78rem; line-height: 1.45;">{{ ins.text|safe }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+</div>
+{% endif %}
+
 <!-- ======================================================== -->
 <!-- MODAL: AGGIUNGI NUOVA SCADENZA FUTURA                     -->
 <!-- ======================================================== -->
@@ -3053,17 +3043,11 @@ function toggleAssistantMacroAdvisor() {
 }
 
 function initAssistantMacroAdvisorState() {
-    const saved = localStorage.getItem('fisc_assistant_macroadvisor_collapsed');
     const body = document.getElementById('macroAdvisorBody');
     const arrow = document.getElementById('macroAdvisorArrow');
     if (body) {
-        if (saved === 'false') {
-            body.style.display = 'block';
-            if (arrow) arrow.innerHTML = '▴ Comprimi Analisi';
-        } else {
-            body.style.display = 'none';
-            if (arrow) arrow.innerHTML = '▾ Espandi Analisi';
-        }
+        body.style.display = 'none';
+        if (arrow) arrow.innerHTML = '▾ Espandi Analisi';
     }
 }
 
@@ -3402,7 +3386,7 @@ function syncDeadlineToCategory(val) {
 // 📑 DASHBOARD TABS NAVIGATION CONTROLLER
 // ---------------------------------------------------------
 function switchDashboardTab(tabKey, btn) {
-    const validTabs = ['glance', 'calendar', 'trend', 'investments'];
+    const validTabs = ['glance', 'calendar', 'trend', 'investments', 'advisor'];
     if (!validTabs.includes(tabKey)) tabKey = 'glance';
 
     // Hide all tab contents
@@ -3469,6 +3453,8 @@ function initDashboardTabsState() {
         savedTab = 'calendar';
     } else if (hash.includes('trend')) {
         savedTab = 'trend';
+    } else if (hash.includes('persona') || hash.includes('advisor') || hash.includes('demetrio')) {
+        savedTab = 'advisor';
     }
 
     switchDashboardTab(savedTab);
