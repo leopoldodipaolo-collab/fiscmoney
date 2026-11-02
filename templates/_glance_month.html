@@ -77,5 +77,140 @@
             <a href="/transactions" class="glance-stat-hint">tutti i conti →</a>
         </div>
     </div>
+
+    {% if smart_budget %}
+    {% set bud_circ = 213.63 %}
+    {% set bud_pct = [smart_budget.overall_pct, 100]|min %}
+    {% set bud_off = bud_circ * (1 - (bud_pct / 100)) %}
+    {% set sav_ok = smart_budget.planned_savings >= smart_budget.target_savings %}
+    {% set sav_pct_raw = ((smart_budget.planned_savings / smart_budget.target_savings * 100) if smart_budget.target_savings else 100) %}
+    {% set sav_pct = [sav_pct_raw, 100]|min if sav_pct_raw > 0 else 0 %}
+    {% set sav_off = bud_circ * (1 - (sav_pct / 100)) %}
+    <div class="glance-duo">
+        <div class="glance-spot bud">
+            <div class="glance-mini-ring-wrap">
+                <svg class="glance-mini-ring" viewBox="0 0 80 80" aria-hidden="true">
+                    <circle class="trk" cx="40" cy="40" r="34"></circle>
+                    <circle class="val cyan" cx="40" cy="40" r="34"
+                        stroke-dasharray="{{ bud_circ }}"
+                        stroke-dashoffset="{{ '%.2f'|format(bud_off) }}"></circle>
+                </svg>
+                <div class="glance-mini-core privacy-mask">{{ '%.0f'|format(smart_budget.overall_pct) }}%</div>
+            </div>
+            <div class="glance-spot-copy">
+                <div class="glance-stat-lbl">🛒 Budget categorie</div>
+                <div class="privacy-mask glance-spot-val cyan">{{ smart_budget.total_allocated_budget|eur }}</div>
+                <div class="glance-bar"><span style="width: {{ bud_pct }}%;"></span></div>
+                <div class="glance-stat-hint">Speso {{ smart_budget.total_variable_spent|eur }} · resta {{ smart_budget.remaining_variable_budget|eur }}</div>
+            </div>
+        </div>
+        <div class="glance-spot save{% if not sav_ok %} warn{% endif %}">
+            <div class="glance-mini-ring-wrap">
+                <svg class="glance-mini-ring" viewBox="0 0 80 80" aria-hidden="true">
+                    <circle class="trk" cx="40" cy="40" r="34"></circle>
+                    <circle class="val {% if sav_ok %}green{% else %}gold{% endif %}" cx="40" cy="40" r="34"
+                        stroke-dasharray="{{ bud_circ }}"
+                        stroke-dashoffset="{{ '%.2f'|format(sav_off) }}"></circle>
+                </svg>
+                <div class="glance-mini-core">{% if sav_ok %}✓{% else %}!{% endif %}</div>
+            </div>
+            <div class="glance-spot-copy">
+                <div class="glance-stat-lbl">⚖️ Risparmio pianificato</div>
+                <div class="privacy-mask glance-spot-val {% if sav_ok %}green{% else %}gold{% endif %}">{{ smart_budget.planned_savings|eur }}</div>
+                <div class="glance-bar gold"><span style="width: {{ sav_pct }}%;"></span></div>
+                <div class="glance-stat-hint">
+                    {% if sav_ok %}
+                        Target protetto · {{ smart_budget.target_savings|eur }}
+                    {% else %}
+                        Sotto target di {{ (smart_budget.target_savings - smart_budget.planned_savings)|eur }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="glance-sim" id="glanceSim"
+         data-income="{{ (smart_budget.effective_income if smart_budget else (cashflow.expected_month_income if cashflow else 0)) }}"
+         data-free="{{ still_free }}"
+         data-savings="{{ (smart_budget.planned_savings if smart_budget else 0) }}"
+         data-target="{{ (smart_budget.target_savings if smart_budget else 0) }}"
+         data-days="{{ days_left }}">
+        <div class="glance-sim-head">
+            <span class="glance-sim-kicker">Simulatore shock</span>
+            <strong>E se arriva una spesa improvvisa?</strong>
+        </div>
+        <div class="glance-sim-row">
+            <label class="glance-sim-input-wrap">
+                <span>€</span>
+                <input type="number" id="glanceSimAmt" min="0" step="50" placeholder="700" inputmode="decimal" oninput="runGlanceSim()">
+            </label>
+            <div class="glance-sim-chips">
+                <button type="button" data-amt="200" onclick="setGlanceSim(200)">200</button>
+                <button type="button" data-amt="500" onclick="setGlanceSim(500)">500</button>
+                <button type="button" data-amt="700" onclick="setGlanceSim(700)">700</button>
+                <button type="button" data-amt="1000" onclick="setGlanceSim(1000)">1.000</button>
+            </div>
+        </div>
+        <div class="glance-sim-stage idle" id="glanceSimVerdict">
+            <div class="glance-sim-idle">Tocca un importo: vedi se lo stipendio copre, quanto resta spendibile e se il target resiste.</div>
+        </div>
+    </div>
 </div>
+<script>
+function glanceSimEur(v) {
+    return '€ ' + Number(v || 0).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+function setGlanceSim(n) {
+    var el = document.getElementById('glanceSimAmt');
+    if (el) { el.value = n; runGlanceSim(); }
+}
+function runGlanceSim() {
+    var box = document.getElementById('glanceSim');
+    var out = document.getElementById('glanceSimVerdict');
+    var inp = document.getElementById('glanceSimAmt');
+    if (!box || !out || !inp) return;
+    var extra = parseFloat(String(inp.value || '').replace(',', '.')) || 0;
+    var chips = box.querySelectorAll('.glance-sim-chips button');
+    for (var i = 0; i < chips.length; i++) {
+        chips[i].classList.toggle('on', Number(chips[i].getAttribute('data-amt')) === extra);
+    }
+    if (extra <= 0) {
+        out.className = 'glance-sim-stage idle';
+        out.innerHTML = '<div class="glance-sim-idle">Tocca un importo: vedi se lo stipendio copre, quanto resta spendibile e se il target resiste.</div>';
+        return;
+    }
+    var income = parseFloat(box.dataset.income) || 0;
+    var free = parseFloat(box.dataset.free) || 0;
+    var savings = parseFloat(box.dataset.savings) || 0;
+    var target = parseFloat(box.dataset.target) || 0;
+    var days = parseInt(box.dataset.days, 10) || 0;
+    var leftFree = free - extra;
+    var leftSav = savings - extra;
+    var daily = (days > 0 && leftFree > 0) ? (leftFree / days) : 0;
+    var coversSalary = extra <= income;
+    var coversBuffer = extra <= free;
+    var cls = coversSalary && coversBuffer ? 'ok' : (coversSalary ? 'warn' : 'bad');
+    var coverTitle = !coversSalary ? 'Non copre' : (coversBuffer ? 'Sì, copre' : 'Copre, ma stretto');
+    var coverSub = !coversSalary
+        ? 'Manca ' + glanceSimEur(extra - income)
+        : (coversBuffer ? 'Dentro il buffer' : 'Sfori di ' + glanceSimEur(extra - free));
+    var barBase = Math.max(free, extra, 1);
+    var shockPct = Math.min(100, extra / barBase * 100);
+    var restPct = Math.max(0, 100 - shockPct);
+    var savNote = !target ? '' : (leftSav >= target ? 'Target ancora protetto' : 'Sotto target di ' + glanceSimEur(target - leftSav));
+    out.className = 'glance-sim-stage ' + cls;
+    out.innerHTML =
+        '<div class="glance-sim-kpis">' +
+            '<div class="glance-sim-kpi cover"><span>Stipendio</span><strong>' + coverTitle + '</strong><em>' + coverSub + '</em></div>' +
+            '<div class="glance-sim-kpi rest"><span>Resta spendibile</span><strong class="privacy-mask">' + glanceSimEur(Math.max(0, leftFree)) + '</strong><em>' + (days > 0 && leftFree > 0 ? glanceSimEur(daily) + ' / giorno' : 'buffer esaurito') + '</em></div>' +
+            '<div class="glance-sim-kpi sav"><span>Risparmio dopo</span><strong class="privacy-mask">' + glanceSimEur(leftSav) + '</strong><em>' + savNote + '</em></div>' +
+        '</div>' +
+        '<div class="glance-shock-bar" title="Quanto la spesa mangia il buffer">' +
+            '<span class="shock" style="width:' + shockPct + '%"></span>' +
+            '<span class="rest" style="width:' + restPct + '%"></span>' +
+        '</div>' +
+        '<div class="glance-shock-legend"><span>Spesa shock ' + glanceSimEur(extra) + '</span><span>Buffer ' + glanceSimEur(free) + '</span></div>';
+}
+</script>
 </div> <!-- /#dashTabContent_glance -->
