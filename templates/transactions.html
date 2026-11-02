@@ -1286,6 +1286,39 @@
         </div>
     </div>
 
+    {% if available_months|length > 0 %}
+    {% set ns = namespace(keep='') %}
+    {% if selected_category %}{% set ns.keep = ns.keep ~ '&category=' ~ (selected_category|urlencode) %}{% endif %}
+    {% if search_query %}{% set ns.keep = ns.keep ~ '&q=' ~ (search_query|urlencode) %}{% endif %}
+    {% if selected_tag %}{% set ns.keep = ns.keep ~ '&tag=' ~ (selected_tag|urlencode) %}{% endif %}
+    {% if selected_account_id %}{% set ns.keep = ns.keep ~ '&account_id=' ~ selected_account_id %}{% endif %}
+    {% if status_filter %}{% set ns.keep = ns.keep ~ '&status=' ~ status_filter %}{% endif %}
+    <div class="tx-month-filter-bar" style="display: flex; align-items: center; gap: 8px; margin: 0 0 14px 0; flex-wrap: wrap;">
+        <span style="font-size: 0.72rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap;">🗓️ Mese</span>
+        <div class="triage-months-scroll" style="display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; flex: 1; min-width: 0; padding: 2px 0;">
+            <a href="/transactions?month=all{{ ns.keep }}"
+               class="triage-month-capsule {% if selected_month == 'all' %}active{% endif %}"
+               style="flex-shrink: 0;">
+                <div class="month-capsule-title"><strong>Tutti</strong></div>
+            </a>
+            {% for m in available_months %}
+            {% set is_m_active = (selected_month == m.ym) %}
+            <a href="/transactions?month={{ m.ym }}{{ ns.keep }}"
+               class="triage-month-capsule {% if is_m_active %}active{% endif %} {% if m.is_current_month %}is-current{% endif %}"
+               style="flex-shrink: 0;">
+                <div class="month-capsule-title">
+                    {% if m.is_current_month %}<span>📍</span>{% endif %}
+                    <strong>{{ m.name_short or m.name_full }}</strong>
+                </div>
+                <div class="month-capsule-meta">
+                    <span class="count-tx">{{ m.tx_count }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
     <!-- ======================================================== -->
     <!-- VISTA A: CASSETTI PER MACRO-CATEGORIA (DEFAULT)         -->
     <!-- ======================================================== -->
@@ -1299,10 +1332,11 @@
         {% else %}
         <div class="category-folders-container">
             {% for folder in category_folders %}
-            <div class="category-folder-card" id="catFolder-{{ loop.index }}">
+            {% set folder_slug = folder.name|replace(' ', '-')|replace('&', 'e')|replace('/', '-') %}
+            <div class="category-folder-card" id="catFolder-{{ folder_slug }}" data-folder="{{ folder.name }}">
                 
                 <!-- Folder Header (Click to toggle) -->
-                <div class="category-folder-header" onclick="toggleCategoryFolder('catFolder-{{ loop.index }}')">
+                <div class="category-folder-header" onclick="toggleCategoryFolder('catFolder-{{ folder_slug }}')">
                     <div class="cat-header-left">
                         <div class="cat-folder-icon" style="background: {{ folder.color }}22; border: 1.5px solid {{ folder.color }}55;">
                             {{ folder.icon }}
@@ -2004,6 +2038,7 @@
         </div>
         
         <form id="editTxForm" method="POST" action="">
+            <input type="hidden" name="next" id="editTxNext" value="">
             <input type="hidden" id="editTags" name="tags" value="">
 
             <!-- AI Smart Auto-Suggestion Box -->
@@ -4334,6 +4369,9 @@ function toggleEditAmountFields(enabled) {
 
 function openEditTxModal(id, category, subCategory, tags, desc, amount = 0) {
     document.getElementById('editTxForm').action = `/transactions/update/${id}`;
+    const nextField = document.getElementById('editTxNext');
+    if (nextField) nextField.value = currentTransactionsReturnUrl();
+    saveTxWorkspaceState();
     currentEditTxDesc = desc;
     currentEditTxAmount = Math.abs(parseFloat(amount) || 0);
     document.getElementById('editTxDesc').innerText = `"${desc}"`;
@@ -5912,6 +5950,46 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleMicroExpenses(shouldHide);
 });
 
+function txWorkspaceStorageKey() {
+    return 'fisc_tx_workspace:' + (window.location.search || '');
+}
+
+function saveTxWorkspaceState() {
+    try {
+        const openFolders = [];
+        document.querySelectorAll('.category-folder-card.is-open').forEach((el) => {
+            if (el.id) openFolders.push(el.id);
+        });
+        sessionStorage.setItem(txWorkspaceStorageKey(), JSON.stringify({
+            scrollY: window.scrollY,
+            openFolders,
+            view: localStorage.getItem('fisc_tx_main_view') || 'folders'
+        }));
+    } catch (e) { /* ignore */ }
+}
+
+function restoreTxWorkspaceState() {
+    try {
+        const raw = sessionStorage.getItem(txWorkspaceStorageKey());
+        if (!raw) return;
+        const state = JSON.parse(raw);
+        (state.openFolders || []).forEach((id) => {
+            const folder = document.getElementById(id);
+            if (!folder) return;
+            folder.classList.add('is-open');
+            const body = folder.querySelector('.category-folder-body');
+            if (body) body.style.display = 'block';
+        });
+        if (typeof state.scrollY === 'number') {
+            requestAnimationFrame(() => window.scrollTo(0, state.scrollY));
+        }
+    } catch (e) { /* ignore */ }
+}
+
+function currentTransactionsReturnUrl() {
+    return window.location.pathname + window.location.search;
+}
+
 function toggleCategoryFolder(folderId) {
     const folder = document.getElementById(folderId);
     if (!folder) return;
@@ -5926,6 +6004,7 @@ function toggleCategoryFolder(folderId) {
         folder.classList.add('is-open');
         if (body) body.style.display = 'block';
     }
+    saveTxWorkspaceState();
 }
 
 function applyFiglioButtonState(btn, isFiglio) {
@@ -6020,6 +6099,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Restore User's Preferred Main View Mode (Folders vs Flat Table)
     const savedMainView = localStorage.getItem('fisc_tx_main_view') || 'folders';
     switchMainTxView(savedMainView);
+    restoreTxWorkspaceState();
+
+    document.addEventListener('submit', (ev) => {
+        const form = ev.target;
+        if (!form || !form.action) return;
+        const action = String(form.action);
+        if (action.indexOf('/transactions/') === -1 && action.indexOf('/transactions?') === -1) return;
+        saveTxWorkspaceState();
+        let next = form.querySelector('input[name="next"]');
+        if (!next) {
+            next = document.createElement('input');
+            next.type = 'hidden';
+            next.name = 'next';
+            form.appendChild(next);
+        }
+        next.value = currentTransactionsReturnUrl();
+    });
+    window.addEventListener('beforeunload', saveTxWorkspaceState);
 
     // 2. If initial query exists in search input, trigger live filter
     const initialInput = document.getElementById('liveTxSearchInput');

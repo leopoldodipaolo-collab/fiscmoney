@@ -227,6 +227,16 @@ def login_required(view):
         return view(**kwargs)
     return wrapped_view
 
+
+def _safe_transactions_return():
+    """Stay on the Conti view the user was editing (month, filtri, hash)."""
+    nxt = (request.form.get("next") or request.args.get("next") or "").strip()
+    path = nxt.split("?", 1)[0].split("#", 1)[0]
+    if nxt.startswith("/transactions") and path.startswith("/transactions") and "://" not in nxt:
+        return nxt
+    return url_for("transactions")
+
+
 # Super Admin Required Decorator
 def admin_required(view):
     @functools.wraps(view)
@@ -4008,7 +4018,7 @@ def update_transaction(tx_id):
     if not tx:
         conn.close()
         flash("Movimento non trovato.", "error")
-        return redirect(url_for('transactions'))
+        return redirect(_safe_transactions_return())
         
     cursor.execute('''
         UPDATE transactions 
@@ -4125,7 +4135,7 @@ def update_transaction(tx_id):
     else:
         flash("Movimento aggiornato con successo!", "success")
         
-    return redirect(url_for('transactions'))
+    return redirect(_safe_transactions_return())
 
 @app.route("/transactions/delete/<int:tx_id>", methods=["POST"])
 @login_required
@@ -4146,7 +4156,7 @@ def delete_transaction(tx_id):
         flash("Movimento eliminato e saldo aggiornato.", "success")
         
     conn.close()
-    return redirect(url_for('transactions'))
+    return redirect(_safe_transactions_return())
 
 # ---------------------------------------------------------
 # CEDOLINO & BUSTA PAGA MODULE
