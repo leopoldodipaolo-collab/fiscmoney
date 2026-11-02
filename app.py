@@ -855,6 +855,102 @@ def dashboard():
     )
 
 
+@app.route("/lab/home")
+@login_required
+def lab_home_v2():
+    """Pagina di prova: prima schermata Home snella. Non sostituisce /dashboard."""
+    conn = get_db_connection()
+    ws_id = session.get("workspace_id")
+    user_id = session.get("user_id")
+    ctx = get_workspace_privacy_context(conn, ws_id, user_id)
+    user = ctx["user"]
+    ws = ctx["ws"]
+    is_admin = ctx["is_admin"]
+    visible_profiles = ctx["visible_profiles"]
+    active_filter = ctx["active_filter"]
+    selected_profile = ctx["selected_profile"]
+    p_id_filter = ctx["p_id_filter"]
+    sharing_mode = ctx["sharing_mode"]
+    my_profile = ctx["my_profile"]
+
+    total_balance = 0.0
+    total_invested = 0.0
+    if ws_id:
+        if not is_admin and sharing_mode in ["ADMIN_ONLY", "HYBRID"] and my_profile:
+            row = conn.execute(
+                "SELECT SUM(balance) as total FROM accounts WHERE workspace_id = ? AND (profile_id = ? OR is_shared = 1 OR profile_id IS NULL)",
+                (ws_id, my_profile["id"]),
+            ).fetchone()
+            inv_row = conn.execute(
+                "SELECT SUM(total_invested) as total FROM investments WHERE workspace_id = ? AND (profile_id = ? OR profile_id IS NULL)",
+                (ws_id, my_profile["id"]),
+            ).fetchone()
+        elif active_filter == "all":
+            row = conn.execute("SELECT SUM(balance) as total FROM accounts WHERE workspace_id = ?", (ws_id,)).fetchone()
+            inv_row = conn.execute("SELECT SUM(total_invested) as total FROM investments WHERE workspace_id = ?", (ws_id,)).fetchone()
+        else:
+            pid = selected_profile["id"] if selected_profile else 0
+            row = conn.execute(
+                "SELECT SUM(balance) as total FROM accounts WHERE workspace_id = ? AND profile_id = ?",
+                (ws_id, pid),
+            ).fetchone()
+            inv_row = conn.execute(
+                "SELECT SUM(total_invested) as total FROM investments WHERE workspace_id = ? AND (profile_id = ? OR profile_id IS NULL)",
+                (ws_id, pid),
+            ).fetchone()
+        if row and row["total"]:
+            total_balance = float(row["total"])
+        try:
+            if inv_row and inv_row["total"]:
+                total_invested = round(float(inv_row["total"]), 2)
+        except Exception:
+            total_invested = 0.0
+
+    bank_rows = []
+    if ws_id:
+        bank_rows = conn.execute(
+            """
+            SELECT COALESCE(bank_name, 'Altro') as bank_name, SUM(balance) as total
+            FROM accounts WHERE workspace_id = ?
+            GROUP BY COALESCE(bank_name, 'Altro')
+            ORDER BY total DESC LIMIT 5
+            """,
+            (ws_id,),
+        ).fetchall()
+    banks = [{"name": r["bank_name"], "total": float(r["total"] or 0)} for r in bank_rows]
+    conn.close()
+
+    cashflow = get_monthly_cashflow_data(ws_id, p_id_filter) if ws_id else None
+    smart_budget = calculate_smart_budget_copilot(ws_id, p_id_filter) if ws_id else None
+    trend_data = get_multi_month_trend_data(ws_id, p_id_filter, months_count=3) if ws_id else None
+    deadlines_radar = get_annual_deadlines_radar(ws_id, p_id_filter) if ws_id else None
+
+    next_deadline = None
+    if deadlines_radar:
+        unpaid = [d for d in (deadlines_radar.get("deadlines") or []) if not d.get("is_paid")]
+        if unpaid:
+            next_deadline = unpaid[0]
+
+    return render_template(
+        "lab_home.html",
+        user=user,
+        active_workspace=ws,
+        profiles=visible_profiles,
+        active_filter=active_filter,
+        selected_profile=selected_profile,
+        total_balance=total_balance,
+        total_invested=total_invested,
+        net_worth=round(total_balance + total_invested, 2),
+        banks=banks,
+        cashflow=cashflow,
+        smart_budget=smart_budget,
+        trend_data=trend_data,
+        deadlines_radar=deadlines_radar,
+        next_deadline=next_deadline,
+        is_admin=is_admin,
+    )
+
+
 @app.route("/assistant/set-persona/<persona_key>", methods=["GET", "POST"])
 @login_required
 def set_assistant_persona(persona_key):
