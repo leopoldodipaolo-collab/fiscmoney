@@ -3020,7 +3020,14 @@ function renderCoupleModalTxList() {
             
             <div style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
                 <strong style="font-size: 0.92rem; font-weight: 800; color: #f87171; font-variant-numeric: tabular-nums;">${tx.formatted_amount}</strong>
-                
+                <button type="button"
+                        class="badge-figlio-toggle ${tx.is_figlio ? 'is-figlio' : ''}"
+                        data-txid="${tx.id}"
+                        onclick="toggleModalTxFiglio(${tx.id}, this)"
+                        title="${tx.is_figlio ? 'Spesa figli — clicca per toglierla dalla card Figli' : 'Segna come spesa figli: va sulla card Figli'}"
+                        style="background: ${tx.is_figlio ? 'rgba(192, 132, 252, 0.22)' : 'rgba(255,255,255,0.05)'}; color: ${tx.is_figlio ? '#e9d5ff' : 'var(--text-muted)'}; border: 1px solid ${tx.is_figlio ? 'rgba(192, 132, 252, 0.5)' : 'rgba(255,255,255,0.1)'}; font-size: 0.85rem; padding: 5px 8px; border-radius: 6px; cursor: pointer;">
+                    👶
+                </button>
                 <button type="button" 
                         onclick="toggleModalTxShared(${tx.id}, this)"
                         style="background: ${isSh ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255,255,255,0.05)'}; color: ${isSh ? '#fbbf24' : 'var(--text-muted)'}; border: 1px solid ${isSh ? 'rgba(245, 158, 11, 0.4)' : 'rgba(255,255,255,0.1)'}; font-size: 0.72rem; padding: 5px 9px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 800; transition: all 0.2s;">
@@ -3031,6 +3038,33 @@ function renderCoupleModalTxList() {
     });
     html += '</div>';
     container.innerHTML = html;
+}
+
+async function toggleModalTxFiglio(txId, btn) {
+    try {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        const res = await fetch(`/api/transactions/${txId}/toggle-figlio`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success || data.status === 'ok') {
+            const isFiglio = (data.is_figlio === 1 || data.is_figlio === true);
+            const target = currentModalTxData.find(t => t.id === txId);
+            if (target) target.is_figlio = isFiglio ? 1 : 0;
+            loadCoupleCategoryTransactions();
+            switchCoupleSplitPreset(currentCouplePreset);
+        } else {
+            alert('Errore durante l\'aggiornamento: ' + (data.error || 'Sconosciuto'));
+        }
+    } catch (e) {
+        console.error(e);
+        alert('Errore di connessione');
+    } finally {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+    }
 }
 
 async function toggleModalTxShared(txId, btn) {

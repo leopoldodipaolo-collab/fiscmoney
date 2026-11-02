@@ -58,7 +58,8 @@ from services.vertical_focus_engine import (
 from services.couple_split_engine import (
     get_couple_split_analytics,
     get_couple_category_transactions,
-    bulk_set_category_shared
+    bulk_set_category_shared,
+    toggle_figlio_on_tags,
 )
 from services.deadlines_radar_engine import (
     get_annual_deadlines_radar,
@@ -1725,6 +1726,37 @@ def api_toggle_transaction_shared(tx_id):
         "tx_id": tx_id,
         "is_shared": new_state,
         "message": "Spesa impostata come Condivisa 🤝" if new_state == 1 else "Spesa impostata come Personale 👤"
+    })
+
+
+@app.route("/api/transactions/<int:tx_id>/toggle-figlio", methods=["POST"])
+@login_required
+def api_toggle_transaction_figlio(tx_id):
+    ws_id = session.get('workspace_id')
+    if not ws_id:
+        return jsonify({"success": False, "error": "Workspace non trovato"}), 400
+
+    conn = get_db_connection()
+    tx = conn.execute(
+        "SELECT id, tags FROM transactions WHERE id = ? AND workspace_id = ?",
+        (tx_id, ws_id),
+    ).fetchone()
+    if not tx:
+        conn.close()
+        return jsonify({"success": False, "error": "Transazione non trovata"}), 404
+
+    new_tags, is_figlio = toggle_figlio_on_tags(tx["tags"])
+    conn.execute("UPDATE transactions SET tags = ? WHERE id = ?", (new_tags, tx_id))
+    conn.commit()
+    conn.close()
+
+    return jsonify({
+        "success": True,
+        "status": "ok",
+        "tx_id": tx_id,
+        "is_figlio": 1 if is_figlio else 0,
+        "tags": new_tags,
+        "message": "Spesa sulla card Figli 👶" if is_figlio else "Tolta dalla card Figli",
     })
 
 @app.route("/api/couple-split/data")

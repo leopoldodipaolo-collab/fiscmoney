@@ -5,6 +5,20 @@ from database import get_db_connection
 from services.cashflow_engine import MONTH_NAMES_IT, MONTH_NAMES_IT_SHORT
 from services.bank_importer import MACRO_CATEGORIES
 
+def tags_have_figlio(tags):
+    low = (tags or "").lower()
+    return "#figlio" in low or "#figli" in low
+
+
+def toggle_figlio_on_tags(tags):
+    parts = [p for p in (tags or "").replace(",", " ").split() if p]
+    if any(p.lower() in ("#figlio", "#figli") for p in parts):
+        parts = [p for p in parts if p.lower() not in ("#figlio", "#figli")]
+        return " ".join(parts), False
+    parts.append("#figlio")
+    return " ".join(parts), True
+
+
 COMMON_DEFAULT_CATEGORIES = [
     "Spesa & Alimentari",
     "Alimentari e Spesa",
@@ -146,32 +160,16 @@ def get_couple_split_analytics(workspace_id, preset='THIS_MONTH', from_ym=None, 
         else:
             other_total += amt
 
-        # Check if it's a child-dedicated expense
         is_child_tx = (
-            '#figlio' in tx_tags or 
-            '#figli' in tx_tags or 
-            '#asilo' in tx_tags or 
+            '#figlio' in tx_tags or
+            '#figli' in tx_tags or
+            '#asilo' in tx_tags or
             '#scuola' in tx_tags or
             'asilo nido' in desc_lower or
             'asilo' in desc_lower or
             'pediatra' in desc_lower
         )
-        if is_child_tx:
-            child_expenses["total"] += amt
-            child_expenses["count"] += 1
-            if prof_id == p1['id']:
-                child_expenses["p1_amount"] += amt
-            elif prof_id == p2['id']:
-                child_expenses["p2_amount"] += amt
-            child_expenses["transactions"].append({
-                "id": r['id'],
-                "date": r['date'],
-                "description": r['description'],
-                "amount": amt,
-                "profile_name": r['profile_name'] or 'Membro',
-                "category": cat
-            })
-            
+
         # Category aggregation
         if cat not in cat_breakdown:
             icon = "📦"
@@ -219,7 +217,56 @@ def get_couple_split_analytics(workspace_id, preset='THIS_MONTH', from_ym=None, 
             "is_child": is_child_tx,
             "account_name": r['account_name'] or r['bank_name'] or 'Conto'
         })
-        
+
+    # Card Figli: tutte le spese taggate #figlio (anche se restano Personali)
+    child_clauses = ["t.workspace_id = ?", "t.amount < 0", "t.is_transfer = 0"]
+    child_params = [workspace_id]
+    if start_date and end_date:
+        child_clauses.append("t.date >= ? AND t.date <= ?")
+        child_params.extend([start_date, end_date])
+    child_clauses.append("""(
+        t.tags LIKE '%#figlio%'
+        OR t.tags LIKE '%#figli%'
+        OR t.tags LIKE '%#asilo%'
+        OR t.tags LIKE '%#scuola%'
+        OR LOWER(t.description) LIKE '%asilo%'
+        OR LOWER(t.description) LIKE '%pediatra%'
+    )""")
+    child_rows = conn.execute(
+        f"""
+        SELECT t.*, p.name as profile_name
+        FROM transactions t
+        LEFT JOIN profiles p ON t.profile_id = p.id
+        WHERE {' AND '.join(child_clauses)}
+        ORDER BY t.date DESC, t.id DESC
+        """,
+        child_params,
+    ).fetchall()
+    child_expenses = {
+        "total": 0.0,
+        "p1_amount": 0.0,
+        "p2_amount": 0.0,
+        "count": 0,
+        "transactions": [],
+    }
+    for r in child_rows:
+        amt = abs(float(r["amount"] or 0))
+        prof_id = r["profile_id"]
+        child_expenses["total"] += amt
+        child_expenses["count"] += 1
+        if prof_id == p1["id"]:
+            child_expenses["p1_amount"] += amt
+        elif prof_id == p2["id"]:
+            child_expenses["p2_amount"] += amt
+        child_expenses["transactions"].append({
+            "id": r["id"],
+            "date": r["date"],
+            "description": r["description"],
+            "amount": amt,
+            "profile_name": r["profile_name"] or "Membro",
+            "category": r["category"] or "Altro",
+        })
+
     conn.close()
     
     # 5. Settlement & Fairness Math
@@ -398,6 +445,7 @@ def get_couple_category_transactions(workspace_id: int, category: str, preset: s
             "amount": amt,
             "formatted_amount": f"{amt:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") + " €",
             "is_shared": is_sh,
+            "is_figlio": 1 if tags_have_figlio(r['tags']) else 0,
             "profile_id": r['profile_id'],
             "profile_name": r['profile_name'] or 'Comune/Cointestato',
             "account_name": r['account_name'] or r['bank_name'] or 'Conto'

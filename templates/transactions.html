@@ -1387,6 +1387,15 @@
                             </div>
 
                             <div style="display: flex; align-items: center; gap: 8px; margin-left: 12px; flex-shrink: 0;">
+                                {% set is_figlio = tx.tags and ('#figlio' in tx.tags.lower() or '#figli' in tx.tags.lower()) %}
+                                <button type="button"
+                                        class="badge-figlio-toggle {% if is_figlio %}is-figlio{% endif %}"
+                                        data-txid="{{ tx.id }}"
+                                        onclick="toggleTxFiglio({{ tx.id }}, this)"
+                                        title="{% if is_figlio %}Spesa figli — clicca per toglierla dalla card Figli in Focus{% else %}Segna come spesa figli: va sulla card Figli in Focus{% endif %}"
+                                        style="background: {% if is_figlio %}rgba(192, 132, 252, 0.22){% else %}rgba(255,255,255,0.05){% endif %}; color: {% if is_figlio %}#e9d5ff{% else %}var(--text-muted){% endif %}; border: 1px solid {% if is_figlio %}rgba(192, 132, 252, 0.5){% else %}rgba(255,255,255,0.1){% endif %}; font-size: 0.72rem; padding: 2px 6px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; font-weight: 700; transition: all 0.2s;">
+                                    👶
+                                </button>
                                 <!-- 1-Tap Couple Shared Toggle -->
                                 <button type="button" 
                                         class="badge-shared-toggle {% if tx.is_shared %}is-shared{% endif %}" 
@@ -1511,6 +1520,15 @@
                         {% endif %}
                     </button>
 
+                    {% set is_figlio_flat = tx.tags and ('#figlio' in tx.tags.lower() or '#figli' in tx.tags.lower()) %}
+                    <button type="button"
+                            class="badge-figlio-toggle {% if is_figlio_flat %}is-figlio{% endif %}"
+                            data-txid="{{ tx.id }}"
+                            onclick="toggleTxFiglio({{ tx.id }}, this)"
+                            title="{% if is_figlio_flat %}Spesa figli — clicca per toglierla dalla card Figli in Focus{% else %}Segna come spesa figli: va sulla card Figli in Focus{% endif %}"
+                            style="background: {% if is_figlio_flat %}rgba(192, 132, 252, 0.22){% else %}rgba(255,255,255,0.05){% endif %}; color: {% if is_figlio_flat %}#e9d5ff{% else %}var(--text-muted){% endif %}; border: 1px solid {% if is_figlio_flat %}rgba(192, 132, 252, 0.5){% else %}rgba(255,255,255,0.1){% endif %}; font-size: 0.78rem; padding: 4px 7px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; font-weight: 700; transition: all 0.2s; flex-shrink: 0;">
+                        👶
+                    </button>
                     <!-- 1-Tap Couple Shared Toggle -->
                     <button type="button" 
                             class="badge-shared-toggle {% if tx.is_shared %}is-shared{% endif %}" 
@@ -5907,6 +5925,45 @@ function toggleCategoryFolder(folderId) {
     } else {
         folder.classList.add('is-open');
         if (body) body.style.display = 'block';
+    }
+}
+
+function applyFiglioButtonState(btn, isFiglio) {
+    if (!btn) return;
+    btn.style.background = isFiglio ? 'rgba(192, 132, 252, 0.22)' : 'rgba(255,255,255,0.05)';
+    btn.style.color = isFiglio ? '#e9d5ff' : 'var(--text-muted)';
+    btn.style.borderColor = isFiglio ? 'rgba(192, 132, 252, 0.5)' : 'rgba(255,255,255,0.1)';
+    btn.title = isFiglio
+        ? 'Spesa figli — clicca per toglierla dalla card Figli in Focus'
+        : 'Segna come spesa figli: va sulla card Figli in Focus';
+    if (isFiglio) btn.classList.add('is-figlio');
+    else btn.classList.remove('is-figlio');
+}
+
+async function toggleTxFiglio(txId, btn) {
+    try {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        const res = await fetch(`/api/transactions/${txId}/toggle-figlio`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+        if (data.success || data.status === 'ok') {
+            const isFiglio = (data.is_figlio === 1 || data.is_figlio === true);
+            document.querySelectorAll(`.badge-figlio-toggle[data-txid="${txId}"]`).forEach(el => {
+                applyFiglioButtonState(el, isFiglio);
+            });
+            applyFiglioButtonState(btn, isFiglio);
+        } else {
+            alert('Errore: ' + (data.error || data.message || 'Sconosciuto'));
+        }
+    } catch (e) {
+        console.error(e);
+        alert('Errore di connessione');
+    } finally {
+        btn.disabled = false;
+        btn.style.opacity = '1';
     }
 }
 
