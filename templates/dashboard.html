@@ -536,50 +536,80 @@
     color: #67e8f9;
 }
 .glance-sim-head strong { color: #fff; font-size: 1.05rem; }
-.glance-sim-row {
+.glance-pot { margin: 4px 0 6px; }
+.glance-pot-top {
     display: flex;
-    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
     gap: 10px;
-    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #94a3b8;
 }
-.glance-sim-input-wrap {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(2, 6, 23, 0.75);
-    border: 1px solid rgba(125, 211, 252, 0.45);
-    border-radius: 14px;
-    padding: 10px 14px;
-    color: #7dd3fc;
-    font-weight: 800;
-    box-shadow: 0 0 22px rgba(56,189,248,0.18);
-}
-.glance-sim-input-wrap input {
-    width: 110px;
-    background: transparent;
-    border: 0;
-    outline: none;
-    color: #fff;
-    font-size: 1.35rem;
+.glance-pot-top strong {
+    font-size: 1.45rem;
     font-weight: 900;
+    color: #fb7185;
+    text-shadow: 0 0 16px rgba(244,63,94,0.4);
 }
-.glance-sim-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.glance-sim-chips button {
-    background: rgba(15, 23, 42, 0.8);
-    border: 1px solid rgba(255,255,255,0.12);
-    color: #e2e8f0;
-    border-radius: 999px;
-    padding: 7px 12px;
-    font-size: 0.78rem;
+.glance-pot-track { position: relative; padding-top: 22px; }
+.glance-limit-pin {
+    position: absolute;
+    top: 0;
+    z-index: 2;
+    width: 2px;
+    height: 34px;
+    background: #fbbf24;
+    box-shadow: 0 0 12px rgba(251, 191, 36, 0.8);
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+.glance-limit-pin span {
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    transform: translate(-50%, -100%);
+    white-space: nowrap;
+    font-size: 0.62rem;
     font-weight: 800;
-    cursor: pointer;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #0f172a;
+    background: #fbbf24;
+    border-radius: 999px;
+    padding: 1px 7px;
 }
-.glance-sim-chips button:hover,
-.glance-sim-chips button.on {
-    border-color: #38bdf8;
-    color: #fff;
-    background: linear-gradient(135deg, rgba(14,165,233,0.45), rgba(16,185,129,0.25));
-    box-shadow: 0 0 14px rgba(56,189,248,0.35);
+.glance-pot input[type="range"] {
+    width: 100%;
+    height: 8px;
+    accent-color: #f43f5e;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+}
+.glance-limit-flag {
+    margin-top: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #fde68a;
+    background: rgba(251, 191, 36, 0.12);
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    border-radius: 10px;
+    padding: 8px 10px;
+}
+.glance-limit-flag.over {
+    color: #fecaca;
+    background: rgba(244, 63, 94, 0.14);
+    border-color: rgba(244, 63, 94, 0.4);
+}
+.glance-pot-ticks {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #64748b;
 }
 .glance-sim-stage { margin-top: 14px; }
 .glance-sim-idle {
@@ -637,6 +667,11 @@
     overflow: hidden;
     margin-top: 12px;
     background: rgba(255,255,255,0.08);
+}
+.glance-shock-bar .bud {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #0ea5e9, #38bdf8);
 }
 .glance-shock-bar .shock {
     display: block;

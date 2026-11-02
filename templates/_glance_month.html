@@ -132,85 +132,96 @@
 
     <div class="glance-sim" id="glanceSim"
          data-income="{{ (smart_budget.effective_income if smart_budget else (cashflow.expected_month_income if cashflow else 0)) }}"
-         data-free="{{ still_free }}"
+         data-budget="{{ (smart_budget.total_allocated_budget if smart_budget else 0) }}"
          data-savings="{{ (smart_budget.planned_savings if smart_budget else 0) }}"
-         data-target="{{ (smart_budget.target_savings if smart_budget else 0) }}"
-         data-days="{{ days_left }}">
+         data-target="{{ (smart_budget.target_savings if smart_budget else 0) }}">
         <div class="glance-sim-head">
             <span class="glance-sim-kicker">Simulatore shock</span>
-            <strong>E se arriva una spesa improvvisa?</strong>
+            <strong>Budget + spesa improvvisa: lo stipendio copre?</strong>
         </div>
-        <div class="glance-sim-row">
-            <label class="glance-sim-input-wrap">
-                <span>€</span>
-                <input type="number" id="glanceSimAmt" min="0" step="50" placeholder="700" inputmode="decimal" oninput="runGlanceSim()">
-            </label>
-            <div class="glance-sim-chips">
-                <button type="button" data-amt="200" onclick="setGlanceSim(200)">200</button>
-                <button type="button" data-amt="500" onclick="setGlanceSim(500)">500</button>
-                <button type="button" data-amt="700" onclick="setGlanceSim(700)">700</button>
-                <button type="button" data-amt="1000" onclick="setGlanceSim(1000)">1.000</button>
+        <div class="glance-pot">
+            <div class="glance-pot-top">
+                <span>Spesa extra, oltre il budget</span>
+                <strong class="privacy-mask" id="glanceSimAmtLabel">€ 0,00</strong>
             </div>
+            <div class="glance-pot-track">
+                <div class="glance-limit-pin" id="glanceLimitPin" hidden>
+                    <span>Limite</span>
+                </div>
+                <input type="range" id="glanceSimAmt" min="0" max="2000" step="50" value="0" oninput="runGlanceSim()">
+            </div>
+            <div class="glance-pot-ticks" id="glancePotTicks"><span>0</span><span>500</span><span>1.000</span><span>1.500</span><span>2.000</span></div>
+            <div class="glance-limit-flag" id="glanceLimitFlag"></div>
         </div>
-        <div class="glance-sim-stage idle" id="glanceSimVerdict">
-            <div class="glance-sim-idle">Tocca un importo: vedi se lo stipendio copre, quanto resta spendibile e se il target resiste.</div>
-        </div>
+        <div class="glance-sim-stage idle" id="glanceSimVerdict"></div>
     </div>
 </div>
 <script>
 function glanceSimEur(v) {
     return '€ ' + Number(v || 0).toLocaleString('it-IT', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
-function setGlanceSim(n) {
-    var el = document.getElementById('glanceSimAmt');
-    if (el) { el.value = n; runGlanceSim(); }
-}
 function runGlanceSim() {
     var box = document.getElementById('glanceSim');
     var out = document.getElementById('glanceSimVerdict');
     var inp = document.getElementById('glanceSimAmt');
+    var lab = document.getElementById('glanceSimAmtLabel');
     if (!box || !out || !inp) return;
-    var extra = parseFloat(String(inp.value || '').replace(',', '.')) || 0;
-    var chips = box.querySelectorAll('.glance-sim-chips button');
-    for (var i = 0; i < chips.length; i++) {
-        chips[i].classList.toggle('on', Number(chips[i].getAttribute('data-amt')) === extra);
-    }
-    if (extra <= 0) {
-        out.className = 'glance-sim-stage idle';
-        out.innerHTML = '<div class="glance-sim-idle">Tocca un importo: vedi se lo stipendio copre, quanto resta spendibile e se il target resiste.</div>';
-        return;
-    }
+    var extra = parseFloat(inp.value) || 0;
+    if (lab) lab.textContent = glanceSimEur(extra);
     var income = parseFloat(box.dataset.income) || 0;
-    var free = parseFloat(box.dataset.free) || 0;
-    var savings = parseFloat(box.dataset.savings) || 0;
+    var budget = parseFloat(box.dataset.budget) || 0;
     var target = parseFloat(box.dataset.target) || 0;
-    var days = parseInt(box.dataset.days, 10) || 0;
-    var leftFree = free - extra;
-    var leftSav = savings - extra;
-    var daily = (days > 0 && leftFree > 0) ? (leftFree / days) : 0;
-    var coversSalary = extra <= income;
-    var coversBuffer = extra <= free;
-    var cls = coversSalary && coversBuffer ? 'ok' : (coversSalary ? 'warn' : 'bad');
-    var coverTitle = !coversSalary ? 'Non copre' : (coversBuffer ? 'Sì, copre' : 'Copre, ma stretto');
-    var coverSub = !coversSalary
-        ? 'Manca ' + glanceSimEur(extra - income)
-        : (coversBuffer ? 'Dentro il buffer' : 'Sfori di ' + glanceSimEur(extra - free));
-    var barBase = Math.max(free, extra, 1);
-    var shockPct = Math.min(100, extra / barBase * 100);
-    var restPct = Math.max(0, 100 - shockPct);
-    var savNote = !target ? '' : (leftSav >= target ? 'Target ancora protetto' : 'Sotto target di ' + glanceSimEur(target - leftSav));
+    var limit = Math.max(0, income - budget);
+    var sliderMax = Math.max(2000, Math.ceil((limit + 500) / 50) * 50);
+    if (Number(inp.max) !== sliderMax) {
+        inp.max = sliderMax;
+        var ticks = document.getElementById('glancePotTicks');
+        if (ticks) {
+            var parts = [0, sliderMax * 0.25, sliderMax * 0.5, sliderMax * 0.75, sliderMax];
+            ticks.innerHTML = parts.map(function (n) {
+                return '<span>' + Math.round(n).toLocaleString('it-IT') + '</span>';
+            }).join('');
+        }
+    }
+    var pin = document.getElementById('glanceLimitPin');
+    if (pin && sliderMax > 0) {
+        pin.hidden = false;
+        pin.style.left = Math.min(100, (limit / sliderMax) * 100) + '%';
+    }
+    var flag = document.getElementById('glanceLimitFlag');
+    if (flag) {
+        flag.className = 'glance-limit-flag' + (extra > limit ? ' over' : '');
+        flag.innerHTML = extra > limit
+            ? 'Oltre il limite: lo stipendio non copre più budget + extra.'
+            : 'Limite copertura: <strong class="privacy-mask">' + glanceSimEur(limit) + '</strong> extra. Oltre, lo stipendio non copre più.';
+    }
+    var committed = budget + extra;
+    var left = income - committed;
+    var covers = left >= 0;
+    var cls = !covers ? 'bad' : (target && left < target ? 'warn' : 'ok');
+    var coverTitle = covers ? 'Sì, copre' : 'Non copre';
+    var coverSub = covers
+        ? 'Stipendio vs budget + extra'
+        : 'Manca ' + glanceSimEur(-left);
+    var savNote = !target ? '' : (left >= target ? 'Target ancora protetto' : 'Sotto target di ' + glanceSimEur(target - left));
+    var base = Math.max(income, committed, 1);
+    var bPct = budget / base * 100;
+    var sPct = extra / base * 100;
+    var rPct = Math.max(0, left) / base * 100;
     out.className = 'glance-sim-stage ' + cls;
     out.innerHTML =
         '<div class="glance-sim-kpis">' +
             '<div class="glance-sim-kpi cover"><span>Stipendio</span><strong>' + coverTitle + '</strong><em>' + coverSub + '</em></div>' +
-            '<div class="glance-sim-kpi rest"><span>Resta spendibile</span><strong class="privacy-mask">' + glanceSimEur(Math.max(0, leftFree)) + '</strong><em>' + (days > 0 && leftFree > 0 ? glanceSimEur(daily) + ' / giorno' : 'buffer esaurito') + '</em></div>' +
-            '<div class="glance-sim-kpi sav"><span>Risparmio dopo</span><strong class="privacy-mask">' + glanceSimEur(leftSav) + '</strong><em>' + savNote + '</em></div>' +
+            '<div class="glance-sim-kpi rest"><span>Impegnato</span><strong class="privacy-mask">' + glanceSimEur(committed) + '</strong><em>Budget ' + glanceSimEur(budget) + ' + extra ' + glanceSimEur(extra) + '</em></div>' +
+            '<div class="glance-sim-kpi sav"><span>Ti resta</span><strong class="privacy-mask">' + glanceSimEur(left) + '</strong><em>' + savNote + '</em></div>' +
         '</div>' +
-        '<div class="glance-shock-bar" title="Quanto la spesa mangia il buffer">' +
-            '<span class="shock" style="width:' + shockPct + '%"></span>' +
-            '<span class="rest" style="width:' + restPct + '%"></span>' +
+        '<div class="glance-shock-bar" title="Come lo stipendio si divide">' +
+            '<span class="bud" style="width:' + bPct + '%"></span>' +
+            '<span class="shock" style="width:' + sPct + '%"></span>' +
+            '<span class="rest" style="width:' + rPct + '%"></span>' +
         '</div>' +
-        '<div class="glance-shock-legend"><span>Spesa shock ' + glanceSimEur(extra) + '</span><span>Buffer ' + glanceSimEur(free) + '</span></div>';
+        '<div class="glance-shock-legend"><span>Budget ' + glanceSimEur(budget) + '</span><span>Extra ' + glanceSimEur(extra) + '</span><span>Resta ' + glanceSimEur(left) + '</span></div>';
 }
+if (document.getElementById('glanceSimAmt')) runGlanceSim();
 </script>
 </div> <!-- /#dashTabContent_glance -->
