@@ -554,6 +554,14 @@ def init_db():
     seed_or_update_global_rules(cursor)
 
     conn.commit()
+    try:
+        from services.bank_importer import purge_cross_account_import_duplicates
+        n_dups = purge_cross_account_import_duplicates(conn)
+        if n_dups:
+            conn.commit()
+            print(f"[dup-cleanup] removed {n_dups} duplicate imported movements")
+    except Exception as e:
+        print(f"[dup-cleanup] skipped: {e}")
     conn.close()
 
 def seed_or_update_global_rules(cursor=None):

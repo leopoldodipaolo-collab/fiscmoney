@@ -1294,6 +1294,107 @@ def resolve_import_action(tx, existing_hashes, workspace_tx_cache, target_accoun
     return "skip", match
 
 
+def _is_card_account(acc):
+    t = (acc.get("type") or "").upper()
+    name = (acc.get("name") or "").lower()
+    if t == "CARD":
+        return True
+    return any(k in name for k in ("prepagata", "carta", "card"))
+
+
+def _is_card_export_wording(desc):
+    d = (desc or "").lower()
+    return "eseguit" in d or "pagamento pos" in d or "pagamento online" in d
+
+
+def _is_conto_card_wording(desc):
+    d = (desc or "").lower()
+    return "operazione carta" in d
+
+
+def purge_cross_account_import_duplicates(conn, window_days=4):
+    """
+    Remove card-statement copies of movements already on the checking account
+    (BPER carta vs conto: same POS, different text). Adjusts card balances.
+    Returns number of deleted rows.
+    """
+    accounts = {
+        r["id"]: dict(r)
+        for r in conn.execute("SELECT id, workspace_id, type, name FROM accounts")
+    }
+    ws_ids = sorted({a["workspace_id"] for a in accounts.values() if a.get("workspace_id")})
+    deleted = 0
+    cursor = conn.cursor()
+
+    for ws_id in ws_ids:
+        txs = [dict(r) for r in conn.execute(
+            """
+            SELECT id, account_id, date, amount, description, raw_description
+            FROM transactions WHERE workspace_id = ?
+            """,
+            (ws_id,),
+        )]
+        keepers = []
+        candidates = []
+        for tx in txs:
+            acc = accounts.get(tx.get("account_id")) or {}
+            desc = tx.get("description") or tx.get("raw_description") or ""
+            if _is_card_account(acc) or _is_card_export_wording(desc):
+                candidates.append(tx)
+            else:
+                keepers.append(tx)
+
+        used_keeper_ids = set()
+        to_delete = []
+        for cand in candidates:
+            acc = accounts.get(cand.get("account_id")) or {}
+            cand_desc = cand.get("description") or cand.get("raw_description") or ""
+            match = None
+            for k in keepers:
+                if k["id"] in used_keeper_ids:
+                    continue
+                if abs(float(k.get("amount") or 0) - float(cand.get("amount") or 0)) >= 0.001:
+                    continue
+                try:
+                    d1 = datetime.strptime(str(cand.get("date") or "")[:10], "%Y-%m-%d")
+                    d2 = datetime.strptime(str(k.get("date") or "")[:10], "%Y-%m-%d")
+                except Exception:
+                    continue
+                if abs((d1 - d2).days) > window_days:
+                    continue
+                k_desc = k.get("description") or k.get("raw_description") or ""
+                same_account = k.get("account_id") == cand.get("account_id")
+                if same_account:
+                    # Only same-account if wording is clearly carta-export vs conto "Operazione carta"
+                    if not (
+                        _is_card_export_wording(cand_desc) and _is_conto_card_wording(k_desc)
+                    ):
+                        continue
+                elif not _is_card_account(acc):
+                    continue
+                if descriptions_compatible_for_import(cand_desc, k_desc):
+                    match = k
+                    break
+            if match:
+                used_keeper_ids.add(match["id"])
+                to_delete.append(cand)
+
+        for tx in to_delete:
+            cursor.execute("DELETE FROM transactions WHERE id = ?", (tx["id"],))
+            if tx.get("account_id"):
+                cursor.execute(
+                    "UPDATE accounts SET balance = balance - ? WHERE id = ?",
+                    (tx["amount"], tx["account_id"]),
+                )
+            deleted += 1
+            print(
+                f"[dup-cleanup] deleted tx {tx['id']} acc={tx.get('account_id')} "
+                f"{tx.get('date')} {tx.get('amount')} {(tx.get('description') or '')[:60]}"
+            )
+
+    return deleted
+
+
 # ---------------------------------------------------------
 # 5. HEADER HUNTER: Find Table Start in Bank Statement
 # ---------------------------------------------------------
