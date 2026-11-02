@@ -1193,6 +1193,108 @@ def parse_amount_resilient(val):
         return 0.0
 
 # ---------------------------------------------------------
+# 4b. IMPORT DEDUP: BPER carta vs conto (stesso POS, testo diverso)
+# ---------------------------------------------------------
+IMPORT_DESC_STOPWORDS = {
+    "pagamento", "pagamenti", "pos", "online", "eseguita", "eseguito",
+    "operazione", "carta", "alle", "presso", "tramite", "contabile",
+    "valuta", "import", "importo", "euro", "della", "delle", "degli",
+    "italia", "ita", "via", "del", "dal", "dai", "con", "per", "the",
+    "and", "sas", "srl", "spa", "di", "da",
+    # city / geo tokens shared by many POS slips (would false-match -8.50 same day)
+    "aquila", "roma", "milano", "carsoli", "avezzano", "italia",
+}
+
+_RE_ESEGUITA = re.compile(
+    r"(?i)\s+eseguit[ao]\s+il\s+\d{1,2}[./-]\d{1,2}[./-]\d{2,4}.*$"
+)
+_RE_OP_CARTA = re.compile(
+    r"(?i)\s+operazione\s+carta\s+[\*\d].*$"
+)
+_RE_PAGAMENTO_POS = re.compile(
+    r"(?i)\s+pagamento\s+(pos|online)\b.*$"
+)
+
+
+def normalize_import_description(desc):
+    """Strip bank suffixes so carta export and conto export hash/match the same merchant."""
+    s = (desc or "").strip()
+    s = _RE_ESEGUITA.sub("", s)
+    s = _RE_OP_CARTA.sub("", s)
+    s = _RE_PAGAMENTO_POS.sub("", s)
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def merchant_match_tokens(desc):
+    norm = normalize_import_description(desc).lower()
+    words = re.findall(r"[a-zA-Z0-9àèéìòù]{4,}", norm)
+    return {w for w in words if w not in IMPORT_DESC_STOPWORDS}
+
+
+def descriptions_compatible_for_import(new_desc, existing_desc):
+    new_l = (new_desc or "").lower()
+    ex_l = (existing_desc or "").lower()
+    if "quick" in ex_l:
+        return True
+    t_new = merchant_match_tokens(new_desc)
+    t_ex = merchant_match_tokens(existing_desc)
+    shared = t_new & t_ex
+    # One shared city/word is not enough (CONAD vs ENI both in L'Aquila).
+    if len(shared) >= 2:
+        return True
+    if len(shared) == 1:
+        only = next(iter(shared))
+        if len(only) >= 5:
+            return True
+    n_new = normalize_import_description(new_desc).lower()
+    n_ex = normalize_import_description(existing_desc).lower()
+    if len(n_new) >= 8 and len(n_ex) >= 8 and n_new[:8] == n_ex[:8]:
+        return True
+    return False
+
+
+def find_import_consolidation_match(tx, workspace_tx_cache, window_days=4):
+    """Same amount, ±N days, compatible merchant — across all accounts in the workspace."""
+    tx_amt = tx.get("amount")
+    tx_dt_str = tx.get("date") or ""
+    try:
+        tx_dt = datetime.strptime(tx_dt_str[:10], "%Y-%m-%d")
+    except Exception:
+        return None
+    tx_desc = tx.get("description") or tx.get("raw_description") or ""
+    for ex in workspace_tx_cache:
+        try:
+            if abs(float(ex.get("amount") or 0) - float(tx_amt)) >= 0.001:
+                continue
+            ex_dt = datetime.strptime(str(ex.get("date") or "")[:10], "%Y-%m-%d")
+            if abs((tx_dt - ex_dt).days) > window_days:
+                continue
+            ex_desc = ex.get("description") or ex.get("raw_description") or ""
+            if descriptions_compatible_for_import(tx_desc, ex_desc):
+                return ex
+        except Exception:
+            continue
+    return None
+
+
+def resolve_import_action(tx, existing_hashes, workspace_tx_cache, target_account_id, window_days=4):
+    """
+    skip: already imported (hash or same POS already on another account)
+    consolidate: same account, update the existing row with bank hash/date
+    insert: new movement
+    """
+    h = tx.get("import_hash")
+    if h and h in existing_hashes:
+        return "skip", None
+    match = find_import_consolidation_match(tx, workspace_tx_cache, window_days)
+    if not match:
+        return "insert", None
+    if match.get("account_id") == target_account_id:
+        return "consolidate", match
+    return "skip", match
+
+
+# ---------------------------------------------------------
 # 5. HEADER HUNTER: Find Table Start in Bank Statement
 # ---------------------------------------------------------
 def find_header_row(rows):
@@ -1229,6 +1331,9 @@ def find_header_row(rows):
                 mapping["desc"] = c_idx
                 score += 3
             elif any(k in cell for k in AMOUNT_KW) and mapping["amount"] is None:
+                # BPER carta: ignore "Importo Valuta Estera" (second amount, would be the wrong currency)
+                if "valuta estera" in cell or "foreign" in cell:
+                    continue
                 mapping["amount"] = c_idx
                 score += 4
             elif any(cell == k or f" {k}" in cell or f"{k} " in cell for k in IN_KW) and mapping["in"] is None:
@@ -1525,8 +1630,11 @@ def parse_bank_file(file_content, filename, workspace_id, account_id=None, custo
             desc_raw, amount, custom_rules=custom_rules
         )
         
-        # SHA-256 Fingerprint for Deduplication
-        hash_input = f"{workspace_id}_{account_id}_{clean_date}_{amount:.2f}_{desc_raw.strip().lower()}"
+        # SHA-256 Fingerprint for Deduplication (normalized desc: carta vs conto wording)
+        hash_input = (
+            f"{workspace_id}_{account_id}_{clean_date}_{amount:.2f}_"
+            f"{normalize_import_description(desc_raw).lower()}"
+        )
         tx_hash = hashlib.sha256(hash_input.encode("utf-8")).hexdigest()
         
         parsed_transactions.append({
