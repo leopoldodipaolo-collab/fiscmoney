@@ -458,7 +458,7 @@
                 <span class="omnibar-search-icon">🔍</span>
                 <input type="text" 
                        id="omnibarInput" 
-                       placeholder="Cerca per tag, commerciante o spesa (es. asilo, amazon, mutuo, spesa...)" 
+                       placeholder="Cerca un #hashtag o una spesa (es. #carburante, #bollo, amazon…)" 
                        autocomplete="off"
                        oninput="handleOmnibarInput(this.value)">
                 <span id="omnibarLoadingSpinner" class="omnibar-spinner" style="display: none;">⏳</span>
@@ -467,20 +467,20 @@
 
             <!-- Quick Suggestion Chips -->
             <div class="omnibar-chips-row">
-                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">Rapidi:</span>
-                <button type="button" class="btn-omnibar-chip" onclick="setOmnibarSearch('asilo')">🎒 Asilo</button>
-                <button type="button" class="btn-omnibar-chip" onclick="setOmnibarSearch('spesa')">🛒 Spesa</button>
-                <button type="button" class="btn-omnibar-chip" onclick="setOmnibarSearch('mutuo')">🏠 Mutuo</button>
-                <button type="button" class="btn-omnibar-chip" onclick="setOmnibarSearch('amazon')">📦 Amazon</button>
-                <button type="button" class="btn-omnibar-chip" onclick="setOmnibarSearch('bollette')">⚡ Bollette</button>
+                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">Hashtag:</span>
+                <button type="button" class="btn-omnibar-chip" onclick="setOmnibarSearch('#carburante')">#carburante</button>
+                <button type="button" class="btn-omnibar-chip" onclick="setOmnibarSearch('#bollo')">#bollo</button>
+                <button type="button" class="btn-omnibar-chip" onclick="setOmnibarSearch('#asilo')">#asilo</button>
+                <button type="button" class="btn-omnibar-chip" onclick="setOmnibarSearch('#mutuo')">#mutuo</button>
+                <button type="button" class="btn-omnibar-chip" onclick="setOmnibarSearch('amazon')">amazon</button>
             </div>
 
             <!-- Results View Area -->
             <div id="omnibarResultsContainer" class="omnibar-results-area">
                 <div class="omnibar-empty-state">
                     <span style="font-size: 2rem; display: block; margin-bottom: 6px;">💡</span>
-                    <p style="margin: 0; font-size: 0.88rem; color: #cbd5e1; font-weight: 600;">Digita una parola per ottenere una risposta finanziaria istantanea</p>
-                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">Esempio: digita "asilo" per vedere quanto hai speso quest'anno e la media mensile</small>
+                    <p style="margin: 0; font-size: 0.88rem; color: #cbd5e1; font-weight: 600;">Cerca un hashtag, un negozio o una causale</p>
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">Esempio: <strong style="color:#7dd3fc;">#carburante</strong> o <strong style="color:#7dd3fc;">#bollo</strong> — vedi spesa anno, media mese e gli ultimi movimenti</small>
                 </div>
             </div>
             
@@ -797,8 +797,8 @@
                 container.innerHTML = `
                     <div class="omnibar-empty-state">
                         <span style="font-size: 2rem; display: block; margin-bottom: 6px;">💡</span>
-                        <p style="margin: 0; font-size: 0.88rem; color: #cbd5e1; font-weight: 600;">Digita una parola per ottenere una risposta finanziaria istantanea</p>
-                        <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">Esempio: digita "asilo" per vedere quanto hai speso quest'anno e la media mensile</small>
+                        <p style="margin: 0; font-size: 0.88rem; color: #cbd5e1; font-weight: 600;">Cerca un hashtag, un negozio o una causale</p>
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">Esempio: #carburante o #bollo</small>
                     </div>
                 `;
             }
@@ -837,7 +837,7 @@
                 <div class="omnibar-empty-state">
                     <span style="font-size: 2rem; display: block; margin-bottom: 6px;">🍃</span>
                     <p style="margin: 0; font-size: 0.88rem; color: #cbd5e1; font-weight: 600;">Nessun risultato trovato per "${queryLabel}"</p>
-                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">Verifica l'ortografia oppure prova un termine come carburante, spesa, bollette o amazon.</small>
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; display: block;">Prova con # (es. #carburante, #bollo) oppure un negozio come amazon.</small>
                 </div>
             `;
             return;
@@ -855,12 +855,12 @@
                             <span style="font-size: 1.4rem;">🏷️</span>
                             <div>
                                 <span class="badge-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">
-                                    Risposta Finanziaria Rapida
+                                    ${tm.is_hashtag ? 'Hashtag' : 'Risposta rapida'}
                                 </span>
-                                <h4 style="margin: 2px 0 0 0; font-size: 1.15rem; color: #fff; font-weight: 800;">${tm.name}</h4>
+                                <h4 style="margin: 2px 0 0 0; font-size: 1.15rem; color: #7dd3fc; font-weight: 800;">${tm.name}</h4>
                             </div>
                         </div>
-                        <a href="/transactions?tag=${encodeURIComponent(data.query)}" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 8px; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">
+                        <a href="/transactions?tag=${encodeURIComponent(tm.canonical_tag || data.query)}" class="btn btn-secondary btn-sm" style="font-size: 0.72rem; padding: 4px 10px; border-radius: 8px; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">
                             Vedi tutte le ${tm.count || 0} transazioni &rarr;
                         </a>
                     </div>

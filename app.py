@@ -5746,7 +5746,7 @@ def api_search_omnibar():
     Esempio: "asilo" -> somma totale anno, media mensile, ultime transazioni, advisor tip.
     """
     raw_query = request.args.get('q', '').strip()
-    if not raw_query or len(raw_query) < 2:
+    if not raw_query or len(raw_query.lstrip('#').strip()) < 2:
         return jsonify({"results": None, "query": raw_query})
 
     user_id = session.get('user_id')
@@ -5774,10 +5774,18 @@ def api_search_omnibar():
         privacy_sql = " AND (t.profile_id = ? OR t.is_shared = 1 OR a.is_shared = 1)"
         privacy_params.append(my_profile['id'])
 
-    q_clean = raw_query.strip().lstrip('#')
-    q_lower = q_clean.lower()
+    q_clean = raw_query.strip().lstrip('#').strip().lower()
+    if not q_clean or len(q_clean) < 2:
+        conn.close()
+        return jsonify({"results": None, "query": raw_query})
+
+    is_hash_query = raw_query.strip().startswith('#')
+    q_lower = q_clean
     q_like = f"%{q_lower}%"
-    q_tag_like = f"%#{q_lower}%"
+    q_tag_token = f"% {q_lower} %"
+    tags_norm = "(' ' || LOWER(REPLACE(REPLACE(REPLACE(IFNULL(t.tags,''), '#', ' '), ',', ' '), ';', ' ')) || ' ')"
+    tag_clause = f"({tags_norm} LIKE ? OR LOWER(IFNULL(t.tags,'')) LIKE ?)"
+    tag_params_extra = [q_tag_token, q_like]
 
     current_year = datetime.now().strftime('%Y')
     current_ym = datetime.now().strftime('%Y-%m')
@@ -5795,9 +5803,11 @@ def api_search_omnibar():
         FROM transactions t
         JOIN accounts a ON t.account_id = a.id
         WHERE a.workspace_id = ? {privacy_sql}
-        AND (LOWER(t.tags) LIKE ? OR LOWER(t.tags) LIKE ? OR LOWER(t.category) LIKE ?)
+        AND ({tag_clause}{' OR LOWER(t.category) LIKE ?' if not is_hash_query else ''})
     """
-    tag_params = list(privacy_params) + [q_like, q_tag_like, q_like]
+    tag_params = list(privacy_params) + list(tag_params_extra)
+    if not is_hash_query:
+        tag_params.append(q_like)
     tag_stat = conn.execute(tag_sql, tag_params).fetchone()
 
     tag_result = None
@@ -5808,7 +5818,7 @@ def api_search_omnibar():
             FROM transactions t
             JOIN accounts a ON t.account_id = a.id
             WHERE a.workspace_id = ? {privacy_sql}
-            AND (LOWER(t.tags) LIKE ? OR LOWER(t.tags) LIKE ? OR LOWER(t.category) LIKE ?)
+            AND ({tag_clause}{' OR LOWER(t.category) LIKE ?' if not is_hash_query else ''})
             AND t.date LIKE '{current_year}%'
             AND t.amount < 0
         """
@@ -5826,9 +5836,13 @@ def api_search_omnibar():
             advisor_tip = "💡 Le spese sanitarie e farmaceutiche oltre la franchigia di 129,11 € danno diritto alla detrazione 19% nel 730."
         elif "bollo" in q_lower or "assicurazione" in q_lower:
             advisor_tip = "💡 Questa spesa fissa ricorrente è tracciata anche nel tuo Radar Scadenze di coppia."
+        elif "carburante" in q_lower or "benzina" in q_lower:
+            advisor_tip = "💡 Il tag #carburante raggruppa i rifornimenti: confronta la media mese con Focus Auto."
 
         tag_result = {
-            "name": raw_query.capitalize(),
+            "name": f"#{q_clean}",
+            "canonical_tag": q_clean,
+            "is_hashtag": True,
             "count": tag_stat['count'],
             "total_spent": round(tag_stat['total_spent'], 2),
             "spent_current_year": round(tag_stat['spent_current_year'], 2),
@@ -5838,7 +5852,7 @@ def api_search_omnibar():
             "advisor_tip": advisor_tip
         }
 
-    # 2. MERCHANT / BENEFICIARY STATS
+    # 2. MERCHANT / BENEFICIARY STATS (skip when query is an explicit #tag)
     merchant_sql = f"""
         SELECT 
             COUNT(*) as count,
@@ -5852,7 +5866,7 @@ def api_search_omnibar():
         AND (LOWER(t.description) LIKE ? OR LOWER(t.raw_description) LIKE ?)
     """
     merch_params = list(privacy_params) + [q_like, q_like]
-    merch_stat = conn.execute(merchant_sql, merch_params).fetchone()
+    merch_stat = None if is_hash_query else conn.execute(merchant_sql, merch_params).fetchone()
 
     merchant_result = None
     if merch_stat and merch_stat['count'] > 0:
@@ -5873,15 +5887,15 @@ def api_search_omnibar():
         LEFT JOIN profiles p ON t.profile_id = p.id
         WHERE a.workspace_id = ? {privacy_sql}
         AND (
-            LOWER(t.description) LIKE ? 
-            OR LOWER(t.raw_description) LIKE ? 
-            OR LOWER(t.tags) LIKE ?
-            OR LOWER(t.category) LIKE ?
+            {tag_clause}
+            {'' if is_hash_query else 'OR LOWER(t.description) LIKE ? OR LOWER(t.raw_description) LIKE ? OR LOWER(t.category) LIKE ?'}
         )
         ORDER BY t.date DESC, t.id DESC
         LIMIT 8
     """
-    tx_params = list(privacy_params) + [q_like, q_like, q_like, q_like]
+    tx_params = list(privacy_params) + list(tag_params_extra)
+    if not is_hash_query:
+        tx_params.extend([q_like, q_like, q_like])
     tx_rows = conn.execute(tx_sql, tx_params).fetchall()
     transactions_list = []
     for r in tx_rows:

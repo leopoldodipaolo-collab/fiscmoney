@@ -8,60 +8,58 @@
 <div class="dash-top-split">
 <div class="dash-top-main">
 <!-- Executive Hero Greeting & Workspace Card -->
-<div class="card hero-greeting-card" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)); border: 1px solid rgba(56, 189, 248, 0.35); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); padding: 18px 20px; border-radius: 16px; margin-bottom: 0; position: relative; overflow: hidden;">
-    <!-- Ambient glow behind the logo -->
-    <div style="position: absolute; top: -40px; left: -40px; width: 160px; height: 160px; background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, transparent 70%); border-radius: 50%; pointer-events: none;"></div>
+<div class="card hero-greeting-card hero-wow">
+    <div class="hero-wow-orb hero-wow-orb-a"></div>
+    <div class="hero-wow-orb hero-wow-orb-b"></div>
+    <div class="hero-wow-shine"></div>
 
-    <div class="hero-header-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 14px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <!-- Glowing FiscMoney Emblem -->
-            <div class="hero-emblem-box" style="position: relative; width: 48px; height: 48px; border-radius: 50%; padding: 2px; background: linear-gradient(135deg, #38bdf8, #0ea5e9, #f59e0b); box-shadow: 0 0 20px rgba(14, 165, 233, 0.4); flex-shrink: 0; display: flex; align-items: center; justify-content: center;">
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FiscMoney" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: #0f172a;">
+    <div class="hero-header-row">
+        <div class="hero-identity">
+            <div class="hero-emblem-box">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="FiscMoney">
             </div>
-            
             <div>
-                <h1 class="hero-title-text" style="font-size: 1.25rem; font-weight: 800; color: #fff; margin: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                    <span id="heroDynamicGreeting">Bentornato</span>, <span>{{ session.get('user_name', 'Utente').split()[0] }}!</span> 👋
+                <div class="radar-kicker" style="color:#7dd3fc;">Casa &amp; conti</div>
+                <h1 class="hero-title-text">
+                    <span id="heroDynamicGreeting">Bentornato</span>, <span class="hero-name">{{ session.get('user_name', 'Utente').split()[0] }}</span>!
                 </h1>
-                <p class="hero-sub-text" style="color: var(--text-muted); font-size: 0.78rem; margin: 3px 0 0 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                    <span id="heroCurrentDateStr">Oggi</span> &bull; 
+                <p class="hero-sub-text">
+                    <span id="heroCurrentDateStr">Oggi</span>
+                    <span class="hero-dot">•</span>
                     <span>💼 {{ active_workspace.name }}</span>
                 </p>
             </div>
         </div>
 
-        <!-- Workspace Type Badge & Privacy Control -->
-        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <span class="badge-tag" style="background: {% if active_workspace.type == 'FAMILY' %}rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: var(--accent-success);{% else %}rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); color: var(--accent-primary);{% endif %} padding: 5px 10px; font-weight: 700; font-size: 0.72rem; letter-spacing: 0.5px;">
-                {{ '👨‍👩‍👧‍👦 WORKSPACE FAMIGLIA' if active_workspace.type == 'FAMILY' else '👤 WORKSPACE SINGOLO' }}
+        <div class="hero-badges">
+            <span class="hero-chip {% if active_workspace.type == 'FAMILY' %}family{% else %}solo{% endif %}">
+                {{ '👨‍👩‍👧‍👦 Workspace famiglia' if active_workspace.type == 'FAMILY' else '👤 Workspace singolo' }}
             </span>
             {% if is_admin and profiles|length > 1 %}
-            <button type="button" onclick="openPrivacyModal()" class="badge-tag" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); color: #cbd5e1; font-size: 0.72rem; padding: 5px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; transition: all 0.2s ease;" title="Clicca per modificare la privacy del nucleo" onmouseover="this.style.background='rgba(56,189,248,0.15)'; this.style.borderColor='rgba(56,189,248,0.5)';" onmouseout="this.style.background='rgba(255,255,255,0.06)'; this.style.borderColor='rgba(255,255,255,0.18)';">
-                <span>🛡️ {% if current_mode == 'FULL' %}🟢 Trasparenza Totale{% elif current_mode == 'HYBRID' %}🟡 Ibrida{% else %}🛡️ Gestore{% endif %}</span>
-                <span style="font-size: 0.68rem; opacity: 0.75;">⚙️</span>
+            <button type="button" onclick="openPrivacyModal()" class="hero-chip privacy" title="Clicca per modificare la privacy del nucleo">
+                {% if current_mode == 'FULL' %}🟢 Trasparenza{% elif current_mode == 'HYBRID' %}🟡 Ibrida{% else %}🛡️ Gestore{% endif %}
+                <span>⚙️</span>
             </button>
             {% elif profiles|length > 1 %}
-            <span class="badge-tag" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; font-size: 0.72rem; padding: 5px 10px;" title="Livello di privacy del nucleo">
-                🛡️ {% if current_mode == 'FULL' %}🟢 Trasparenza Totale{% elif current_mode == 'HYBRID' %}🟡 Ibrida{% else %}🛡️ Gestore{% endif %}
+            <span class="hero-chip privacy" title="Livello di privacy del nucleo">
+                {% if current_mode == 'FULL' %}🟢 Trasparenza{% elif current_mode == 'HYBRID' %}🟡 Ibrida{% else %}🛡️ Gestore{% endif %}
             </span>
             {% endif %}
-
         </div>
     </div>
 
-    <!-- Integrated Profile Filter Pills Bar (Mobile Scrollable) -->
-    <div class="hero-profile-pills-row" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-        <span class="pill-label" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-right: 2px;">Vista:</span>
+    <div class="hero-profile-pills-row">
+        <span class="pill-label">Vista</span>
         
         {% if is_admin or current_mode == 'FULL' %}
-        <a href="/workspace/filter/all" class="profile-pill {% if active_filter == 'all' %}active{% endif %}" style="margin: 0; padding: 6px 14px; font-weight: 700; border-radius: 10px;">
+        <a href="/workspace/filter/all" class="profile-pill {% if active_filter == 'all' %}active{% endif %}">
             <span>👨‍👩‍👧‍👦</span>
             <span>Tutta la Famiglia</span>
         </a>
         {% endif %}
         
         {% for p in profiles %}
-        <div style="display: inline-flex; align-items: center; background: {% if active_filter == p.id|string %}var(--accent-primary){% else %}rgba(255,255,255,0.04){% endif %}; border: 1px solid {% if active_filter == p.id|string %}var(--accent-primary){% else %}rgba(255,255,255,0.1){% endif %}; border-radius: 10px; padding: 2px 6px 2px 8px; gap: 6px;">
+        <div class="hero-member-pill{% if active_filter == p.id|string %} on{% endif %}">
             <a href="/workspace/filter/{{ p.id }}" style="text-decoration: none; color: #fff; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 6px; padding: 4px 2px;">
                 <span>{% if p.is_primary %}👤{% elif 'Figli' in (p.role_title or '') %}👶{% else %}👩{% endif %}</span>
                 <span>{{ p.name }}</span>
@@ -85,7 +83,7 @@
         {% endfor %}
         
         {% if is_admin %}
-        <button class="profile-pill add-btn" onclick="openAddMemberModal()" style="margin: 0; padding: 6px 12px; font-weight: 700; border-radius: 10px; background: rgba(56, 189, 248, 0.1); border: 1px dashed rgba(56, 189, 248, 0.4); color: #38bdf8;">
+        <button class="profile-pill add-btn hero-add-member" onclick="openAddMemberModal()">
             <span>➕</span>
             <span>Aggiungi Membro</span>
         </button>
@@ -152,20 +150,34 @@
 </div>
 
 <div class="dash-top-side">
-    <div class="card dash-side-search dashboard-hero-omnibar-card" onclick="openOmnibarModal()">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px;">
-            <div style="font-size:0.92rem; font-weight:800; color:#fff;">Cerca</div>
-            <span style="font-size:0.68rem; color:#94a3b8; font-weight:700;">Ctrl K</span>
+    {% set _pref_tags = ['carburante', 'bollo', 'asilo', 'mutuo', 'spesa', 'figlio', 'tari', 'assicurazione'] %}
+    <div class="card dash-side-search dashboard-hero-omnibar-card search-wow" onclick="openOmnibarModal()">
+        <div class="search-wow-head">
+            <div>
+                <div class="radar-kicker" style="color:#67e8f9;">Hashtag & movimenti</div>
+                <div class="search-wow-title">Cerca nei conti</div>
+            </div>
+            <span class="search-wow-kbd">Ctrl K</span>
         </div>
-        <div style="background: rgba(10, 15, 29, 0.85); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: 10px; padding: 9px 12px; display: flex; align-items: center; gap: 8px;">
-            <span style="color:#38bdf8;">🔍</span>
-            <span style="color:#94a3b8; font-size:0.8rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">asilo, carburante, mutuo…</span>
+        <div class="search-wow-bar">
+            <span>🔍</span>
+            <span class="search-wow-ph">Prova <em>#carburante</em> o <em>#bollo</em></span>
         </div>
-        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;" onclick="event.stopPropagation()">
-            <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('asilo')">🎒 Asilo</button>
-            <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('carburante')">⛽ Carburante</button>
-            <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('spesa')">🛒 Spesa</button>
-            <button type="button" class="btn-omnibar-chip" onclick="openOmnibarModal('mutuo')">🏠 Mutuo</button>
+        <p class="search-wow-hint">Cerca gli # che usi in Focus, oppure un negozio o una causale.</p>
+        <div class="search-wow-chips" onclick="event.stopPropagation()">
+            {% set ns = namespace(n=0) %}
+            {% for tg in _pref_tags %}
+                {% if all_tags and tg in all_tags and ns.n < 6 %}
+                <button type="button" class="btn-omnibar-chip hash" onclick="openOmnibarModal('#{{ tg }}')">#{{ tg }}</button>
+                {% set ns.n = ns.n + 1 %}
+                {% endif %}
+            {% endfor %}
+            {% if ns.n == 0 %}
+            <button type="button" class="btn-omnibar-chip hash" onclick="openOmnibarModal('#carburante')">#carburante</button>
+            <button type="button" class="btn-omnibar-chip hash" onclick="openOmnibarModal('#bollo')">#bollo</button>
+            <button type="button" class="btn-omnibar-chip hash" onclick="openOmnibarModal('#asilo')">#asilo</button>
+            <button type="button" class="btn-omnibar-chip hash" onclick="openOmnibarModal('#mutuo')">#mutuo</button>
+            {% endif %}
         </div>
     </div>
     <div id="pwaInstallBanner" class="dash-side-pwa">
@@ -201,14 +213,165 @@
     margin-bottom: 0 !important;
     height: 100%;
 }
+.hero-wow {
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(900px 280px at 0% -30%, rgba(56, 189, 248, 0.22), transparent 55%),
+        radial-gradient(700px 240px at 100% 120%, rgba(245, 158, 11, 0.12), transparent 50%),
+        linear-gradient(165deg, #0b1220 0%, #111827 58%, #0f172a 100%);
+    border: 1px solid rgba(125, 211, 252, 0.28);
+    border-radius: 22px;
+    padding: 18px 20px;
+    box-shadow: 0 18px 50px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.hero-wow-orb {
+    position: absolute; border-radius: 50%; filter: blur(40px); pointer-events: none;
+}
+.hero-wow-orb-a { width: 220px; height: 220px; background: rgba(56,189,248,0.22); top: -90px; left: -20px; }
+.hero-wow-orb-b { width: 180px; height: 180px; background: rgba(245,158,11,0.14); bottom: -80px; right: 8%; }
+.hero-wow-shine {
+    position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.06) 48%, transparent 62%);
+    animation: heroShine 6.5s ease-in-out infinite;
+}
+@keyframes heroShine {
+    0% { transform: translateX(-40%); opacity: 0; }
+    18% { opacity: 1; }
+    42% { transform: translateX(40%); opacity: 0; }
+    100% { transform: translateX(40%); opacity: 0; }
+}
+.hero-wow .hero-header-row {
+    position: relative; z-index: 1;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 14px; margin-bottom: 14px;
+}
+.hero-identity { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.hero-emblem-box {
+    position: relative; width: 56px; height: 56px; border-radius: 50%;
+    flex-shrink: 0; padding: 3px; display: flex; align-items: center; justify-content: center;
+    background: conic-gradient(from 0deg, #38bdf8, #f59e0b, #34d399, #38bdf8);
+    animation: heroSpin 5s linear infinite;
+    box-shadow: 0 0 28px rgba(56, 189, 248, 0.45);
+}
+.hero-emblem-box img {
+    width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
+    background: #0f172a; position: relative; z-index: 1;
+    animation: heroSpinRev 5s linear infinite;
+}
+@keyframes heroSpin { to { transform: rotate(360deg); } }
+@keyframes heroSpinRev { to { transform: rotate(-360deg); } }
+.hero-wow .hero-title-text {
+    margin: 2px 0 0; font-size: 1.42rem; font-weight: 900; letter-spacing: -0.03em;
+    color: #fff; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;
+}
+.hero-name {
+    background: linear-gradient(90deg, #fff 10%, #7dd3fc 55%, #fde68a 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero-wow .hero-sub-text {
+    margin: 4px 0 0; color: #94a3b8; font-size: 0.78rem;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.hero-dot { opacity: 0.45; }
+.hero-badges { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.hero-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.72rem; font-weight: 800; letter-spacing: 0.02em;
+    padding: 6px 11px; border-radius: 999px; border: 1px solid transparent;
+}
+.hero-chip.family {
+    background: rgba(16,185,129,0.16); border-color: rgba(52,211,153,0.4); color: #6ee7b7;
+    box-shadow: 0 0 14px rgba(16,185,129,0.2);
+}
+.hero-chip.solo {
+    background: rgba(59,130,246,0.16); border-color: rgba(96,165,250,0.4); color: #93c5fd;
+}
+.hero-chip.privacy {
+    background: rgba(245,158,11,0.12); border-color: rgba(251,191,36,0.35); color: #fde68a;
+    cursor: pointer;
+}
+.hero-wow .hero-profile-pills-row {
+    position: relative; z-index: 1;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.hero-wow .pill-label {
+    font-size: 0.68rem; color: #94a3b8; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.12em; margin-right: 2px;
+}
+.hero-wow .profile-pill {
+    margin: 0; padding: 7px 14px; font-weight: 800; border-radius: 999px;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+}
+.hero-wow .profile-pill.active {
+    background: linear-gradient(135deg, #38bdf8, #6366f1);
+    border-color: transparent; color: #fff;
+    box-shadow: 0 6px 18px rgba(56,189,248,0.35);
+}
+.hero-member-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 999px; padding: 2px 8px 2px 10px;
+}
+.hero-member-pill.on {
+    background: linear-gradient(135deg, rgba(37,99,235,0.9), rgba(56,189,248,0.85));
+    border-color: transparent;
+    box-shadow: 0 6px 16px rgba(37,99,235,0.35);
+}
+.hero-add-member {
+    background: rgba(56, 189, 248, 0.1) !important;
+    border: 1px dashed rgba(125, 211, 252, 0.55) !important;
+    color: #7dd3fc !important;
+}
+.hero-add-member:hover {
+    background: rgba(56, 189, 248, 0.2) !important;
+    box-shadow: 0 0 16px rgba(56,189,248,0.25);
+}
 .dash-side-search {
     flex: 1;
     cursor: pointer;
-    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
-    border: 1.5px solid rgba(56, 189, 248, 0.35);
-    border-radius: 16px;
-    padding: 14px 16px;
-    box-shadow: 0 8px 22px rgba(0,0,0,0.35);
+    position: relative;
+    overflow: hidden;
+    background:
+        radial-gradient(600px 200px at 100% 0%, rgba(56,189,248,0.16), transparent 55%),
+        linear-gradient(165deg, #0b1220, #111827);
+    border: 1px solid rgba(125, 211, 252, 0.28);
+    border-radius: 22px;
+    padding: 16px 16px 14px;
+    box-shadow: 0 18px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.search-wow-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    gap: 8px; margin-bottom: 12px;
+}
+.search-wow-title { font-size: 1.12rem; font-weight: 900; color: #fff; margin-top: 2px; }
+.search-wow-kbd {
+    font-size: 0.65rem; font-weight: 800; color: #e0f2fe;
+    background: rgba(56,189,248,0.18); border: 1px solid rgba(125,211,252,0.35);
+    border-radius: 8px; padding: 4px 8px; letter-spacing: 0.04em;
+}
+.search-wow-bar {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(2,6,23,0.75);
+    border: 1px solid rgba(125,211,252,0.4);
+    border-radius: 14px; padding: 11px 13px;
+    box-shadow: 0 0 22px rgba(56,189,248,0.18);
+}
+.search-wow-ph { color: #94a3b8; font-size: 0.82rem; }
+.search-wow-ph em { color: #67e8f9; font-style: normal; font-weight: 800; }
+.search-wow-hint { margin: 8px 0 0; font-size: 0.72rem; color: #64748b; line-height: 1.35; }
+.search-wow-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.btn-omnibar-chip.hash {
+    background: rgba(56,189,248,0.12);
+    border: 1px solid rgba(125,211,252,0.35);
+    color: #7dd3fc; font-weight: 800; font-size: 0.72rem;
+    border-radius: 999px; padding: 5px 10px; cursor: pointer;
+}
+.btn-omnibar-chip.hash:hover {
+    background: linear-gradient(135deg, rgba(14,165,233,0.45), rgba(16,185,129,0.25));
+    color: #fff; box-shadow: 0 0 12px rgba(56,189,248,0.3);
 }
 .assistant-briefing-fold {
     border-top: 1px solid rgba(255,255,255,0.08);
