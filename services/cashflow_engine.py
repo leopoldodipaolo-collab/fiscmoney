@@ -596,6 +596,19 @@ def normalize_life_bucket(raw, name=None, category=None, is_income=False):
     return classify_spend_bucket(name, category, is_income)
 
 
+def is_mortgage_fixed_item(fc):
+    blob = f"{fc.get('name') or ''} {fc.get('match_pattern') or ''} {fc.get('category') or ''}".lower()
+    try:
+        amt = abs(float(fc.get("expected_amount") or 0))
+    except (TypeError, ValueError):
+        amt = 0.0
+    if "mutuo" in blob or "prima casa" in blob:
+        return True
+    if 900 <= amt <= 1300 and ("casa" in blob or "immobili" in blob):
+        return True
+    return False
+
+
 def next_life_bucket(current):
     order = list(LIFE_BUCKETS)
     try:
@@ -605,7 +618,7 @@ def next_life_bucket(current):
     return order[(i + 1) % len(order)]
 
 
-def _build_fixed_board(due_items, skipped_items):
+def _build_fixed_board(due_items, skipped_items, mortgage_rule=None):
     board = {}
     for meta in LIFE_BUCKET_META:
         board[meta["key"]] = {
@@ -629,6 +642,16 @@ def _build_fixed_board(due_items, skipped_items):
         if b not in board:
             b = "need"
         board[b]["skipped"].append(item)
+    if mortgage_rule and mortgage_rule.get("inactive"):
+        b = mortgage_rule.get("life_bucket") or "need"
+        if b not in board:
+            b = "need"
+        already = any(
+            (it.get("id") == mortgage_rule.get("id"))
+            for it in board[b]["due"] + board[b]["skipped"]
+        )
+        if not already:
+            board[b]["due"].insert(0, mortgage_rule)
     for col in board.values():
         col["due_total"] = round(col["due_total"], 2)
         col["count"] = len(col["due"]) + len(col["skipped"])
@@ -1059,6 +1082,8 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         )
         item['spend_bucket'] = item['life_bucket']
         item['next_life_bucket'] = next_life_bucket(item['life_bucket'])
+        item['is_mortgage'] = is_mortgage_fixed_item(item)
+        item['inactive'] = False
         
         if due_this_month or is_paid:
             exp_amt = fc['expected_amount']
@@ -1071,6 +1096,28 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
             fixed_items_due.append(item)
         else:
             fixed_items_skipped.append(item)
+
+    mort_query = "SELECT * FROM fixed_costs WHERE workspace_id = ? AND (is_income = 0 OR is_income IS NULL)"
+    mort_params = [workspace_id]
+    if profile_id:
+        mort_query += " AND (profile_id = ? OR profile_id IS NULL)"
+        mort_params.append(profile_id)
+    mortgage_rule = None
+    for mrow in conn.execute(mort_query, mort_params).fetchall():
+        md = dict(mrow)
+        if not is_mortgage_fixed_item(md):
+            continue
+        md["is_active"] = bool(md.get("is_active"))
+        md["life_bucket"] = normalize_life_bucket(
+            md.get("life_bucket"), md.get("name"), md.get("category"), False
+        )
+        md["frequency_label"] = frequency_label(md)
+        md["is_mortgage"] = True
+        md["inactive"] = not md["is_active"]
+        md["is_paid"] = False
+        md["is_income"] = 0
+        if mortgage_rule is None or float(md.get("expected_amount") or 0) > float(mortgage_rule.get("expected_amount") or 0):
+            mortgage_rule = md
 
     # 6.5. PLANNED DEADLINES / IMPEGNI DEL MESE (es. Bollo, TARI, Revisione)
     # Smart Auto-Rollover: If recurring deadlines exist in past years/months, automatically project them into this year_month!
@@ -1657,7 +1704,8 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         "investment_transactions": investment_tx_list,
         "fixed_items": fixed_items_due,
         "fixed_items_skipped": fixed_items_skipped,
-        "fixed_board": _build_fixed_board(fixed_items_due, fixed_items_skipped),
+        "fixed_board": _build_fixed_board(fixed_items_due, fixed_items_skipped, mortgage_rule),
+        "mortgage_rule": mortgage_rule,
         "life_bucket_meta": [dict(x) for x in LIFE_BUCKET_META],
         "planned_deadlines": planned_deadlines_list,
         "deadlines_catalog": DEADLINES_CATALOG,

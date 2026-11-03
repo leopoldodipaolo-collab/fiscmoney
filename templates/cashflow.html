@@ -1691,6 +1691,15 @@
             {% if data.is_current_month %}
             <span class="fx-chip wait">⏳ {{ data.total_fixed_expenses_pending|eur }} da pagare</span>
             {% endif %}
+            {% if data.mortgage_rule %}
+            <form action="/fixed-costs/toggle/{{ data.mortgage_rule.id }}" method="POST" class="fx-mutuo-form" title="{% if data.mortgage_rule.is_active %}Escludi il mutuo dai totali del mese{% else %}Rimetti il mutuo nei totali{% endif %}">
+                <button type="submit" class="fx-mutuo-switch {% if data.mortgage_rule.is_active %}on{% else %}off{% endif %}">
+                    <span class="fx-mutuo-knob"></span>
+                    <span>🏠 Mutuo {% if data.mortgage_rule.is_active %}incluso{% else %}escluso{% endif %}</span>
+                    <strong class="privacy-mask">{{ data.mortgage_rule.expected_amount|eur }}</strong>
+                </button>
+            </form>
+            {% endif %}
             <a href="/fixed-costs" class="fx-link">Anagrafica →</a>
         </div>
     </div>
@@ -1752,13 +1761,15 @@
             </header>
             <div class="fx-col-body">
                 {% for item in col.due %}
-                <div class="fx-row {{ col.key }} {% if item.is_paid %}is-paid{% endif %} {% if item.is_income %}income{% endif %}">
+                <div class="fx-row {{ col.key }} {% if item.is_paid %}is-paid{% endif %} {% if item.is_income %}income{% endif %} {% if item.inactive %}inactive{% endif %}">
                     <div class="fx-row-main">
                         <div class="fx-status">{% if item.is_paid %}●{% else %}◐{% endif %}</div>
                         <div class="fx-row-copy">
                             <div class="fx-row-name">
                                 {{ item.name }}
                                 {% if item.is_income %}<em class="fx-badge income">Entrata</em>{% endif %}
+                                {% if item.is_mortgage %}<em class="fx-badge mortgage">Mutuo</em>{% endif %}
+                                {% if item.inactive %}<em class="fx-badge off">Escluso</em>{% endif %}
                                 <form action="/fixed-costs/bucket/{{ item.id }}" method="POST" class="fx-bucket-form">
                                     <input type="hidden" name="life_bucket" value="cycle">
                                     <button type="submit" class="fx-badge {{ col.key }}" title="Cambia tipo">{{ col.label }}</button>
@@ -1774,8 +1785,11 @@
                             {% else %}
                                 {{ (item.expected_amount if item.is_income else -item.expected_amount)|eur_sign }}
                             {% endif %}
-                            <small>{% if item.is_paid %}Ok{% else %}Attesa{% endif %}</small>
+                            <small>{% if item.inactive %}Fuori totale{% elif item.is_paid %}Ok{% else %}Attesa{% endif %}</small>
                         </div>
+                        <form action="/fixed-costs/toggle/{{ item.id }}" method="POST" title="{% if item.inactive %}Riattiva{% else %}Disattiva (resta in anagrafica){% endif %}">
+                            <button type="submit" class="fx-ico">{% if item.inactive %}✅{% else %}💤{% endif %}</button>
+                        </form>
                         <button type="button" class="fx-ico" title="Modifica" data-fc='{{ item|tojson|forceescape }}' onclick="openEditFixedCostFromEl(this)">✏️</button>
                         <form action="/fixed-costs/delete/{{ item.id }}" method="POST" onsubmit="return confirm('Rimuovere questa spesa fissa dall\'anagrafica?');">
                             <button type="submit" class="fx-ico" title="Elimina">🗑️</button>
@@ -3527,6 +3541,33 @@ window.addEventListener('click', function(e) {
 .fx-chip.paid { background: rgba(16,185,129,0.12); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
 .fx-chip.wait { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
 .fx-link { color: #7dd3fc; font-size: 0.75rem; font-weight: 700; text-decoration: none; }
+.fx-mutuo-form { margin: 0; }
+.fx-mutuo-switch {
+    display: inline-flex; align-items: center; gap: 8px;
+    border-radius: 999px; padding: 6px 12px 6px 8px; cursor: pointer;
+    font-size: 0.72rem; font-weight: 800; border: 1px solid transparent;
+}
+.fx-mutuo-switch.on {
+    background: rgba(16,185,129,0.14); color: #6ee7b7; border-color: rgba(16,185,129,0.4);
+    box-shadow: 0 0 16px rgba(16,185,129,0.15);
+}
+.fx-mutuo-switch.off {
+    background: rgba(148,163,184,0.1); color: #94a3b8; border-color: rgba(148,163,184,0.3);
+}
+.fx-mutuo-knob {
+    width: 28px; height: 16px; border-radius: 999px; position: relative;
+    background: rgba(255,255,255,0.15);
+}
+.fx-mutuo-knob::after {
+    content: ""; position: absolute; top: 2px; width: 12px; height: 12px; border-radius: 50%;
+    background: #fff; transition: left 0.15s ease;
+}
+.fx-mutuo-switch.on .fx-mutuo-knob { background: #34d399; }
+.fx-mutuo-switch.on .fx-mutuo-knob::after { left: 14px; }
+.fx-mutuo-switch.off .fx-mutuo-knob::after { left: 2px; background: #cbd5e1; }
+.fx-row.inactive { opacity: 0.48; filter: grayscale(0.35); }
+.fx-badge.mortgage { background: rgba(239,68,68,0.16); color: #fca5a5; }
+.fx-badge.off { background: rgba(148,163,184,0.16); color: #94a3b8; }
 .fx-kpi-row { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
 @media (max-width: 820px) { .fx-kpi-row { grid-template-columns: repeat(2, 1fr); } .fx-cols { grid-template-columns: 1fr !important; } }
 .fx-kpi { padding: 10px 12px; border-radius: 14px; background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.06); }
