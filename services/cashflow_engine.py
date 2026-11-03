@@ -382,12 +382,13 @@ def seed_smart_fixed_costs(workspace_id, profile_id=None, force=False):
 
 def is_cost_due_in_month(fc, month_num):
     """Determines if a recurring cost falls in the specified month (1-12)."""
-    freq = fc.get('frequency', 'MONTHLY')
+    freq = (fc.get('frequency') or 'MONTHLY').upper()
     active_m = fc.get('active_months')
     
     if active_m:
-        months_list = [int(x.strip()) for x in active_m.split(',') if x.strip().isdigit()]
-        return month_num in months_list
+        months_list = [int(x.strip()) for x in str(active_m).split(',') if x.strip().isdigit()]
+        if months_list:
+            return month_num in months_list
         
     if freq == 'MONTHLY':
         return True
@@ -397,11 +398,145 @@ def is_cost_due_in_month(fc, month_num):
         return month_num % 2 == 1
     elif freq == 'QUARTERLY':
         return month_num in [3, 6, 9, 12]
-    elif freq == 'ANNUAL':
-        # Se non è specificato active_months, ricava il mese da created_at o default mese corrente
-        return True
+    elif freq == 'SEMIANNUAL':
+        return month_num in [6, 12]
+    elif freq in ('ANNUAL', 'CUSTOM_MONTHS', 'BIENNIAL'):
+        return False
         
     return True
+
+
+def frequency_label(fc):
+    """Human Italian label for a fixed-cost cadence."""
+    freq = (fc.get('frequency') or 'MONTHLY').upper()
+    labels = {
+        'MONTHLY': 'Mensile',
+        'BIMONTHLY_EVEN': 'Bimestrale · mesi pari',
+        'BIMONTHLY_ODD': 'Bimestrale · mesi dispari',
+        'QUARTERLY': 'Trimestrale',
+        'SEMIANNUAL': 'Semestrale',
+        'ANNUAL': 'Annuale',
+        'BIENNIAL': 'Biennale',
+        'CUSTOM_MONTHS': 'Mesi personalizzati',
+    }
+    base = labels.get(freq, 'Fissa')
+    if freq in ('BIMONTHLY_EVEN', 'BIMONTHLY_ODD', 'QUARTERLY', 'MONTHLY'):
+        return base
+    active_m = fc.get('active_months')
+    if active_m:
+        months = []
+        for x in str(active_m).split(','):
+            x = x.strip()
+            if x.isdigit() and 1 <= int(x) <= 12:
+                months.append(MONTH_NAMES_IT_SHORT[int(x)])
+        if months:
+            return f"{base} · {', '.join(months)}"
+    return base
+
+
+def next_due_month_label(fc, from_month):
+    """Next calendar month (IT) in which this fixed cost is due, after from_month."""
+    try:
+        from_month = int(from_month)
+    except (TypeError, ValueError):
+        from_month = datetime.now().month
+    for i in range(0, 12):
+        m = ((from_month - 1 + i) % 12) + 1
+        if i == 0 and is_cost_due_in_month(fc, m):
+            return MONTH_NAMES_IT[m]
+        if i > 0 and is_cost_due_in_month(fc, m):
+            return MONTH_NAMES_IT[m]
+    return None
+
+
+def resolve_frequency_fields(frequency, custom_months=None, annual_month=None):
+    """Maps UI frequency + optional months into (frequency, active_months)."""
+    frequency = (frequency or 'MONTHLY').strip().upper()
+    active_months = None
+    if frequency == 'BIMONTHLY_EVEN':
+        active_months = '2,4,6,8,10,12'
+    elif frequency == 'BIMONTHLY_ODD':
+        active_months = '1,3,5,7,9,11'
+    elif frequency == 'QUARTERLY':
+        active_months = '3,6,9,12'
+    elif frequency == 'SEMIANNUAL':
+        try:
+            m = int(annual_month) if annual_month else 1
+        except (TypeError, ValueError):
+            m = 1
+        m = max(1, min(12, m))
+        m2 = ((m - 1 + 6) % 12) + 1
+        active_months = f"{m},{m2}"
+    elif frequency in ('ANNUAL', 'BIENNIAL'):
+        try:
+            m = int(annual_month) if annual_month else None
+        except (TypeError, ValueError):
+            m = None
+        if m and 1 <= m <= 12:
+            active_months = str(m)
+    elif frequency == 'CUSTOM_MONTHS':
+        nums = []
+        if isinstance(custom_months, (list, tuple)):
+            raw = custom_months
+        elif custom_months:
+            raw = str(custom_months).split(',')
+        else:
+            raw = []
+        for x in raw:
+            xs = str(x).strip()
+            if xs.isdigit() and 1 <= int(xs) <= 12:
+                nums.append(str(int(xs)))
+        active_months = ','.join(nums) if nums else None
+    return frequency, active_months
+
+
+def monthly_equivalent(fc):
+    """Rough monthly impact of a fixed cost, for registry KPIs."""
+    try:
+        amt = float(fc.get('expected_amount') or 0)
+    except (TypeError, ValueError):
+        amt = 0.0
+    if fc.get('is_income'):
+        return 0.0
+    freq = (fc.get('frequency') or 'MONTHLY').upper()
+    if freq == 'MONTHLY':
+        return amt
+    if freq in ('BIMONTHLY_EVEN', 'BIMONTHLY_ODD'):
+        return amt / 2.0
+    if freq == 'QUARTERLY':
+        return amt / 3.0
+    if freq == 'SEMIANNUAL':
+        return amt / 6.0
+    if freq in ('ANNUAL', 'BIENNIAL'):
+        return amt / (12.0 if freq == 'ANNUAL' else 24.0)
+    active_m = fc.get('active_months') or ''
+    n = len([x for x in str(active_m).split(',') if x.strip().isdigit()])
+    return (amt * n / 12.0) if n else amt / 12.0
+
+
+def list_fixed_costs_registry(workspace_id, profile_id=None):
+    """All fixed-cost rules (active and inactive) for the management page."""
+    init_fixed_costs_schema()
+    conn = get_db_connection()
+    q = "SELECT * FROM fixed_costs WHERE workspace_id = ?"
+    params = [workspace_id]
+    if profile_id:
+        q += " AND (profile_id = ? OR profile_id IS NULL)"
+        params.append(profile_id)
+    q += " ORDER BY is_active DESC, is_income DESC, due_day ASC, name ASC"
+    rows = conn.execute(q, params).fetchall()
+    conn.close()
+    today_m = datetime.now().month
+    items = []
+    for r in rows:
+        item = dict(r)
+        item['frequency_label'] = frequency_label(item)
+        item['due_this_month'] = is_cost_due_in_month(item, today_m)
+        nxt = next_due_month_label(item, today_m)
+        item['next_due_label'] = nxt
+        item['monthly_equivalent'] = round(monthly_equivalent(item), 2)
+        items.append(item)
+    return items
 
 def calculate_average_monthly_income(conn, workspace_id, profile_id=None, exclude_month=None):
     """
@@ -582,6 +717,8 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         item['actual_amount'] = actual_amount
         item['paid_date'] = paid_date
         item['matched_tx_ids'] = [t['id'] for t in matched_txs]
+        item['frequency_label'] = frequency_label(item)
+        item['next_due_label'] = next_due_month_label(item, m)
         
         if due_this_month or is_paid:
             exp_amt = fc['expected_amount']
@@ -1559,7 +1696,7 @@ def calculate_fiscmoney_score(cashflow_data, workspace_id, profile_id=None):
             "points": f"+{pts} pt",
             "points_num": pts,
             "gap": gap,
-            "action_url": "/settings/fixed-costs",
+            "action_url": "/fixed-costs",
             "action_label": "Gestisci Spese Fisse"
         })
 

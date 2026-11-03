@@ -45,7 +45,9 @@ from services.cashflow_engine import (
     save_category_monthly_budgets,
     get_category_trend_intelligence,
     is_internal_giroconto,
-    giroconto_transfer_flag
+    giroconto_transfer_flag,
+    list_fixed_costs_registry,
+    resolve_frequency_fields,
 )
 from services.vertical_focus_engine import (
     get_active_focus_categories,
@@ -1410,61 +1412,154 @@ def save_cashflow_settings():
         return redirect(ref)
     return redirect(url_for('cashflow'))
 
-@app.route("/fixed-costs/add", methods=["POST"])
+def _redirect_after_fixed_cost():
+    ref = request.referrer or ""
+    if ref and "/login" not in ref:
+        try:
+            host = urllib.parse.urlparse(ref).netloc
+            if host and host == request.host:
+                return redirect(ref)
+        except Exception:
+            pass
+    return redirect(url_for("fixed_costs_registry"))
+
+
+@app.route("/fixed-costs")
 @login_required
-def add_fixed_cost():
-    ws_id = session.get('workspace_id')
+def fixed_costs_registry():
+    ws_id = session.get("workspace_id")
     if not ws_id:
-        return redirect(url_for('cashflow'))
-        
+        return redirect(url_for("dashboard"))
+
+    conn = get_db_connection()
+    user_id = session.get("user_id")
+    ctx = get_workspace_privacy_context(conn, ws_id, user_id)
+    p_id_filter = ctx["p_id_filter"]
+    conn.close()
+
+    items = list_fixed_costs_registry(ws_id, p_id_filter)
+    active_items = [i for i in items if i.get("is_active")]
+    due_now = [i for i in active_items if i.get("due_this_month") and not i.get("is_income")]
+    monthly_eq = sum(i.get("monthly_equivalent") or 0 for i in active_items)
+    return render_template(
+        "fixed_costs.html",
+        items=items,
+        due_now_count=len(due_now),
+        active_count=len(active_items),
+        monthly_equivalent=monthly_eq,
+        current_month_name=MONTH_NAMES_IT[datetime.now().month],
+        macro_categories=MACRO_CATEGORIES,
+        user=ctx["user"],
+        active_workspace=ctx["ws"],
+        profiles=ctx["visible_profiles"],
+        active_filter=ctx["active_filter"],
+        is_admin=ctx["is_admin"],
+        current_mode=ctx["sharing_mode"],
+    )
+
+
+@app.route("/fixed-costs/add", methods=["POST"])
+@app.route("/fixed-costs/save", methods=["POST"])
+@login_required
+def save_fixed_cost():
+    ws_id = session.get("workspace_id")
+    if not ws_id:
+        return redirect(url_for("cashflow"))
+
     name = request.form.get("name", "").strip()
-    category = request.form.get("category", "Casa & Utenze").strip()
+    category = request.form.get("category", "Casa & Immobili").strip()
     amount_str = request.form.get("expected_amount", "0").replace(",", ".").strip()
     due_day_str = request.form.get("due_day", "1").strip()
     frequency = request.form.get("frequency", "MONTHLY").strip()
     pattern = request.form.get("match_pattern", "").strip()
     is_income = 1 if request.form.get("is_income") == "1" else 0
-    
-    active_months = None
-    if frequency == 'BIMONTHLY_EVEN':
-        active_months = '2,4,6,8,10,12'
-    elif frequency == 'BIMONTHLY_ODD':
-        active_months = '1,3,5,7,9,11'
-    elif frequency == 'QUARTERLY':
-        active_months = '3,6,9,12'
-        
+    item_id = request.form.get("item_id", "").strip()
+    annual_month = request.form.get("annual_month") or request.form.get("due_month")
+    custom_months = request.form.getlist("custom_months")
+    frequency, active_months = resolve_frequency_fields(frequency, custom_months, annual_month)
+
+    if not name:
+        flash("Indica il nome della spesa fissa.", "error")
+        return _redirect_after_fixed_cost()
+
     try:
         expected_amount = float(amount_str)
         due_day = int(due_day_str)
+        if due_day < 1 or due_day > 31:
+            raise ValueError("due_day")
     except ValueError:
         flash("Importo o giorno di scadenza non valido.", "error")
-        return redirect(url_for('cashflow'))
-        
+        return _redirect_after_fixed_cost()
+
     conn = get_db_connection()
-    conn.execute('''
-        INSERT INTO fixed_costs (workspace_id, name, category, expected_amount, due_day, frequency, active_months, match_pattern, is_income, is_active)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
-    ''', (ws_id, name, category, expected_amount, due_day, frequency, active_months, pattern, is_income))
+    if item_id and item_id.isdigit():
+        conn.execute(
+            """
+            UPDATE fixed_costs
+            SET name = ?, category = ?, expected_amount = ?, due_day = ?,
+                frequency = ?, active_months = ?, match_pattern = ?, is_income = ?
+            WHERE id = ? AND workspace_id = ?
+            """,
+            (name, category, expected_amount, due_day, frequency, active_months, pattern, is_income, int(item_id), ws_id),
+        )
+        flash(f"Spesa fissa '{name}' aggiornata.", "success")
+    else:
+        conn.execute(
+            """
+            INSERT INTO fixed_costs (workspace_id, name, category, expected_amount, due_day, frequency, active_months, match_pattern, is_income, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+            """,
+            (ws_id, name, category, expected_amount, due_day, frequency, active_months, pattern, is_income),
+        )
+        flash(f"Spesa fissa '{name}' salvata in anagrafica.", "success")
     conn.commit()
     conn.close()
-    
-    flash(f"Spesa fissa '{name}' aggiunta con successo!", "success")
-    return redirect(url_for('cashflow'))
+    return _redirect_after_fixed_cost()
+
+
+@app.route("/fixed-costs/toggle/<int:item_id>", methods=["POST"])
+@login_required
+def toggle_fixed_cost(item_id):
+    ws_id = session.get("workspace_id")
+    if not ws_id:
+        return redirect(url_for("cashflow"))
+    conn = get_db_connection()
+    row = conn.execute(
+        "SELECT is_active, name FROM fixed_costs WHERE id = ? AND workspace_id = ?",
+        (item_id, ws_id),
+    ).fetchone()
+    if not row:
+        conn.close()
+        flash("Spesa fissa non trovata.", "error")
+        return _redirect_after_fixed_cost()
+    new_val = 0 if row["is_active"] else 1
+    conn.execute(
+        "UPDATE fixed_costs SET is_active = ? WHERE id = ? AND workspace_id = ?",
+        (new_val, item_id, ws_id),
+    )
+    conn.commit()
+    conn.close()
+    flash(
+        f"'{row['name']}' {'riattivata' if new_val else 'disattivata'}." ,
+        "success",
+    )
+    return _redirect_after_fixed_cost()
+
 
 @app.route("/fixed-costs/delete/<int:item_id>", methods=["POST"])
 @login_required
 def delete_fixed_cost(item_id):
-    ws_id = session.get('workspace_id')
+    ws_id = session.get("workspace_id")
     if not ws_id:
-        return redirect(url_for('cashflow'))
-        
+        return redirect(url_for("cashflow"))
+
     conn = get_db_connection()
     conn.execute("DELETE FROM fixed_costs WHERE id = ? AND workspace_id = ?", (item_id, ws_id))
     conn.commit()
     conn.close()
-    
-    flash("Spesa fissa rimossa dalle regole.", "success")
-    return redirect(url_for('cashflow'))
+
+    flash("Spesa fissa rimossa dall'anagrafica.", "success")
+    return _redirect_after_fixed_cost()
 
 # ---------------------------------------------------------
 # PLANNED DEADLINES & TAXES (TARI, BOLLO, REVISIONE, ETC.)
@@ -4010,7 +4105,7 @@ def update_transaction(tx_id):
     tags = request.form.get("tags", "").strip()
     learn_rule = request.form.get("learn_rule") == "1"
     set_fixed_cost = request.form.get("set_fixed_cost") == "1"
-    fixed_freq = request.form.get("fixed_frequency", "MONTHLY")
+    set_radar_dl = request.form.get("set_radar_deadline") == "1"
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -4027,15 +4122,15 @@ def update_transaction(tx_id):
         WHERE id = ?
     ''', (category, sub_category, tags, tx_id))
     
-    # Gestione Unificata Spesa Ricorrente / Radar Scadenze
-    set_radar_dl = request.form.get("set_radar_deadline") == "1" or request.form.get("set_fixed_cost") == "1"
-    if set_radar_dl and tx['description']:
+    # Spesa fissa (anagrafica) e Radar scadenze sono due azioni distinte
+    if (set_fixed_cost or set_radar_dl) and tx['description']:
         r_target_type = request.form.get("radar_target_type", "LEOPOLDO_ONLY")
         r_recurrence = request.form.get("radar_recurrence") or request.form.get("fixed_frequency") or "ANNUAL"
-        r_custom_months = request.form.getlist("radar_custom_months")
+        fc_frequency = request.form.get("fixed_frequency") or r_recurrence or "MONTHLY"
+        r_custom_months = request.form.getlist("radar_custom_months") or request.form.getlist("custom_months")
         r_custom_months_str = ",".join(r_custom_months) if r_custom_months else None
-        
-        # Estrai nome pulito ed esercente/creditore reale
+        annual_month = request.form.get("annual_month")
+
         raw_desc = tx['description'] or tx['raw_description'] or ''
         clean_name = extract_clean_merchant_pattern(raw_desc)
         if not clean_name or len(clean_name) < 3:
@@ -4050,49 +4145,38 @@ def update_transaction(tx_id):
         due_ym = tx['date'][:7] if "-" in tx['date'] else datetime.now().strftime("%Y-%m")
         tx_month_num = int(tx['date'].split("-")[1]) if "-" in tx['date'] else datetime.now().month
 
-        # 1. Salva anche nei Costi Fissi Ricorrenti del Cash Flow
-        fc_active_m = None
-        if r_recurrence == 'BIMONTHLY_EVEN':
-            fc_active_m = '2,4,6,8,10,12'
-        elif r_recurrence == 'BIMONTHLY_ODD':
-            fc_active_m = '1,3,5,7,9,11'
-        elif r_recurrence in ('ANNUAL', 'BIENNIAL'):
-            fc_active_m = str(tx_month_num)
-        elif r_recurrence == 'CUSTOM_MONTHS' and r_custom_months_str:
-            fc_active_m = r_custom_months_str
+        if set_fixed_cost:
+            fc_freq_mapped, fc_active_m = resolve_frequency_fields(
+                fc_frequency,
+                r_custom_months,
+                annual_month or tx_month_num,
+            )
+            cursor.execute('''
+                INSERT INTO fixed_costs (workspace_id, profile_id, name, category, expected_amount, due_day, frequency, active_months, match_pattern, is_income, is_active)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1)
+            ''', (ws_id, tx['profile_id'], clean_name, category, expected_amt, due_day, fc_freq_mapped, fc_active_m, clean_name))
 
-        fc_freq_mapped = 'MONTHLY'
-        if r_recurrence in ('BIMONTHLY_EVEN', 'BIMONTHLY_ODD'):
-            fc_freq_mapped = r_recurrence
-        elif r_recurrence in ('ANNUAL', 'BIENNIAL'):
-            fc_freq_mapped = 'ANNUAL'
+        if set_radar_dl:
+            if r_target_type == 'LEOPOLDO_ONLY':
+                p1_paid = expected_amt
+                p2_paid = 0.0
+            elif r_target_type == 'NUNZIA_ONLY':
+                p1_paid = 0.0
+                p2_paid = expected_amt
+            else:
+                p1_paid = expected_amt / 2
+                p2_paid = expected_amt / 2
 
-        cursor.execute('''
-            INSERT INTO fixed_costs (workspace_id, profile_id, name, category, expected_amount, due_day, frequency, active_months, match_pattern, is_income, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1)
-        ''', (ws_id, tx['profile_id'], clean_name, category, expected_amt, due_day, fc_freq_mapped, fc_active_m, clean_name))
-
-        # 2. Salva nel Radar Scadenze Future
-        if r_target_type == 'LEOPOLDO_ONLY':
-            p1_paid = expected_amt
-            p2_paid = 0.0
-        elif r_target_type == 'NUNZIA_ONLY':
-            p1_paid = 0.0
-            p2_paid = expected_amt
-        else: # SHARED_50_50
-            p1_paid = expected_amt / 2
-            p2_paid = expected_amt / 2
-
-        cursor.execute('''
-            INSERT INTO planned_deadlines (
-                workspace_id, name, category, expected_amount, year_month, due_day, 
-                match_pattern, recurrence, target_type, p1_paid_amount, p2_paid_amount, is_paid, custom_months, notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            ws_id, f"{category} - {clean_name}", category, expected_amt, due_ym, due_day,
-            clean_name, r_recurrence, r_target_type, p1_paid, p2_paid, 1, r_custom_months_str,
-            f"Registrato dal movimento {tx['date']} ({clean_name})"
-        ))
+            cursor.execute('''
+                INSERT INTO planned_deadlines (
+                    workspace_id, name, category, expected_amount, year_month, due_day, 
+                    match_pattern, recurrence, target_type, p1_paid_amount, p2_paid_amount, is_paid, custom_months, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                ws_id, f"{category} - {clean_name}", category, expected_amt, due_ym, due_day,
+                clean_name, r_recurrence, r_target_type, p1_paid, p2_paid, 1, r_custom_months_str,
+                f"Registrato dal movimento {tx['date']} ({clean_name})"
+            ))
         
     conn.commit()
     conn.close()
@@ -5835,7 +5919,7 @@ def api_search_omnibar():
         elif "medico" in q_lower or "farmacia" in q_lower or "salute" in q_lower:
             advisor_tip = "💡 Le spese sanitarie e farmaceutiche oltre la franchigia di 129,11 € danno diritto alla detrazione 19% nel 730."
         elif "bollo" in q_lower or "assicurazione" in q_lower:
-            advisor_tip = "💡 Questa spesa fissa ricorrente è tracciata anche nel tuo Radar Scadenze di coppia."
+            advisor_tip = "💡 Questa spesa fissa è in anagrafica. Le scadenze straordinarie restano nel Radar."
         elif "carburante" in q_lower or "benzina" in q_lower:
             advisor_tip = "💡 Il tag #carburante raggruppa i rifornimenti: confronta la media mese con Focus Auto."
 

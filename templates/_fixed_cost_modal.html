@@ -1,0 +1,160 @@
+<div id="addFixedCostModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 560px;">
+        <div class="modal-header">
+            <h3 id="fcModalTitle" style="font-size: 1.15rem; font-weight: 800; color: #fff;">📌 Nuova Spesa Fissa</h3>
+            <button type="button" class="modal-close" onclick="closeAddFixedCostModal()">&times;</button>
+        </div>
+
+        <p style="color: #94a3b8; font-size: 0.78rem; margin: -4px 0 14px 0; line-height: 1.45;">
+            Una spesa fissa è un impegno noto (mutuo, utenza, abbonamento) con una <strong style="color:#e2e8f0;">frequenza</strong>: mensile, bimestrale, trimestrale, annuale o mesi a scelta.
+            Il Radar resta per le scadenze straordinarie (bollo, TARI, cambio gomme).
+        </p>
+
+        <form id="fixedCostForm" action="/fixed-costs/save" method="POST">
+            <input type="hidden" name="item_id" id="fcItemId" value="">
+
+            <div class="form-group">
+                <label for="fcName">Nome *</label>
+                <input type="text" id="fcName" name="name" class="form-control" placeholder="es. Enel Energia, Iliad, Mutuo BCC..." required>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label for="fcAmount">Importo previsto (€) *</label>
+                    <input type="number" step="0.01" id="fcAmount" name="expected_amount" class="form-control" placeholder="es. 162.60" required>
+                </div>
+                <div class="form-group">
+                    <label for="fcDueDay">Giorno addebito (1-31)</label>
+                    <input type="number" min="1" max="31" id="fcDueDay" name="due_day" class="form-control" value="1" required>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="form-group">
+                    <label for="fcCategory">Categoria</label>
+                    <select id="fcCategory" name="category" class="form-control" style="background: #1e293b; color: #fff;">
+                        {% for cat_name, cat in macro_categories.items() %}
+                        <option value="{{ cat_name }}">{{ cat.icon }} {{ cat_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="fcFrequency">Frequenza</label>
+                    <select id="fcFrequency" name="frequency" class="form-control" style="background: #1e293b; color: #fff;" onchange="toggleFixedCostFreqUI(this.value)">
+                        <option value="MONTHLY">Mensile (tutti i mesi)</option>
+                        <option value="BIMONTHLY_EVEN">Bimestrale · mesi pari (feb, apr, giu…)</option>
+                        <option value="BIMONTHLY_ODD">Bimestrale · mesi dispari (gen, mar, mag…)</option>
+                        <option value="QUARTERLY">Trimestrale (mar, giu, set, dic)</option>
+                        <option value="SEMIANNUAL">Semestrale</option>
+                        <option value="ANNUAL">Annuale</option>
+                        <option value="CUSTOM_MONTHS">Mesi personalizzati</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="fcAnnualMonthBox" style="display: none;" class="form-group">
+                <label for="fcAnnualMonth">Mese di scadenza</label>
+                <select id="fcAnnualMonth" name="annual_month" class="form-control" style="background: #1e293b; color: #fff;">
+                    {% for m_idx, m_name in [(1,'Gennaio'),(2,'Febbraio'),(3,'Marzo'),(4,'Aprile'),(5,'Maggio'),(6,'Giugno'),(7,'Luglio'),(8,'Agosto'),(9,'Settembre'),(10,'Ottobre'),(11,'Novembre'),(12,'Dicembre')] %}
+                    <option value="{{ m_idx }}">{{ m_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div id="fcCustomMonthsBox" style="display: none; background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 12px;">
+                <span style="font-size: 0.7rem; color: #38bdf8; font-weight: 700; display: block; margin-bottom: 6px;">
+                    Mesi in cui scade questa fissa
+                </span>
+                <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; font-size: 0.7rem; text-align: center;">
+                    {% for m_idx, m_name in [('1','Gen'), ('2','Feb'), ('3','Mar'), ('4','Apr'), ('5','Mag'), ('6','Giu'), ('7','Lug'), ('8','Ago'), ('9','Set'), ('10','Ott'), ('11','Nov'), ('12','Dic')] %}
+                    <label class="fc-month-chip" style="display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 4px 2px; cursor: pointer;">
+                        <span style="color: #cbd5e1; font-weight: 700;">{{ m_name }}</span>
+                        <input type="checkbox" name="custom_months" value="{{ m_idx }}" class="fc-custom-month" style="margin-top: 2px; accent-color: #38bdf8;">
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="fcPattern">Parola chiave per riconoscimento in banca (facoltativa)</label>
+                <input type="text" id="fcPattern" name="match_pattern" class="form-control" placeholder="es. enel, iliad, mutuo">
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Quando compare sull'estratto conto, la checklist del mese la segna come addebitata.</small>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.85rem;">
+                    <input type="checkbox" id="fcIsIncome" name="is_income" value="1">
+                    <span>È un'entrata fissa (stipendio, affitto percepito…)</span>
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 24px;">
+                <button type="button" class="btn btn-secondary" onclick="closeAddFixedCostModal()" style="width: 40%;">Annulla</button>
+                <button type="submit" id="fcSubmitBtn" class="btn" style="width: 60%;">Salva spesa fissa</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleFixedCostFreqUI(val) {
+    const annualBox = document.getElementById('fcAnnualMonthBox');
+    const customBox = document.getElementById('fcCustomMonthsBox');
+    if (annualBox) annualBox.style.display = (val === 'ANNUAL' || val === 'SEMIANNUAL' || val === 'BIENNIAL') ? 'block' : 'none';
+    if (customBox) customBox.style.display = (val === 'CUSTOM_MONTHS') ? 'block' : 'none';
+}
+
+function resetFixedCostModal() {
+    const form = document.getElementById('fixedCostForm');
+    if (!form) return;
+    form.reset();
+    document.getElementById('fcItemId').value = '';
+    document.getElementById('fcModalTitle').innerText = '📌 Nuova Spesa Fissa';
+    document.getElementById('fcSubmitBtn').innerText = 'Salva spesa fissa';
+    document.getElementById('fcDueDay').value = '1';
+    document.getElementById('fcFrequency').value = 'MONTHLY';
+    document.querySelectorAll('.fc-custom-month').forEach(function(cb) { cb.checked = false; });
+    toggleFixedCostFreqUI('MONTHLY');
+}
+
+function openAddFixedCostModal(prefill) {
+    resetFixedCostModal();
+    if (prefill) {
+        document.getElementById('fcItemId').value = prefill.id || '';
+        document.getElementById('fcModalTitle').innerText = '✏️ Modifica Spesa Fissa';
+        document.getElementById('fcSubmitBtn').innerText = 'Aggiorna spesa fissa';
+        document.getElementById('fcName').value = prefill.name || '';
+        document.getElementById('fcAmount').value = prefill.expected_amount || '';
+        document.getElementById('fcDueDay').value = prefill.due_day || 1;
+        document.getElementById('fcCategory').value = prefill.category || 'Casa & Immobili';
+        document.getElementById('fcFrequency').value = prefill.frequency || 'MONTHLY';
+        document.getElementById('fcPattern').value = prefill.match_pattern || '';
+        document.getElementById('fcIsIncome').checked = !!Number(prefill.is_income);
+        const months = (prefill.active_months || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean);
+        if (prefill.frequency === 'ANNUAL' || prefill.frequency === 'SEMIANNUAL' || prefill.frequency === 'BIENNIAL') {
+            if (months[0]) document.getElementById('fcAnnualMonth').value = months[0];
+        }
+        if (prefill.frequency === 'CUSTOM_MONTHS') {
+            document.querySelectorAll('.fc-custom-month').forEach(function(cb) {
+                cb.checked = months.indexOf(cb.value) !== -1;
+            });
+        }
+        toggleFixedCostFreqUI(prefill.frequency || 'MONTHLY');
+    }
+    document.getElementById('addFixedCostModal').classList.add('open');
+    document.getElementById('fcName').focus();
+}
+
+function openEditFixedCostFromEl(el) {
+    try {
+        openAddFixedCostModal(JSON.parse(el.getAttribute('data-fc') || '{}'));
+    } catch (e) {
+        openAddFixedCostModal();
+    }
+}
+
+function closeAddFixedCostModal() {
+    const modal = document.getElementById('addFixedCostModal');
+    if (modal) modal.classList.remove('open');
+}
+</script>

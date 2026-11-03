@@ -2107,52 +2107,77 @@
                 </div>
             </div>
 
-            <!-- 5. Spesa Ricorrente & Scadenza nel Radar (Unificata) -->
-            <div style="margin: 12px 0; padding: 12px 14px; background: linear-gradient(135deg, rgba(234, 179, 8, 0.12), rgba(59, 130, 246, 0.08)); border: 1.5px solid rgba(234, 179, 8, 0.4); border-radius: var(--radius-md);">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="setRadarDeadlineCheckbox" name="set_radar_deadline" value="1" style="width: 18px; height: 18px; accent-color: #eab308; cursor: pointer;" onchange="document.getElementById('radarDeadlineOptions').style.display = this.checked ? 'block' : 'none';">
-                    <label for="setRadarDeadlineCheckbox" style="font-size: 0.84rem; color: #fde047; cursor: pointer; font-weight: 800;">
-                        🗓️ Pianifica come Spesa Ricorrente / Scadenza nel Radar
-                    </label>
+            <!-- Spesa fissa (anagrafica) vs Radar scadenze (straordinarie) -->
+            <div style="margin: 12px 0; display: flex; flex-direction: column; gap: 8px;">
+                <div style="padding: 12px 14px; background: rgba(56, 189, 248, 0.08); border: 1.5px solid rgba(56, 189, 248, 0.35); border-radius: var(--radius-md);">
+                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                        <input type="checkbox" id="setFixedCostCheckbox" name="set_fixed_cost" value="1" style="width: 18px; height: 18px; margin-top: 2px; accent-color: #38bdf8; cursor: pointer;" onchange="document.getElementById('fixedCostFromTxOptions').style.display = this.checked ? 'block' : 'none';">
+                        <label for="setFixedCostCheckbox" style="font-size: 0.84rem; color: #7dd3fc; cursor: pointer; font-weight: 800; line-height: 1.3;">
+                            📌 Salva come Spesa Fissa
+                            <small style="display: block; font-weight: 500; color: #94a3b8; font-size: 0.72rem; margin-top: 2px;">
+                                Mutuo, utenze, abbonamenti. Scegli la frequenza: anche bimestrale o mesi a scelta.
+                            </small>
+                        </label>
+                    </div>
+                    <div id="fixedCostFromTxOptions" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.15);">
+                        <label style="font-size: 0.72rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 2px;">Frequenza</label>
+                        <select name="fixed_frequency" id="fixedFrequencySelect" class="form-control" onchange="toggleCustomMonthsUI(this.value)" style="background: #1e293b; color: #fff; padding: 6px; font-size: 0.75rem; border-radius: 6px; width: 100%;">
+                            <option value="MONTHLY" selected>Mensile (tutti i mesi)</option>
+                            <option value="BIMONTHLY_EVEN">Bimestrale · mesi pari</option>
+                            <option value="BIMONTHLY_ODD">Bimestrale · mesi dispari</option>
+                            <option value="QUARTERLY">Trimestrale</option>
+                            <option value="SEMIANNUAL">Semestrale</option>
+                            <option value="ANNUAL">Annuale</option>
+                            <option value="CUSTOM_MONTHS">Mesi personalizzati</option>
+                        </select>
+                    </div>
                 </div>
-                <div id="radarDeadlineOptions" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.15);">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px;">
-                        <div>
-                            <label style="font-size: 0.72rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 2px;">Cadenza / Frequenza:</label>
-                            <select name="radar_recurrence" id="radarRecurrenceSelect" class="form-control" onchange="toggleCustomMonthsUI(this.value)" style="background: #1e293b; color: #fff; padding: 6px; font-size: 0.75rem; border-radius: 6px; width: 100%;">
-                                <option value="ANNUAL">📆 Annuale (Stesso mese ogni anno)</option>
-                                <option value="BIENNIAL">🔄 Biennale (Ogni 2 anni - es. Revisione)</option>
-                                <option value="MONTHLY">📅 Mensile (Tutti i mesi)</option>
-                                <option value="BIMONTHLY_EVEN">⚡ Bimestrale Mesi Pari (Feb, Apr, Giu...)</option>
-                                <option value="BIMONTHLY_ODD">⚡ Bimestrale Mesi Dispari (Gen, Mar, Mag...)</option>
-                                <option value="SEMIANNUAL">⚡ Semestrale (Ogni 6 mesi)</option>
-                                <option value="CUSTOM_MONTHS">🎯 Mesi Personalizzati a Scelta</option>
-                                <option value="ONE_OFF">Una Tantum (Solo per questo mese)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="font-size: 0.72rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 2px;">Pertinenza Spesa:</label>
-                            <select name="radar_target_type" class="form-control" style="background: #1e293b; color: #fff; padding: 6px; font-size: 0.75rem; border-radius: 6px; width: 100%;">
-                                <option value="LEOPOLDO_ONLY">👤 Personale (Solo Leopoldo)</option>
-                                <option value="SHARED_50_50">👥 Comune Famiglia (Quote 50/50)</option>
-                                <option value="NUNZIA_ONLY">👩 Personale (Solo Nunzia)</option>
-                            </select>
+
+                <div style="padding: 12px 14px; background: linear-gradient(135deg, rgba(234, 179, 8, 0.12), rgba(59, 130, 246, 0.08)); border: 1.5px solid rgba(234, 179, 8, 0.4); border-radius: var(--radius-md);">
+                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                        <input type="checkbox" id="setRadarDeadlineCheckbox" name="set_radar_deadline" value="1" style="width: 18px; height: 18px; margin-top: 2px; accent-color: #eab308; cursor: pointer;" onchange="document.getElementById('radarDeadlineOptions').style.display = this.checked ? 'block' : 'none';">
+                        <label for="setRadarDeadlineCheckbox" style="font-size: 0.84rem; color: #fde047; cursor: pointer; font-weight: 800; line-height: 1.3;">
+                            🗓️ Aggiungi al Radar Scadenze
+                            <small style="display: block; font-weight: 500; color: #94a3b8; font-size: 0.72rem; margin-top: 2px;">
+                                Solo eventi straordinari: bollo, TARI, revisione, cambio gomme, quote di coppia.
+                            </small>
+                        </label>
+                    </div>
+                    <div id="radarDeadlineOptions" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.15);">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px;">
+                            <div>
+                                <label style="font-size: 0.72rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 2px;">Ricorrenza Radar</label>
+                                <select name="radar_recurrence" id="radarRecurrenceSelect" class="form-control" onchange="toggleCustomMonthsUI(this.value)" style="background: #1e293b; color: #fff; padding: 6px; font-size: 0.75rem; border-radius: 6px; width: 100%;">
+                                    <option value="ANNUAL">Annuale</option>
+                                    <option value="BIENNIAL">Biennale (es. revisione)</option>
+                                    <option value="SEMIANNUAL">Semestrale</option>
+                                    <option value="CUSTOM_MONTHS">Mesi personalizzati</option>
+                                    <option value="ONE_OFF">Una tantum</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.72rem; color: #cbd5e1; font-weight: 700; display: block; margin-bottom: 2px;">Pertinenza</label>
+                                <select name="radar_target_type" class="form-control" style="background: #1e293b; color: #fff; padding: 6px; font-size: 0.75rem; border-radius: 6px; width: 100%;">
+                                    <option value="LEOPOLDO_ONLY">Personale (Leopoldo)</option>
+                                    <option value="SHARED_50_50">Comune famiglia 50/50</option>
+                                    <option value="NUNZIA_ONLY">Personale (Nunzia)</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Selettore Flessibile Mesi Specifici (Gen, Feb, Apr, Dic...) -->
-                    <div id="radarCustomMonthsBox" style="display: none; background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); margin-top: 6px;">
-                        <span style="font-size: 0.7rem; color: #38bdf8; font-weight: 700; display: block; margin-bottom: 6px;">
-                            Scegli i mesi in cui si ripete questa spesa:
-                        </span>
-                        <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; font-size: 0.7rem; text-align: center;">
-                            {% for m_idx, m_name in [('1','Gen'), ('2','Feb'), ('3','Mar'), ('4','Apr'), ('5','Mag'), ('6','Giu'), ('7','Lug'), ('8','Ago'), ('9','Set'), ('10','Ott'), ('11','Nov'), ('12','Dic')] %}
-                            <label style="display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 4px 2px; cursor: pointer;">
-                                <span style="color: #cbd5e1; font-weight: 700;">{{ m_name }}</span>
-                                <input type="checkbox" name="radar_custom_months" value="{{ m_idx }}" style="margin-top: 2px; accent-color: #38bdf8;">
-                            </label>
-                            {% endfor %}
-                        </div>
+                <div id="radarCustomMonthsBox" style="display: none; background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+                    <span style="font-size: 0.7rem; color: #38bdf8; font-weight: 700; display: block; margin-bottom: 6px;">
+                        Mesi in cui si ripete:
+                    </span>
+                    <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; font-size: 0.7rem; text-align: center;">
+                        {% for m_idx, m_name in [('1','Gen'), ('2','Feb'), ('3','Mar'), ('4','Apr'), ('5','Mag'), ('6','Giu'), ('7','Lug'), ('8','Ago'), ('9','Set'), ('10','Ott'), ('11','Nov'), ('12','Dic')] %}
+                        <label style="display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 4px 2px; cursor: pointer;">
+                            <span style="color: #cbd5e1; font-weight: 700;">{{ m_name }}</span>
+                            <input type="checkbox" name="radar_custom_months" value="{{ m_idx }}" style="margin-top: 2px; accent-color: #38bdf8;">
+                        </label>
+                        {% endfor %}
                     </div>
                 </div>
             </div>

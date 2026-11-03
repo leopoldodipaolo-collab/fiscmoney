@@ -53,11 +53,10 @@
             </a>
         </div>
         
-        {% if data.is_current_month %}
+        <a href="/fixed-costs" class="btn btn-sm btn-secondary" style="font-size: 0.8rem;">📌 Anagrafica fisse</a>
         <button class="btn btn-sm" onclick="openAddFixedCostModal()" style="background: linear-gradient(135deg, var(--accent-primary), #2563eb); font-size: 0.8rem;">
-            ➕ Nuovo Costo Fisso
+            ➕ Nuova spesa fissa
         </button>
-        {% endif %}
     </div>
 </div>
 
@@ -1558,13 +1557,16 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
         <div style="display: flex; align-items: center; gap: 8px;">
             <span style="font-size: 1.2rem;">📅</span>
+            <div>
             <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff; margin: 0;">
                 {% if data.is_current_month %}
-                    Scadenze & Tasse Programmate per {{ data.year_month }}
+                    Scadenze straordinarie · {{ data.year_month }}
                 {% else %}
-                    Scadenze Straordinarie di {{ data.month_name_it }} (Consuntivo)
+                    Scadenze straordinarie di {{ data.month_name_it }}
                 {% endif %}
             </h3>
+            <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 2px;">Radar: bollo, TARI, revisione, cambio gomme. Non le utenze mensili.</div>
+            </div>
         </div>
         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <span style="color: var(--accent-success); font-weight: 600; font-size: 0.75rem;">
@@ -1672,15 +1674,16 @@
 <!-- ======================================================== -->
 <div class="card" style="margin-bottom: 16px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="display: flex; align-items: flex-start; gap: 8px;">
             <span style="font-size: 1.2rem;">📋</span>
-            <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff;">
-                {% if data.is_current_month %}
-                    Spese Fisse & Ricorrenti Mensili
-                {% else %}
-                    Costi Fissi & Utenze Regolari di {{ data.month_name_it }}
-                {% endif %}
-            </h3>
+            <div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff;">
+                    Fisse in scadenza · {{ data.month_name_it }}
+                </h3>
+                <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 500; margin-top: 2px;">
+                    Checklist del mese. Per modificare importi e frequenza usa l'<a href="/fixed-costs" style="color: #38bdf8;">anagrafica spese fisse</a>.
+                </div>
+            </div>
         </div>
         <div style="display: flex; align-items: center; gap: 10px; font-size: 0.75rem;">
             <span style="color: var(--accent-success); font-weight: 600;">
@@ -1711,7 +1714,9 @@
                     <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
                         <span>📂 {{ item.category }}</span>
                         <span>•</span>
-                        <span>Scadenza: Giorno {{ item.due_day }} del mese</span>
+                        <span>{{ item.frequency_label or 'Mensile' }}</span>
+                        <span>•</span>
+                        <span>Giorno {{ item.due_day }}</span>
                         {% if item.is_paid and item.paid_date %}
                         <span>•</span>
                         <span style="color: var(--accent-success); font-weight: 600;">Addebitato il {{ item.paid_date }}</span>
@@ -1738,8 +1743,10 @@
                     </div>
                 </div>
 
-                <form action="/fixed-costs/delete/{{ item.id }}" method="POST" onsubmit="return confirm('Rimuovere questo costo fisso dalle regole?');" style="margin: 0;">
-                    <button type="submit" class="btn-danger-icon" title="Elimina Regola" style="background: none; border: none; cursor: pointer; opacity: 0.6;">🗑️</button>
+                <button type="button" class="btn-danger-icon" title="Modifica" style="background: none; border: none; cursor: pointer; opacity: 0.75;"
+                        data-fc='{{ item|tojson|forceescape }}' onclick="openEditFixedCostFromEl(this)">✏️</button>
+                <form action="/fixed-costs/delete/{{ item.id }}" method="POST" onsubmit="return confirm('Rimuovere questa spesa fissa dall\'anagrafica?');" style="margin: 0;">
+                    <button type="submit" class="btn-danger-icon" title="Elimina" style="background: none; border: none; cursor: pointer; opacity: 0.6;">🗑️</button>
                 </form>
             </div>
         </div>
@@ -1750,105 +1757,24 @@
     {% if data.fixed_items_skipped|length > 0 %}
     <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--border-color);">
         <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px;">
-            <span>⏭️ Spese Ricorrenti non previste in questo mese (Stagionali / Bimestrali):</span>
-            <span class="badge-tag" style="font-size: 0.65rem;">{{ data.fixed_items_skipped|length }} escluse</span>
+            <span>Altre fisse, non in scadenza a {{ data.month_name_it }}:</span>
+            <a href="/fixed-costs" class="badge-tag" style="font-size: 0.65rem; text-decoration: none; color: #7dd3fc;">{{ data.fixed_items_skipped|length }} · gestisci</a>
         </div>
         <div style="display: flex; flex-wrap: wrap; gap: 8px;">
             {% for sk in data.fixed_items_skipped %}
-            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+            <button type="button" data-fc='{{ sk|tojson|forceescape }}' onclick="openEditFixedCostFromEl(this)" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; cursor: pointer;">
                 <span>💤</span>
                 <strong style="color: #cbd5e1;">{{ sk.name }}</strong>
                 <span>(~{{ sk.expected_amount|eur }})</span>
-                <span style="font-size: 0.65rem; color: var(--accent-primary);">
-                    {% if sk.frequency == 'BIMONTHLY_EVEN' %}Bimestrale (Mesi Pari)
-                    {% elif sk.frequency == 'BIMONTHLY_ODD' %}Bimestrale (Mesi Dispari)
-                    {% elif sk.frequency == 'QUARTERLY' %}Trimestrale
-                    {% else %}Mesi: {{ sk.active_months }}{% endif %}
-                </span>
-            </div>
+                <span style="font-size: 0.65rem; color: var(--accent-primary);">{{ sk.frequency_label }}{% if sk.next_due_label %} · prossima {{ sk.next_due_label }}{% endif %}</span>
+            </button>
             {% endfor %}
         </div>
     </div>
     {% endif %}
 </div>
 
-<!-- ======================================================== -->
-<!-- MODAL: AGGIUNGI COSTO FISSO / SPESA RICORRENTE           -->
-<!-- ======================================================== -->
-<div id="addFixedCostModal" class="modal-overlay">
-    <div class="modal-card">
-        <div class="modal-header">
-            <h3 style="font-size: 1.15rem; font-weight: 800; color: #fff;">➕ Aggiungi Spesa Ricorrente / Costo Fisso</h3>
-            <button class="modal-close" onclick="closeAddFixedCostModal()">&times;</button>
-        </div>
-        
-        <form action="/fixed-costs/add" method="POST">
-            <div class="form-group">
-                <label for="fcName">Nome Spesa Ricorrente *</label>
-                <input type="text" id="fcName" name="name" class="form-control" placeholder="es. Affitto, Rata Auto, Netflix, Enel..." required autofocus>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div class="form-group">
-                    <label for="fcAmount">Importo Previsto (€) *</label>
-                    <input type="number" step="0.01" id="fcAmount" name="expected_amount" class="form-control" placeholder="es. 150.00" required>
-                </div>
-                <div class="form-group">
-                    <label for="fcDueDay">Giorno Scadenza (1-31)</label>
-                    <input type="number" min="1" max="31" id="fcDueDay" name="due_day" class="form-control" value="1" required>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div class="form-group">
-                    <label for="fcCategory">Categoria Macro</label>
-                    <select id="fcCategory" name="category" class="form-control" style="background: #1e293b; color: #fff;">
-                        <option value="Casa & Immobili">🏠 Casa & Immobili</option>
-                        <option value="Bollette & Utenze">💡 Bollette & Utenze</option>
-                        <option value="Spesa & Alimentari">🛒 Spesa & Alimentari</option>
-                        <option value="Auto & Mobilità">🚗 Auto & Mobilità</option>
-                        <option value="Ristoranti & Bar">🍽️ Ristoranti & Bar</option>
-                        <option value="Shopping & Abbigliamento">🛍️ Shopping & Abbigliamento</option>
-                        <option value="Digitale, Tech & Tel">🌐 Digitale, Tech & Tel</option>
-                        <option value="Viaggi & Tempo Libero">✈️ Viaggi & Tempo Libero</option>
-                        <option value="Salute & Benessere">🩺 Salute & Benessere</option>
-                        <option value="Lavoro & Entrate">💼 Lavoro & Entrate</option>
-                        <option value="Risparmio & Investimenti">📈 Risparmio & Investimenti</option>
-                        <option value="Tasse, Fisco & Banche">🏛️ Tasse, Fisco & Banche</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="fcFrequency">Frequenza & Cadenza</label>
-                    <select id="fcFrequency" name="frequency" class="form-control" style="background: #1e293b; color: #fff;">
-                        <option value="MONTHLY">📅 Mensile (Tutti i mesi)</option>
-                        <option value="BIMONTHLY_EVEN">⚡ Bimestrale Mesi Pari (Feb, Apr, Giu, Ago, Ott, Dic)</option>
-                        <option value="BIMONTHLY_ODD">⚡ Bimestrale Mesi Dispari (Gen, Mar, Mag, Lug, Set, Nov)</option>
-                        <option value="QUARTERLY">📊 Trimestrale (Mar, Giu, Set, Dic)</option>
-                        <option value="ANNUAL">📆 Annuale (1 volta l'anno)</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="fcPattern">Parola Chiave per Riconoscimento Automatico (Facoltativa)</label>
-                <input type="text" id="fcPattern" name="match_pattern" class="form-control" placeholder="es. telepass, enel, netflix, mutuo">
-                <small style="color: var(--text-muted); font-size: 0.7rem;">Il sistema controllerà le descrizioni bancarie per segnare la spesa come "Pagata" appena compare sull'estratto conto.</small>
-            </div>
-
-            <div class="form-group" style="margin-top: 10px;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #fff; font-size: 0.85rem;">
-                    <input type="checkbox" name="is_income" value="1">
-                    <span>Si tratta di un'entrata fissa ricorrente (es. Stipendio, Pensione, Affitto percepito)</span>
-                </label>
-            </div>
-
-            <div style="display: flex; gap: 10px; margin-top: 24px;">
-                <button type="button" class="btn btn-secondary" onclick="closeAddFixedCostModal()" style="width: 40%;">Annulla</button>
-                <button type="submit" class="btn" style="width: 60%;">Salva Costo Fisso</button>
-            </div>
-        </form>
-    </div>
-</div>
+{% include '_fixed_cost_modal.html' %}
 
 <!-- ======================================================== -->
 <!-- MODAL: AGGIUNGI SCADENZA STRAORDINARIA / TASSA           -->
@@ -2884,14 +2810,6 @@ if (document.readyState === 'loading') {
     initCashflowCharts();
 }
 
-function openAddFixedCostModal() {
-    document.getElementById('addFixedCostModal').classList.add('open');
-    document.getElementById('fcName').focus();
-}
-
-function closeAddFixedCostModal() {
-    document.getElementById('addFixedCostModal').classList.remove('open');
-}
 
 function openAddDeadlineModalManual() {
     document.getElementById('dlModalTitle').innerText = "📅 Programma Scadenza / Tassa del Mese";

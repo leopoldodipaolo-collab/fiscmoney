@@ -1337,7 +1337,7 @@
                     <span id="radarMonthSummaryText"></span>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <button type="button" id="btnToggleMonthFixedCosts" onclick="toggleRadarFixedCostsDrawer()" style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer;">
-                            🔄 Mostra Costi Fissi Mese ▾
+                            📌 Mostra fisse del mese ▾
                         </button>
                         <button type="button" onclick="filterDeadlinesByMonth('ALL', null)" style="background: none; border: none; color: #94a3b8; font-size: 0.72rem; cursor: pointer; text-decoration: underline; padding: 0;">Mostra Tutti i Mesi ✕</button>
                     </div>
@@ -1346,7 +1346,8 @@
                 <!-- Cassetto Dettaglio Costi Fissi Ricorrenti del Mese Selezionato -->
                 <div id="radarFixedCostsDrawer" style="display: none; margin-top: 10px; padding-top: 8px; border-top: 1px dashed rgba(56, 189, 248, 0.25);">
                     <div style="font-size: 0.72rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                        <span>🔄</span> Costi Fissi Mensili Ricorrenti per questo Mese:
+                        <span>📌</span> Spese fisse in scadenza questo mese:
+                        <a href="/fixed-costs" style="margin-left: auto; color: #7dd3fc; font-weight: 600; text-transform: none; letter-spacing: 0; font-size: 0.7rem;">Gestisci anagrafica →</a>
                     </div>
                     <div id="radarFixedCostsList" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 6px;">
                         <!-- Popolato dinamicamente da JS -->
@@ -3486,13 +3487,13 @@ function renderMonthFixedCosts(targetYm) {
             `).join('');
             if (fcToggleBtn) {
                 fcToggleBtn.style.display = 'inline-block';
-                fcToggleBtn.innerText = `🔄 Costi Fissi Mese (${filteredItems.length} voci) ▾`;
+                fcToggleBtn.innerText = `📌 Fisse del mese (${filteredItems.length} voci) ▾`;
             }
         } else {
-            fcList.innerHTML = '<span style="font-size: 0.7rem; color: var(--text-muted);">Nessun costo fisso ricorrente previsto per questo mese (escluso eventuale mutuo).</span>';
+            fcList.innerHTML = '<span style="font-size: 0.7rem; color: var(--text-muted);">Nessuna spesa fissa in scadenza questo mese (escluso eventuale mutuo). <a href="/fixed-costs" style="color:#7dd3fc;">Apri anagrafica</a></span>';
             if (fcToggleBtn) {
                 fcToggleBtn.style.display = 'inline-block';
-                fcToggleBtn.innerText = `🔄 Costi Fissi Mese (0 voci) ▾`;
+                fcToggleBtn.innerText = `📌 Fisse del mese (0 voci) ▾`;
             }
         }
     }
