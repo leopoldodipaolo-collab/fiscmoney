@@ -48,6 +48,9 @@ from services.cashflow_engine import (
     giroconto_transfer_flag,
     list_fixed_costs_registry,
     resolve_frequency_fields,
+    normalize_life_bucket,
+    next_life_bucket,
+    LIFE_BUCKETS,
 )
 from services.vertical_focus_engine import (
     get_active_focus_categories,
@@ -1477,6 +1480,12 @@ def save_fixed_cost():
     annual_month = request.form.get("annual_month") or request.form.get("due_month")
     custom_months = request.form.getlist("custom_months")
     frequency, active_months = resolve_frequency_fields(frequency, custom_months, annual_month)
+    life_bucket = normalize_life_bucket(
+        request.form.get("life_bucket"),
+        name,
+        category,
+        is_income,
+    )
 
     if not name:
         flash("Indica il nome della spesa fissa.", "error")
@@ -1497,23 +1506,57 @@ def save_fixed_cost():
             """
             UPDATE fixed_costs
             SET name = ?, category = ?, expected_amount = ?, due_day = ?,
-                frequency = ?, active_months = ?, match_pattern = ?, is_income = ?
+                frequency = ?, active_months = ?, match_pattern = ?, is_income = ?, life_bucket = ?
             WHERE id = ? AND workspace_id = ?
             """,
-            (name, category, expected_amount, due_day, frequency, active_months, pattern, is_income, int(item_id), ws_id),
+            (name, category, expected_amount, due_day, frequency, active_months, pattern, is_income, life_bucket, int(item_id), ws_id),
         )
         flash(f"Spesa fissa '{name}' aggiornata.", "success")
     else:
         conn.execute(
             """
-            INSERT INTO fixed_costs (workspace_id, name, category, expected_amount, due_day, frequency, active_months, match_pattern, is_income, is_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+            INSERT INTO fixed_costs (workspace_id, name, category, expected_amount, due_day, frequency, active_months, match_pattern, is_income, is_active, life_bucket)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
             """,
-            (ws_id, name, category, expected_amount, due_day, frequency, active_months, pattern, is_income),
+            (ws_id, name, category, expected_amount, due_day, frequency, active_months, pattern, is_income, life_bucket),
         )
         flash(f"Spesa fissa '{name}' salvata in anagrafica.", "success")
     conn.commit()
     conn.close()
+    return _redirect_after_fixed_cost()
+
+
+@app.route("/fixed-costs/bucket/<int:item_id>", methods=["POST"])
+@login_required
+def set_fixed_cost_bucket(item_id):
+    ws_id = session.get("workspace_id")
+    if not ws_id:
+        return redirect(url_for("cashflow"))
+    conn = get_db_connection()
+    row = conn.execute(
+        "SELECT name, category, is_income, life_bucket FROM fixed_costs WHERE id = ? AND workspace_id = ?",
+        (item_id, ws_id),
+    ).fetchone()
+    if not row:
+        conn.close()
+        flash("Spesa fissa non trovata.", "error")
+        return _redirect_after_fixed_cost()
+    requested = (request.form.get("life_bucket") or "").strip().lower()
+    if requested == "cycle":
+        current = normalize_life_bucket(row["life_bucket"], row["name"], row["category"], row["is_income"])
+        new_bucket = next_life_bucket(current)
+    else:
+        new_bucket = normalize_life_bucket(requested, row["name"], row["category"], row["is_income"])
+        if new_bucket not in LIFE_BUCKETS:
+            new_bucket = "need"
+    conn.execute(
+        "UPDATE fixed_costs SET life_bucket = ? WHERE id = ? AND workspace_id = ?",
+        (new_bucket, item_id, ws_id),
+    )
+    conn.commit()
+    conn.close()
+    labels = {"need": "Necessaria", "work": "Lavoro", "extra": "Extra"}
+    flash(f"'{row['name']}' ora è {labels.get(new_bucket, new_bucket)}.", "success")
     return _redirect_after_fixed_cost()
 
 
@@ -4151,10 +4194,11 @@ def update_transaction(tx_id):
                 r_custom_months,
                 annual_month or tx_month_num,
             )
+            fc_bucket = normalize_life_bucket(None, clean_name, category, False)
             cursor.execute('''
-                INSERT INTO fixed_costs (workspace_id, profile_id, name, category, expected_amount, due_day, frequency, active_months, match_pattern, is_income, is_active)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1)
-            ''', (ws_id, tx['profile_id'], clean_name, category, expected_amt, due_day, fc_freq_mapped, fc_active_m, clean_name))
+                INSERT INTO fixed_costs (workspace_id, profile_id, name, category, expected_amount, due_day, frequency, active_months, match_pattern, is_income, is_active, life_bucket)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, ?)
+            ''', (ws_id, tx['profile_id'], clean_name, category, expected_amt, due_day, fc_freq_mapped, fc_active_m, clean_name, fc_bucket))
 
         if set_radar_dl:
             if r_target_type == 'LEOPOLDO_ONLY':

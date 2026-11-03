@@ -76,6 +76,25 @@
             </div>
 
             <div class="form-group">
+                <label>Tipo di spesa</label>
+                <div class="fc-bucket-picks" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                    <label class="fc-bucket-pick" style="cursor: pointer;">
+                        <input type="radio" name="life_bucket" id="fcBucketNeed" value="need" checked>
+                        <span>Necessaria</span>
+                    </label>
+                    <label class="fc-bucket-pick" style="cursor: pointer;">
+                        <input type="radio" name="life_bucket" id="fcBucketWork" value="work">
+                        <span>Lavoro</span>
+                    </label>
+                    <label class="fc-bucket-pick" style="cursor: pointer;">
+                        <input type="radio" name="life_bucket" id="fcBucketExtra" value="extra">
+                        <span>Extra</span>
+                    </label>
+                </div>
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Casa e utenze / tool professionali / superfluo. In lista puoi cambiarlo con un click sul badge.</small>
+            </div>
+
+            <div class="form-group">
                 <label for="fcPattern">Parola chiave per riconoscimento in banca (facoltativa)</label>
                 <input type="text" id="fcPattern" name="match_pattern" class="form-control" placeholder="es. enel, iliad, mutuo">
                 <small style="color: var(--text-muted); font-size: 0.7rem;">Quando compare sull'estratto conto, la checklist del mese la segna come addebitata.</small>
@@ -115,6 +134,7 @@ function resetFixedCostModal() {
     document.getElementById('fcSubmitBtn').innerText = 'Salva spesa fissa';
     document.getElementById('fcDueDay').value = '1';
     document.getElementById('fcFrequency').value = 'MONTHLY';
+    document.getElementById('fcBucketNeed').checked = true;
     document.querySelectorAll('.fc-custom-month').forEach(function(cb) { cb.checked = false; });
     var delBtn = document.getElementById('fcDeleteBtn');
     if (delBtn) delBtn.style.display = 'none';
@@ -134,6 +154,11 @@ function openAddFixedCostModal(prefill) {
         document.getElementById('fcFrequency').value = prefill.frequency || 'MONTHLY';
         document.getElementById('fcPattern').value = prefill.match_pattern || '';
         document.getElementById('fcIsIncome').checked = !!Number(prefill.is_income);
+        var b = prefill.life_bucket || prefill.spend_bucket || 'need';
+        if (b === 'flex') b = 'extra';
+        if (b === 'essential' || b === 'income') b = (b === 'income') ? 'work' : 'need';
+        var radio = document.getElementById(b === 'work' ? 'fcBucketWork' : (b === 'extra' ? 'fcBucketExtra' : 'fcBucketNeed'));
+        if (radio) radio.checked = true;
         const months = (prefill.active_months || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean);
         if (prefill.frequency === 'ANNUAL' || prefill.frequency === 'SEMIANNUAL' || prefill.frequency === 'BIENNIAL') {
             if (months[0]) document.getElementById('fcAnnualMonth').value = months[0];

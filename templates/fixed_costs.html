@@ -53,6 +53,7 @@
             <thead>
                 <tr style="text-align: left; color: #94a3b8; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 1px solid rgba(255,255,255,0.08);">
                     <th style="padding: 12px 16px;">Spesa</th>
+                    <th style="padding: 12px 10px;">Tipo</th>
                     <th style="padding: 12px 10px;">Frequenza</th>
                     <th style="padding: 12px 10px;">Giorno</th>
                     <th style="padding: 12px 10px;">Prossima</th>
@@ -71,6 +72,17 @@
                             {% if not item.is_active %}<span class="badge-tag" style="background: rgba(148,163,184,0.15); color: #94a3b8; margin-left: 6px;">Disattiva</span>{% endif %}
                             {% if item.match_pattern %}<span style="margin-left: 6px; color: #64748b;">chiave: {{ item.match_pattern }}</span>{% endif %}
                         </div>
+                    </td>
+                    <td style="padding: 12px 10px;">
+                        <form action="/fixed-costs/bucket/{{ item.id }}" method="POST" style="margin: 0;">
+                            <input type="hidden" name="life_bucket" value="cycle">
+                            <button type="submit" title="Clicca per cambiare" style="border: none; cursor: pointer; padding: 2px 8px; border-radius: 999px; font-size: 0.68rem; font-weight: 800;
+                                {% if item.life_bucket == 'work' %}background: rgba(56,189,248,0.16); color: #7dd3fc;
+                                {% elif item.life_bucket == 'extra' %}background: rgba(251,191,36,0.16); color: #fbbf24;
+                                {% else %}background: rgba(16,185,129,0.16); color: #6ee7b7;{% endif %}">
+                                {% if item.life_bucket == 'work' %}Lavoro{% elif item.life_bucket == 'extra' %}Extra{% else %}Necessaria{% endif %}
+                            </button>
+                        </form>
                     </td>
                     <td style="padding: 12px 10px;">
                         <span style="display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; background: rgba(56,189,248,0.12); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.25);">

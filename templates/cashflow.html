@@ -1681,7 +1681,7 @@
         <div class="fx-title-group">
             <div class="fx-emblem">⚖️</div>
             <div>
-                <div class="fx-kicker">Necessario vs extra · {{ data.month_name_it }}</div>
+                <div class="fx-kicker">Necessaria · Lavoro · Extra · {{ data.month_name_it }}</div>
                 <h3 class="fx-title">Fisse del mese</h3>
                 <p class="fx-verdict">{{ recap.verdict if recap else 'Checklist delle spese fisse in scadenza.' }}</p>
             </div>
@@ -1701,14 +1701,14 @@
             <span>Necessarie</span>
             <strong class="privacy-mask">{{ recap.essential_fixed|eur }}</strong>
         </div>
-        <div class="fx-kpi extra">
-            <span>Extra fisse</span>
-            <strong class="privacy-mask">{{ recap.flex_fixed|eur }}</strong>
-            <small>{{ recap.extra_pct }}% entrate con le variabili</small>
+        <div class="fx-kpi work">
+            <span>Lavoro</span>
+            <strong class="privacy-mask">{{ recap.work_fixed|eur }}</strong>
         </div>
-        <div class="fx-kpi var">
-            <span>Variabile extra</span>
-            <strong class="privacy-mask">{{ recap.flex_variable|eur }}</strong>
+        <div class="fx-kpi extra">
+            <span>Extra</span>
+            <strong class="privacy-mask">{{ recap.flex_fixed|eur }}</strong>
+            <small>{{ recap.extra_pct }}% con le variabili</small>
         </div>
         <div class="fx-kpi rest">
             <span>Ti resta</span>
@@ -1718,13 +1718,15 @@
 
     <div class="fx-bar" title="Composizione vs entrate">
         <div style="width: {{ recap.bar.essential }}%;" class="seg need"></div>
+        <div style="width: {{ recap.bar.work }}%;" class="seg work"></div>
         <div style="width: {{ recap.bar.flex }}%;" class="seg extra"></div>
         <div style="width: {{ recap.bar.deadlines }}%;" class="seg dl"></div>
         <div style="width: {{ recap.bar.investments }}%;" class="seg inv"></div>
         <div style="width: {{ recap.bar.leftover }}%;" class="seg rest"></div>
     </div>
     <div class="fx-legend">
-        <span><i class="dot need"></i> Necessarie</span>
+        <span><i class="dot need"></i> Necessaria</span>
+        <span><i class="dot work"></i> Lavoro</span>
         <span><i class="dot extra"></i> Extra</span>
         <span><i class="dot dl"></i> Scadenze</span>
         <span><i class="dot inv"></i> Investimenti</span>
@@ -1737,67 +1739,71 @@
     </div>
     {% endif %}
 
-    <div class="fx-list">
-        {% for item in data.fixed_items %}
-        <div class="fx-row {% if item.is_income %}income{% elif item.spend_bucket == 'flex' %}extra{% else %}need{% endif %} {% if item.is_paid %}is-paid{% endif %}">
-            <div class="fx-row-main">
-                <div class="fx-status">{% if item.is_paid %}●{% else %}◐{% endif %}</div>
-                <div class="fx-row-copy">
-                    <div class="fx-row-name">
-                        {{ item.name }}
-                        {% if item.is_income %}
-                            <em class="fx-badge income">Entrata</em>
-                        {% elif item.spend_bucket == 'flex' %}
-                            <em class="fx-badge extra">Extra</em>
-                        {% else %}
-                            <em class="fx-badge need">Necessaria</em>
-                        {% endif %}
+    <p class="fx-hint">Clicca il badge per spostare una voce: Necessaria → Lavoro → Extra.</p>
+    <div class="fx-cols">
+        {% for col in data.fixed_board %}
+        <section class="fx-col {{ col.key }}">
+            <header class="fx-col-head">
+                <div>
+                    <h4>{{ col.label }}</h4>
+                    <span>{{ col.hint }}</span>
+                </div>
+                <strong class="privacy-mask">{{ col.due_total|eur }}</strong>
+            </header>
+            <div class="fx-col-body">
+                {% for item in col.due %}
+                <div class="fx-row {{ col.key }} {% if item.is_paid %}is-paid{% endif %} {% if item.is_income %}income{% endif %}">
+                    <div class="fx-row-main">
+                        <div class="fx-status">{% if item.is_paid %}●{% else %}◐{% endif %}</div>
+                        <div class="fx-row-copy">
+                            <div class="fx-row-name">
+                                {{ item.name }}
+                                {% if item.is_income %}<em class="fx-badge income">Entrata</em>{% endif %}
+                                <form action="/fixed-costs/bucket/{{ item.id }}" method="POST" class="fx-bucket-form">
+                                    <input type="hidden" name="life_bucket" value="cycle">
+                                    <button type="submit" class="fx-badge {{ col.key }}" title="Cambia tipo">{{ col.label }}</button>
+                                </form>
+                            </div>
+                            <div class="fx-row-sub">{{ item.frequency_label or 'Mensile' }} · g. {{ item.due_day }}{% if item.is_paid and item.paid_date %} · {{ item.paid_date }}{% endif %}</div>
+                        </div>
                     </div>
-                    <div class="fx-row-sub">
-                        {{ item.category }} · {{ item.frequency_label or 'Mensile' }} · giorno {{ item.due_day }}
-                        {% if item.is_paid and item.paid_date %} · addebitato {{ item.paid_date }}{% endif %}
+                    <div class="fx-row-right">
+                        <div class="fx-amt privacy-mask">
+                            {% if item.is_paid %}
+                                {{ (item.actual_amount if item.is_income else -item.actual_amount)|eur_sign }}
+                            {% else %}
+                                {{ (item.expected_amount if item.is_income else -item.expected_amount)|eur_sign }}
+                            {% endif %}
+                            <small>{% if item.is_paid %}Ok{% else %}Attesa{% endif %}</small>
+                        </div>
+                        <button type="button" class="fx-ico" title="Modifica" data-fc='{{ item|tojson|forceescape }}' onclick="openEditFixedCostFromEl(this)">✏️</button>
+                        <form action="/fixed-costs/delete/{{ item.id }}" method="POST" onsubmit="return confirm('Rimuovere questa spesa fissa dall\'anagrafica?');">
+                            <button type="submit" class="fx-ico" title="Elimina">🗑️</button>
+                        </form>
                     </div>
                 </div>
-            </div>
-            <div class="fx-row-right">
-                <div class="fx-amt privacy-mask">
-                    {% if item.is_paid %}
-                        {{ (item.actual_amount if item.is_income else -item.actual_amount)|eur_sign }}
-                    {% else %}
-                        {{ (item.expected_amount if item.is_income else -item.expected_amount)|eur_sign }}
-                    {% endif %}
-                    <small>{% if item.is_paid %}Confermato{% else %}In attesa{% endif %}</small>
+                {% else %}
+                <div class="fx-empty">Nessuna in scadenza</div>
+                {% endfor %}
+                {% for sk in col.skipped %}
+                <div class="fx-skip-chip {{ col.key }}">
+                    <strong>{{ sk.name }}</strong>
+                    <span class="privacy-mask">~{{ sk.expected_amount|eur }}</span>
+                    <em>{{ sk.frequency_label }}{% if sk.next_due_label %} · {{ sk.next_due_label }}{% endif %}</em>
+                    <form action="/fixed-costs/bucket/{{ sk.id }}" method="POST">
+                        <input type="hidden" name="life_bucket" value="cycle">
+                        <button type="submit" class="fx-badge {{ col.key }}" title="Cambia tipo">{{ col.label }}</button>
+                    </form>
+                    <button type="button" title="Modifica" data-fc='{{ sk|tojson|forceescape }}' onclick="openEditFixedCostFromEl(this)">✏️</button>
+                    <form action="/fixed-costs/delete/{{ sk.id }}" method="POST" onsubmit="return confirm('Eliminare «{{ sk.name|e }}» dall\'anagrafica spese fisse?');">
+                        <button type="submit" title="Elimina">🗑️</button>
+                    </form>
                 </div>
-                <button type="button" class="fx-ico" title="Modifica" data-fc='{{ item|tojson|forceescape }}' onclick="openEditFixedCostFromEl(this)">✏️</button>
-                <form action="/fixed-costs/delete/{{ item.id }}" method="POST" onsubmit="return confirm('Rimuovere questa spesa fissa dall\'anagrafica?');">
-                    <button type="submit" class="fx-ico" title="Elimina">🗑️</button>
-                </form>
+                {% endfor %}
             </div>
-        </div>
+        </section>
         {% endfor %}
     </div>
-
-    {% if data.fixed_items_skipped|length > 0 %}
-    <div class="fx-skipped">
-        <div class="fx-skipped-head">
-            <span>Non in scadenza a {{ data.month_name_it }}</span>
-            <a href="/fixed-costs">{{ data.fixed_items_skipped|length }} · gestisci</a>
-        </div>
-        <div class="fx-skipped-list">
-            {% for sk in data.fixed_items_skipped %}
-            <div class="fx-skip-chip {% if sk.spend_bucket == 'flex' %}extra{% else %}need{% endif %}">
-                <strong>{{ sk.name }}</strong>
-                <span class="privacy-mask">~{{ sk.expected_amount|eur }}</span>
-                <em>{{ sk.frequency_label }}{% if sk.next_due_label %} · {{ sk.next_due_label }}{% endif %}</em>
-                <button type="button" title="Modifica" data-fc='{{ sk|tojson|forceescape }}' onclick="openEditFixedCostFromEl(this)">✏️</button>
-                <form action="/fixed-costs/delete/{{ sk.id }}" method="POST" onsubmit="return confirm('Eliminare «{{ sk.name|e }}» dall\'anagrafica spese fisse?');">
-                    <button type="submit" title="Elimina">🗑️</button>
-                </form>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-    {% endif %}
 </div>
 
 {% include '_fixed_cost_modal.html' %}
@@ -3522,18 +3528,19 @@ window.addEventListener('click', function(e) {
 .fx-chip.wait { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
 .fx-link { color: #7dd3fc; font-size: 0.75rem; font-weight: 700; text-decoration: none; }
 .fx-kpi-row { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
-@media (max-width: 820px) { .fx-kpi-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 820px) { .fx-kpi-row { grid-template-columns: repeat(2, 1fr); } .fx-cols { grid-template-columns: 1fr !important; } }
 .fx-kpi { padding: 10px 12px; border-radius: 14px; background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.06); }
 .fx-kpi span { display: block; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px; }
 .fx-kpi strong { font-size: 1.12rem; color: #fff; }
 .fx-kpi.need { border-color: rgba(52,211,153,0.28); }
+.fx-kpi.work { border-color: rgba(56,189,248,0.32); }
 .fx-kpi.extra { border-color: rgba(251,191,36,0.32); box-shadow: 0 0 18px rgba(251,191,36,0.08); }
-.fx-kpi.var { border-color: rgba(248,113,113,0.22); }
 .fx-kpi small { display: block; font-size: 0.62rem; color: #64748b; margin-top: 2px; }
 .fx-kpi .pos { color: #34d399; }
 .fx-kpi .neg { color: #f87171; }
 .fx-bar { position: relative; z-index: 1; height: 10px; border-radius: 999px; overflow: hidden; display: flex; background: rgba(255,255,255,0.06); }
 .fx-bar .seg.need { background: linear-gradient(90deg, #059669, #34d399); }
+.fx-bar .seg.work { background: linear-gradient(90deg, #0284c7, #38bdf8); }
 .fx-bar .seg.extra { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
 .fx-bar .seg.dl { background: #c084fc; }
 .fx-bar .seg.inv { background: #38bdf8; }
@@ -3541,12 +3548,29 @@ window.addEventListener('click', function(e) {
 .fx-legend { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 8px 0 16px; font-size: 0.65rem; color: #94a3b8; }
 .fx-legend .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
 .fx-legend .dot.need { background: #34d399; }
+.fx-legend .dot.work { background: #38bdf8; }
 .fx-legend .dot.extra { background: #fbbf24; }
 .fx-legend .dot.dl { background: #c084fc; }
 .fx-legend .dot.inv { background: #38bdf8; }
 .fx-legend .dot.rest { background: #64748b; }
 .fx-var-pill { padding: 2px 8px; border-radius: 999px; background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.25); color: #fecaca; font-weight: 700; }
-.fx-list { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 8px; }
+.fx-hint { position: relative; z-index: 1; font-size: 0.7rem; color: #64748b; margin: -4px 0 10px; }
+.fx-cols { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.fx-col { border-radius: 16px; padding: 10px; background: rgba(0,0,0,0.22); border: 1px solid rgba(255,255,255,0.06); min-height: 120px; }
+.fx-col.need { border-color: rgba(52,211,153,0.28); }
+.fx-col.work { border-color: rgba(56,189,248,0.28); }
+.fx-col.extra { border-color: rgba(251,191,36,0.3); }
+.fx-col-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
+.fx-col-head h4 { margin: 0; font-size: 0.82rem; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 0.04em; }
+.fx-col.need .fx-col-head h4 { color: #6ee7b7; }
+.fx-col.work .fx-col-head h4 { color: #7dd3fc; }
+.fx-col.extra .fx-col-head h4 { color: #fbbf24; }
+.fx-col-head span { display: block; font-size: 0.62rem; color: #64748b; margin-top: 2px; }
+.fx-col-head strong { font-size: 0.95rem; color: #fff; }
+.fx-col-body { display: flex; flex-direction: column; gap: 7px; }
+.fx-empty { font-size: 0.72rem; color: #64748b; padding: 12px 6px; text-align: center; border: 1px dashed rgba(255,255,255,0.08); border-radius: 10px; }
+.fx-bucket-form { display: inline; margin: 0; }
+.fx-badge { cursor: pointer; border: none; }
 .fx-row {
     display: flex; justify-content: space-between; align-items: center; gap: 10px;
     padding: 11px 12px 11px 10px; border-radius: 14px;
@@ -3555,6 +3579,7 @@ window.addEventListener('click', function(e) {
 }
 .fx-row.extra { border-left-color: #fbbf24; background: rgba(251,191,36,0.06); }
 .fx-row.need { border-left-color: #34d399; }
+.fx-row.work { border-left-color: #38bdf8; background: rgba(56,189,248,0.06); }
 .fx-row.income { border-left-color: #38bdf8; }
 .fx-row.is-paid { opacity: 0.88; }
 .fx-row-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
@@ -3565,11 +3590,13 @@ window.addEventListener('click', function(e) {
 .fx-badge { font-style: normal; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
 .fx-badge.extra { background: rgba(251,191,36,0.18); color: #fbbf24; }
 .fx-badge.need { background: rgba(16,185,129,0.16); color: #6ee7b7; }
+.fx-badge.work { background: rgba(56,189,248,0.16); color: #7dd3fc; }
 .fx-badge.income { background: rgba(56,189,248,0.16); color: #7dd3fc; }
 .fx-row-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .fx-row-right form { margin: 0; }
 .fx-amt { text-align: right; font-weight: 800; font-size: 1.02rem; color: #fff; }
 .fx-row.extra .fx-amt { color: #fbbf24; }
+.fx-row.work .fx-amt { color: #7dd3fc; }
 .fx-row.need:not(.is-paid) .fx-amt { color: #fcd34d; }
 .fx-amt small { display: block; font-size: 0.62rem; font-weight: 600; color: #94a3b8; }
 .fx-ico { background: none; border: none; cursor: pointer; opacity: 0.65; padding: 2px; }
@@ -3585,6 +3612,17 @@ window.addEventListener('click', function(e) {
 }
 .fx-skip-chip.extra { border-color: rgba(251,191,36,0.28); }
 .fx-skip-chip.need { border-color: rgba(52,211,153,0.22); }
+.fx-skip-chip.work { border-color: rgba(56,189,248,0.28); }
+.fc-bucket-picks input { display: none; }
+.fc-bucket-pick span {
+    display: block; text-align: center; padding: 8px 4px; border-radius: 10px;
+    font-size: 0.75rem; font-weight: 800; color: #94a3b8;
+    border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.25);
+}
+.fc-bucket-picks input:checked + span { color: #fff; }
+#fcBucketNeed:checked + span { border-color: rgba(52,211,153,0.5); background: rgba(16,185,129,0.18); color: #6ee7b7; }
+#fcBucketWork:checked + span { border-color: rgba(56,189,248,0.5); background: rgba(14,165,233,0.18); color: #7dd3fc; }
+#fcBucketExtra:checked + span { border-color: rgba(251,191,36,0.5); background: rgba(251,191,36,0.16); color: #fbbf24; }
 .fx-skip-chip strong { color: #e2e8f0; }
 .fx-skip-chip em { font-style: normal; font-size: 0.64rem; color: #38bdf8; }
 .fx-skip-chip button, .fx-skip-chip form { margin: 0; background: none; border: none; cursor: pointer; padding: 0; }

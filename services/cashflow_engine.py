@@ -278,6 +278,8 @@ def init_fixed_costs_schema():
         cursor.execute("ALTER TABLE fixed_costs ADD COLUMN frequency TEXT DEFAULT 'MONTHLY'")
     if "active_months" not in cols:
         cursor.execute("ALTER TABLE fixed_costs ADD COLUMN active_months TEXT")
+    if "life_bucket" not in cols:
+        cursor.execute("ALTER TABLE fixed_costs ADD COLUMN life_bucket TEXT")
         
     # Safe migration: add recurrence if missing in planned_deadlines
     cursor.execute("PRAGMA table_info(planned_deadlines)")
@@ -514,11 +516,15 @@ def monthly_equivalent(fc):
     return (amt * n / 12.0) if n else amt / 12.0
 
 
+WORK_NAME_RE = re.compile(
+    r"render|cursor|antigravity|github|vercel|netlify|openai|chatgpt|"
+    r"notion|figma|canva|adobe|jetbrains|aws|digitalocean|heroku",
+    re.IGNORECASE,
+)
 FLEX_NAME_RE = re.compile(
-    r"render|google\s*one|antigravity|cursor|netflix|spotify|prime|disney|"
-    r"youtube|chatgpt|openai|icloud|playstation|xbox|dazn|now\s*tv|"
-    r"apple\s*(one|tv)|microsoft\s*365|github|vercel|netlify|notion|figma|canva|"
-    r"adobe|dropbox|nordvpn|expressvpn",
+    r"google\s*one|netflix|spotify|prime|disney|"
+    r"youtube|icloud|playstation|xbox|dazn|now\s*tv|"
+    r"apple\s*(one|tv)|microsoft\s*365|dropbox|nordvpn|expressvpn",
     re.IGNORECASE,
 )
 CONNECTIVITY_RE = re.compile(
@@ -542,23 +548,91 @@ FLEX_CATS = {
 }
 
 
+LIFE_BUCKETS = ("need", "work", "extra")
+LIFE_BUCKET_META = (
+    {"key": "need", "label": "Necessaria", "hint": "Casa, utenze, mutuo, SIM"},
+    {"key": "work", "label": "Lavoro", "hint": "Tool e costi professionali"},
+    {"key": "extra", "label": "Extra", "hint": "Abbonamenti e superfluo"},
+)
+_BUCKET_ALIASES = {
+    "need": "need",
+    "essential": "need",
+    "necessaria": "need",
+    "necessary": "need",
+    "work": "work",
+    "lavoro": "work",
+    "income": "work",
+    "extra": "extra",
+    "flex": "extra",
+}
+
+
 def classify_spend_bucket(name, category, is_income=False):
-    """essential | flex | income — heuristic for 'superfluo vs necessario'."""
+    """Heuristic: need | work | extra."""
     if is_income:
-        return "income"
+        return "work"
     blob = f"{name or ''} {category or ''}"
+    if WORK_NAME_RE.search(blob):
+        return "work"
     if FLEX_NAME_RE.search(blob):
-        return "flex"
+        return "extra"
     if CONNECTIVITY_RE.search(blob):
-        return "essential"
+        return "need"
     cat = category or ""
     if cat in ESSENTIAL_CATS:
-        return "essential"
+        return "need"
     if cat in FLEX_CATS:
-        return "flex"
+        return "extra"
     if cat in ("Auto & Mobilità", "Auto & Trasporti"):
-        return "essential"
-    return "essential"
+        return "need"
+    return "need"
+
+
+def normalize_life_bucket(raw, name=None, category=None, is_income=False):
+    """Persisted value if valid, otherwise heuristic."""
+    key = _BUCKET_ALIASES.get((raw or "").strip().lower())
+    if key in LIFE_BUCKETS:
+        return key
+    return classify_spend_bucket(name, category, is_income)
+
+
+def next_life_bucket(current):
+    order = list(LIFE_BUCKETS)
+    try:
+        i = order.index(current)
+    except ValueError:
+        i = 0
+    return order[(i + 1) % len(order)]
+
+
+def _build_fixed_board(due_items, skipped_items):
+    board = {}
+    for meta in LIFE_BUCKET_META:
+        board[meta["key"]] = {
+            "key": meta["key"],
+            "label": meta["label"],
+            "hint": meta["hint"],
+            "due": [],
+            "skipped": [],
+            "due_total": 0.0,
+        }
+    for item in due_items or []:
+        b = item.get("life_bucket") or "need"
+        if b not in board:
+            b = "need"
+        board[b]["due"].append(item)
+        if not item.get("is_income"):
+            amt = item.get("actual_amount") if item.get("is_paid") else item.get("expected_amount")
+            board[b]["due_total"] += float(amt or 0)
+    for item in skipped_items or []:
+        b = item.get("life_bucket") or "need"
+        if b not in board:
+            b = "need"
+        board[b]["skipped"].append(item)
+    for col in board.values():
+        col["due_total"] = round(col["due_total"], 2)
+        col["count"] = len(col["due"]) + len(col["skipped"])
+    return [board[k] for k in LIFE_BUCKETS]
 
 
 def build_spend_recap(
@@ -572,6 +646,7 @@ def build_spend_recap(
     """Month recap: structural vs extra, so the user sees what can be cut."""
     income = float(expected_income or 0)
     essential_fixed = 0.0
+    work_fixed = 0.0
     flex_fixed = 0.0
     essential_items = []
     flex_items = []
@@ -581,7 +656,7 @@ def build_spend_recap(
             continue
         amt = float(it.get("expected_amount") or 0)
         due = bool(it.get("is_due_this_month") or it.get("is_paid"))
-        bucket = classify_spend_bucket(it.get("name"), it.get("category"), False)
+        bucket = it.get("life_bucket") or classify_spend_bucket(it.get("name"), it.get("category"), False)
         row = {
             "id": it.get("id"),
             "name": it.get("name"),
@@ -590,10 +665,13 @@ def build_spend_recap(
             "frequency_label": it.get("frequency_label") or "",
             "bucket": bucket,
         }
-        if bucket == "flex":
+        if bucket == "extra":
             flex_items.append(row)
             if due:
                 flex_fixed += amt
+        elif bucket == "work":
+            if due:
+                work_fixed += amt
         else:
             essential_items.append(row)
             if due:
@@ -605,7 +683,7 @@ def build_spend_recap(
     for tx in variable_txs or []:
         amt = float(tx.get("amount") or 0)
         bucket = classify_spend_bucket(tx.get("display_title") or tx.get("description"), tx.get("category"))
-        if bucket == "flex":
+        if bucket == "extra":
             flex_var += amt
             cat = tx.get("category") or "Altro"
             flex_var_by_cat[cat] = flex_var_by_cat.get(cat, 0.0) + amt
@@ -619,7 +697,7 @@ def build_spend_recap(
     flex_items.sort(key=lambda x: x["amount"], reverse=True)
 
     extra_this_month = flex_fixed + flex_var
-    committed = essential_fixed + flex_fixed + float(deadlines_total or 0)
+    committed = essential_fixed + work_fixed + flex_fixed + float(deadlines_total or 0)
     inv = float(investments_total or 0)
     leftover = income - committed - flex_var - need_var - inv
     extra_pct = round((extra_this_month / income * 100), 1) if income > 0 else 0.0
@@ -648,6 +726,7 @@ def build_spend_recap(
 
     return {
         "essential_fixed": round(essential_fixed, 2),
+        "work_fixed": round(work_fixed, 2),
         "flex_fixed": round(flex_fixed, 2),
         "need_variable": round(need_var, 2),
         "flex_variable": round(flex_var, 2),
@@ -665,6 +744,7 @@ def build_spend_recap(
         "tone": tone,
         "bar": {
             "essential": _pct(essential_fixed + need_var),
+            "work": _pct(work_fixed),
             "flex": _pct(extra_this_month),
             "deadlines": _pct(float(deadlines_total or 0)),
             "investments": _pct(inv),
@@ -694,6 +774,13 @@ def list_fixed_costs_registry(workspace_id, profile_id=None):
         nxt = next_due_month_label(item, today_m)
         item['next_due_label'] = nxt
         item['monthly_equivalent'] = round(monthly_equivalent(item), 2)
+        item['life_bucket'] = normalize_life_bucket(
+            item.get('life_bucket'),
+            item.get('name'),
+            item.get('category'),
+            item.get('is_income'),
+        )
+        item['next_life_bucket'] = next_life_bucket(item['life_bucket'])
         items.append(item)
     return items
 
@@ -878,7 +965,14 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         item['matched_tx_ids'] = [t['id'] for t in matched_txs]
         item['frequency_label'] = frequency_label(item)
         item['next_due_label'] = next_due_month_label(item, m)
-        item['spend_bucket'] = classify_spend_bucket(item.get('name'), item.get('category'), item.get('is_income'))
+        item['life_bucket'] = normalize_life_bucket(
+            item.get('life_bucket'),
+            item.get('name'),
+            item.get('category'),
+            item.get('is_income'),
+        )
+        item['spend_bucket'] = item['life_bucket']
+        item['next_life_bucket'] = next_life_bucket(item['life_bucket'])
         
         if due_this_month or is_paid:
             exp_amt = fc['expected_amount']
@@ -1477,6 +1571,8 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         "investment_transactions": investment_tx_list,
         "fixed_items": fixed_items_due,
         "fixed_items_skipped": fixed_items_skipped,
+        "fixed_board": _build_fixed_board(fixed_items_due, fixed_items_skipped),
+        "life_bucket_meta": [dict(x) for x in LIFE_BUCKET_META],
         "planned_deadlines": planned_deadlines_list,
         "deadlines_catalog": DEADLINES_CATALOG,
         "total_deadlines_expected": total_deadlines_expected,
