@@ -51,6 +51,7 @@ from services.cashflow_engine import (
     normalize_life_bucket,
     next_life_bucket,
     LIFE_BUCKETS,
+    annotate_fixed_cost_matches,
 )
 from services.vertical_focus_engine import (
     get_active_focus_categories,
@@ -2953,6 +2954,10 @@ def transactions():
     # Calculate Merchant Frequency Groups & Triage Completion Stats
     merchant_groups = aggregate_transactions_by_merchant(tx_list)
     category_folders = group_transactions_by_category(tx_list, MACRO_CATEGORIES)
+    folder_merchants = []
+    for folder in category_folders:
+        folder_merchants.extend(folder.get("merchants") or [])
+    annotate_fixed_cost_matches(tx_list, ws_id, extra_groups=merchant_groups + folder_merchants)
     pending_groups = [g for g in merchant_groups if not g.get('is_homogeneous') or g.get('is_unassigned')]
     completed_groups = [g for g in merchant_groups if g.get('is_homogeneous') and not g.get('is_unassigned')]
     triage_stats = {

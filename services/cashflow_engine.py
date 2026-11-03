@@ -784,6 +784,92 @@ def list_fixed_costs_registry(workspace_id, profile_id=None):
         items.append(item)
     return items
 
+_LIFE_LABELS = {"need": "Necessaria", "work": "Lavoro", "extra": "Extra"}
+
+
+def load_active_fixed_rules(workspace_id):
+    """Compiled matchers for active fixed-cost rules."""
+    init_fixed_costs_schema()
+    conn = get_db_connection()
+    rows = conn.execute(
+        """
+        SELECT id, name, match_pattern, expected_amount, life_bucket, category, is_income
+        FROM fixed_costs
+        WHERE workspace_id = ? AND is_active = 1
+        """,
+        (workspace_id,),
+    ).fetchall()
+    conn.close()
+    rules = []
+    for r in rows:
+        item = dict(r)
+        raw = (item.get("match_pattern") or "").strip()
+        if raw:
+            pat = raw
+        else:
+            pat = re.escape((item.get("name") or "").strip())
+        if not pat:
+            continue
+        try:
+            compiled = re.compile(pat, re.IGNORECASE)
+        except re.error:
+            compiled = re.compile(re.escape(pat), re.IGNORECASE)
+        bucket = normalize_life_bucket(
+            item.get("life_bucket"),
+            item.get("name"),
+            item.get("category"),
+            item.get("is_income"),
+        )
+        rules.append({
+            "id": item["id"],
+            "name": item["name"],
+            "life_bucket": bucket,
+            "life_label": _LIFE_LABELS.get(bucket, ""),
+            "expected_amount": item.get("expected_amount"),
+            "pattern": pat,
+            "rx": compiled,
+        })
+    rules.sort(key=lambda x: len(x["pattern"]), reverse=True)
+    return rules
+
+
+def match_fixed_rule_for_text(text, rules):
+    blob = text or ""
+    blob_l = blob.lower()
+    if not blob.strip() or not rules:
+        return None
+    for rule in rules:
+        if "directa" in blob_l and "directa" not in (rule.get("pattern") or "").lower():
+            continue
+        if rule["rx"].search(blob):
+            return {
+                "id": rule["id"],
+                "name": rule["name"],
+                "life_bucket": rule["life_bucket"],
+                "life_label": rule["life_label"],
+                "expected_amount": rule["expected_amount"],
+            }
+    return None
+
+
+def annotate_fixed_cost_matches(tx_list, workspace_id, extra_groups=None):
+    """Stamp `fixed_rule` on transactions (and optional merchant groups)."""
+    rules = load_active_fixed_rules(workspace_id)
+    for tx in tx_list or []:
+        blob = f"{tx.get('description') or ''} {tx.get('raw_description') or ''}"
+        tx["fixed_rule"] = match_fixed_rule_for_text(blob, rules)
+    for group in extra_groups or []:
+        blob = group.get("pattern") or group.get("name") or ""
+        hit = match_fixed_rule_for_text(blob, rules)
+        if not hit:
+            for tx in group.get("transactions") or []:
+                if tx.get("fixed_rule"):
+                    hit = tx["fixed_rule"]
+                    break
+        group["fixed_rule"] = hit
+    return rules
+
+
 def calculate_average_monthly_income(conn, workspace_id, profile_id=None, exclude_month=None):
     """
     Calculates the realistic monthly income baseline:

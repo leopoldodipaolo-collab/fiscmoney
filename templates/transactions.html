@@ -5,6 +5,22 @@
 {% block content %}
 
 <style>
+.badge-fissa {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 999px;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+.badge-fissa.need { background: rgba(16,185,129,0.16); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.35); }
+.badge-fissa.work { background: rgba(56,189,248,0.16); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.4); }
+.badge-fissa.extra { background: rgba(251,191,36,0.16); color: #fbbf24; border: 1px solid rgba(251,191,36,0.4); }
 .merchant-triage-card {
     margin-bottom: 18px;
     background: linear-gradient(135deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.95)) !important;
@@ -1125,7 +1141,12 @@
                                         <div class="triage-m-left">
                                             <span class="triage-m-freq">x{{ g.count }}</span>
                                             <div class="triage-m-merchant" onclick="onMerchantClickFilter('{{ g.pattern|replace("'", "\\'") }}')" title="Tocca per isolare i movimenti">
-                                                <div class="triage-m-name">{{ g.pattern }}</div>
+                                                <div class="triage-m-name">
+                                                    {{ g.pattern }}
+                                                    {% if g.fixed_rule %}
+                                                    <span class="badge-fissa {{ g.fixed_rule.life_bucket }}" title="Già in anagrafica: {{ g.fixed_rule.name }}">📌 Fissa</span>
+                                                    {% endif %}
+                                                </div>
                                                 <div class="triage-m-sub">
                                                     <span>~{{ g.avg_amount|eur }}/spesa</span>
                                                     {% if g.latest_date %}<span>• Ultimo: {{ g.latest_date }}</span>{% endif %}
@@ -1370,6 +1391,9 @@
                             <div style="display: flex; align-items: center; gap: 6px;">
                                 <span style="font-size: 0.85rem;">🏬</span>
                                 <strong style="color: #e2e8f0; font-size: 0.82rem;">{{ m.pattern }}</strong>
+                                {% if m.fixed_rule %}
+                                <span class="badge-fissa {{ m.fixed_rule.life_bucket }}" title="Già in anagrafica: {{ m.fixed_rule.name }}">📌 Fissa{% if m.fixed_rule.life_label %} · {{ m.fixed_rule.life_label }}{% endif %}</span>
+                                {% endif %}
                                 <span style="font-size: 0.65rem; background: rgba(255,255,255,0.08); color: var(--text-muted); padding: 1px 5px; border-radius: 8px;">
                                     {{ m.count }} mov.
                                 </span>
@@ -1388,6 +1412,9 @@
                                 <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1;">
                                     <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                         <span style="color: #fff; font-size: 0.8rem;" title="{{ tx.description }}">{{ tx.description }}</span>
+                                        {% if tx.fixed_rule %}
+                                        <span class="badge-fissa {{ tx.fixed_rule.life_bucket }}" title="Già in anagrafica: {{ tx.fixed_rule.name }}">📌 Fissa{% if tx.fixed_rule.life_label %} · {{ tx.fixed_rule.life_label }}{% endif %}</span>
+                                        {% endif %}
                                         <small style="color: var(--text-muted); font-size: 0.68rem; margin-left: 6px;">{{ tx.account_name or 'Conto' }}</small>
                                     </div>
                                     {% if tx.tags %}
@@ -1485,7 +1512,12 @@
 
                 <!-- Description & Account Info -->
                 <div class="tx-info">
-                    <div class="tx-desc" title="{{ tx.description }}">{{ tx.description }}</div>
+                    <div class="tx-desc" title="{{ tx.description }}">
+                        {{ tx.description }}
+                        {% if tx.fixed_rule %}
+                        <span class="badge-fissa {{ tx.fixed_rule.life_bucket }}" title="Già in anagrafica: {{ tx.fixed_rule.name }}">📌 Fissa{% if tx.fixed_rule.life_label %} · {{ tx.fixed_rule.life_label }}{% endif %}</span>
+                        {% endif %}
+                    </div>
                     <div class="tx-sub">
                         <span>{{ tx.account_name or 'Conto' }}</span>
                         {% if tx.profile_name %}• <span class="tx-profile-name">{{ tx.profile_name }}</span>{% endif %}
