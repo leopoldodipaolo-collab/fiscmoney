@@ -514,6 +514,165 @@ def monthly_equivalent(fc):
     return (amt * n / 12.0) if n else amt / 12.0
 
 
+FLEX_NAME_RE = re.compile(
+    r"render|google\s*one|antigravity|cursor|netflix|spotify|prime|disney|"
+    r"youtube|chatgpt|openai|icloud|playstation|xbox|dazn|now\s*tv|"
+    r"apple\s*(one|tv)|microsoft\s*365|github|vercel|netlify|notion|figma|canva|"
+    r"adobe|dropbox|nordvpn|expressvpn",
+    re.IGNORECASE,
+)
+CONNECTIVITY_RE = re.compile(
+    r"iliad|tim\b|vodafone|fastweb|windtre|wind\s*tre|fibra|sim\b|mobile|"
+    r"adsl|internet|enel|acea|hera|a2a|mutuo|affitto|condominio|telepass",
+    re.IGNORECASE,
+)
+ESSENTIAL_CATS = {
+    "Casa & Immobili",
+    "Bollette & Utenze",
+    "Tasse, Fisco & Banche",
+    "Spesa & Alimentari",
+    "Salute & Benessere",
+    "Lavoro & Entrate",
+}
+FLEX_CATS = {
+    "Ristoranti & Bar",
+    "Shopping & Abbigliamento",
+    "Viaggi & Tempo Libero",
+    "Digitale, Tech & Tel",
+}
+
+
+def classify_spend_bucket(name, category, is_income=False):
+    """essential | flex | income — heuristic for 'superfluo vs necessario'."""
+    if is_income:
+        return "income"
+    blob = f"{name or ''} {category or ''}"
+    if FLEX_NAME_RE.search(blob):
+        return "flex"
+    if CONNECTIVITY_RE.search(blob):
+        return "essential"
+    cat = category or ""
+    if cat in ESSENTIAL_CATS:
+        return "essential"
+    if cat in FLEX_CATS:
+        return "flex"
+    if cat in ("Auto & Mobilità", "Auto & Trasporti"):
+        return "essential"
+    return "essential"
+
+
+def build_spend_recap(
+    expected_income,
+    fixed_due,
+    fixed_skipped,
+    variable_txs,
+    investments_total,
+    deadlines_total,
+):
+    """Month recap: structural vs extra, so the user sees what can be cut."""
+    income = float(expected_income or 0)
+    essential_fixed = 0.0
+    flex_fixed = 0.0
+    essential_items = []
+    flex_items = []
+
+    for it in list(fixed_due or []) + list(fixed_skipped or []):
+        if it.get("is_income"):
+            continue
+        amt = float(it.get("expected_amount") or 0)
+        due = bool(it.get("is_due_this_month") or it.get("is_paid"))
+        bucket = classify_spend_bucket(it.get("name"), it.get("category"), False)
+        row = {
+            "id": it.get("id"),
+            "name": it.get("name"),
+            "amount": amt,
+            "due_this_month": due,
+            "frequency_label": it.get("frequency_label") or "",
+            "bucket": bucket,
+        }
+        if bucket == "flex":
+            flex_items.append(row)
+            if due:
+                flex_fixed += amt
+        else:
+            essential_items.append(row)
+            if due:
+                essential_fixed += amt
+
+    flex_var = 0.0
+    need_var = 0.0
+    flex_var_by_cat = {}
+    for tx in variable_txs or []:
+        amt = float(tx.get("amount") or 0)
+        bucket = classify_spend_bucket(tx.get("display_title") or tx.get("description"), tx.get("category"))
+        if bucket == "flex":
+            flex_var += amt
+            cat = tx.get("category") or "Altro"
+            flex_var_by_cat[cat] = flex_var_by_cat.get(cat, 0.0) + amt
+        else:
+            need_var += amt
+
+    flex_var_cats = [
+        {"name": k, "amount": v}
+        for k, v in sorted(flex_var_by_cat.items(), key=lambda x: x[1], reverse=True)
+    ][:6]
+    flex_items.sort(key=lambda x: x["amount"], reverse=True)
+
+    extra_this_month = flex_fixed + flex_var
+    committed = essential_fixed + flex_fixed + float(deadlines_total or 0)
+    inv = float(investments_total or 0)
+    leftover = income - committed - flex_var - need_var - inv
+    extra_pct = round((extra_this_month / income * 100), 1) if income > 0 else 0.0
+    essential_pct = round(((essential_fixed + need_var) / income * 100), 1) if income > 0 else 0.0
+
+    recoverable = flex_fixed
+    top_cut = flex_items[:3]
+    names = ", ".join(x["name"] for x in top_cut[:2]) if top_cut else ""
+
+    if extra_this_month <= 0 and not flex_items:
+        verdict = "Questo mese non vedo extra evidenti: quasi tutto è strutturale (casa, utenze, connettività)."
+        tone = "ok"
+    elif extra_pct >= 18:
+        verdict = f"Le extra pesano {extra_pct}% delle entrate. C'è margine: {names} e le spese variabili di svago."
+        tone = "warn"
+    elif extra_pct >= 8:
+        verdict = f"Extra sotto controllo ({extra_pct}% delle entrate). Tagliare {names or 'gli abbonamenti digitali'} libera circa {flex_fixed:.0f}€ sulle fisse."
+        tone = "mid"
+    else:
+        verdict = f"Poco superfluo sulle fisse. Il grasso, se c'è, sta nelle variabili ({flex_var:.0f}€)."
+        tone = "ok"
+
+    def _pct(part):
+        tot = max(income, committed + flex_var + need_var + inv, 1.0)
+        return max(0.0, min(100.0, round(part / tot * 100, 1)))
+
+    return {
+        "essential_fixed": round(essential_fixed, 2),
+        "flex_fixed": round(flex_fixed, 2),
+        "need_variable": round(need_var, 2),
+        "flex_variable": round(flex_var, 2),
+        "investments": round(inv, 2),
+        "deadlines": round(float(deadlines_total or 0), 2),
+        "extra_this_month": round(extra_this_month, 2),
+        "extra_pct": extra_pct,
+        "essential_pct": essential_pct,
+        "leftover": round(leftover, 2),
+        "income": round(income, 2),
+        "flex_items": flex_items,
+        "flex_var_cats": flex_var_cats,
+        "recoverable_fixed": round(recoverable, 2),
+        "verdict": verdict,
+        "tone": tone,
+        "bar": {
+            "essential": _pct(essential_fixed + need_var),
+            "flex": _pct(extra_this_month),
+            "deadlines": _pct(float(deadlines_total or 0)),
+            "investments": _pct(inv),
+            "leftover": _pct(max(0.0, leftover)),
+        },
+    }
+
+
 def list_fixed_costs_registry(workspace_id, profile_id=None):
     """All fixed-cost rules (active and inactive) for the management page."""
     init_fixed_costs_schema()
@@ -719,6 +878,7 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         item['matched_tx_ids'] = [t['id'] for t in matched_txs]
         item['frequency_label'] = frequency_label(item)
         item['next_due_label'] = next_due_month_label(item, m)
+        item['spend_bucket'] = classify_spend_bucket(item.get('name'), item.get('category'), item.get('is_income'))
         
         if due_this_month or is_paid:
             exp_amt = fc['expected_amount']
@@ -1331,7 +1491,15 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         "total_all_deadlines": total_all_deadlines,
         "daily_safe_budget": daily_safe_budget,
         "burn_rate_daily": burn_rate_daily,
-        "smart_alerts": smart_alerts
+        "smart_alerts": smart_alerts,
+        "spend_recap": build_spend_recap(
+            expected_month_income,
+            fixed_items_due,
+            fixed_items_skipped,
+            variable_tx_list,
+            total_investments_month,
+            total_all_deadlines,
+        ),
     }
 
     # Holistic Personal Finance Health Index: FiscMoney Score (0 - 1000)
