@@ -1762,12 +1762,16 @@
         </div>
         <div style="display: flex; flex-wrap: wrap; gap: 8px;">
             {% for sk in data.fixed_items_skipped %}
-            <button type="button" data-fc='{{ sk|tojson|forceescape }}' onclick="openEditFixedCostFromEl(this)" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 6px 10px; font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; cursor: pointer;">
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 6px 8px 6px 10px; font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
                 <span>💤</span>
                 <strong style="color: #cbd5e1;">{{ sk.name }}</strong>
                 <span>(~{{ sk.expected_amount|eur }})</span>
                 <span style="font-size: 0.65rem; color: var(--accent-primary);">{{ sk.frequency_label }}{% if sk.next_due_label %} · prossima {{ sk.next_due_label }}{% endif %}</span>
-            </button>
+                <button type="button" title="Modifica" data-fc='{{ sk|tojson|forceescape }}' onclick="openEditFixedCostFromEl(this)" style="background: none; border: none; cursor: pointer; opacity: 0.75; padding: 0 2px;">✏️</button>
+                <form action="/fixed-costs/delete/{{ sk.id }}" method="POST" onsubmit="return confirm('Eliminare «{{ sk.name|e }}» dall\'anagrafica spese fisse?');" style="margin: 0;">
+                    <button type="submit" title="Elimina" style="background: none; border: none; cursor: pointer; opacity: 0.7; padding: 0 2px;">🗑️</button>
+                </form>
+            </div>
             {% endfor %}
         </div>
     </div>

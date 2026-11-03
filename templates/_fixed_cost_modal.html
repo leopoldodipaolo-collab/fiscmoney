@@ -88,11 +88,13 @@
                 </label>
             </div>
 
-            <div style="display: flex; gap: 10px; margin-top: 24px;">
-                <button type="button" class="btn btn-secondary" onclick="closeAddFixedCostModal()" style="width: 40%;">Annulla</button>
-                <button type="submit" id="fcSubmitBtn" class="btn" style="width: 60%;">Salva spesa fissa</button>
+            <div style="display: flex; gap: 10px; margin-top: 24px; align-items: center;">
+                <button type="button" class="btn btn-secondary" onclick="closeAddFixedCostModal()" style="width: 32%;">Annulla</button>
+                <button type="submit" id="fcSubmitBtn" class="btn" style="width: 48%;">Salva spesa fissa</button>
+                <button type="button" id="fcDeleteBtn" onclick="submitFixedCostDelete()" style="display: none; width: 20%; background: none; border: 1px solid rgba(248,113,113,0.4); color: #f87171; border-radius: 8px; padding: 8px 6px; cursor: pointer; font-size: 0.8rem;">🗑️</button>
             </div>
         </form>
+        <form id="fcDeleteForm" method="POST" style="display: none;"></form>
     </div>
 </div>
 
@@ -114,6 +116,8 @@ function resetFixedCostModal() {
     document.getElementById('fcDueDay').value = '1';
     document.getElementById('fcFrequency').value = 'MONTHLY';
     document.querySelectorAll('.fc-custom-month').forEach(function(cb) { cb.checked = false; });
+    var delBtn = document.getElementById('fcDeleteBtn');
+    if (delBtn) delBtn.style.display = 'none';
     toggleFixedCostFreqUI('MONTHLY');
 }
 
@@ -140,6 +144,8 @@ function openAddFixedCostModal(prefill) {
             });
         }
         toggleFixedCostFreqUI(prefill.frequency || 'MONTHLY');
+        var delBtn = document.getElementById('fcDeleteBtn');
+        if (delBtn) delBtn.style.display = prefill.id ? 'inline-block' : 'none';
     }
     document.getElementById('addFixedCostModal').classList.add('open');
     document.getElementById('fcName').focus();
@@ -156,5 +162,15 @@ function openEditFixedCostFromEl(el) {
 function closeAddFixedCostModal() {
     const modal = document.getElementById('addFixedCostModal');
     if (modal) modal.classList.remove('open');
+}
+
+function submitFixedCostDelete() {
+    var id = document.getElementById('fcItemId').value;
+    var name = document.getElementById('fcName').value || 'questa spesa fissa';
+    if (!id) return;
+    if (!confirm('Eliminare «' + name + '» dall\'anagrafica spese fisse?')) return;
+    var form = document.getElementById('fcDeleteForm');
+    form.action = '/fixed-costs/delete/' + id;
+    form.submit();
 }
 </script>
