@@ -768,6 +768,11 @@
                             ✨ Prima Casa (730 Detraibile)
                         </span>
                         {% endif %}
+                        {% if mortgage_data.mortgage.source == 'pdf' %}
+                        <span class="badge-tag" style="background: rgba(251, 191, 36, 0.14); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.35); font-size: 0.7rem; font-weight: 700;">
+                            📄 Piano da rendiconto{% if mortgage_data.mortgage.statement_date %} {{ mortgage_data.mortgage.statement_date }}{% endif %}
+                        </span>
+                        {% endif %}
                     </div>
                     <!-- Live Summary Chips in Header (always visible) -->
                     <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap;">
@@ -791,6 +796,12 @@
                     <span id="mortgageExpandArrow">▾ Espandi Dettaglio Mutuo</span>
                 </button>
 
+                <form action="/focus/mortgage/upload" method="POST" enctype="multipart/form-data" style="margin:0;">
+                    <label class="btn btn-secondary btn-sm" style="background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.35); color: #fbbf24; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; padding: 5px 10px; font-size: 0.75rem; cursor: pointer; margin: 0;">
+                        <span>📄</span> Carica rendiconto
+                        <input type="file" name="files" accept="application/pdf" multiple hidden onchange="this.form.submit()">
+                    </label>
+                </form>
                 <!-- Settings Button -->
                 <button type="button" onclick="openMortgageModal()" class="btn btn-secondary btn-sm" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; padding: 5px 10px; font-size: 0.75rem;">
                     <span>⚙️</span> Configura
@@ -1698,6 +1709,13 @@
             <button class="modal-close" onclick="closeMortgageModal()">&times;</button>
         </div>
         
+        <form action="/focus/mortgage/upload" method="POST" enctype="multipart/form-data" style="margin: 0 0 14px 0; padding: 10px 12px; border-radius: 10px; background: rgba(251, 191, 36, 0.08); border: 1px dashed rgba(251, 191, 36, 0.35);">
+            <label style="display: flex; flex-direction: column; gap: 6px; cursor: pointer; color: #fde68a; font-size: 0.8rem; font-weight: 700;">
+                <span>📄 Oppure importa il rendiconto BCC / piano di ammortamento (PDF, anche più file)</span>
+                <input type="file" name="files" accept="application/pdf" multiple onchange="this.form.submit()" style="font-size: 0.75rem; color: #e2e8f0;">
+            </label>
+            <small style="color: #94a3b8; font-size: 0.68rem;">Meglio il PDF digitale della banca. Le scansioni senza testo non si leggono da sole.</small>
+        </form>
         <form action="/focus/mortgage/save" method="POST">
             <div class="form-group">
                 <label for="mName">Nome Mutuo / Descrizione *</label>
@@ -1731,7 +1749,7 @@
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
                     <label for="mRate">Tasso Attuale (TAN in %) *</label>
-                    <input type="number" step="0.01" id="mRate" name="annual_interest_rate" class="form-control" value="{{ mortgage_data.mortgage.annual_interest_rate if mortgage_data else 3.20 }}" placeholder="3.20" required>
+                    <input type="number" step="0.001" id="mRate" name="annual_interest_rate" class="form-control" value="{{ mortgage_data.mortgage.annual_interest_rate if mortgage_data else 3.20 }}" placeholder="3.20" required>
                 </div>
                 <div class="form-group">
                     <label for="mType">Tipologia Tasso</label>

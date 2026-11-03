@@ -59,6 +59,7 @@ from services.vertical_focus_engine import (
     get_vertical_category_data,
     get_mortgage_deep_dive,
     get_mortgage_profile,
+    upsert_mortgage_from_statement,
     get_category_tags_drilldown
 )
 from services.couple_split_engine import (
@@ -87,6 +88,7 @@ from services.paystub_engine import (
     PAYSTUB_GLOSSARY
 )
 from services.paystub_pdf_parser import parse_paystub_pdf
+from services.mortgage_pdf_parser import parse_mortgage_pdf, merge_mortgage_parses
 from services.online_ai_classifier import classify_merchant_online
 from services.assistant_engine import (
     ASSISTANT_PERSONAS,
@@ -2017,6 +2019,56 @@ def save_mortgage_settings():
     
     flash("Parametri contrattuali e piano di ammortamento del mutuo aggiornati con successo!", "success")
     return redirect(url_for('focus_hub'))
+
+
+@app.route("/focus/mortgage/upload", methods=["POST"])
+@login_required
+def upload_mortgage_statement():
+    ws_id = session.get("workspace_id")
+    if not ws_id:
+        return redirect(url_for("focus_hub"))
+
+    files = request.files.getlist("files")
+    if not files:
+        one = request.files.get("file")
+        files = [one] if one else []
+    files = [f for f in files if f and getattr(f, "filename", None)]
+    if not files:
+        flash("Seleziona il PDF del rendiconto mutuo (anche più pagine).", "error")
+        return redirect(url_for("focus_hub"))
+
+    parsed_list = []
+    for f in files:
+        fname = (f.filename or "").lower()
+        if not fname.endswith(".pdf") and not (f.mimetype or "").startswith("application/pdf"):
+            flash("Carica solo PDF del rendiconto / piano di ammortamento.", "error")
+            return redirect(url_for("focus_hub"))
+        payload = f.read()
+        if not payload:
+            continue
+        parsed_list.append(parse_mortgage_pdf(payload))
+
+    merged = merge_mortgage_parses(parsed_list)
+    if not merged.get("success"):
+        flash(merged.get("error") or "Non riesco a leggere questo PDF.", "error")
+        return redirect(url_for("focus_hub"))
+
+    if not merged.get("original_amount") or not merged.get("monthly_installment"):
+        flash("Nel PDF manca il capitale o la rata. Controlla di aver caricato il piano di rientro completo.", "error")
+        return redirect(url_for("focus_hub"))
+
+    upsert_mortgage_from_statement(ws_id, merged)
+    bits = ["Piano mutuo aggiornato dal rendiconto."]
+    if merged.get("bank_name"):
+        bits.append(merged["bank_name"])
+    if merged.get("original_amount"):
+        bits.append(f"capitale € {merged['original_amount']:,.0f}".replace(",", "."))
+    if merged.get("monthly_installment"):
+        bits.append(f"rata € {merged['monthly_installment']:,.2f}")
+    if merged.get("duration_months"):
+        bits.append(f"{int(merged['duration_months'])} rate")
+    flash(" · ".join(bits), "success")
+    return redirect(url_for("focus_hub"))
 
 @app.route("/focus/categories/toggle", methods=["POST"])
 @login_required

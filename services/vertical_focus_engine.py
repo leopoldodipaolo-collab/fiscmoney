@@ -51,6 +51,10 @@ def init_focus_schema():
             monthly_installment REAL NOT NULL DEFAULT 1050.00,
             is_primary_residence BOOLEAN NOT NULL DEFAULT 1,
             notes TEXT,
+            contract_number TEXT,
+            extra_monthly_cost REAL DEFAULT 0,
+            statement_date TEXT,
+            source TEXT DEFAULT 'manual',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE,
             FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE SET NULL
@@ -71,6 +75,16 @@ def init_focus_schema():
             FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE
         )
     ''')
+
+    existing_cols = {row[1] for row in cursor.execute("PRAGMA table_info(mortgage_profiles)").fetchall()}
+    for col, decl in {
+        "contract_number": "TEXT",
+        "extra_monthly_cost": "REAL DEFAULT 0",
+        "statement_date": "TEXT",
+        "source": "TEXT DEFAULT 'manual'",
+    }.items():
+        if col not in existing_cols:
+            cursor.execute(f"ALTER TABLE mortgage_profiles ADD COLUMN {col} {decl}")
     
     conn.commit()
     conn.close()
@@ -635,6 +649,81 @@ def get_mortgage_profile(workspace_id, profile_id=None):
     return None
 
 
+def upsert_mortgage_from_statement(workspace_id, parsed, profile_id=None):
+    """Writes rendiconto PDF fields onto the workspace mortgage profile."""
+    init_focus_schema()
+    existing = get_mortgage_profile(workspace_id, profile_id) or {}
+    name = parsed.get("name") or existing.get("name") or "Mutuo Prima Casa"
+    bank = parsed.get("bank_name") or existing.get("bank_name") or "Banca"
+    orig = parsed.get("original_amount") or existing.get("original_amount")
+    start = parsed.get("start_date") or existing.get("start_date")
+    dur = parsed.get("duration_months") or existing.get("duration_months") or 240
+    rate = parsed.get("annual_interest_rate")
+    if rate is None:
+        rate = existing.get("annual_interest_rate") or 3.0
+    inst = parsed.get("monthly_installment") or existing.get("monthly_installment")
+    itype = parsed.get("interest_type") or existing.get("interest_type") or "FIXED"
+    primary = parsed.get("is_primary_residence")
+    if primary is None:
+        primary = existing.get("is_primary_residence", 1)
+    extra = parsed.get("extra_monthly_cost")
+    if extra is None:
+        extra = existing.get("extra_monthly_cost") or 0
+    contract = parsed.get("contract_number") or existing.get("contract_number")
+    statement_date = parsed.get("statement_date") or existing.get("statement_date")
+    note_bits = []
+    if contract:
+        note_bits.append(f"Contratto {contract}.")
+    if parsed.get("disbursed_date"):
+        note_bits.append(f"Erogato il {parsed['disbursed_date']}.")
+    if extra:
+        note_bits.append(f"Spese/commissioni {extra:.2f} €/rata.")
+    if parsed.get("residual_at_statement") and statement_date:
+        note_bits.append(
+            f"Debito residuo al {statement_date}: {parsed['residual_at_statement']:,.2f} €.".replace(",", "X").replace(".", ",").replace("X", ".")
+        )
+    notes = " ".join(note_bits)
+
+    conn = get_db_connection()
+    row = conn.execute(
+        "SELECT id FROM mortgage_profiles WHERE workspace_id = ? ORDER BY id DESC LIMIT 1",
+        (workspace_id,),
+    ).fetchone()
+    fields = (
+        name, bank, orig, start, int(dur), itype, float(rate), float(inst or 0),
+        1 if primary else 0, notes, contract, float(extra or 0), statement_date, "pdf",
+    )
+    if row:
+        conn.execute(
+            """
+            UPDATE mortgage_profiles SET
+                name=?, bank_name=?, original_amount=?, start_date=?,
+                duration_months=?, interest_type=?, annual_interest_rate=?,
+                monthly_installment=?, is_primary_residence=?, notes=?,
+                contract_number=?, extra_monthly_cost=?, statement_date=?, source=?
+            WHERE id=?
+            """,
+            fields + (row["id"],),
+        )
+        mid = row["id"]
+    else:
+        conn.execute(
+            """
+            INSERT INTO mortgage_profiles (
+                workspace_id, profile_id, name, bank_name, original_amount, start_date,
+                duration_months, interest_type, annual_interest_rate, monthly_installment,
+                is_primary_residence, notes, contract_number, extra_monthly_cost,
+                statement_date, source
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (workspace_id, profile_id) + fields,
+        )
+        mid = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    conn.commit()
+    conn.close()
+    return mid
+
+
 def calculate_french_amortization(original_amount, annual_rate_pct, duration_months, start_date_str, monthly_installment=None):
     """
     Simulates full French Amortization schedule (Ammortamento alla Francese a Rata Costante).
@@ -702,7 +791,7 @@ def calculate_french_amortization(original_amount, annual_rate_pct, duration_mon
 
     remaining_installments = max(0, duration_months - paid_installments_count)
     repaid_capital_pct = round((total_capital_paid_to_date / original_amount * 100), 1) if original_amount > 0 else 0.0
-    end_date = start_d + relativedelta(months=duration_months)
+    end_date = start_d + relativedelta(months=max(duration_months - 1, 0))
 
     # Aggregate by Year for Amortization Chart
     yearly_dict = {}
@@ -739,12 +828,24 @@ def calculate_french_amortization(original_amount, annual_rate_pct, duration_mon
         chart_capital.append(y_info["capital_paid"])
         chart_interest.append(y_info["interest_paid"])
 
-    current_res_debt = round(schedule[min(paid_installments_count, len(schedule)-1)]["residual_principal"], 2) if schedule else 0.0
+    if schedule:
+        paid_idx = min(max(paid_installments_count - 1, 0), len(schedule) - 1)
+        current_res_debt = round(schedule[paid_idx]["residual_principal"], 2)
+        if paid_installments_count <= 0:
+            current_res_debt = round(original_amount, 2)
+    else:
+        current_res_debt = 0.0
+    display_installment = theoretical_installment
+    try:
+        if monthly_installment and float(monthly_installment) > 0:
+            display_installment = float(monthly_installment)
+    except (TypeError, ValueError):
+        pass
 
     return {
         "schedule": schedule,
         "theoretical_installment": round(theoretical_installment, 2),
-        "actual_installment": round(installment, 2),
+        "actual_installment": round(display_installment, 2),
         "paid_installments_count": paid_installments_count,
         "remaining_installments": remaining_installments,
         "total_installments": duration_months,
@@ -838,6 +939,23 @@ def get_mortgage_deep_dive(workspace_id, profile_id=None):
                         f"Ottenere un tasso di mercato al ~{market_benchmark_fixed:.2f}% ti farebbe risparmiare circa <strong>€ {potential_saving_month:,.0f}/mese</strong> (oltre <strong>€ {total_potential_saving:,.0f}</strong> complessivi fino a scadenza!)."
             })
     
+    if actual_txs and mortgage.get("monthly_installment"):
+        avg_paid = round(sum(t["amount"] for t in actual_txs) / max(len(actual_txs), 1), 2)
+        piano = float(mortgage["monthly_installment"] or 0)
+        extra_vs_piano = round(avg_paid - piano, 2)
+        if extra_vs_piano >= 15:
+            advisor_tips.append({
+                "type": "success",
+                "icon": "🎯",
+                "title": "Bonifico più alto della rata da piano",
+                "text": (
+                    f"Sul conto stai mandando in media <strong>€ {avg_paid:,.2f}</strong> "
+                    f"contro la rata da rendiconto di <strong>€ {piano:,.2f}</strong> "
+                    f"(+€ {extra_vs_piano:,.2f}/mese). Quella differenza va in quota capitale extra: "
+                    f"è già una mini-estinzione parziale ogni mese, utile se vuoi chiudere prima."
+                ),
+            })
+
     # Prepayment Strategy vs PAC
     advisor_tips.append({
         "type": "amber",
