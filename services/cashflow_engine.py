@@ -14,9 +14,43 @@ MONTH_NAMES_IT_SHORT = {
     7: "Lug", 8: "Ago", 9: "Set", 10: "Ott", 11: "Nov", 12: "Dic"
 }
 
+def _tx_blob(tx):
+    def _val(key, default=""):
+        try:
+            if hasattr(tx, "keys") and key in tx.keys():
+                v = tx[key]
+            elif isinstance(tx, dict):
+                v = tx.get(key, default)
+            else:
+                return default
+            return default if v is None else v
+        except Exception:
+            return default
+
+    return " ".join(
+        str(_val(k) or "")
+        for k in ("tags", "sub_category", "category", "description", "raw_description")
+    ).lower()
+
+
+def is_salary_inflow(tx):
+    blob = _tx_blob(tx)
+    return any(k in blob for k in ("stipendio", "emolumenti", "busta paga", "#stipendio"))
+
+
+def is_expense_reimbursement(tx):
+    blob = _tx_blob(tx)
+    return any(
+        k in blob
+        for k in ("rimbors", "nota spese", "#rimborsi", "#rimborso", "reso ")
+    )
+
+
 def is_internal_giroconto(tx):
     """True for internal transfers: is_transfer flag, #giroconto, or subcategory Giroconto Interno."""
     if tx is None:
+        return False
+    if is_expense_reimbursement(tx):
         return False
 
     def _val(key, default=""):
@@ -1003,20 +1037,30 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
     
     actual_month_income = 0.0
     actual_month_expenses = 0.0
+    actual_salary_income = 0.0
+    actual_other_income = 0.0
     for tx in tx_rows:
+        amt = tx['amount'] or 0.0
+        if amt > 0 and is_expense_reimbursement(tx):
+            actual_month_income += amt
+            actual_other_income += amt
+            continue
         if is_internal_giroconto(tx):
             continue
-        amt = tx['amount']
         if amt > 0:
             actual_month_income += amt
+            if is_salary_inflow(tx):
+                actual_salary_income += amt
+            else:
+                actual_other_income += amt
         else:
             actual_month_expenses += abs(amt)
 
-    # 4. POTENTIAL / EXPECTED MONTHLY INCOME (Baseline)
+    # 4. POTENTIAL / EXPECTED MONTHLY INCOME
+    # Stipendio (regola fissa / media) + altre entrate già arrivate (rimborsi, bonus, extra).
     avg_3m_income = calculate_average_monthly_income(conn, workspace_id, profile_id, exclude_month=year_month if is_current_month else None)
-    
-    # Expected Monthly Inflow: If already received substantial income this month (e.g. stipend arrived), use actual, otherwise baseline
-    expected_month_income = actual_month_income if actual_month_income >= (avg_3m_income * 0.7) else avg_3m_income
+    salary_expected = actual_salary_income if actual_salary_income >= (avg_3m_income * 0.7) else avg_3m_income
+    expected_month_income = round(salary_expected + actual_other_income, 2)
 
     # 5. Fetch Fixed Costs & Filter ONLY THOSE DUE IN THIS SPECIFIC MONTH (m)
     fc_query = "SELECT * FROM fixed_costs WHERE workspace_id = ? AND is_active = 1"
@@ -1674,6 +1718,9 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         "total_liquid_reserve": total_liquid_reserve,
         "expected_month_income": expected_month_income,
         "avg_3m_income": avg_3m_income,
+        "salary_expected": round(salary_expected, 2),
+        "other_income": round(actual_other_income, 2),
+        "actual_salary_income": round(actual_salary_income, 2),
         "actual_month_income": actual_month_income,
         "actual_month_expenses": actual_month_expenses,
         "net_savings": net_savings,
@@ -2610,8 +2657,12 @@ def get_monthly_forecast_and_considerations(cashflow_data, custom_salary=None, c
     days_remaining = cashflow_data.get('days_remaining', 0) if is_current else 0
     current_balance = cashflow_data.get('total_liquid_reserve', 0.0)
     
-    # Baseline or Custom Salary/Income
-    effective_income = float(custom_salary) if custom_salary is not None else float(cashflow_data.get('expected_month_income', 3000.00))
+    # Stipendio (custom o atteso) + altre entrate già incassate (rimborsi, bonus)
+    other_income = float(cashflow_data.get("other_income", 0.0) or 0.0)
+    if custom_salary is not None:
+        effective_income = float(custom_salary) + other_income
+    else:
+        effective_income = float(cashflow_data.get("expected_month_income", 3000.00) or 0.0)
     target_savings = float(custom_target) if custom_target is not None else 500.00
     
     actual_income = float(cashflow_data.get('actual_month_income', 0.0))
@@ -2649,6 +2700,11 @@ def get_monthly_forecast_and_considerations(cashflow_data, custom_salary=None, c
 
     forecast = {
         "effective_income": effective_income,
+        "other_income": round(other_income, 2),
+        "salary_expected": round(float(cashflow_data.get("salary_expected", 0) or 0), 2),
+        "projected_variable_remaining": projected_variable_remaining,
+        "unpaid_fixed_total": unpaid_fixed_total,
+        "unpaid_upcoming_total": unpaid_upcoming_total,
         "target_savings": target_savings,
         "current_balance": current_balance,
         "current_savings_today": current_savings_today,
@@ -2703,14 +2759,14 @@ def get_monthly_forecast_and_considerations(cashflow_data, custom_salary=None, c
             'type': 'success',
             'icon': '🎯',
             'title': 'Obiettivo Raggiungibile!',
-            'text': f"Ad oggi hai sostenuto spese per € {format_eur_advisor(expense)} a fronte di uno stipendio/entrate di riferimento di € {format_eur_advisor(effective_income)}. Il tuo margine attuale nel mese è di <strong>{margin_fmt}</strong>."
+            'text': f"Ad oggi hai sostenuto spese per € {format_eur_advisor(expense)} a fronte di entrate di € {format_eur_advisor(effective_income)} (stipendio + rimborsi/extra). Il tuo margine attuale nel mese è di <strong>{margin_fmt}</strong>."
         })
     else:
         considerations.append({
             'type': 'amber' if current_savings_today >= 0 else 'warning',
             'icon': '⚠️',
             'title': 'Stima Margine Mese',
-            'text': f"Nel mese hai speso € {format_eur_advisor(expense)} su € {format_eur_advisor(effective_income)} di stipendio di riferimento. Ad oggi il tuo margine residuo è di <strong>{margin_fmt}</strong>."
+            'text': f"Nel mese hai speso € {format_eur_advisor(expense)} su € {format_eur_advisor(effective_income)} di entrate (stipendio + rimborsi/extra). Ad oggi il tuo margine è di <strong>{margin_fmt}</strong>."
         })
 
     # 4. Stima a Fine Mese
@@ -2883,9 +2939,13 @@ def calculate_smart_budget_copilot(workspace_id, profile_id=None, year_month=Non
     # 1. Recupera dati cash flow di base
     cf_data = get_monthly_cashflow_data(workspace_id, profile_id, year_month)
     
-    effective_income = float(custom_salary) if custom_salary is not None else float(cf_data.get('expected_month_income', 3000.00))
+    other_income = float(cf_data.get("other_income", 0.0) or 0.0)
+    if custom_salary is not None:
+        effective_income = float(custom_salary) + other_income
+    else:
+        effective_income = float(cf_data.get("expected_month_income", 3000.00) or 0.0)
     if effective_income <= 0:
-        effective_income = float(cf_data.get('actual_month_income', 3000.00)) or 3000.00
+        effective_income = float(cf_data.get("actual_month_income", 0.0) or 0.0)
 
     target_savings = float(custom_target_savings) if custom_target_savings is not None else 500.00
     extra_expense = max(0.0, float(extra_simulation_expense or 0.0))

@@ -64,7 +64,7 @@
         <div class="glance-stat in">
             <span class="glance-stat-lbl">Entrate attese</span>
             <span class="privacy-mask glance-stat-val">{% if cashflow %}{{ cashflow.expected_month_income|eur_sign }}{% else %}€ 0,00{% endif %}</span>
-            <span class="glance-stat-hint">stipendio / media</span>
+            <span class="glance-stat-hint">{% if cashflow and cashflow.other_income %}stipendio + {{ cashflow.other_income|eur }} extra{% else %}stipendio + rimborsi / extra{% endif %}</span>
         </div>
         <div class="glance-stat fix">
             <span class="glance-stat-lbl">Fissi del mese</span>

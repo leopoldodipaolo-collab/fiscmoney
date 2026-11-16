@@ -156,20 +156,20 @@
                 <div class="forecast-val" style="color: {% if monthly_forecast.forecast.current_savings_today >= 0 %}#fff{% else %}#f87171{% endif %};">
                     {{ monthly_forecast.forecast.current_savings_today|eur_sign }}
                 </div>
-                <span class="forecast-sub">Stipendio - Uscite ad oggi</span>
+                <span class="forecast-sub">Entrate (stipendio + extra) − uscite ad oggi</span>
             </div>
 
             <!-- 2. Stima Risparmio Mese -->
-            <div class="forecast-box highlight-box">
-                <span class="forecast-label">Stima Risparmio Mese</span>
+            <div class="forecast-box highlight-box" title="Non è un saldo già perso: è cosa resterebbe se da qui a fine mese paghi i fissi ancora aperti e continui a spendere le variabili al ritmo di oggi.">
+                <span class="forecast-label">Se continui così a fine mese</span>
                 <div class="forecast-val" style="color: {% if monthly_forecast.forecast.projected_savings_end >= 0 %}#c084fc{% else %}#f87171{% endif %};">
                     {{ monthly_forecast.forecast.projected_savings_end|eur_sign }}
                 </div>
                 <span class="forecast-sub">
                     {% if monthly_forecast.forecast.is_current_month and monthly_forecast.forecast.days_remaining > 0 %}
-                        Proiezione a fine mese ({{ monthly_forecast.forecast.days_passed }}/{{ monthly_forecast.forecast.days_in_month }} giorni trascorse)
+                        Entrate − già speso − fissi restanti {{ monthly_forecast.forecast.unpaid_fixed_total|eur }} − ritmo variabile × {{ monthly_forecast.forecast.days_remaining }} gg
                     {% else %}
-                        Consuntivo chiuso
+                        Consuntivo chiuso (entrate − uscite del mese)
                     {% endif %}
                 </span>
             </div>
