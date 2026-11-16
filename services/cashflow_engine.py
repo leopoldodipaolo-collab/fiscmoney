@@ -1337,9 +1337,18 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
     # Se il mese presenta scadenze straordinarie (es. Bollo, TARI) sia pagate che pendenti, vanno entrambe dedotte dal budget mensile.
     total_all_deadlines = total_deadlines_paid + total_deadlines_pending
     monthly_net_margin = max(0.0, expected_month_income - total_fixed_expenses_expected)
-    monthly_safe_to_spend = max(0.0, expected_month_income - total_fixed_expenses_expected - variable_expenses - total_all_deadlines - total_investments_month)
-    monthly_budget_overrun = max(0.0, (total_fixed_expenses_expected + variable_expenses + total_all_deadlines + total_investments_month) - expected_month_income)
-    daily_safe_budget = monthly_safe_to_spend / days_remaining if days_remaining > 0 else 0.0
+    committed_out = (
+        variable_expenses
+        + total_fixed_expenses_expected
+        + total_all_deadlines
+        + total_investments_month
+    )
+    cash_left_this_month = round(expected_month_income - committed_out, 2)
+    monthly_safe_to_spend = max(0.0, cash_left_this_month)
+    monthly_budget_overrun = max(0.0, committed_out - expected_month_income)
+    daily_safe_budget = (
+        round(monthly_safe_to_spend / days_remaining, 2) if days_remaining > 0 else 0.0
+    )
     burn_rate_daily = actual_month_expenses / current_day if current_day > 0 else 0.0
 
     MESI_IT = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
@@ -1763,6 +1772,7 @@ def get_monthly_cashflow_data(workspace_id, profile_id=None, year_month=None):
         "total_fixed_expenses_paid": total_fixed_expenses_paid,
         "total_fixed_expenses_pending": total_fixed_expenses_pending,
         "monthly_net_margin": monthly_net_margin,
+        "cash_left_this_month": cash_left_this_month,
         "monthly_safe_to_spend": monthly_safe_to_spend,
         "monthly_budget_overrun": monthly_budget_overrun,
         "total_all_deadlines": total_all_deadlines,

@@ -1,7 +1,7 @@
 <!-- TAB 1: SINTESI OGGI (DEFAULT) -->
 <div id="dashTabContent_glance" class="dash-tab-content active" style="display: block;">
-{% set daily_quota = (smart_budget.daily_spendable_budget if smart_budget else (cashflow.daily_safe_budget if cashflow else 0)) %}
-{% set still_free = (smart_budget.remaining_variable_budget if smart_budget else (cashflow.monthly_safe_to_spend if cashflow else 0)) %}
+{% set still_free = (cashflow.monthly_safe_to_spend if cashflow else 0) %}
+{% set daily_quota = (cashflow.daily_safe_budget if cashflow else 0) %}
 {% set spent_month = (cashflow.variable_expenses if cashflow else 0) %}
 {% set days_left = (cashflow.days_remaining if cashflow else 0) %}
 {% set dim = (cashflow.days_in_month if cashflow and cashflow.days_in_month else 30) %}
@@ -51,7 +51,17 @@
             <div class="glance-days-pill">{{ days_left }} giorni restanti</div>
             <div class="privacy-mask glance-free-line">Ancora spendibile</div>
             <div class="privacy-mask glance-free-val">{{ still_free|eur }}</div>
-            <p class="glance-hero-hint">Se spendi circa questa quota al giorno, chiudi il mese in equilibrio.</p>
+            <p class="glance-hero-hint">
+                {% if cashflow and cashflow.other_income and still_free > 0 %}
+                Con stipendio + extra, dopo i fissi ancora aperti ti restano {{ still_free|eur }} (circa {{ daily_quota|eur }}/giorno).
+                {% elif cashflow and cashflow.other_income and still_free <= 0 %}
+                I rimborsi coprono il buco sullo stipendio, ma dopo i fissi ancora da pagare non resta margine variabile.
+                {% elif still_free > 0 %}
+                Se spendi circa questa quota al giorno, chiudi il mese in equilibrio (entrate − già speso − fissi restanti).
+                {% else %}
+                Le uscite già fatte e i fissi ancora aperti coprono le entrate del mese: quota variabile a zero.
+                {% endif %}
+            </p>
         </div>
     </div>
 
